@@ -16,12 +16,12 @@
   <key id="d0" for="node" attr.name="GraphID" attr.type="string" />
   <graph edgedefault="undirected">
     <node id="1">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">NetworkNode</data>
       <data key="d2">node+AL2S</data>
       <data key="d3">AL2S</data>
       <data key="d4">Switch</data>
-      <data key="d5">AL2S AL2S</data>
+      <data key="d5">AL2S OESS</data>
       <data key="d6">{"unit": 1}</data>
       <data key="d7">{"local_name": "AL2S"}</data>
       <data key="d8">false</data>
@@ -30,7 +30,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"local_name": "AL2S"}}}</data>
     </node>
     <node id="2">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">NetworkService</data>
       <data key="d2">node+AL2S-ns</data>
       <data key="d3">AL2S-ns</data>
@@ -40,7 +40,7 @@
       <data key="d12">L2</data>
     </node>
     <node id="3">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">NetworkService</data>
       <data key="d2">node+AL2S-l3vpn-ns</data>
       <data key="d3">AL2S-l3vpn-ns</data>
@@ -51,7 +51,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"asn": "55038"}}}</data>
     </node>
     <node id="4">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:core1.atla.net.internet2.edu:HundredGigE0/0/0/26</data>
       <data key="d3">core1.atla.net.internet2.edu:HundredGigE0/0/0/26</data>
@@ -63,7 +63,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["3020-3029"], "local_name": "HundredGigE0/0/0/26", "device_name": "core1.atla.net.internet2.edu"}}}</data>
     </node>
     <node id="5">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/0</data>
       <data key="d3">agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/0</data>
@@ -75,45 +75,45 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/13/0", "device_name": "agg3.dall3.net.internet2.edu"}}}</data>
     </node>
     <node id="6">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">NetworkNode</data>
-      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/0:facility+Cloud_Facility_Azure_Gov</data>
-      <data key="d3">Cloud_Facility_Azure_Gov</data>
+      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/0:facility+Cloud-Facility-Azure-Gov</data>
+      <data key="d3">Cloud-Facility-Azure-Gov</data>
       <data key="d4">Facility</data>
       <data key="d8">false</data>
-      <data key="d9">Azure_Gov</data>
+      <data key="d9">Azure-Gov</data>
     </node>
     <node id="7">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">NetworkService</data>
-      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/0:facility+Cloud_Facility_Azure_Gov-ns</data>
-      <data key="d3">Cloud_Facility_Azure_Gov-ns</data>
+      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/0:facility+Cloud-Facility-Azure-Gov-ns</data>
+      <data key="d3">Cloud-Facility-Azure-Gov-ns</data>
       <data key="d4">VLAN</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="8">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/0:Cloud_Facility_Azure_Gov:facility_port</data>
-      <data key="d3">Azure_Gov_CrossConnect-Dallas-Gov_agg3.dall3.net.internet2.edu_TenGigE0/0/0/13/0</data>
+      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/0:Cloud-Facility-Azure-Gov:facility_port</data>
+      <data key="d3">Azure-Gov-CrossConnect-Dallas-Gov-agg3.dall3.net.internet2.edu-TenGigE0/0/0/13/0</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.dall3.net.internet2.edu", "local_name": "TenGigE0/0/0/13/0", "region": "eastus2", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
-      <data key="d13">PDP DALL3-CONN-MICROSOFT-1</data>
+      <data key="d13">PDPDALL3-CONN-MICROSOFT-1|I2-DALL3-DALL3-10GE-193703</data>
     </node>
     <node id="9">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/0:facility+Cloud_Facility_Azure_Gov+link</data>
-      <data key="d3">Cloud_Facility_Azure_Gov-link:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/0</data>
+      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/0:facility+Cloud-Facility-Azure-Gov+link</data>
+      <data key="d3">Cloud-Facility-Azure-Gov-link:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/0</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="10">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/0</data>
       <data key="d3">agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/0</data>
@@ -125,26 +125,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/11/0", "device_name": "agg4.dall3.net.internet2.edu"}}}</data>
     </node>
     <node id="11">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/0:Cloud_Facility_Azure_Gov:facility_port</data>
-      <data key="d3">Azure_Gov_CrossConnect-Dallas-Gov_agg4.dall3.net.internet2.edu_TenGigE0/0/0/11/0</data>
+      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/0:Cloud-Facility-Azure-Gov:facility_port</data>
+      <data key="d3">Azure-Gov-CrossConnect-Dallas-Gov-agg4.dall3.net.internet2.edu-TenGigE0/0/0/11/0</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.dall3.net.internet2.edu", "local_name": "TenGigE0/0/0/11/0", "region": "eastus2", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="12">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/0:facility+Cloud_Facility_Azure_Gov+link</data>
-      <data key="d3">Cloud_Facility_Azure_Gov-link:agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/0</data>
+      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/0:facility+Cloud-Facility-Azure-Gov+link</data>
+      <data key="d3">Cloud-Facility-Azure-Gov-link:agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/0</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="13">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/10/2</data>
       <data key="d3">agg3.eqch.net.internet2.edu:TenGigE0/0/0/10/2</data>
@@ -156,45 +156,45 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/10/2", "device_name": "agg3.eqch.net.internet2.edu"}}}</data>
     </node>
     <node id="14">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">NetworkNode</data>
-      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/10/2:facility+Cloud_Facility_Azure</data>
-      <data key="d3">Cloud_Facility_Azure</data>
+      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/10/2:facility+Cloud-Facility-Azure</data>
+      <data key="d3">Cloud-Facility-Azure</data>
       <data key="d4">Facility</data>
       <data key="d8">false</data>
       <data key="d9">Azure</data>
     </node>
     <node id="15">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">NetworkService</data>
-      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/10/2:facility+Cloud_Facility_Azure-ns</data>
-      <data key="d3">Cloud_Facility_Azure-ns</data>
+      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/10/2:facility+Cloud-Facility-Azure-ns</data>
+      <data key="d3">Cloud-Facility-Azure-ns</data>
       <data key="d4">VLAN</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="16">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/10/2:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-Chicago_agg3.eqch.net.internet2.edu_TenGigE0/0/0/10/2</data>
+      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/10/2:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-Chicago-agg3.eqch.net.internet2.edu-TenGigE0/0/0/10/2</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.eqch.net.internet2.edu", "local_name": "TenGigE0/0/0/10/2", "region": "westus2", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
-      <data key="d13">PDP EQCH-CONN-MICROSOFT-1</data>
+      <data key="d13">PDPEQCH-CONN-MICROSOFT-1|I2-EQCH-EQCH-10GE-185913</data>
     </node>
     <node id="17">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/10/2:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg3.eqch.net.internet2.edu:TenGigE0/0/0/10/2</data>
+      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/10/2:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg3.eqch.net.internet2.edu:TenGigE0/0/0/10/2</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="18">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/0</data>
       <data key="d3">agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/0</data>
@@ -206,26 +206,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/11/0", "device_name": "agg4.eqch.net.internet2.edu"}}}</data>
     </node>
     <node id="19">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/0:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-Chicago_agg4.eqch.net.internet2.edu_TenGigE0/0/0/11/0</data>
+      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/0:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-Chicago-agg4.eqch.net.internet2.edu-TenGigE0/0/0/11/0</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.eqch.net.internet2.edu", "local_name": "TenGigE0/0/0/11/0", "region": "westus2", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="20">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/0:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/0</data>
+      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/0:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/0</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="21">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:HundredGigE0/0/0/4</data>
       <data key="d3">agg3.eqch.net.internet2.edu:HundredGigE0/0/0/4</data>
@@ -237,26 +237,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "HundredGigE0/0/0/4", "device_name": "agg3.eqch.net.internet2.edu"}}}</data>
     </node>
     <node id="22">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:HundredGigE0/0/0/4:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-Chicago_agg3.eqch.net.internet2.edu_HundredGigE0/0/0/4</data>
+      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:HundredGigE0/0/0/4:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-Chicago-agg3.eqch.net.internet2.edu-HundredGigE0/0/0/4</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 100}</data>
       <data key="d7">{"device_name": "agg3.eqch.net.internet2.edu", "local_name": "HundredGigE0/0/0/4", "region": "westus2", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="23">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:HundredGigE0/0/0/4:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg3.eqch.net.internet2.edu:HundredGigE0/0/0/4</data>
+      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:HundredGigE0/0/0/4:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg3.eqch.net.internet2.edu:HundredGigE0/0/0/4</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="24">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:HundredGigE0/0/0/4</data>
       <data key="d3">agg4.eqch.net.internet2.edu:HundredGigE0/0/0/4</data>
@@ -268,26 +268,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "HundredGigE0/0/0/4", "device_name": "agg4.eqch.net.internet2.edu"}}}</data>
     </node>
     <node id="25">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:HundredGigE0/0/0/4:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-Chicago_agg4.eqch.net.internet2.edu_HundredGigE0/0/0/4</data>
+      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:HundredGigE0/0/0/4:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-Chicago-agg4.eqch.net.internet2.edu-HundredGigE0/0/0/4</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 100}</data>
       <data key="d7">{"device_name": "agg4.eqch.net.internet2.edu", "local_name": "HundredGigE0/0/0/4", "region": "westus2", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="26">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:HundredGigE0/0/0/4:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg4.eqch.net.internet2.edu:HundredGigE0/0/0/4</data>
+      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:HundredGigE0/0/0/4:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg4.eqch.net.internet2.edu:HundredGigE0/0/0/4</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="27">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/0</data>
       <data key="d3">agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/0</data>
@@ -299,26 +299,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095", "2-2"], "local_name": "TenGigE0/0/0/14/0", "device_name": "agg4.dall3.net.internet2.edu"}}}</data>
     </node>
     <node id="28">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/0:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-Dallas_agg4.dall3.net.internet2.edu_TenGigE0/0/0/14/0</data>
+      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/0:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-Dallas-agg4.dall3.net.internet2.edu-TenGigE0/0/0/14/0</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.dall3.net.internet2.edu", "local_name": "TenGigE0/0/0/14/0", "region": "eastus", "vlan_range": ["1-4095", "2-2"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="29">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/0:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/0</data>
+      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/0:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/0</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="30">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/2</data>
       <data key="d3">agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/2</data>
@@ -330,26 +330,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095", "2-2"], "local_name": "TenGigE0/0/0/13/2", "device_name": "agg3.dall3.net.internet2.edu"}}}</data>
     </node>
     <node id="31">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/2:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-Dallas_agg3.dall3.net.internet2.edu_TenGigE0/0/0/13/2</data>
+      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/2:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-Dallas-agg3.dall3.net.internet2.edu-TenGigE0/0/0/13/2</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.dall3.net.internet2.edu", "local_name": "TenGigE0/0/0/13/2", "region": "eastus", "vlan_range": ["1-4095", "2-2"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="32">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/2:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/2</data>
+      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/2:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/2</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="33">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/0</data>
       <data key="d3">agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/0</data>
@@ -361,26 +361,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/12/0", "device_name": "agg3.sanj.net.internet2.edu"}}}</data>
     </node>
     <node id="34">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/0:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-SiliconValley_agg3.sanj.net.internet2.edu_TenGigE0/0/0/12/0</data>
+      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/0:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-SiliconValley-agg3.sanj.net.internet2.edu-TenGigE0/0/0/12/0</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.sanj.net.internet2.edu", "local_name": "TenGigE0/0/0/12/0", "region": "westus3", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="35">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/0:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/0</data>
+      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/0:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/0</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="36">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/0</data>
       <data key="d3">agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/0</data>
@@ -392,26 +392,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/12/0", "device_name": "agg4.sanj.net.internet2.edu"}}}</data>
     </node>
     <node id="37">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/0:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-SiliconValley_agg4.sanj.net.internet2.edu_TenGigE0/0/0/12/0</data>
+      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/0:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-SiliconValley-agg4.sanj.net.internet2.edu-TenGigE0/0/0/12/0</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.sanj.net.internet2.edu", "local_name": "TenGigE0/0/0/12/0", "region": "westus3", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="38">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/0:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/0</data>
+      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/0:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/0</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="39">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:HundredGigE0/0/0/3</data>
       <data key="d3">agg4.sanj.net.internet2.edu:HundredGigE0/0/0/3</data>
@@ -423,26 +423,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "HundredGigE0/0/0/3", "device_name": "agg4.sanj.net.internet2.edu"}}}</data>
     </node>
     <node id="40">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:HundredGigE0/0/0/3:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-SiliconValley_agg4.sanj.net.internet2.edu_HundredGigE0/0/0/3</data>
+      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:HundredGigE0/0/0/3:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-SiliconValley-agg4.sanj.net.internet2.edu-HundredGigE0/0/0/3</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 100}</data>
       <data key="d7">{"device_name": "agg4.sanj.net.internet2.edu", "local_name": "HundredGigE0/0/0/3", "region": "westus3", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="41">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:HundredGigE0/0/0/3:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg4.sanj.net.internet2.edu:HundredGigE0/0/0/3</data>
+      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:HundredGigE0/0/0/3:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg4.sanj.net.internet2.edu:HundredGigE0/0/0/3</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="42">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:HundredGigE0/0/0/3</data>
       <data key="d3">agg3.sanj.net.internet2.edu:HundredGigE0/0/0/3</data>
@@ -454,26 +454,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "HundredGigE0/0/0/3", "device_name": "agg3.sanj.net.internet2.edu"}}}</data>
     </node>
     <node id="43">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:HundredGigE0/0/0/3:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-SiliconValley_agg3.sanj.net.internet2.edu_HundredGigE0/0/0/3</data>
+      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:HundredGigE0/0/0/3:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-SiliconValley-agg3.sanj.net.internet2.edu-HundredGigE0/0/0/3</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 100}</data>
       <data key="d7">{"device_name": "agg3.sanj.net.internet2.edu", "local_name": "HundredGigE0/0/0/3", "region": "westus3", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="44">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:HundredGigE0/0/0/3:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg3.sanj.net.internet2.edu:HundredGigE0/0/0/3</data>
+      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:HundredGigE0/0/0/3:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg3.sanj.net.internet2.edu:HundredGigE0/0/0/3</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="45">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/2</data>
       <data key="d3">agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/2</data>
@@ -485,26 +485,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/12/2", "device_name": "agg3.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="46">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/2:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-WashingtonDC_agg3.ashb.net.internet2.edu_TenGigE0/0/0/12/2</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/2:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-WashingtonDC-agg3.ashb.net.internet2.edu-TenGigE0/0/0/12/2</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/12/2", "region": "eastus", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="47">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/2:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/2</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/2:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/2</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="48">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/3</data>
       <data key="d3">agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/3</data>
@@ -516,26 +516,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["3-3", "8-8", "9-9", "12-12", "14-14", "15-15", "16-16", "1-4095"], "local_name": "TenGigE0/0/0/12/3", "device_name": "agg4.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="49">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/3:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-WashingtonDC_agg4.ashb.net.internet2.edu_TenGigE0/0/0/12/3</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/3:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-WashingtonDC-agg4.ashb.net.internet2.edu-TenGigE0/0/0/12/3</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/12/3", "region": "eastus", "vlan_range": ["3-3", "8-8", "9-9", "12-12", "14-14", "15-15", "16-16", "1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="50">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/3:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/3</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/3:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/3</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="51">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/1</data>
       <data key="d3">agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/1</data>
@@ -547,26 +547,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/12/1", "device_name": "agg3.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="52">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/1:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-WashingtonDC_agg3.ashb.net.internet2.edu_TenGigE0/0/0/12/1</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/1:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-WashingtonDC-agg3.ashb.net.internet2.edu-TenGigE0/0/0/12/1</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/12/1", "region": "eastus", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="53">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/1:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/1</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/1:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/1</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="54">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/1</data>
       <data key="d3">agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/1</data>
@@ -578,26 +578,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/11/1", "device_name": "agg4.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="55">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/1:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-WashingtonDC_agg4.ashb.net.internet2.edu_TenGigE0/0/0/11/1</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/1:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-WashingtonDC-agg4.ashb.net.internet2.edu-TenGigE0/0/0/11/1</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/11/1", "region": "eastus", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="56">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/1:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/1</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/1:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/1</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="57">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:HundredGigE0/0/0/4</data>
       <data key="d3">agg4.ashb.net.internet2.edu:HundredGigE0/0/0/4</data>
@@ -609,26 +609,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "HundredGigE0/0/0/4", "device_name": "agg4.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="58">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:HundredGigE0/0/0/4:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-WashingtonDC_agg4.ashb.net.internet2.edu_HundredGigE0/0/0/4</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:HundredGigE0/0/0/4:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-WashingtonDC-agg4.ashb.net.internet2.edu-HundredGigE0/0/0/4</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 100}</data>
       <data key="d7">{"device_name": "agg4.ashb.net.internet2.edu", "local_name": "HundredGigE0/0/0/4", "region": "eastus", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="59">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:HundredGigE0/0/0/4:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg4.ashb.net.internet2.edu:HundredGigE0/0/0/4</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:HundredGigE0/0/0/4:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg4.ashb.net.internet2.edu:HundredGigE0/0/0/4</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="60">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:HundredGigE0/0/0/4</data>
       <data key="d3">agg3.ashb.net.internet2.edu:HundredGigE0/0/0/4</data>
@@ -640,26 +640,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "HundredGigE0/0/0/4", "device_name": "agg3.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="61">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:HundredGigE0/0/0/4:Cloud_Facility_Azure:facility_port</data>
-      <data key="d3">Azure_CrossConnection-WashingtonDC_agg3.ashb.net.internet2.edu_HundredGigE0/0/0/4</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:HundredGigE0/0/0/4:Cloud-Facility-Azure:facility_port</data>
+      <data key="d3">Azure-CrossConnection-WashingtonDC-agg3.ashb.net.internet2.edu-HundredGigE0/0/0/4</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 100}</data>
       <data key="d7">{"device_name": "agg3.ashb.net.internet2.edu", "local_name": "HundredGigE0/0/0/4", "region": "eastus", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="62">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:HundredGigE0/0/0/4:facility+Cloud_Facility_Azure+link</data>
-      <data key="d3">Cloud_Facility_Azure-link:agg3.ashb.net.internet2.edu:HundredGigE0/0/0/4</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:HundredGigE0/0/0/4:facility+Cloud-Facility-Azure+link</data>
+      <data key="d3">Cloud-Facility-Azure-link:agg3.ashb.net.internet2.edu:HundredGigE0/0/0/4</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="63">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/1</data>
       <data key="d3">agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/1</data>
@@ -671,26 +671,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/11/1", "device_name": "agg3.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="64">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/1:Cloud_Facility_Azure_Gov:facility_port</data>
-      <data key="d3">Azure_Gov_CrossConnection-WashingtonDC-Gov_agg3.ashb.net.internet2.edu_TenGigE0/0/0/11/1</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/1:Cloud-Facility-Azure-Gov:facility_port</data>
+      <data key="d3">Azure-Gov-CrossConnection-WashingtonDC-Gov-agg3.ashb.net.internet2.edu-TenGigE0/0/0/11/1</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/11/1", "region": "eastus2", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="65">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/1:facility+Cloud_Facility_Azure_Gov+link</data>
-      <data key="d3">Cloud_Facility_Azure_Gov-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/1</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/1:facility+Cloud-Facility-Azure-Gov+link</data>
+      <data key="d3">Cloud-Facility-Azure-Gov-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/1</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="66">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/1</data>
       <data key="d3">agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/1</data>
@@ -702,26 +702,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/12/1", "device_name": "agg4.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="67">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/1:Cloud_Facility_Azure_Gov:facility_port</data>
-      <data key="d3">Azure_Gov_CrossConnection-WashingtonDC-Gov_agg4.ashb.net.internet2.edu_TenGigE0/0/0/12/1</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/1:Cloud-Facility-Azure-Gov:facility_port</data>
+      <data key="d3">Azure-Gov-CrossConnection-WashingtonDC-Gov-agg4.ashb.net.internet2.edu-TenGigE0/0/0/12/1</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/12/1", "region": "eastus2", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="68">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/1:facility+Cloud_Facility_Azure_Gov+link</data>
-      <data key="d3">Cloud_Facility_Azure_Gov-link:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/1</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/1:facility+Cloud-Facility-Azure-Gov+link</data>
+      <data key="d3">Cloud-Facility-Azure-Gov-link:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/1</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="69">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:core1.loui.net.internet2.edu:HundredGigE0/0/0/24</data>
       <data key="d3">core1.loui.net.internet2.edu:HundredGigE0/0/0/24</data>
@@ -733,7 +733,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["850-859"], "local_name": "HundredGigE0/0/0/24", "device_name": "core1.loui.net.internet2.edu"}}}</data>
     </node>
     <node id="70">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:core2.sunn.net.internet2.edu:HundredGigE0/0/0/24</data>
       <data key="d3">core2.sunn.net.internet2.edu:HundredGigE0/0/0/24</data>
@@ -745,7 +745,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2400-2410"], "local_name": "HundredGigE0/0/0/24", "device_name": "core2.sunn.net.internet2.edu"}}}</data>
     </node>
     <node id="71">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:core1.ashb.net.internet2.edu:HundredGigE0/0/0/26</data>
       <data key="d3">core1.ashb.net.internet2.edu:HundredGigE0/0/0/26</data>
@@ -757,7 +757,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2050-2059"], "local_name": "HundredGigE0/0/0/26", "device_name": "core1.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="72">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:core1.star.net.internet2.edu:HundredGigE0/0/0/20</data>
       <data key="d3">core1.star.net.internet2.edu:HundredGigE0/0/0/20</data>
@@ -769,7 +769,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["3720-3729"], "local_name": "HundredGigE0/0/0/20", "device_name": "core1.star.net.internet2.edu"}}}</data>
     </node>
     <node id="73">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:core1.salt.net.internet2.edu:HundredGigE0/0/0/24</data>
       <data key="d3">core1.salt.net.internet2.edu:HundredGigE0/0/0/24</data>
@@ -781,7 +781,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2090-2099"], "local_name": "HundredGigE0/0/0/24", "device_name": "core1.salt.net.internet2.edu"}}}</data>
     </node>
     <node id="74">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:core1.rale.net.internet2.edu:Bundle-Ether250</data>
       <data key="d3">core1.rale.net.internet2.edu:Bundle-Ether250</data>
@@ -793,7 +793,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["3981-3984", "3999-3999"], "local_name": "Bundle-Ether250", "device_name": "core1.rale.net.internet2.edu"}}}</data>
     </node>
     <node id="75">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:core1.wash.net.internet2.edu:HundredGigE0/0/0/28</data>
       <data key="d3">core1.wash.net.internet2.edu:HundredGigE0/0/0/28</data>
@@ -805,7 +805,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "HundredGigE0/0/0/28", "device_name": "core1.wash.net.internet2.edu"}}}</data>
     </node>
     <node id="76">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:core1.jack.net.internet2.edu:HundredGigE0/0/0/26</data>
       <data key="d3">core1.jack.net.internet2.edu:HundredGigE0/0/0/26</data>
@@ -817,7 +817,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["130-139"], "local_name": "HundredGigE0/0/0/26", "device_name": "core1.jack.net.internet2.edu"}}}</data>
     </node>
     <node id="77">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:core2.kans.net.internet2.edu:HundredGigE0/0/0/24</data>
       <data key="d3">core2.kans.net.internet2.edu:HundredGigE0/0/0/24</data>
@@ -829,7 +829,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["3800-3809"], "local_name": "HundredGigE0/0/0/24", "device_name": "core2.kans.net.internet2.edu"}}}</data>
     </node>
     <node id="78">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:core1.newy32aoa.net.internet2.edu:Bundle-Ether240</data>
       <data key="d3">core1.newy32aoa.net.internet2.edu:Bundle-Ether240</data>
@@ -841,7 +841,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2790-2799"], "local_name": "Bundle-Ether240", "device_name": "core1.newy32aoa.net.internet2.edu"}}}</data>
     </node>
     <node id="79">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:core1.phoe.net.internet2.edu:HundredGigE0/0/0/24</data>
       <data key="d3">core1.phoe.net.internet2.edu:HundredGigE0/0/0/24</data>
@@ -853,7 +853,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["760-769"], "local_name": "HundredGigE0/0/0/24", "device_name": "core1.phoe.net.internet2.edu"}}}</data>
     </node>
     <node id="80">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:core2.newy32aoa.net.internet2.edu:HundredGigE0/0/0/24</data>
       <data key="d3">core2.newy32aoa.net.internet2.edu:HundredGigE0/0/0/24</data>
@@ -865,7 +865,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["3100-3109"], "local_name": "HundredGigE0/0/0/24", "device_name": "core2.newy32aoa.net.internet2.edu"}}}</data>
     </node>
     <node id="81">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:core1.houh.net.internet2.edu:HundredGigE0/0/0/24</data>
       <data key="d3">core1.houh.net.internet2.edu:HundredGigE0/0/0/24</data>
@@ -877,7 +877,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2060-2070", "3140-3150"], "local_name": "HundredGigE0/0/0/24", "device_name": "core1.houh.net.internet2.edu"}}}</data>
     </node>
     <node id="82">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:core1.dall.net.internet2.edu:HundredGigE0/0/0/24</data>
       <data key="d3">core1.dall.net.internet2.edu:HundredGigE0/0/0/24</data>
@@ -889,7 +889,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2060-2070", "3160-3170"], "local_name": "HundredGigE0/0/0/24", "device_name": "core1.dall.net.internet2.edu"}}}</data>
     </node>
     <node id="83">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:Bundle-Ether100</data>
       <data key="d3">agg3.eqch.net.internet2.edu:Bundle-Ether100</data>
@@ -901,45 +901,45 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "Bundle-Ether100", "device_name": "agg3.eqch.net.internet2.edu"}}}</data>
     </node>
     <node id="84">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">NetworkNode</data>
-      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:Bundle-Ether100:facility+Cloud_Facility_GCP</data>
-      <data key="d3">Cloud_Facility_GCP</data>
+      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:Bundle-Ether100:facility+Cloud-Facility-GCP</data>
+      <data key="d3">Cloud-Facility-GCP</data>
       <data key="d4">Facility</data>
       <data key="d8">false</data>
       <data key="d9">GCP</data>
     </node>
     <node id="85">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">NetworkService</data>
-      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:Bundle-Ether100:facility+Cloud_Facility_GCP-ns</data>
-      <data key="d3">Cloud_Facility_GCP-ns</data>
+      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:Bundle-Ether100:facility+Cloud-Facility-GCP-ns</data>
+      <data key="d3">Cloud-Facility-GCP-ns</data>
       <data key="d4">VLAN</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="86">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:Bundle-Ether100:Cloud_Facility_GCP:facility_port</data>
-      <data key="d3">GCP_US_Central1__Iowa__agg3.eqch.net.internet2.edu_Bundle-Ether100</data>
+      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:Bundle-Ether100:Cloud-Facility-GCP:facility_port</data>
+      <data key="d3">GCP-US-Central1--Iowa--agg3.eqch.net.internet2.edu-Bundle-Ether100</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.eqch.net.internet2.edu", "local_name": "Bundle-Ether100", "region": "us-central1", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
-      <data key="d13">PDP EQCH-CONN-GOOGLE-1 10G</data>
+      <data key="d13">PDPEQCH-CONN-GOOGLE-110G</data>
     </node>
     <node id="87">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:Bundle-Ether100:facility+Cloud_Facility_GCP+link</data>
-      <data key="d3">Cloud_Facility_GCP-link:agg3.eqch.net.internet2.edu:Bundle-Ether100</data>
+      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:Bundle-Ether100:facility+Cloud-Facility-GCP+link</data>
+      <data key="d3">Cloud-Facility-GCP-link:agg3.eqch.net.internet2.edu:Bundle-Ether100</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="88">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:Bundle-Ether100</data>
       <data key="d3">agg4.eqch.net.internet2.edu:Bundle-Ether100</data>
@@ -951,26 +951,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "Bundle-Ether100", "device_name": "agg4.eqch.net.internet2.edu"}}}</data>
     </node>
     <node id="89">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:Bundle-Ether100:Cloud_Facility_GCP:facility_port</data>
-      <data key="d3">GCP_US_Central1__Iowa__agg4.eqch.net.internet2.edu_Bundle-Ether100</data>
+      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:Bundle-Ether100:Cloud-Facility-GCP:facility_port</data>
+      <data key="d3">GCP-US-Central1--Iowa--agg4.eqch.net.internet2.edu-Bundle-Ether100</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.eqch.net.internet2.edu", "local_name": "Bundle-Ether100", "region": "us-central1", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="90">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:Bundle-Ether100:facility+Cloud_Facility_GCP+link</data>
-      <data key="d3">Cloud_Facility_GCP-link:agg4.eqch.net.internet2.edu:Bundle-Ether100</data>
+      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:Bundle-Ether100:facility+Cloud-Facility-GCP+link</data>
+      <data key="d3">Cloud-Facility-GCP-link:agg4.eqch.net.internet2.edu:Bundle-Ether100</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="91">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:Bundle-Ether6</data>
       <data key="d3">agg3.ashb.net.internet2.edu:Bundle-Ether6</data>
@@ -982,7 +982,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["100-4094"], "local_name": "Bundle-Ether6", "device_name": "agg3.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="92">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:Bundle-Ether6</data>
       <data key="d3">agg4.ashb.net.internet2.edu:Bundle-Ether6</data>
@@ -994,7 +994,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["100-4094"], "local_name": "Bundle-Ether6", "device_name": "agg4.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="93">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/11/2</data>
       <data key="d3">agg3.dall3.net.internet2.edu:TenGigE0/0/0/11/2</data>
@@ -1006,45 +1006,45 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/11/2", "device_name": "agg3.dall3.net.internet2.edu"}}}</data>
     </node>
     <node id="94">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">NetworkNode</data>
-      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/11/2:facility+Cloud_Facility_AWS</data>
-      <data key="d3">Cloud_Facility_AWS</data>
+      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/11/2:facility+Cloud-Facility-AWS</data>
+      <data key="d3">Cloud-Facility-AWS</data>
       <data key="d4">Facility</data>
       <data key="d8">false</data>
       <data key="d9">AWS</data>
     </node>
     <node id="95">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">NetworkService</data>
-      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/11/2:facility+Cloud_Facility_AWS-ns</data>
-      <data key="d3">Cloud_Facility_AWS-ns</data>
+      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/11/2:facility+Cloud-Facility-AWS-ns</data>
+      <data key="d3">Cloud-Facility-AWS-ns</data>
       <data key="d4">VLAN</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="96">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/11/2:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__Dallas__agg3.dall3.net.internet2.edu_TenGigE0/0/0/11/2</data>
+      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/11/2:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--Dallas--agg3.dall3.net.internet2.edu-TenGigE0/0/0/11/2</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.dall3.net.internet2.edu", "local_name": "TenGigE0/0/0/11/2", "region": "us-east-3", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
-      <data key="d13">PDP DALL3-CONN-AWS-3</data>
+      <data key="d13">PDPDALL3-CONN-AWS-3|I2-DALL3-DALL3-10GE-196918</data>
     </node>
     <node id="97">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/11/2:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg3.dall3.net.internet2.edu:TenGigE0/0/0/11/2</data>
+      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/11/2:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg3.dall3.net.internet2.edu:TenGigE0/0/0/11/2</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="98">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/2</data>
       <data key="d3">agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/2</data>
@@ -1056,26 +1056,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "TenGigE0/0/0/14/2", "device_name": "agg4.dall3.net.internet2.edu"}}}</data>
     </node>
     <node id="99">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/2:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__Dallas__agg4.dall3.net.internet2.edu_TenGigE0/0/0/14/2</data>
+      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/2:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--Dallas--agg4.dall3.net.internet2.edu-TenGigE0/0/0/14/2</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.dall3.net.internet2.edu", "local_name": "TenGigE0/0/0/14/2", "region": "us-east-3", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="100">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/2:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/2</data>
+      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/2:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg4.dall3.net.internet2.edu:TenGigE0/0/0/14/2</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="101">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/3</data>
       <data key="d3">agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/3</data>
@@ -1087,26 +1087,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "TenGigE0/0/0/13/3", "device_name": "agg3.dall3.net.internet2.edu"}}}</data>
     </node>
     <node id="102">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/3:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__Dallas__agg3.dall3.net.internet2.edu_TenGigE0/0/0/13/3</data>
+      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/3:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--Dallas--agg3.dall3.net.internet2.edu-TenGigE0/0/0/13/3</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.dall3.net.internet2.edu", "local_name": "TenGigE0/0/0/13/3", "region": "us-east-3", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="103">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/3:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/3</data>
+      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/3:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg3.dall3.net.internet2.edu:TenGigE0/0/0/13/3</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="104">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/3</data>
       <data key="d3">agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/3</data>
@@ -1118,26 +1118,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "TenGigE0/0/0/11/3", "device_name": "agg4.dall3.net.internet2.edu"}}}</data>
     </node>
     <node id="105">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/3:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__Dallas__agg4.dall3.net.internet2.edu_TenGigE0/0/0/11/3</data>
+      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/3:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--Dallas--agg4.dall3.net.internet2.edu-TenGigE0/0/0/11/3</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.dall3.net.internet2.edu", "local_name": "TenGigE0/0/0/11/3", "region": "us-east-3", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="106">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/3:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/3</data>
+      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/3:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg4.dall3.net.internet2.edu:TenGigE0/0/0/11/3</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="107">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/0</data>
       <data key="d3">agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/0</data>
@@ -1149,26 +1149,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "TenGigE0/0/0/12/0", "device_name": "agg3.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="108">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/0:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__N._Virginia__-_Hosted_Connect_agg3.ashb.net.internet2.edu_TenGigE0/0/0/12/0</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/0:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--N.-Virginia----Hosted-Connect-agg3.ashb.net.internet2.edu-TenGigE0/0/0/12/0</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/12/0", "region": "us-east-1", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="109">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/0:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/0</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/0:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/0</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="110">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/3</data>
       <data key="d3">agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/3</data>
@@ -1180,26 +1180,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/11/3", "device_name": "agg4.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="111">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/3:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__N._Virginia__-_Hosted_Connect_agg4.ashb.net.internet2.edu_TenGigE0/0/0/11/3</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/3:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--N.-Virginia----Hosted-Connect-agg4.ashb.net.internet2.edu-TenGigE0/0/0/11/3</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/11/3", "region": "us-east-1", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="112">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/3:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/3</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/3:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg4.ashb.net.internet2.edu:TenGigE0/0/0/11/3</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="113">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/2</data>
       <data key="d3">agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/2</data>
@@ -1211,26 +1211,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["21-21", "2-4095"], "local_name": "TenGigE0/0/0/11/2", "device_name": "agg3.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="114">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/2:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__N._Virginia__-_Hosted_Connect_agg3.ashb.net.internet2.edu_TenGigE0/0/0/11/2</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/2:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--N.-Virginia----Hosted-Connect-agg3.ashb.net.internet2.edu-TenGigE0/0/0/11/2</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/11/2", "region": "us-east-1", "vlan_range": ["21-21", "2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="115">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/2:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/2</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/2:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/2</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="116">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/3</data>
       <data key="d3">agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/3</data>
@@ -1242,26 +1242,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["31-31", "2-4095"], "local_name": "TenGigE0/0/0/11/3", "device_name": "agg3.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="117">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/3:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__N._Virginia__-_Hosted_Connect_agg3.ashb.net.internet2.edu_TenGigE0/0/0/11/3</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/3:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--N.-Virginia----Hosted-Connect-agg3.ashb.net.internet2.edu-TenGigE0/0/0/11/3</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/11/3", "region": "us-east-1", "vlan_range": ["31-31", "2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="118">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/3:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/3</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/3:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/11/3</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="119">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/2</data>
       <data key="d3">agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/2</data>
@@ -1273,26 +1273,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["22-22", "1-4095", "2-4095"], "local_name": "TenGigE0/0/0/12/2", "device_name": "agg4.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="120">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/2:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__N._Virginia__-_Hosted_Connect_agg4.ashb.net.internet2.edu_TenGigE0/0/0/12/2</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/2:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--N.-Virginia----Hosted-Connect-agg4.ashb.net.internet2.edu-TenGigE0/0/0/12/2</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/12/2", "region": "us-east-1", "vlan_range": ["22-22", "1-4095", "2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="121">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/2:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/2</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/2:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg4.ashb.net.internet2.edu:TenGigE0/0/0/12/2</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="122">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/1</data>
       <data key="d3">agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/1</data>
@@ -1304,26 +1304,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["41-41", "2-4095"], "local_name": "TenGigE0/0/0/13/1", "device_name": "agg3.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="123">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/1:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__N._Virginia__-_Hosted_Connect_agg3.ashb.net.internet2.edu_TenGigE0/0/0/13/1</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/1:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--N.-Virginia----Hosted-Connect-agg3.ashb.net.internet2.edu-TenGigE0/0/0/13/1</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/13/1", "region": "us-east-1", "vlan_range": ["41-41", "2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="124">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/1:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/1</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/1:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/1</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="125">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/13/0</data>
       <data key="d3">agg4.ashb.net.internet2.edu:TenGigE0/0/0/13/0</data>
@@ -1335,26 +1335,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["32-32", "2-4095"], "local_name": "TenGigE0/0/0/13/0", "device_name": "agg4.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="126">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/13/0:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__N._Virginia__-_Hosted_Connect_agg4.ashb.net.internet2.edu_TenGigE0/0/0/13/0</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/13/0:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--N.-Virginia----Hosted-Connect-agg4.ashb.net.internet2.edu-TenGigE0/0/0/13/0</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/13/0", "region": "us-east-1", "vlan_range": ["32-32", "2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="127">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/13/0:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg4.ashb.net.internet2.edu:TenGigE0/0/0/13/0</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/13/0:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg4.ashb.net.internet2.edu:TenGigE0/0/0/13/0</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="128">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/3</data>
       <data key="d3">agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/3</data>
@@ -1366,26 +1366,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095", "751-751"], "local_name": "TenGigE0/0/0/12/3", "device_name": "agg3.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="129">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/3:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__N._Virginia__-_Hosted_Connect_agg3.ashb.net.internet2.edu_TenGigE0/0/0/12/3</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/3:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--N.-Virginia----Hosted-Connect-agg3.ashb.net.internet2.edu-TenGigE0/0/0/12/3</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/12/3", "region": "us-east-1", "vlan_range": ["2-4095", "751-751"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="130">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/3:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/3</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/3:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/12/3</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="131">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/2</data>
       <data key="d3">agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/2</data>
@@ -1397,26 +1397,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095", "1-4095"], "local_name": "TenGigE0/0/0/13/2", "device_name": "agg3.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="132">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/2:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__N._Virginia__-_Hosted_Connect_agg3.ashb.net.internet2.edu_TenGigE0/0/0/13/2</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/2:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--N.-Virginia----Hosted-Connect-agg3.ashb.net.internet2.edu-TenGigE0/0/0/13/2</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/13/2", "region": "us-east-1", "vlan_range": ["2-4095", "1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="133">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/2:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/2</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/2:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg3.ashb.net.internet2.edu:TenGigE0/0/0/13/2</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="134">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/14/0</data>
       <data key="d3">agg4.ashb.net.internet2.edu:TenGigE0/0/0/14/0</data>
@@ -1428,26 +1428,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095", "1-4095"], "local_name": "TenGigE0/0/0/14/0", "device_name": "agg4.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="135">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/14/0:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__N._Virginia__-_Hosted_Connect_agg4.ashb.net.internet2.edu_TenGigE0/0/0/14/0</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/14/0:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--N.-Virginia----Hosted-Connect-agg4.ashb.net.internet2.edu-TenGigE0/0/0/14/0</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.ashb.net.internet2.edu", "local_name": "TenGigE0/0/0/14/0", "region": "us-east-1", "vlan_range": ["2-4095", "1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="136">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/14/0:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg4.ashb.net.internet2.edu:TenGigE0/0/0/14/0</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:TenGigE0/0/0/14/0:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg4.ashb.net.internet2.edu:TenGigE0/0/0/14/0</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="137">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:HundredGigE0/0/0/7</data>
       <data key="d3">agg3.ashb.net.internet2.edu:HundredGigE0/0/0/7</data>
@@ -1459,26 +1459,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "HundredGigE0/0/0/7", "device_name": "agg3.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="138">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:HundredGigE0/0/0/7:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__N._Virginia__-_Hosted_Connect_agg3.ashb.net.internet2.edu_HundredGigE0/0/0/7</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:HundredGigE0/0/0/7:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--N.-Virginia----Hosted-Connect-agg3.ashb.net.internet2.edu-HundredGigE0/0/0/7</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 100}</data>
       <data key="d7">{"device_name": "agg3.ashb.net.internet2.edu", "local_name": "HundredGigE0/0/0/7", "region": "us-east-1", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="139">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:HundredGigE0/0/0/7:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg3.ashb.net.internet2.edu:HundredGigE0/0/0/7</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:HundredGigE0/0/0/7:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg3.ashb.net.internet2.edu:HundredGigE0/0/0/7</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="140">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:HundredGigE0/0/0/7</data>
       <data key="d3">agg4.ashb.net.internet2.edu:HundredGigE0/0/0/7</data>
@@ -1490,26 +1490,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "HundredGigE0/0/0/7", "device_name": "agg4.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="141">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:HundredGigE0/0/0/7:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__N._Virginia__-_Hosted_Connect_agg4.ashb.net.internet2.edu_HundredGigE0/0/0/7</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:HundredGigE0/0/0/7:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--N.-Virginia----Hosted-Connect-agg4.ashb.net.internet2.edu-HundredGigE0/0/0/7</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 100}</data>
       <data key="d7">{"device_name": "agg4.ashb.net.internet2.edu", "local_name": "HundredGigE0/0/0/7", "region": "us-east-1", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="142">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:HundredGigE0/0/0/7:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg4.ashb.net.internet2.edu:HundredGigE0/0/0/7</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:HundredGigE0/0/0/7:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg4.ashb.net.internet2.edu:HundredGigE0/0/0/7</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="143">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:TenGigE0/0/0/10/2</data>
       <data key="d3">agg4.eqch.net.internet2.edu:TenGigE0/0/0/10/2</data>
@@ -1521,26 +1521,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/10/2", "device_name": "agg4.eqch.net.internet2.edu"}}}</data>
     </node>
     <node id="144">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:TenGigE0/0/0/10/2:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__Ohio__Hosted_Connect_agg4.eqch.net.internet2.edu_TenGigE0/0/0/10/2</data>
+      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:TenGigE0/0/0/10/2:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--Ohio--Hosted-Connect-agg4.eqch.net.internet2.edu-TenGigE0/0/0/10/2</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.eqch.net.internet2.edu", "local_name": "TenGigE0/0/0/10/2", "region": "us-east-2", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="145">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:TenGigE0/0/0/10/2:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg4.eqch.net.internet2.edu:TenGigE0/0/0/10/2</data>
+      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:TenGigE0/0/0/10/2:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg4.eqch.net.internet2.edu:TenGigE0/0/0/10/2</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="146">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/0</data>
       <data key="d3">agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/0</data>
@@ -1552,26 +1552,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/11/0", "device_name": "agg3.eqch.net.internet2.edu"}}}</data>
     </node>
     <node id="147">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/0:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__Ohio__Hosted_Connect_agg3.eqch.net.internet2.edu_TenGigE0/0/0/11/0</data>
+      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/0:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--Ohio--Hosted-Connect-agg3.eqch.net.internet2.edu-TenGigE0/0/0/11/0</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.eqch.net.internet2.edu", "local_name": "TenGigE0/0/0/11/0", "region": "us-east-2", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="148">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/0:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/0</data>
+      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/0:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/0</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="149">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/2</data>
       <data key="d3">agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/2</data>
@@ -1583,26 +1583,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095", "1-4095"], "local_name": "TenGigE0/0/0/11/2", "device_name": "agg4.eqch.net.internet2.edu"}}}</data>
     </node>
     <node id="150">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/2:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__Ohio__Hosted_Connect_agg4.eqch.net.internet2.edu_TenGigE0/0/0/11/2</data>
+      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/2:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--Ohio--Hosted-Connect-agg4.eqch.net.internet2.edu-TenGigE0/0/0/11/2</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.eqch.net.internet2.edu", "local_name": "TenGigE0/0/0/11/2", "region": "us-east-2", "vlan_range": ["2-4095", "1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="151">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/2:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/2</data>
+      <data key="d2">port+al2s:agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/2:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg4.eqch.net.internet2.edu:TenGigE0/0/0/11/2</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="152">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/3</data>
       <data key="d3">agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/3</data>
@@ -1614,26 +1614,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095", "1-4095"], "local_name": "TenGigE0/0/0/11/3", "device_name": "agg3.eqch.net.internet2.edu"}}}</data>
     </node>
     <node id="153">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/3:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_East__Ohio__Hosted_Connect_agg3.eqch.net.internet2.edu_TenGigE0/0/0/11/3</data>
+      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/3:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-East--Ohio--Hosted-Connect-agg3.eqch.net.internet2.edu-TenGigE0/0/0/11/3</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.eqch.net.internet2.edu", "local_name": "TenGigE0/0/0/11/3", "region": "us-east-2", "vlan_range": ["2-4095", "1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="154">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/3:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/3</data>
+      <data key="d2">port+al2s:agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/3:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg3.eqch.net.internet2.edu:TenGigE0/0/0/11/3</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="155">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:Bundle-Ether110</data>
       <data key="d3">agg3.ashb.net.internet2.edu:Bundle-Ether110</data>
@@ -1645,26 +1645,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1001-1005", "2-4095"], "local_name": "Bundle-Ether110", "device_name": "agg3.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="156">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:Bundle-Ether110:Cloud_Facility_GCP:facility_port</data>
-      <data key="d3">GCP_US_East4__Northern_Virginia__agg3.ashb.net.internet2.edu_Bundle-Ether110</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:Bundle-Ether110:Cloud-Facility-GCP:facility_port</data>
+      <data key="d3">GCP-US-East4--Northern-Virginia--agg3.ashb.net.internet2.edu-Bundle-Ether110</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.ashb.net.internet2.edu", "local_name": "Bundle-Ether110", "region": "us-east-4", "vlan_range": ["1001-1005", "2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="157">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:Bundle-Ether110:facility+Cloud_Facility_GCP+link</data>
-      <data key="d3">Cloud_Facility_GCP-link:agg3.ashb.net.internet2.edu:Bundle-Ether110</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:Bundle-Ether110:facility+Cloud-Facility-GCP+link</data>
+      <data key="d3">Cloud-Facility-GCP-link:agg3.ashb.net.internet2.edu:Bundle-Ether110</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="158">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:Bundle-Ether110</data>
       <data key="d3">agg4.ashb.net.internet2.edu:Bundle-Ether110</data>
@@ -1676,26 +1676,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1001-1005", "2-4095"], "local_name": "Bundle-Ether110", "device_name": "agg4.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="159">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:Bundle-Ether110:Cloud_Facility_GCP:facility_port</data>
-      <data key="d3">GCP_US_East4__Northern_Virginia__agg4.ashb.net.internet2.edu_Bundle-Ether110</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:Bundle-Ether110:Cloud-Facility-GCP:facility_port</data>
+      <data key="d3">GCP-US-East4--Northern-Virginia--agg4.ashb.net.internet2.edu-Bundle-Ether110</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.ashb.net.internet2.edu", "local_name": "Bundle-Ether110", "region": "us-east-4", "vlan_range": ["1001-1005", "2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="160">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:Bundle-Ether110:facility+Cloud_Facility_GCP+link</data>
-      <data key="d3">Cloud_Facility_GCP-link:agg4.ashb.net.internet2.edu:Bundle-Ether110</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:Bundle-Ether110:facility+Cloud-Facility-GCP+link</data>
+      <data key="d3">Cloud-Facility-GCP-link:agg4.ashb.net.internet2.edu:Bundle-Ether110</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="161">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:Bundle-Ether5</data>
       <data key="d3">agg3.ashb.net.internet2.edu:Bundle-Ether5</data>
@@ -1707,26 +1707,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "Bundle-Ether5", "device_name": "agg3.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="162">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:Bundle-Ether5:Cloud_Facility_GCP:facility_port</data>
-      <data key="d3">GCP_US_East4__Northern_Virginia__agg3.ashb.net.internet2.edu_Bundle-Ether5</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:Bundle-Ether5:Cloud-Facility-GCP:facility_port</data>
+      <data key="d3">GCP-US-East4--Northern-Virginia--agg3.ashb.net.internet2.edu-Bundle-Ether5</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 100}</data>
       <data key="d7">{"device_name": "agg3.ashb.net.internet2.edu", "local_name": "Bundle-Ether5", "region": "us-east-4", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="163">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:Bundle-Ether5:facility+Cloud_Facility_GCP+link</data>
-      <data key="d3">Cloud_Facility_GCP-link:agg3.ashb.net.internet2.edu:Bundle-Ether5</data>
+      <data key="d2">port+al2s:agg3.ashb.net.internet2.edu:Bundle-Ether5:facility+Cloud-Facility-GCP+link</data>
+      <data key="d3">Cloud-Facility-GCP-link:agg3.ashb.net.internet2.edu:Bundle-Ether5</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="164">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:Bundle-Ether5</data>
       <data key="d3">agg4.ashb.net.internet2.edu:Bundle-Ether5</data>
@@ -1738,26 +1738,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "Bundle-Ether5", "device_name": "agg4.ashb.net.internet2.edu"}}}</data>
     </node>
     <node id="165">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:Bundle-Ether5:Cloud_Facility_GCP:facility_port</data>
-      <data key="d3">GCP_US_East4__Northern_Virginia__agg4.ashb.net.internet2.edu_Bundle-Ether5</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:Bundle-Ether5:Cloud-Facility-GCP:facility_port</data>
+      <data key="d3">GCP-US-East4--Northern-Virginia--agg4.ashb.net.internet2.edu-Bundle-Ether5</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 100}</data>
       <data key="d7">{"device_name": "agg4.ashb.net.internet2.edu", "local_name": "Bundle-Ether5", "region": "us-east-4", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="166">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:Bundle-Ether5:facility+Cloud_Facility_GCP+link</data>
-      <data key="d3">Cloud_Facility_GCP-link:agg4.ashb.net.internet2.edu:Bundle-Ether5</data>
+      <data key="d2">port+al2s:agg4.ashb.net.internet2.edu:Bundle-Ether5:facility+Cloud-Facility-GCP+link</data>
+      <data key="d3">Cloud-Facility-GCP-link:agg4.ashb.net.internet2.edu:Bundle-Ether5</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="167">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:TenGigE0/0/0/11/2</data>
       <data key="d3">agg4.sanj.net.internet2.edu:TenGigE0/0/0/11/2</data>
@@ -1769,26 +1769,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/11/2", "device_name": "agg4.sanj.net.internet2.edu"}}}</data>
     </node>
     <node id="168">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:TenGigE0/0/0/11/2:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_West__N._California__-_Hosted_Connect_agg4.sanj.net.internet2.edu_TenGigE0/0/0/11/2</data>
+      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:TenGigE0/0/0/11/2:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-West--N.-California----Hosted-Connect-agg4.sanj.net.internet2.edu-TenGigE0/0/0/11/2</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.sanj.net.internet2.edu", "local_name": "TenGigE0/0/0/11/2", "region": "us-west-1", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="169">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:TenGigE0/0/0/11/2:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg4.sanj.net.internet2.edu:TenGigE0/0/0/11/2</data>
+      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:TenGigE0/0/0/11/2:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg4.sanj.net.internet2.edu:TenGigE0/0/0/11/2</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="170">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/2</data>
       <data key="d3">agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/2</data>
@@ -1800,26 +1800,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["1-4095"], "local_name": "TenGigE0/0/0/12/2", "device_name": "agg3.sanj.net.internet2.edu"}}}</data>
     </node>
     <node id="171">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/2:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_West__N._California__-_Hosted_Connect_agg3.sanj.net.internet2.edu_TenGigE0/0/0/12/2</data>
+      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/2:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-West--N.-California----Hosted-Connect-agg3.sanj.net.internet2.edu-TenGigE0/0/0/12/2</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.sanj.net.internet2.edu", "local_name": "TenGigE0/0/0/12/2", "region": "us-west-1", "vlan_range": ["1-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="172">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/2:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/2</data>
+      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/2:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg3.sanj.net.internet2.edu:TenGigE0/0/0/12/2</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="173">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/2</data>
       <data key="d3">agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/2</data>
@@ -1831,26 +1831,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095", "21-21"], "local_name": "TenGigE0/0/0/12/2", "device_name": "agg4.sanj.net.internet2.edu"}}}</data>
     </node>
     <node id="174">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/2:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_West__N._California__-_Hosted_Connect_agg4.sanj.net.internet2.edu_TenGigE0/0/0/12/2</data>
+      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/2:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-West--N.-California----Hosted-Connect-agg4.sanj.net.internet2.edu-TenGigE0/0/0/12/2</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.sanj.net.internet2.edu", "local_name": "TenGigE0/0/0/12/2", "region": "us-west-1", "vlan_range": ["2-4095", "21-21"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="175">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/2:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/2</data>
+      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/2:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg4.sanj.net.internet2.edu:TenGigE0/0/0/12/2</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="176">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:TenGigE0/0/0/11/0</data>
       <data key="d3">agg3.sanj.net.internet2.edu:TenGigE0/0/0/11/0</data>
@@ -1862,26 +1862,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095", "22-22"], "local_name": "TenGigE0/0/0/11/0", "device_name": "agg3.sanj.net.internet2.edu"}}}</data>
     </node>
     <node id="177">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:TenGigE0/0/0/11/0:Cloud_Facility_AWS:facility_port</data>
-      <data key="d3">AWS_US_West__N._California__-_Hosted_Connect_agg3.sanj.net.internet2.edu_TenGigE0/0/0/11/0</data>
+      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:TenGigE0/0/0/11/0:Cloud-Facility-AWS:facility_port</data>
+      <data key="d3">AWS-US-West--N.-California----Hosted-Connect-agg3.sanj.net.internet2.edu-TenGigE0/0/0/11/0</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.sanj.net.internet2.edu", "local_name": "TenGigE0/0/0/11/0", "region": "us-west-1", "vlan_range": ["2-4095", "22-22"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="178">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:TenGigE0/0/0/11/0:facility+Cloud_Facility_AWS+link</data>
-      <data key="d3">Cloud_Facility_AWS-link:agg3.sanj.net.internet2.edu:TenGigE0/0/0/11/0</data>
+      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:TenGigE0/0/0/11/0:facility+Cloud-Facility-AWS+link</data>
+      <data key="d3">Cloud-Facility-AWS-link:agg3.sanj.net.internet2.edu:TenGigE0/0/0/11/0</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="179">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:HundredGigE0/0/0/3</data>
       <data key="d3">agg3.dall3.net.internet2.edu:HundredGigE0/0/0/3</data>
@@ -1893,7 +1893,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["101-4094"], "local_name": "HundredGigE0/0/0/3", "device_name": "agg3.dall3.net.internet2.edu"}}}</data>
     </node>
     <node id="180">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:HundredGigE0/0/0/3</data>
       <data key="d3">agg4.dall3.net.internet2.edu:HundredGigE0/0/0/3</data>
@@ -1905,7 +1905,7 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["101-4094"], "local_name": "HundredGigE0/0/0/3", "device_name": "agg4.dall3.net.internet2.edu"}}}</data>
     </node>
     <node id="181">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:Bundle-Ether110</data>
       <data key="d3">agg3.dall3.net.internet2.edu:Bundle-Ether110</data>
@@ -1917,26 +1917,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "Bundle-Ether110", "device_name": "agg3.dall3.net.internet2.edu"}}}</data>
     </node>
     <node id="182">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:Bundle-Ether110:Cloud_Facility_GCP:facility_port</data>
-      <data key="d3">GCP_US_West1__Oregon__agg3.dall3.net.internet2.edu_Bundle-Ether110</data>
+      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:Bundle-Ether110:Cloud-Facility-GCP:facility_port</data>
+      <data key="d3">GCP-US-West1--Oregon--agg3.dall3.net.internet2.edu-Bundle-Ether110</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.dall3.net.internet2.edu", "local_name": "Bundle-Ether110", "region": "us-west-2", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="183">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:Bundle-Ether110:facility+Cloud_Facility_GCP+link</data>
-      <data key="d3">Cloud_Facility_GCP-link:agg3.dall3.net.internet2.edu:Bundle-Ether110</data>
+      <data key="d2">port+al2s:agg3.dall3.net.internet2.edu:Bundle-Ether110:facility+Cloud-Facility-GCP+link</data>
+      <data key="d3">Cloud-Facility-GCP-link:agg3.dall3.net.internet2.edu:Bundle-Ether110</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="184">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:Bundle-Ether122</data>
       <data key="d3">agg4.dall3.net.internet2.edu:Bundle-Ether122</data>
@@ -1948,26 +1948,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "Bundle-Ether122", "device_name": "agg4.dall3.net.internet2.edu"}}}</data>
     </node>
     <node id="185">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:Bundle-Ether122:Cloud_Facility_GCP:facility_port</data>
-      <data key="d3">GCP_US_West1__Oregon__agg4.dall3.net.internet2.edu_Bundle-Ether122</data>
+      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:Bundle-Ether122:Cloud-Facility-GCP:facility_port</data>
+      <data key="d3">GCP-US-West1--Oregon--agg4.dall3.net.internet2.edu-Bundle-Ether122</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.dall3.net.internet2.edu", "local_name": "Bundle-Ether122", "region": "us-west-2", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="186">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:Bundle-Ether122:facility+Cloud_Facility_GCP+link</data>
-      <data key="d3">Cloud_Facility_GCP-link:agg4.dall3.net.internet2.edu:Bundle-Ether122</data>
+      <data key="d2">port+al2s:agg4.dall3.net.internet2.edu:Bundle-Ether122:facility+Cloud-Facility-GCP+link</data>
+      <data key="d3">Cloud-Facility-GCP-link:agg4.dall3.net.internet2.edu:Bundle-Ether122</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="187">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:Bundle-Ether110</data>
       <data key="d3">agg4.sanj.net.internet2.edu:Bundle-Ether110</data>
@@ -1979,26 +1979,26 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "Bundle-Ether110", "device_name": "agg4.sanj.net.internet2.edu"}}}</data>
     </node>
     <node id="188">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:Bundle-Ether110:Cloud_Facility_GCP:facility_port</data>
-      <data key="d3">GCP_US_West2__California__agg4.sanj.net.internet2.edu_Bundle-Ether110</data>
+      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:Bundle-Ether110:Cloud-Facility-GCP:facility_port</data>
+      <data key="d3">GCP-US-West2--California--agg4.sanj.net.internet2.edu-Bundle-Ether110</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg4.sanj.net.internet2.edu", "local_name": "Bundle-Ether110", "region": "us-west-3", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="189">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:Bundle-Ether110:facility+Cloud_Facility_GCP+link</data>
-      <data key="d3">Cloud_Facility_GCP-link:agg4.sanj.net.internet2.edu:Bundle-Ether110</data>
+      <data key="d2">port+al2s:agg4.sanj.net.internet2.edu:Bundle-Ether110:facility+Cloud-Facility-GCP+link</data>
+      <data key="d3">Cloud-Facility-GCP-link:agg4.sanj.net.internet2.edu:Bundle-Ether110</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
     </node>
     <node id="190">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:Bundle-Ether112</data>
       <data key="d3">agg3.sanj.net.internet2.edu:Bundle-Ether112</data>
@@ -2010,20 +2010,20 @@
       <data key="d11">{"primary": {"pool_id": "_", "labels": {"vlan_range": ["2-4095"], "local_name": "Bundle-Ether112", "device_name": "agg3.sanj.net.internet2.edu"}}}</data>
     </node>
     <node id="191">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:Bundle-Ether112:Cloud_Facility_GCP:facility_port</data>
-      <data key="d3">GCP_US_West2__California__agg3.sanj.net.internet2.edu_Bundle-Ether112</data>
+      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:Bundle-Ether112:Cloud-Facility-GCP:facility_port</data>
+      <data key="d3">GCP-US-West2--California--agg3.sanj.net.internet2.edu-Bundle-Ether112</data>
       <data key="d4">FacilityPort</data>
       <data key="d6">{"bw": 10}</data>
       <data key="d7">{"device_name": "agg3.sanj.net.internet2.edu", "local_name": "Bundle-Ether112", "region": "us-west-3", "vlan_range": ["2-4095"]}</data>
       <data key="d8">false</data>
     </node>
     <node id="192">
-      <data key="d0">00d65c23-7fb0-400f-96bb-d3dbc0a95b50</data>
+      <data key="d0">68614305-4b41-46ba-90a5-359ee289cdaf</data>
       <data key="d1">Link</data>
-      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:Bundle-Ether112:facility+Cloud_Facility_GCP+link</data>
-      <data key="d3">Cloud_Facility_GCP-link:agg3.sanj.net.internet2.edu:Bundle-Ether112</data>
+      <data key="d2">port+al2s:agg3.sanj.net.internet2.edu:Bundle-Ether112:facility+Cloud-Facility-GCP+link</data>
+      <data key="d3">Cloud-Facility-GCP-link:agg3.sanj.net.internet2.edu:Bundle-Ether112</data>
       <data key="d4">L2Path</data>
       <data key="d8">false</data>
       <data key="d12">L2</data>
