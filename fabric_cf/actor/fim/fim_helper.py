@@ -358,6 +358,9 @@ class FimHelper:
                                 if ifs.peer_labels is not None:
                                     topo_ifs.set_properties(peer_labels=ifs.peer_labels)
 
+                                if ifs.capacities is not None:
+                                    topo_ifs.set_properties(capacities=ifs.capacities)
+
         elif isinstance(sliver, NetworkServiceSliver) and node_name in neo4j_topo.network_services:
             node = neo4j_topo.network_services[node_name]
             node.set_properties(labels=sliver.labels,
@@ -377,6 +380,9 @@ class FimHelper:
 
                     if ifs.peer_labels is not None:
                         topo_ifs.set_properties(peer_labels=ifs.peer_labels)
+
+                    if ifs.capacities is not None:
+                        topo_ifs.set_properties(capacities=ifs.capacities)
 
     @staticmethod
     def get_neo4j_asm_graph(*, slice_graph: str) -> ABCASMPropertyGraph:
