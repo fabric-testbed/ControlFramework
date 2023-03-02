@@ -583,9 +583,9 @@ class OrchestratorSliceWrapper:
                 if new_ns.type not in Constants.L3_FABNET_SERVICES:
                     continue
                 rid = new_ns.reservation_info.reservation_id
-                reservation = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
-                                                                 node_res_mapping=node_res_mapping,
-                                                                 node_id=new_ns.node_id)
+                reservation, dep_update_needed = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
+                                                                                    node_res_mapping=node_res_mapping,
+                                                                                    node_id=new_ns.node_id)
                 reservation.set_reservation_id(value=rid)
                 modified_reservations.append(reservation)
                 self.computed_modify_properties_reservations.append(reservation)
