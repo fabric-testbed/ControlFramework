@@ -310,18 +310,19 @@ class ActorDatabase(ABCDatabase):
             result = pickle.loads(pickled_res)
             result.restore(actor=self.actor, slice_obj=slice_obj)
 
-            if isinstance(result, ABCControllerReservation) and result.get_redeem_predecessors() is not None:
-                for p in result.get_redeem_predecessors():
-                    if p.reservation_id is not None:
-                        parent = self.get_reservations(rid=p.reservation_id)
-                        if parent is not None and len(parent) > 0:
-                            p.set_reservation(reservation=parent[0])
+            if isinstance(result, ABCControllerReservation):
+                if result.get_redeem_predecessors() is not None:
+                    for p in result.get_redeem_predecessors():
+                        if p.reservation_id is not None:
+                            parent = self.get_reservations(rid=p.reservation_id)
+                            if parent is not None and len(parent) > 0:
+                                p.set_reservation(reservation=parent[0])
 
-                for p in result.get_join_predecessors():
-                    if p.reservation_id is not None:
-                        parent = self.get_reservations(rid=p.reservation_id)
-                        if parent is not None and len(parent) > 0:
-                            p.set_reservation(reservation=parent[0])
+                    for p in result.get_join_predecessors():
+                        if p.reservation_id is not None:
+                            parent = self.get_reservations(rid=p.reservation_id)
+                            if parent is not None and len(parent) > 0:
+                                p.set_reservation(reservation=parent[0])
 
             return result
         except Exception as e:

@@ -31,6 +31,7 @@ from typing import List, Tuple
 from fim.slivers.capacities_labels import Labels
 from fim.slivers.gateway import Gateway
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
+from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver, NSLayer, ServiceType
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -128,12 +129,12 @@ class NetworkServiceInventory(InventoryForType):
             if requested_ifs.labels is not None and requested_ifs.labels.vlan is not None:
                 requested_vlan = int(requested_ifs.labels.vlan)
 
-            if requested_vlan is None:
-                return requested_ifs
-
             # Validate the requested VLAN is in range specified on MPLS Network Service in BQM
             # Only do this for Non FacilityPorts
             if bqm_ifs.get_type() != InterfaceType.FacilityPort:
+                if requested_vlan is None:
+                    return requested_ifs
+
                 if owner_ns.get_label_delegations() is None:
                     if 1 > requested_vlan > 4095:
                         raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
@@ -142,7 +143,7 @@ class NetworkServiceInventory(InventoryForType):
                     else:
                         return requested_ifs
 
-                delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
+                delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
                 vlan_range = self.__extract_vlan_range(labels=delegated_label)
 
                 if vlan_range is not None and requested_vlan not in vlan_range:
@@ -156,6 +157,10 @@ class NetworkServiceInventory(InventoryForType):
                 vlan_range = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_ifs,
                                                             existing_reservations=existing_reservations)
 
+                if requested_vlan is None:
+                    requested_ifs.labels.vlan = str(vlan_range[0])
+                    return requested_ifs
+
                 if requested_vlan not in vlan_range:
                     raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
                                           msg=f"Vlan for L2 service {requested_vlan} is outside the available range "
@@ -163,7 +168,7 @@ class NetworkServiceInventory(InventoryForType):
 
         else:
             # Grab Label Delegations
-            delegation_id, delegated_label = self._get_delegations(
+            delegation_id, delegated_label = self.get_delegations(
                 lab_cap_delegations=owner_ns.get_label_delegations())
 
             # Get the VLAN range
@@ -180,8 +185,11 @@ class NetworkServiceInventory(InventoryForType):
                     requested_ifs.labels.vlan = str(vlan_range[0])
                     requested_ifs.label_allocations = Labels(vlan=str(vlan_range[0]))
                 else:
-                    if requested_ifs.labels is None or requested_ifs.labels.vlan is None:
+                    if requested_ifs.labels is None:
                         return requested_ifs
+
+                    if requested_ifs.labels.vlan is None:
+                        requested_ifs.labels.vlan = str(vlan_range[0])
 
                     if int(requested_ifs.labels.vlan) not in vlan_range:
                         raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
@@ -292,7 +300,7 @@ class NetworkServiceInventory(InventoryForType):
                 return requested_ns
 
             # Grab Label Delegations
-            delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
+            delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
 
             # HACK to use FabNetv6 for FabNetv6Ext as both have the same range
             # Needs to be removed if FabNetv6/FabNetv6Ext are configured with different ranges
@@ -408,3 +416,36 @@ class NetworkServiceInventory(InventoryForType):
 
     def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:
         pass
+
+    def allocate_peered_ifs(self, *, owner_switch: NodeSliver,
+                            requested_ifs: InterfaceSliver, bqm_interface: InterfaceSliver,
+                            existing_reservations: List[ABCReservationMixin]) -> InterfaceSliver:
+        """
+        Update Labels for a Peered Interface
+        @param
+        """
+        ifs_labels = requested_ifs.get_labels()
+        if ifs_labels is None:
+            ifs_labels = Labels()
+
+        if owner_switch.get_name() == Constants.AL2S:
+            delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=bqm_interface.get_label_delegations())
+            local_name = delegated_label.local_name
+            device_name = delegated_label.device_name
+        else:
+            local_name = bqm_interface.get_name()
+            device_name = owner_switch.get_name()
+
+        ifs_labels = Labels.update(ifs_labels, local_name=local_name, device_name=device_name)
+
+        if bqm_interface.labels.vlan_range is not None:
+            vlan_range = self.__extract_vlan_range(labels=bqm_interface.labels)
+            available_vlans = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_interface,
+                                                             existing_reservations=existing_reservations)
+            vlan = str(available_vlans[0])
+            ifs_labels = Labels.update(ifs_labels, vlan=vlan)
+
+        requested_ifs.labels = ifs_labels
+        requested_ifs.label_allocations = Labels.update(lab=ifs_labels)
+
+        return requested_ifs

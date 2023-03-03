@@ -43,7 +43,7 @@ runtime:
   kafka-sasl-producer-password:
   kafka-sasl-consumer-username:
   kafka-sasl-consumer-password:
-  prometheus.port: 11000
+  prometheus.port: 11006
   kafka.request.timeout.ms: 120000
   rpc.request.timeout.seconds: 900
   message.max.bytes: 1048588
@@ -55,7 +55,7 @@ logging:
   log-directory: .
 
   ## The filename to be used for actor's log file.
-  log-file: site_actor.log
+  log-file: al2s_actor.log
 
   handler-log-file: handler.log
 
@@ -69,7 +69,7 @@ logging:
   ## You may specify the file size that results in a log file being rotated here.
   log-size: 5000000
 
-  logger: site1-am
+  logger: al2s1-am
 
 oauth:
   jwks-url: https://alpha-2.fabric-testbed.net/credmgr/certs
@@ -80,11 +80,11 @@ oauth:
 database:
   db-user: fabric
   db-password: fabric
-  db-name: am
+  db-name: al2sam
   db-host: localhost:5432
 
 container:
-  container.guid: site1-am-conainer
+  container.guid: al2s1-am-conainer
 
 time:
   # This section controls settings, which are generally useful
@@ -106,39 +106,39 @@ time:
   time.manual: false
 
 pdp:
-  url: http://localhost:8080/services/pdp
+  url: http://localhost:8082/services/pdp
   enable: False
 
 neo4j:
-  url: bolt://localhost:7687
+  url: bolt://localhost:10687
   user: neo4j
   pass: password
-  import_host_dir: ../../../neo4j1/imports/
+  import_host_dir: ../../../neo4j5/imports/
   import_dir: /imports
 
 actor:
   type: authority
-  name: site1-am
-  guid: site1-am-guid
-  description: Site AM
-  kafka-topic: site1-am-topic
-  substrate.file: ../../../neo4j/RENCI-ad.graphml
+  name: al2s1-am
+  guid: al2s1-am-guid
+  description: al2s AM
+  kafka-topic: al2s1-am-topic
+  substrate.file: ../../../neo4j/AL2S.graphml
   policy:
       module: fabric_cf.actor.core.policy.authority_calendar_policy
       class: AuthorityCalendarPolicy
   resources:
       - resource:
-          type: VM
-          label: VM AM
-          description: VM AM
+          type: L2PTP, L2Cloud, L3VPN, L3Cloud
+          label: AL2S AM
+          description: AL2S AM
           handler:
             module: fabric_cf.actor.handlers.no_op_handler
             class: NoOpHandler
   controls:
       - control:
-          type: VM, Container, Baremetal
-          module: fabric_cf.actor.core.policy.network_node_control
-          class: NetworkNodeControl
+          type: L2PTP, L2Cloud, L3VPN, L3Cloud
+          module: fabric_cf.actor.core.policy.network_service_control
+          class: NetworkServiceControl
 
 peers:
   - peer:

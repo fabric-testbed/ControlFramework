@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
-import threading
+import random
 from typing import Tuple, List, Union
 
 from fim.graph.abc_property_graph import ABCPropertyGraph, ABCGraphImporter
@@ -62,6 +62,7 @@ class InterfaceSliverMapping:
         # Maps to the Network Node (Parent of the Component or Parent of Connection) in the Graph
         self.node_id = None
         self.facility = False
+        self.peer_site = None
 
     def get_peer_ifs(self) -> InterfaceSliver:
         return self.peer_ifs
@@ -78,6 +79,12 @@ class InterfaceSliverMapping:
     def is_facility(self) -> bool:
         return self.facility
 
+    def get_peer_site(self) -> str:
+        return self.peer_site
+
+    def is_peered(self) -> bool:
+        return self.peer_site is not None
+
     def set_peer_ifs(self, peer_ifs: InterfaceSliver):
         self.peer_ifs = peer_ifs
 
@@ -92,6 +99,9 @@ class InterfaceSliverMapping:
 
     def set_facility(self, facility: bool):
         self.facility = facility
+
+    def set_peer_site(self, peer_site: str):
+        self.peer_site = peer_site
 
     def set_properties(self, **kwargs):
         """
@@ -345,6 +355,11 @@ class FimHelper:
                                 topo_ifs.set_properties(labels=ifs.labels,
                                                         label_allocations=ifs.label_allocations,
                                                         node_map=ifs.node_map)
+                                if ifs.peer_labels is not None:
+                                    topo_ifs.set_properties(peer_labels=ifs.peer_labels)
+
+                                if ifs.capacities is not None:
+                                    topo_ifs.set_properties(capacities=ifs.capacities)
 
         elif isinstance(sliver, NetworkServiceSliver) and node_name in neo4j_topo.network_services:
             node = neo4j_topo.network_services[node_name]
@@ -363,6 +378,11 @@ class FimHelper:
                                             label_allocations=ifs.label_allocations,
                                             node_map=ifs.node_map)
 
+                    if ifs.peer_labels is not None:
+                        topo_ifs.set_properties(peer_labels=ifs.peer_labels)
+
+                    if ifs.capacities is not None:
+                        topo_ifs.set_properties(capacities=ifs.capacities)
 
     @staticmethod
     def get_neo4j_asm_graph(*, slice_graph: str) -> ABCASMPropertyGraph:
@@ -397,56 +417,89 @@ class FimHelper:
 
         # Peer Connection point maps to Interface Sliver in ASM
         # This must always return only 1 IFS
-        result = FimHelper.get_interface_sliver_by_id(ifs_node_id=ifs_node_id, graph=slice_graph)
-        if len(result) != 1:
+        peer_interfaces = FimHelper.get_peer_interfaces(ifs_node_id=ifs_node_id, graph=slice_graph)
+        if len(peer_interfaces) != 1:
             raise Exception(f"More than one Peer Interface Sliver found for IFS: {ifs_node_id}!")
-        peer_ifs = next(iter(result))
+        peer_ifs = next(iter(peer_interfaces))
 
         peer_ns_node_name, peer_ns_id = slice_graph.get_parent(node_id=peer_ifs.node_id,
                                                                rel=ABCPropertyGraph.REL_CONNECTS,
                                                                parent=ABCPropertyGraph.CLASS_NetworkService)
 
         component_name = None
-        node_id = None
         facility = False
-        if peer_ifs.get_type() != str(InterfaceType.FacilityPort):
+        peer_site = None
+
+        if peer_ifs.get_type() in [InterfaceType.DedicatedPort, InterfaceType.SharedPort]:
             component_name, component_id = slice_graph.get_parent(node_id=peer_ns_id, rel=ABCPropertyGraph.REL_HAS,
                                                                   parent=ABCPropertyGraph.CLASS_Component)
 
             node_name, node_id = slice_graph.get_parent(node_id=component_id, rel=ABCPropertyGraph.REL_HAS,
                                                         parent=ABCPropertyGraph.CLASS_NetworkNode)
-        else:
+        elif peer_ifs.get_type() == InterfaceType.FacilityPort:
             node_name, node_id = slice_graph.get_parent(node_id=peer_ns_id, rel=ABCPropertyGraph.REL_HAS,
                                                         parent=ABCPropertyGraph.CLASS_NetworkNode)
             node_sliver = slice_graph.build_deep_node_sliver(node_id=node_id)
             # Passing Facility Name instead of Node ID
             node_id = f"{node_sliver.get_site()},{node_name}"
             facility = True
+        else:
+            node_id = None
+            peer_ns = slice_graph.build_deep_ns_sliver(node_id=peer_ns_id)
+
+            # Peer Network Service is FABRIC L3VPN connected to a FABRIC Site
+            # Determine the site to which AL2S Peered Interface is connected to
+            for ifs in peer_ns.interface_info.interfaces.values():
+                # Skip the peered interface
+                if ifs.node_id == peer_ifs.node_id:
+                    continue
+                # Grab the first interface connected to a VM
+                peer_nic_ifs_list = FimHelper.get_peer_interfaces(ifs_node_id=ifs.node_id,
+                                                                  graph=slice_graph)
+                ovs_ns_name, ovs_ns_id = slice_graph.get_parent(node_id=peer_nic_ifs_list[0].node_id,
+                                                                rel=ABCPropertyGraph.REL_CONNECTS,
+                                                                parent=ABCPropertyGraph.CLASS_NetworkService)
+                ovs_ns = slice_graph.build_deep_ns_sliver(node_id=ovs_ns_id)
+
+                peer_site = ovs_ns.get_site()
+
+                if ovs_ns.get_type() != ServiceType.OVS:
+                    # Peer node i.e. Facility Port
+                    peer_node_name, peer_node_id = slice_graph.get_parent(node_id=ovs_ns.node_id,
+                                                                          rel=ABCPropertyGraph.REL_HAS,
+                                                                          parent=ABCPropertyGraph.CLASS_NetworkNode)
+
+                    peer_node = slice_graph.build_deep_node_sliver(node_id=peer_node_id)
+
+                    peer_site = f'{ovs_ns.get_site()},{peer_node.get_type()},{peer_node.get_name()}'
+                break
 
         ret_val = InterfaceSliverMapping()
-        ret_val.set_properties(peer_ifs=peer_ifs, peer_ns_id=peer_ns_id,
-                               component_name=component_name, node_id=node_id, facility=facility)
+        ret_val.set_properties(peer_ifs=peer_ifs, peer_ns_id=peer_ns_id, component_name=component_name,
+                               node_id=node_id, facility=facility, peer_site=peer_site)
         return ret_val
 
     @staticmethod
-    def get_interface_sliver_by_id(ifs_node_id: str, graph: ABCPropertyGraph,
-                                   itype: InterfaceType = None) -> List[InterfaceSliver]:
+    def get_peer_interfaces(ifs_node_id: str, graph: ABCPropertyGraph,
+                            interface_type: InterfaceType = None) -> List[InterfaceSliver]:
         """
         Finds Peer Interface Sliver and parent information upto Network Node
         @param ifs_node_id node id of the Interface Sliver
         @param graph Slice ASM
-        @param itype Interface Type
+        @param interface_type Interface Type
         @returns Interface Sliver Mapping
         """
         result = []
         candidates = graph.find_peer_connection_points(node_id=ifs_node_id)
+        if candidates is None:
+            return result
         for c in candidates:
             clazzes, node_props = graph.get_node_properties(node_id=c)
 
             # Peer Connection point maps to Interface Sliver
             # Build Interface Sliver
-            peer_ifs = FimHelper.build_ifs_from_props(node_props=node_props)
-            if itype is not None and peer_ifs.get_type() == itype:
+            peer_ifs = ABCPropertyGraph.interface_sliver_from_graph_properties_dict(d=node_props)
+            if interface_type is not None and peer_ifs.get_type() == interface_type:
                 result.append(peer_ifs)
                 break
             else:
@@ -454,27 +507,8 @@ class FimHelper:
         return result
 
     @staticmethod
-    def build_ifs_from_props(node_props: dict) -> InterfaceSliver:
-        """
-        Build Interface Sliver from the node properties
-        @param node_props Node properties
-        @return Interface Sliver
-        """
-        ifs = InterfaceSliver()
-        ifs.node_id = node_props[ABCPropertyGraph.NODE_ID]
-        cap_json = node_props.get(ABCPropertyGraph.PROP_CAPACITIES, None)
-        labels_json = node_props.get(ABCPropertyGraph.PROP_LABELS, None)
-        ifs.set_properties(name=node_props[ABCPropertyGraph.PROP_NAME],
-                           type=node_props[ABCPropertyGraph.PROP_TYPE])
-        if cap_json is not None:
-            ifs.set_capacities(cap=Capacities().from_json(cap_json))
-
-        if labels_json is not None:
-            ifs.set_labels(lab=Labels().from_json(labels_json))
-        return ifs
-
-    @staticmethod
-    def get_site_interface_sliver(*, component: ComponentSliver, local_name: str) -> InterfaceSliver or None:
+    def get_site_interface_sliver(*, component: ComponentSliver or NodeSliver, local_name: str,
+                                  region: str = None, device_name: str = None) -> InterfaceSliver or None:
         """
         Get Interface Sliver (child of Component Sliver) with a local name
 
@@ -487,18 +521,43 @@ class FimHelper:
 
         @param component Component Sliver
         @param local_name Local Name
+        @param region region
+        @param device_name device name
         @return Interface sliver
         """
         for ns in component.network_service_info.network_services.values():
-            for ifs in ns.interface_info.interfaces.values():
-                # For Facility ifs, local name would be none, there will be only one IFS
-                if component.get_type() == NodeType.Facility or local_name in ifs.get_name():
-                    return ifs
+            # Filter on region
+            if region is not None:
+                result = list(filter(lambda x: (region in x.labels.region), ns.interface_info.interfaces.values()))
+            else:
+                result = list(ns.interface_info.interfaces.values())
+
+            # Filter on device name
+            if device_name is not None:
+                result = list(filter(lambda x: (device_name in x.labels.device_name), result))
+
+            if local_name is not None:
+                result = list(filter(lambda x: (local_name in x.labels.local_name), result))
+
+            return random.choice(result)
+            '''
+            # Return specific interface where local name matches
+            if local_name is not None:
+                return next(x for x in ns.interface_info.interfaces.values() if local_name in x.get_name())
+            else:
+                # Return an interface chosen randomly
+                if region is None:
+                    return random.choice(list(ns.interface_info.interfaces.values()))
+                # Return an interface chosen randomly for a specific region
+                else:
+                    result = list(filter(lambda x: (region in x.labels.region), ns.interface_info.interfaces.values()))
+                    return random.choice(result)
+            '''
         return None
 
     @staticmethod
     def get_owners(*, bqm: ABCCBMPropertyGraph, node_id: str,
-                   ns_type: ServiceType) -> Tuple[NodeSliver, NetworkServiceSliver]:
+                   ns_type: ServiceType) -> Tuple[NodeSliver, NetworkServiceSliver, NetworkServiceSliver]:
         """
         Get owner switch and network service of a Connection Point from BQM
         @param bqm BQM graph
@@ -516,13 +575,14 @@ class FimHelper:
 
         switch = bqm.build_deep_node_sliver(node_id=sw_id)
 
+        requested_ns = mpls_ns
         if ns_type in Constants.L3_SERVICES:
             for ns in switch.network_service_info.network_services.values():
                 if ns_type == ns.get_type():
-                    mpls_ns = ns
+                    requested_ns = ns
                     break
 
-        return switch, mpls_ns
+        return switch, mpls_ns, requested_ns
 
     @staticmethod
     def get_parent_node(*, graph_model: ABCPropertyGraph, component: Component = None, interface: Interface = None,
