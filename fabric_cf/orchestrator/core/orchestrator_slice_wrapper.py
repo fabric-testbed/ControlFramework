@@ -206,6 +206,7 @@ class OrchestratorSliceWrapper:
         @return Network service reservation
         """
         dep_update_needed = False
+        account_id = None
 
         # Build Network Service Sliver
         sliver = slice_graph.build_deep_ns_sliver(node_id=node_id)
@@ -243,6 +244,9 @@ class OrchestratorSliceWrapper:
                             if parent_res_id is not None and parent_res_id not in redeem_predecessors:
                                 redeem_predecessors.append(parent_res_id)
                         continue
+
+                    if ifs.labels is not None and ifs.labels.account_id is not None:
+                        account_id = ifs.labels.account_id
 
                     if ifs_mapping.is_facility():
                         # Set Labels
@@ -331,6 +335,11 @@ class OrchestratorSliceWrapper:
                                                                               end_time=self.slice_obj.get_lease_end(),
                                                                               pred_list=redeem_predecessors)
 
+                if sliver.get_technology() == Constants.AL2S:
+                    if sliver.labels is None:
+                        sliver.labels = Labels()
+                    sliver.labels = Labels.update(sliver.labels,
+                                                  local_name=f"{self.slice_obj.get_slice_name()}-{account_id}")
                 if sliver.node_id not in node_res_mapping:
                     node_res_mapping[sliver.node_id] = reservation.get_reservation_id()
                 return reservation, dep_update_needed
@@ -588,9 +597,12 @@ class OrchestratorSliceWrapper:
                                                                                     node_id=new_ns.node_id)
                 reservation.set_reservation_id(value=rid)
                 modified_reservations.append(reservation)
-                self.computed_modify_properties_reservations.append(reservation)
+                #self.computed_modify_properties_reservations.append(reservation)
                 if new_ns.type == ServiceType.FABNetv4Ext:
                     self.__check_modify_on_fabnetv4ext(rid=rid, req_sliver=reservation.get_sliver())
+
+                self.computed_modify_reservations[rid] = ModifiedReservation(sliver=reservation.get_sliver(),
+                                                                             dependencies=reservation.redeem_processors)
 
         for x in modified_reservations:
             self.computed_reservations.append(x)
