@@ -206,7 +206,6 @@ class OrchestratorSliceWrapper:
         @return Network service reservation
         """
         dep_update_needed = False
-        account_id = None
 
         # Build Network Service Sliver
         sliver = slice_graph.build_deep_ns_sliver(node_id=node_id)
@@ -245,9 +244,6 @@ class OrchestratorSliceWrapper:
                                 redeem_predecessors.append(parent_res_id)
                         continue
 
-                    if ifs.labels is not None and ifs.labels.account_id is not None:
-                        account_id = ifs.labels.account_id
-
                     if ifs_mapping.is_facility():
                         # Set Labels
                         ifs.set_labels(lab=ifs_mapping.get_peer_ifs().get_labels())
@@ -271,6 +267,11 @@ class OrchestratorSliceWrapper:
                         # For AL2S NS IF Sliver, NodeMap [Peered, <site name>]
                         if sliver.get_technology() == Constants.AL2S:
                             node_map = tuple([Constants.PEERED, f"{ifs_mapping.get_peer_site()}"])
+                            if ifs.labels.account_id is not None:
+                                if sliver.labels is None:
+                                    sliver.labels = Labels()
+                            sliver.labels = Labels.update(sliver.labels,
+                                                          local_name=f"{self.slice_obj.get_slice_name()}-{ifs.labels.account_id}")
                         else:
                             # For FABRIC NS IFS, Need the VLAN to be same as the VLAN allocated by Broker to AL2S NS IFS
                             # Add the AL2S Sliver as a redeem predecessor
@@ -335,11 +336,6 @@ class OrchestratorSliceWrapper:
                                                                               end_time=self.slice_obj.get_lease_end(),
                                                                               pred_list=redeem_predecessors)
 
-                if sliver.get_technology() == Constants.AL2S:
-                    if sliver.labels is None:
-                        sliver.labels = Labels()
-                    sliver.labels = Labels.update(sliver.labels,
-                                                  local_name=f"{self.slice_obj.get_slice_name()}-{account_id}")
                 if sliver.node_id not in node_res_mapping:
                     node_res_mapping[sliver.node_id] = reservation.get_reservation_id()
                 return reservation, dep_update_needed
