@@ -80,6 +80,12 @@ class KafkaProxy(Proxy, ABCCallbackProxy):
 
     def __setstate__(self, state):
         self.__dict__.update(state)
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        peer_dict = GlobalsSingleton.get().get_config().get_peers_dict()
+        self.logger = GlobalsSingleton.get().get_logger()
+        peer = peer_dict.get(self.get_name())
+        if peer is not None:
+            self.kafka_topic = peer.get_kafka_topic()
         self.logger = None
 
     def execute(self, *, request: ABCRPCRequestState, producer: AvroProducerApi):

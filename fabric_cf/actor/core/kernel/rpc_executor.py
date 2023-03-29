@@ -56,7 +56,7 @@ class RPCExecutor:
             from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
             RPCManagerSingleton.get().remove_pending_request(request.request.get_message_id())
             failed = FailedRPC(e=e, request=request)
-            request.actor.queue_event(FailedRPCEvent(actor=request.actor, failed=failed))
+            request.actor.queue_event(incoming=FailedRPCEvent(actor=request.actor, failed=failed))
         except Exception as e:
             logger.error("postException failed = {}".format(e))
 

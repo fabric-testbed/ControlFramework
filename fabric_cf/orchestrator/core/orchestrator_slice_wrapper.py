@@ -267,11 +267,6 @@ class OrchestratorSliceWrapper:
                         # For AL2S NS IF Sliver, NodeMap [Peered, <site name>]
                         if sliver.get_technology() == Constants.AL2S:
                             node_map = tuple([Constants.PEERED, f"{ifs_mapping.get_peer_site()}"])
-                            if ifs.labels.account_id is not None:
-                                if sliver.labels is None:
-                                    sliver.labels = Labels()
-                            sliver.labels = Labels.update(sliver.labels,
-                                                          local_name=f"{self.slice_obj.get_slice_name()}-{ifs.labels.account_id}")
                         else:
                             # For FABRIC NS IFS, Need the VLAN to be same as the VLAN allocated by Broker to AL2S NS IFS
                             # Add the AL2S Sliver as a redeem predecessor
@@ -329,6 +324,12 @@ class OrchestratorSliceWrapper:
 
                         if parent_res_id is not None and parent_res_id not in redeem_predecessors:
                             redeem_predecessors.append(parent_res_id)
+
+                    if ifs.peer_labels is not None and ifs.peer_labels.account_id is not None:
+                        if sliver.labels is None:
+                            sliver.labels = Labels()
+                        sliver.labels = Labels.update(sliver.labels,
+                                                      local_name=f"{self.slice_obj.get_slice_name()}-{ifs.peer_labels.account_id}")
 
                 # Generate reservation for the sliver
                 reservation = self.reservation_converter.generate_reservation(sliver=sliver,
