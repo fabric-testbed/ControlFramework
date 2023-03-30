@@ -600,6 +600,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         delegation_id = None
         error_msg = None
         owner_ns = None
+        owner_ns_id = None
         bqm_component = None
         is_vnic = False
         owner_mpls_ns = None
@@ -650,6 +651,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             owner_switch, owner_mpls_ns, owner_ns = self.get_owners(node_id=net_cp.node_id,
                                                                     ns_type=sliver.get_type())
 
+            # Hack for IPV6Ext services
+            owner_ns_id = owner_ns.node_id
+            if 'ipv6ext-ns' in owner_ns_id:
+                owner_ns_id = owner_ns_id.replace('ipv6ext-ns', 'ipv6-ns')
+
             bqm_cp = net_cp
             if bqm_component.get_type() == NodeType.Facility or \
                     (sliver.get_type() == ServiceType.L2Bridge and
@@ -667,7 +673,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                     raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
                                           msg=f"{message}")
             else:
-                existing_reservations = self.get_existing_reservations(node_id=owner_ns.node_id,
+                existing_reservations = self.get_existing_reservations(node_id=owner_ns_id,
                                                                        node_id_to_reservations=node_id_to_reservations)
                 # Set vlan - source: (c) - only for dedicated NICs
                 ifs = inv.allocate_ifs(requested_ns=sliver, requested_ifs=ifs, owner_ns=owner_ns,
@@ -722,10 +728,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.logger.info(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
 
         # Update the Network Service Sliver Node Map to map to parent of (a)
-        sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns.node_id))
+        sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns_id))
 
         # Set the Subnet and gateway from the Owner Switch (a)
-        existing_reservations = self.get_existing_reservations(node_id=owner_ns.node_id,
+        existing_reservations = self.get_existing_reservations(node_id=owner_ns_id,
                                                                node_id_to_reservations=node_id_to_reservations)
 
         # Allocate VLAN for the Network Service
