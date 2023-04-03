@@ -43,6 +43,9 @@ runtime:
     default_ubuntu_20: ubuntu
     default_ubuntu_21: ubuntu
     default_ubuntu_22: ubuntu
+    docker_rocky_8: rocky
+    docker_ubuntu_20: ubuntu
+    docker_ubuntu_22: ubuntu
 playbooks:
   location: /etc/fabric/actor/playbooks
   inventory_location: /etc/fabric/actor/playbooks/inventory
