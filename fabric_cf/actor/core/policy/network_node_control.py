@@ -151,7 +151,7 @@ class NetworkNodeControl(ResourceControl):
                             # For Shared NIC, make sure PCI devices are not same
                             # For other components, having same node map is an error
                             if (ac.get_type() == ComponentType.SharedNIC and
-                                ac.get_label_allocations().bdf == c.get_label_allocations()) or \
+                                ac.get_labels().bdf == c.get_labels()) or \
                                     ac.get_type() != ComponentType.SharedNIC:
                                 raise AuthorityException(
                                     f"Component of type: {resource_type} BQM Node Id: {node_map[1]} "

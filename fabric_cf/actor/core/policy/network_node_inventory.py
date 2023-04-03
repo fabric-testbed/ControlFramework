@@ -293,10 +293,10 @@ class NetworkNodeInventory(InventoryForType):
         delegation_id, delegated_capacity = self.get_delegations(
             lab_cap_delegations=shared_nic.get_capacity_delegations())
 
-        self.logger.debug(f"Allocated NIC: {allocated_nic} labels: {allocated_nic.get_label_allocations()}")
+        self.logger.debug(f"Allocated NIC: {allocated_nic} labels: {allocated_nic.get_labels()}")
 
         # Get the Allocated PCI address
-        allocated_labels = allocated_nic.get_label_allocations()
+        allocated_labels = allocated_nic.get_labels()
 
         delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=shared_nic.get_label_delegations())
 

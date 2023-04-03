@@ -325,6 +325,12 @@ class OrchestratorSliceWrapper:
                         if parent_res_id is not None and parent_res_id not in redeem_predecessors:
                             redeem_predecessors.append(parent_res_id)
 
+                    if ifs.peer_labels is not None and ifs.peer_labels.account_id is not None:
+                        if sliver.labels is None:
+                            sliver.labels = Labels()
+                        sliver.labels = Labels.update(sliver.labels,
+                                                      local_name=f"{self.slice_obj.get_slice_name()}-{ifs.peer_labels.account_id}")
+
                 # Generate reservation for the sliver
                 reservation = self.reservation_converter.generate_reservation(sliver=sliver,
                                                                               slice_id=self.slice_obj.get_slice_id(),
@@ -588,9 +594,12 @@ class OrchestratorSliceWrapper:
                                                                                     node_id=new_ns.node_id)
                 reservation.set_reservation_id(value=rid)
                 modified_reservations.append(reservation)
-                self.computed_modify_properties_reservations.append(reservation)
+                #self.computed_modify_properties_reservations.append(reservation)
                 if new_ns.type == ServiceType.FABNetv4Ext:
                     self.__check_modify_on_fabnetv4ext(rid=rid, req_sliver=reservation.get_sliver())
+
+                self.computed_modify_reservations[rid] = ModifiedReservation(sliver=reservation.get_sliver(),
+                                                                             dependencies=reservation.redeem_processors)
 
         for x in modified_reservations:
             self.computed_reservations.append(x)
