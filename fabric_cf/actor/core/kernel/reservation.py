@@ -33,6 +33,7 @@ from datetime import datetime, timezone
 from fim.slivers.capacities_labels import ReservationInfo
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin, ReservationCategory
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.event_logger import EventLogger
 from fabric_cf.actor.core.common.exceptions import ReservationException
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
@@ -477,7 +478,7 @@ class Reservation(ABCReservationMixin):
         @throws Exception if the reservation has a pending operation.
         """
         if self.pending_state != ReservationPendingStates.None_:
-            self.error(err="reservation has a pending operation")
+            self.error(err=Constants.PENDING_OPERATION_ERROR)
 
     def prepare_probe(self):
         return
