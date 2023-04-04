@@ -40,7 +40,7 @@ from fabric_cf.actor.core.util.resource_type import ResourceType
 
 class AnsibleHandlerProcessorTest(unittest.TestCase):
     from fabric_cf.actor.core.container.globals import Globals
-    Globals.config_file = "../../config/config.test.yaml"
+    Globals.config_file = "./config/config.test.yaml"
     Constants.SUPERBLOCK_LOCATION = './state_recovery.lock'
 
     from fabric_cf.actor.core.container.globals import GlobalsSingleton

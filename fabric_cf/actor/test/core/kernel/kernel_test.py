@@ -58,7 +58,6 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
     def enforceReservationNotInDatabase(self, *, db: ABCDatabase, rid: ID):
         res = db.get_reservations(rid=rid)
-        self.assertIsNone(res)
         self.assertEqual(len(res), 0)
 
     def enforceSliceExistsInDatabase(self, *, db: ABCDatabase, slice_id: ID):
@@ -245,6 +244,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
         slice_obj = SliceFactory.create(slice_id=ID(), name="test_slice")
 
+        # Register a reservation without registering the slice; it should fail
         res_list = []
         for i in range(10):
             res = ClientReservationFactory.create(rid=ID())
@@ -258,19 +258,25 @@ class KernelTest(BaseTestCase, unittest.TestCase):
                 failed = True
 
             self.assertTrue(failed)
-
+            # get it back
             self.assertIsNone(kernel.get_reservation(rid=res.get_reservation_id()))
+            # make sure it is not in the database
             self.enforceReservationNotInDatabase(db=db, rid=res.get_reservation_id())
+            # make sure slice is not present
             self.assertIsNone(kernel.get_slice(slice_id=slice_obj.get_slice_id()))
             self.enforceSliceNotInDatabase(db=db, slice_id=slice_obj.get_slice_id())
 
+        # Register Slice
         kernel.register_slice(slice_object=slice_obj)
 
+        # Register the reservations now, it should succeed
         for res in res_list:
-
+            # get it back
             self.assertIsNone(kernel.get_reservation(rid=res.get_reservation_id()))
+            # make sure it is not in the database
             self.enforceReservationNotInDatabase(db=db, rid=res.get_reservation_id())
 
+            # re-register on a new reservation should fail
             failed = False
             try:
                 kernel.re_register_reservation(reservation=res)
@@ -278,35 +284,52 @@ class KernelTest(BaseTestCase, unittest.TestCase):
                 failed = True
 
             self.assertTrue(failed)
+            # get it back
             self.assertIsNone(kernel.get_reservation(rid=res.get_reservation_id()))
+            # make sure it is not in the database
             self.enforceReservationNotInDatabase(db=db, rid=res.get_reservation_id())
 
+            # register the reservation
             kernel.register_reservation(reservation=res)
-
+            # get it back
             self.assertIsNotNone(kernel.get_reservation(rid=res.get_reservation_id()))
+            # make sure it is in the database
             self.enforceReservationExistsInDatabase(db=db, rid=res.get_reservation_id())
 
+        # Create another kernel wrapper. This will be "equivalent" to starting with a clean kernel.
         kernel2 = self.get_kernel_wrapper(actor=actor)
-        kernel2.re_register_slice(slice_object=slice_obj)
 
         for res in res_list:
-
+            # make sure the new kernel does not know about this reservation
             self.assertIsNone(kernel2.get_reservation(rid=res.get_reservation_id()))
+            # make sure the reservation is in the database
             self.enforceReservationExistsInDatabase(db=db, rid=res.get_reservation_id())
 
+            # Try to register the reservation with the new kernel. This should fail since there is
+            # already a record in the database.
             failed = False
             try:
-                kernel.re_register_reservation(reservation=res)
+                kernel2.re_register_reservation(reservation=res)
             except Exception:
                 failed = True
 
+            # Check that the previous attempt did not leave the reservation in the kernel data structures and
+            # that it did not affect the database.
             self.assertTrue(failed)
+            # make sure the new kernel does not know about this reservation
             self.assertIsNone(kernel2.get_reservation(rid=res.get_reservation_id()))
+            # make sure the reservation is in the database
             self.enforceReservationExistsInDatabase(db=db, rid=res.get_reservation_id())
 
-            kernel2.register_reservation(reservation=res)
+        # re-register the slice: this will clear any previous state created by the first kernel
+        kernel2.re_register_slice(slice_object=slice_obj)
+        for res in res_list:
+            # re-register the reservation.
+            kernel2.re_register_reservation(reservation=res)
 
+            # Check if registered.
             self.assertIsNotNone(kernel2.get_reservation(rid=res.get_reservation_id()))
+            # Check the database.
             self.enforceReservationExistsInDatabase(db=db, rid=res.get_reservation_id())
 
     def test_f_re_register_slice(self):

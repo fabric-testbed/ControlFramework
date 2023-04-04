@@ -28,7 +28,7 @@ dependencies = [
     "fabric_fss_utils==1.4.0",
     "PyYAML",
     "fabric-message-bus==1.4.0",
-    "fabric-fim==1.4.2"]
+    "fabric-fim==1.4.6"]
 
 [project.urls]
 Home = "https://fabric-testbed.net/"

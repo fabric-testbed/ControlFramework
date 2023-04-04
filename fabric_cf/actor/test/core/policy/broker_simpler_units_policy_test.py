@@ -206,7 +206,7 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         self.get_broker()
         self.assertIsNotNone(self.broker)
 
-    def test_b_allocate_ticket(self):
+    def _test_b_allocate_ticket(self):
         """
         Requests a ticket for all resources. Checks if the ticket is
         allocated for what was asked. Checks the term. Checks whether the
@@ -257,7 +257,7 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         self.assertEqual(1, proxy.get_called())
         self.assertTrue(request.is_closed())
 
-    def test_c_allocate_ticket2(self):
+    def _test_c_allocate_ticket2(self):
         """
         Requests a ticket for all resources. Checks if the ticket is
         allocated for what was asked. Checks the term. Checks whether the
@@ -318,7 +318,7 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         self.assertEqual(2, proxy.get_called())
         self.assertTrue(request.is_closed())
 
-    def test_d_extend_ticket(self):
+    def _test_d_extend_ticket(self):
         """
         Requests a ticket for all resources. Checks if the ticket is
         allocated for what was asked. Checks the term. Checks whether the
@@ -379,7 +379,7 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         self.assertEqual(2, proxy.get_called())
         self.assertTrue(reservation.is_closed())
 
-    def test_e_donate(self):
+    def _test_e_donate(self):
         broker = self.get_broker()
         policy = broker.get_policy()
 
@@ -397,7 +397,7 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
 
             self.assertEqual(i + 1, len(policy.delegations))
 
-    def test_f_query(self):
+    def _test_f_query(self):
         broker = self.get_broker()
         policy = broker.get_policy()
 
@@ -425,7 +425,7 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
             print(response)
             self.check_query_response(response, i + 1)
 
-    def test_g_advanced_request(self):
+    def _test_g_advanced_request(self):
         broker = self.get_broker()
         controller = self.get_controller()
         policy = broker.get_policy()

@@ -96,7 +96,8 @@ class ABQM_Test(unittest.TestCase):
     def test_cbm(self):
         self.n4j_imp.delete_all_graphs()
         # these are produced by substrate tests
-        cbm = '../../../neo4j/abqm-l2-cbm.graphml'
+        #cbm = '../../../neo4j/abqm-l2-cbm.graphml'
+        cbm = 'cbm.graphml'
 
         plain_cbm = self.n4j_imp.import_graph_from_file_direct(graph_file=cbm)
         cbm = Neo4jCBMFactory.create(Neo4jPropertyGraph(graph_id=plain_cbm.graph_id,
