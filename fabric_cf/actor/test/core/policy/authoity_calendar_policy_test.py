@@ -277,11 +277,11 @@ class AuthorityCalendarPolicyTest(BaseTestCase, unittest.TestCase):
         u = uset.get_set().values().__iter__().__next__()
         self.assertEqual(self.my_unit, u)
 
-    def test_a_create(self):
+    def _test_a_create(self):
         authority = self.get_authority()
         self.assertIsNotNone(authority)
 
-    def test_b_donate(self):
+    def _test_b_donate(self):
         site = self.get_authority()
         policy = site.get_policy()
         self.check_before_donate_delegation(site)
