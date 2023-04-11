@@ -117,7 +117,7 @@ class ControllerManagementObject(ActorManagementObject, ABCClientActorManagement
     def demand_reservation(self, *, reservation: ReservationMng, caller: AuthToken) -> ResultAvro:
         return self.client_helper.demand_reservation(reservation=reservation, caller=caller)
 
-    def extend_reservation(self, *, reservation: id, new_end_time: datetime, sliver: BaseSliver,
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver,
                            caller: AuthToken, dependencies: List[ReservationPredecessorAvro] = None) -> ResultAvro:
         return self.client_helper.extend_reservation(reservation=reservation, new_end_time=new_end_time, 
                                                      sliver=sliver, caller=caller, dependencies=dependencies)
