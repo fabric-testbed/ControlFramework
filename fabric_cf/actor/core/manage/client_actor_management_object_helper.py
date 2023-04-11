@@ -405,7 +405,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
-    def extend_reservation(self, *, reservation: id, new_end_time: datetime, sliver: BaseSliver,
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver,
                            caller: AuthToken, dependencies: List[ReservationPredecessorAvro] = None) -> ResultAvro:
         result = ResultAvro()
 
@@ -458,7 +458,12 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
                     return result
 
-            result = self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client))
+            # Process Extend for Renew synchronously
+            if new_end_time is not None:
+                result = self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client))
+            # Process Extend for Modify asynchronously
+            else:
+                self.client.execute_on_actor_thread(runnable=Runner(actor=self.client))
 
         except Exception as e:
             self.logger.error("extend_reservation {}".format(e))
