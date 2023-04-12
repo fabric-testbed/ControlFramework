@@ -1082,12 +1082,12 @@ class ReservationClient(Reservation, ABCControllerReservation):
             # Check dependencies
             closed_preds = 0
             for pred_state in self.get_redeem_predecessors():
-                if pred_state.get_reservation().is_closed():
+                if pred_state.get_reservation().is_closed() or pred_state.get_reservation().is_closing():
                     closed_preds += 1
 
             #if closed_preds > len(self.get_redeem_predecessors()):
             if closed_preds:
-                self.logger.debug(f"Found dependencies# {closed_preds} in closed state")
+                self.logger.debug(f"Found dependencies# {closed_preds} in closed/closing state")
                 ret_val = True
         return ret_val
 
