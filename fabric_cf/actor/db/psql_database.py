@@ -715,8 +715,7 @@ class PsqlDatabase:
         return rsv_obj
 
     def create_reservation_filter(self, *, slice_id: str = None, graph_node_id: str = None, project_id: str = None,
-                                  email: str = None, oidc_sub: str = None, rid: str = None, site: str = None,
-                                  rsv_type: str = None) -> dict:
+                                  email: str = None, oidc_sub: str = None, rid: str = None, site: str = None) -> dict:
 
         filter_dict = {}
         if slice_id is not None:
@@ -734,13 +733,11 @@ class PsqlDatabase:
             filter_dict['rsv_resid'] = rid
         if site is not None:
             filter_dict['site'] = site
-        if rsv_type is not None:
-            filter_dict['rsv_type'] = rsv_type
         return filter_dict
 
     def get_reservations(self, *, slice_id: str = None, graph_node_id: str = None, project_id: str = None,
                          email: str = None, oidc_sub: str = None, rid: str = None, states: list[int] = None,
-                         category: list[int] = None, site: str = None, rsv_type: str = None) -> list:
+                         category: list[int] = None, site: str = None, rsv_type: list[str] = None) -> list:
         """
         Get Reservations for an actor
         @param slice_id slice id
@@ -760,9 +757,12 @@ class PsqlDatabase:
         try:
             filter_dict = self.create_reservation_filter(slice_id=slice_id, graph_node_id=graph_node_id,
                                                          project_id=project_id, email=email, oidc_sub=oidc_sub,
-                                                         rid=rid, site=site, rsv_type=rsv_type)
+                                                         rid=rid, site=site)
             with session_scope(self.db_engine) as session:
                 rows = session.query(Reservations).filter_by(**filter_dict)
+
+                if rsv_type is not None:
+                    rows = rows.filter(Reservations.rsv_type.in_(rsv_type))
 
                 if states is not None:
                     rows = rows.filter(Reservations.rsv_state.in_(states))
