@@ -358,7 +358,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
-            rsv_type = type.split(",")
+            rsv_type = None
+            if type is not None:
+                rsv_type = type.split(",")
             res_list = None
             try:
                 if rid_list is not None:

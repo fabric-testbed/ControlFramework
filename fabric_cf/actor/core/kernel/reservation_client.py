@@ -1131,20 +1131,25 @@ class ReservationClient(Reservation, ABCControllerReservation):
                     update_data.message = "Redeem/Ticket timeout"
                     self.mark_close_by_ticket_review(update_data=update_data)
 
+        if self.leased_resources is None:
+            return
+
         # Handling for close completion. Note that this reservation could
         # "stick" once we enter the CloseWait state, if we never hear back from
         # the authority. There is no harm to purging a CloseWait reservation,
         # but we just leave them for now.
-        close_by_deps = self.__are_dependencies_closed()
-        if (self.leased_resources is not None and self.pending_state == ReservationPendingStates.Closing and
-            self.leased_resources.is_closed()) or close_by_deps:
+        #close_by_deps = self.__are_dependencies_closed()
+        #if (self.leased_resources is not None and self.pending_state == ReservationPendingStates.Closing and
+        #    self.leased_resources.is_closed()) or close_by_deps:
 
-            if not close_by_deps:
-                self.logger.debug("LEASED RESOURCES are closed")
-                msg = "local close complete"
-            else:
-                msg = "close by dependencies"
+        #    if not close_by_deps:
+        #        self.logger.debug("LEASED RESOURCES are closed")
+        #        msg = "local close complete"
+        #    else:
+        #        msg = "close by dependencies"
 
+        if self.pending_state == ReservationPendingStates.Closing:
+            msg = "local close complete"
             self.transition(prefix=msg, state=ReservationStates.CloseWait, pending=ReservationPendingStates.None_)
 
             try:

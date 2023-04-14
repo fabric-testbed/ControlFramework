@@ -58,6 +58,10 @@ class MainClass:
         self.neo4j_config = config_dict[Constants.CONFIG_SECTION_NEO4J]
         self.database_config = config_dict[Constants.CONFIG_SECTION_DATABASE]
         self.actor_config = config_dict[Constants.CONFIG_SECTION_ACTOR]
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        GlobalsSingleton.get().config_file = config_file
+        GlobalsSingleton.get().load_config()
+        GlobalsSingleton.get().initialized = True
 
     def delete_dead_closing_slice(self, *, days: int):
         actor_db = ActorDatabase(user=self.database_config[Constants.PROPERTY_CONF_DB_USER],
@@ -67,7 +71,7 @@ class MainClass:
                                  logger=self.logger)
         states = [SliceState.Dead.value, SliceState.Closing.value]
         lease_end = datetime.now(timezone.utc) - timedelta(days=days)
-        slices = actor_db.get_slices(state=states, lease_end=lease_end)
+        slices = actor_db.get_slices(states=states, lease_end=lease_end)
         actor_type = self.actor_config[Constants.TYPE]
         for s in slices:
             try:
