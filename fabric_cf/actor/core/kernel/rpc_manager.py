@@ -454,7 +454,7 @@ class RPCManager:
                 if request.handler is not None:
                     rpc.set_response_handler(response_handler=request.handler)
 
-        actor.get_logger().info(f"Inbound {rpc.get_request_type()} request from "
+        actor.get_logger().debug(f"Inbound {rpc.get_request_type()} request from "
                                 f"<{rpc.get_caller().get_name()}>:{rpc.get()}")
 
         self.__log_sliver(reservation=rpc.get(), logger=actor.get_logger())
@@ -530,7 +530,7 @@ class RPCManager:
     def enqueue(self, *, rpc: RPCRequest):
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         logger = GlobalsSingleton.get().get_logger()
-        logger.info(f"Outbound {rpc.get_request_type()} : {rpc.get()}")
+        logger.debug(f"Outbound {rpc.get_request_type()} : {rpc.get()}")
         self.__log_sliver(reservation=rpc.get(), logger=logger)
         if not self.started:
             logger.warning("Ignoring RPC request: container is shutting down")
