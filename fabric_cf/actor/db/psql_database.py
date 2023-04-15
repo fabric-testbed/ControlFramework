@@ -663,10 +663,11 @@ class PsqlDatabase:
         @param rsv_type reservation type
         """
         try:
-            slc_id = self.get_slc_id_by_slice_id(slice_id=slc_guid)
+            filter_dict = self.create_reservation_filter(slice_id=slc_guid, graph_node_id=rsv_graph_node_id,
+                                                         rid=rsv_resid, site=site)
             with session_scope(self.db_engine) as session:
-                rsv_obj = session.query(Reservations).filter(Reservations.rsv_slc_id == slc_id).filter(
-                    Reservations.rsv_resid == rsv_resid).first()
+                rows = session.query(Reservations).filter_by(**filter_dict)
+                rsv_obj = rows.first()
                 if rsv_obj is not None:
                     rsv_obj.rsv_category = rsv_category
                     rsv_obj.rsv_state = rsv_state
@@ -1120,7 +1121,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 unt_obj = session.query(Units).filter(Units.unt_uid == unt_uid).first()
                 if unt_obj is None:
-                    self.logger.error("Unit with guid {} not found".format(unt_uid))
+                    self.logger.debug("Unit with guid {} not found".format(unt_uid))
                     return result
                 result = self.generate_unit_dict_from_row(unt_obj)
         except Exception as e:

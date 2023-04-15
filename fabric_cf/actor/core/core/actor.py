@@ -153,10 +153,10 @@ class ActorMixin(ABCActorMixin):
     def close(self, *, reservation: ABCReservationMixin):
         if reservation is not None:
             if not self.recovered:
-                self.logger.debug("Adding reservation: {} to closing list".format(reservation.get_reservation_id()))
+                #self.logger.debug("Adding reservation: {} to closing list".format(reservation.get_reservation_id()))
                 self.closing.add(reservation=reservation)
             else:
-                self.logger.debug("Closing reservation: {}".format(reservation.get_reservation_id()))
+                #self.logger.debug("Closing reservation: {}".format(reservation.get_reservation_id()))
                 self.wrapper.close(rid=reservation.get_reservation_id())
 
     def close_slice_reservations(self, *, slice_id: ID):
@@ -165,7 +165,7 @@ class ActorMixin(ABCActorMixin):
     def close_reservations(self, *, reservations: ReservationSet):
         for reservation in reservations.reservations.values():
             try:
-                self.logger.debug("Closing reservation: {}".format(reservation.get_reservation_id()))
+                #self.logger.debug("Closing reservation: {}".format(reservation.get_reservation_id()))
                 self.close(reservation=reservation)
             except Exception as e:
                 self.logger.error(traceback.format_exc())

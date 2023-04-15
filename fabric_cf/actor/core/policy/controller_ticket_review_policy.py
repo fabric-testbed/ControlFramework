@@ -111,7 +111,7 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
                     # examine every reservation contained within the slice,
                     # looking for either a Failed or Nascent reservation
                     # we have to look at everything in a slice once, to determine all/any Sites with failures
-                    for slice_reservation in slice_obj.get_reservations().values():
+                    for slice_reservation in slice_obj.get_reservations_list():
 
                         # If any Reservations that are being redeemed, that means the
                         # slice has already cleared TicketReview.

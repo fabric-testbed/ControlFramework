@@ -335,23 +335,22 @@ class FimHelper:
                         reservation_info.reservation_state = ReservationStates.Failed.name
                         node.components[cname].set_properties(reservation_info=reservation_info)
 
+                topo_component_dict = node.components
                 for component in sliver.attached_components_info.devices.values():
-                    cname = component.get_name()
-                    node.components[cname].set_properties(
-                                                          labels=component.labels,
-                                                          label_allocations=component.label_allocations,
-                                                          capacity_allocations=component.capacity_allocations,
-                                                          node_map=component.node_map)
+                    topo_component = topo_component_dict[component.get_name()]
+                    topo_component.set_properties(labels=component.labels,
+                                                  label_allocations=component.label_allocations,
+                                                  capacity_allocations=component.capacity_allocations,
+                                                  node_map=component.node_map)
                     # Update Mac address
                     if component.network_service_info is not None and \
                             component.network_service_info.network_services is not None:
+                        topo_ifs_dict = topo_component.interfaces
                         for ns in component.network_service_info.network_services.values():
                             if ns.interface_info is None or ns.interface_info.interfaces is None:
                                 continue
-
                             for ifs in ns.interface_info.interfaces.values():
-                                topo_component = node.components[cname]
-                                topo_ifs = topo_component.interfaces[ifs.get_name()]
+                                topo_ifs = topo_ifs_dict[ifs.get_name()]
                                 topo_ifs.set_properties(labels=ifs.labels,
                                                         label_allocations=ifs.label_allocations,
                                                         node_map=ifs.node_map)
@@ -370,10 +369,11 @@ class FimHelper:
                                 node_map=sliver.node_map,
                                 gateway=sliver.gateway)
             if sliver.interface_info is not None:
+                topo_ifs_dict = node.interfaces
                 for ifs in sliver.interface_info.interfaces.values():
                     if ifs.get_name() not in node.interfaces:
                         continue
-                    topo_ifs = node.interfaces[ifs.get_name()]
+                    topo_ifs = topo_ifs_dict[ifs.get_name()]
                     topo_ifs.set_properties(labels=ifs.labels,
                                             label_allocations=ifs.label_allocations,
                                             node_map=ifs.node_map)

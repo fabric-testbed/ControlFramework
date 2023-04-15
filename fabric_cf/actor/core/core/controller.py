@@ -193,7 +193,7 @@ class Controller(ActorMixin, ABCController):
         rset = self.policy.get_closing(cycle=self.current_cycle)
 
         if rset is not None and rset.size() > 0:
-            self.logger.debug("SlottedSM close expiring for cycle {} expiring {}".format(self.current_cycle, rset))
+            #self.logger.debug("SlottedSM close expiring for cycle {} expiring {}".format(self.current_cycle, rset))
             self.close_reservations(reservations=rset)
 
     def demand(self, *, rid: ID):
@@ -280,8 +280,7 @@ class Controller(ActorMixin, ABCController):
         rset = self.policy.get_redeeming(cycle=self.current_cycle)
 
         if rset is not None and rset.size() > 0:
-            self.logger.debug("SlottedController redeem for cycle {} redeeming {}".format(self.current_cycle, rset))
-
+            #self.logger.debug("SlottedController redeem for cycle {} redeeming {}".format(self.current_cycle, rset))
             self.redeem_reservations(rset=rset)
 
     def redeem(self, *, reservation: ABCControllerReservation):

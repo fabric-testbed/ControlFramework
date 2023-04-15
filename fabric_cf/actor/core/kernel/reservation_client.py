@@ -201,7 +201,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
         del state['pending_recover']
         del state['state_transition']
         del state['service_pending']
-
         del state['suggested']
         del state['thread_lock']
         return state

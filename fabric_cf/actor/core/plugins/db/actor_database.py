@@ -286,7 +286,7 @@ class ActorDatabase(ABCDatabase):
                                        rsv_joining=reservation.get_join_state().value,
                                        properties=properties,
                                        rsv_graph_node_id=reservation.get_graph_node_id(),
-                                       site=site, rsv_type = rsv_type)
+                                       site=site, rsv_type=rsv_type)
         finally:
             if self.lock.locked():
                 self.lock.release()
