@@ -34,8 +34,8 @@ from typing import TYPE_CHECKING, List, Tuple
 
 from fim.slivers.attached_components import ComponentType
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.capacities_labels import Labels, ReservationInfo
-from fim.slivers.network_node import NodeSliver, NodeType
+from fim.slivers.capacities_labels import Labels
+from fim.slivers.network_node import NodeType
 from fim.slivers.network_service import NetworkServiceSliver
 
 from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
@@ -919,6 +919,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         assert self.resources.sliver is not None
         sliver = self.resources.sliver
 
+        '''
         self.logger.info(f"Redeem prepared for Sliver: {sliver}")
         if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info is not None:
             for ifs in sliver.interface_info.interfaces.values():
@@ -927,6 +928,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if isinstance(sliver, NodeSliver) and sliver.attached_components_info is not None:
             for c in sliver.attached_components_info.devices.values():
                 self.logger.info(f"Component: {c}")
+        '''
 
     def probe_join_state(self):
         """
