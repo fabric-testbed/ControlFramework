@@ -84,7 +84,7 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
         @throws Exception in case of error
         """
         # add all of our pendingRedeem, so they can be checked
-        for reservation in self.pending_redeem.values():
+        for reservation in self.pending_redeem.reservations.values():
             self.calendar.add_pending(reservation=reservation)
 
         # get set of reservations that need to be redeemed
@@ -98,7 +98,7 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
             return
 
         # check the status of the Slice of each reservation
-        for reservation in my_pending.values():
+        for reservation in my_pending.reservations.values():
             slice_obj = reservation.get_slice()
             slice_id = slice_obj.get_slice_id()
 

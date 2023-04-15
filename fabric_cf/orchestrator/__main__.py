@@ -84,7 +84,8 @@ def main():
                     # Add a middleware function that puts incoming requests into the task queue
                     @app.app.before_request
                     def enqueue_request():
-                        self.queue.put(request.environ)
+                        if request.method == "GET" and "slices" in request.path:
+                            self.queue.put(request.environ)
 
                     # Add a middleware function that checks the task queue depth and
                     # returns a "too busy" error if it exceeds a certain value
@@ -96,11 +97,11 @@ def main():
                 def serve(self, port, threads):
                     serve(app=app.app, port=port, threads=threads)
 
-            waitress_app = WaitressApp(max_depth=8)
-            waitress_app.serve(port=int(rest_port_str), threads=8)
+            #waitress_app = WaitressApp(max_depth=8)
+            #waitress_app.serve(port=int(rest_port_str), threads=8)
 
             # Start up the server to expose the metrics.
-            #waitress.serve(app, port=int(rest_port_str), threads=8)
+            waitress.serve(app, port=int(rest_port_str), threads=8)
 
             while True:
                 time.sleep(0.0001)

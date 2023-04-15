@@ -83,7 +83,7 @@ class IncomingRPCEvent(ABCActorEvent):
         if self.rpc.get_request_type() == RPCRequestType.UpdateLease:
             client.get_logger().info("processing update lease from <{}>".format(self.rpc.get_caller().get_name()))
             if self.rpc.get().get_resources().get_resources() is not None:
-                client.get_logger().info("inbound lease is {}".format(
+                client.get_logger().debug("inbound lease is {}".format(
                     self.rpc.get().get_resources().get_resources()))
 
             client.update_lease(reservation=self.rpc.get(), update_data=self.rpc.get_update_data(),
@@ -92,12 +92,12 @@ class IncomingRPCEvent(ABCActorEvent):
             client.get_logger().info("processing update ticket from <{}>".format(self.rpc.get_caller().get_name()))
             client.update_ticket(reservation=self.rpc.get(), update_data=self.rpc.get_update_data(),
                                  caller=self.rpc.get_caller())
-            client.get_logger().info("update ticket processed from <{}>".format(self.rpc.get_caller().get_name()))
+            client.get_logger().debug("update ticket processed from <{}>".format(self.rpc.get_caller().get_name()))
         elif self.rpc.get_request_type() == RPCRequestType.UpdateDelegation:
             client.get_logger().info("processing update delegation from <{}>".format(self.rpc.get_caller().get_name()))
             client.update_delegation(delegation=self.rpc.get(), update_data=self.rpc.get_update_data(),
                                      caller=self.rpc.get_caller())
-            client.get_logger().info("update delegation processed from <{}>".format(self.rpc.get_caller().get_name()))
+            client.get_logger().debug("update delegation processed from <{}>".format(self.rpc.get_caller().get_name()))
         else:
             processed = self.do_process_actor(actor=client)
         return processed
@@ -111,30 +111,30 @@ class IncomingRPCEvent(ABCActorEvent):
             server.get_logger().info("processing claim delegation from <{}>".format(self.rpc.get_caller().get_name()))
             server.claim_delegation(delegation=self.rpc.get(), callback=self.rpc.get_callback(),
                                     caller=self.rpc.get_caller())
-            server.get_logger().info("claim processed from <{}>".format(self.rpc.get_caller().get_name()))
+            server.get_logger().debug("claim processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         elif self.rpc.get_request_type() == RPCRequestType.ReclaimDelegation:
             server.get_logger().info("processing reclaim delegation from <{}>".format(self.rpc.get_caller().get_name()))
             server.reclaim_delegation(delegation=self.rpc.get(), callback=self.rpc.get_callback(),
                                       caller=self.rpc.get_caller())
-            server.get_logger().info("reclaim processed from <{}>".format(self.rpc.get_caller().get_name()))
+            server.get_logger().debug("reclaim processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         elif self.rpc.get_request_type() == RPCRequestType.Ticket:
             server.get_logger().info("processing ticket from <{}>".format(self.rpc.get_caller().get_name()))
             server.ticket(reservation=self.rpc.get(), callback=self.rpc.get_callback(),
                           caller=self.rpc.get_caller())
-            server.get_logger().info("ticket processed from <{}>".format(self.rpc.get_caller().get_name()))
+            server.get_logger().debug("ticket processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         elif self.rpc.get_request_type() == RPCRequestType.ExtendTicket:
             server.get_logger().info("processing extend ticket from <{}>".format(self.rpc.get_caller().get_name()))
             server.extend_ticket(reservation=self.rpc.get(), caller=self.rpc.get_caller(),
                                  callback=self.rpc.get_callback())
-            server.get_logger().info("extend ticket processed from <{}>".format(self.rpc.get_caller().get_name()))
+            server.get_logger().debug("extend ticket processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         elif self.rpc.get_request_type() == RPCRequestType.Relinquish:
             server.get_logger().info("processing relinquish from <{}>".format(self.rpc.get_caller().get_name()))
             server.relinquish(reservation=self.rpc.get(), caller=self.rpc.get_caller())
-            server.get_logger().info("relinquish processed from <{}>".format(self.rpc.get_caller().get_name()))
+            server.get_logger().debug("relinquish processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         else:
             processed = self.do_process_actor(actor=server)

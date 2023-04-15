@@ -216,9 +216,6 @@ class ReservationSet:
     def values(self) -> list:
         try:
             self.lock.acquire()
-            result = []
-            for r in self.reservations.values():
-                result.append(r)
-            return result
+            return list(self.reservations.values())
         finally:
             self.lock.release()

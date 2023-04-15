@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import time
 import traceback
 from typing import List, Dict
 
@@ -162,7 +163,7 @@ class ActorMixin(ABCActorMixin):
         self.wrapper.close_slice_reservations(slice_id=slice_id)
 
     def close_reservations(self, *, reservations: ReservationSet):
-        for reservation in reservations.values():
+        for reservation in reservations.reservations.values():
             try:
                 self.logger.debug("Closing reservation: {}".format(reservation.get_reservation_id()))
                 self.close(reservation=reservation)
@@ -208,15 +209,23 @@ class ActorMixin(ABCActorMixin):
             while current_cycle <= cycle:
                 self.logger.info("actor_tick: {} start".format(current_cycle))
                 self.current_cycle = current_cycle
+                begin = time.time()
                 self.policy.prepare(cycle=self.current_cycle)
+                self.logger.info(f"POLICY TIME: {time.time() - begin:.0f}")
 
                 if self.first_tick:
                     self.reset()
 
+                begin = time.time()
                 self.tick_handler()
+                self.logger.info(f"ACTOR TICK TIME: {time.time() - begin:.0f}")
+                begin = time.time()
                 self.policy.finish(cycle=self.current_cycle)
+                self.logger.info(f"POLICY FINISH TIME: {time.time() - begin:.0f}")
 
+                begin = time.time()
                 self.wrapper.tick()
+                self.logger.info(f"KERNEL TIME: {time.time() - begin:.0f}")
 
                 self.first_tick = False
                 self.logger.info("actor_tick: {} end".format(current_cycle))

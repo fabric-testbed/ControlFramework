@@ -291,7 +291,7 @@ class Controller(ActorMixin, ABCController):
             self.wrapper.redeem(reservation=reservation)
 
     def redeem_reservations(self, *, rset: ReservationSet):
-        for reservation in rset.values():
+        for reservation in rset.reservations.values():
             try:
                 if isinstance(reservation, ABCControllerReservation):
                     self.redeem(reservation=reservation)

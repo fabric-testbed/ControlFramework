@@ -1197,7 +1197,7 @@ class Kernel:
             begin = time.time()
             for reservation in self.reservations.values():
                 self.__probe_pending(reservation=reservation)
-            self.logger.info(f"KERNEL RES TICK TIME: {time.time() - begin:.0f}")
+            self.logger.info(f"KERNEL RES TICK TIME: {time.time() - begin:.0f} {self.reservations.size()}")
 
             begin = time.time()
             try:
@@ -1208,7 +1208,9 @@ class Kernel:
                 self.lock.release()
             self.logger.info(f"KERNEL SLC TICK TIME: {time.time() - begin:.0f}")
 
+            begin = time.time()
             self.__purge()
+            self.logger.info(f"KERNEL PURGE TICK TIME: {time.time() - begin:.0f}")
             self.check_nothing_pending()
         except Exception as e:
             self.logger.error(traceback.format_exc())

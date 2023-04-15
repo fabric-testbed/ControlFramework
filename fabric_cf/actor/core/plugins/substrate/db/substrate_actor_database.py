@@ -58,7 +58,9 @@ class SubstrateActorDatabase(ServerActorDatabase, ABCSubstrateDatabase):
                 return
 
             slice_id = str(u.get_slice_id())
-            parent = self.get_unit(uid=u.get_parent_id())
+            parent = None
+            if u.get_parent_id() is not None:
+                parent = self.get_unit(uid=u.get_parent_id())
             parent_id = None
             if parent is not None:
                 parent_id = parent['unt_id']
