@@ -663,11 +663,8 @@ class PsqlDatabase:
         @param rsv_type reservation type
         """
         try:
-            filter_dict = self.create_reservation_filter(slice_id=slc_guid, graph_node_id=rsv_graph_node_id,
-                                                         rid=rsv_resid, site=site)
             with session_scope(self.db_engine) as session:
-                rows = session.query(Reservations).filter_by(**filter_dict)
-                rsv_obj = rows.first()
+                rsv_obj = session.query(Reservations).filter(Reservations.rsv_resid == rsv_resid).one()
                 if rsv_obj is not None:
                     rsv_obj.rsv_category = rsv_category
                     rsv_obj.rsv_state = rsv_state

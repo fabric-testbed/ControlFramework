@@ -129,6 +129,7 @@ class Reservations(Base):
     Index('idx_resid_state', rsv_resid, rsv_state)
     Index('idx_slcid_state', rsv_slc_id, rsv_state)
     Index('idx_graph_id_res_id', rsv_graph_node_id, rsv_resid)
+    Index('idx_res_id', rsv_resid)
 
 
 class Slices(Base):
