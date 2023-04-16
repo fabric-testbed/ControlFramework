@@ -195,9 +195,7 @@ class Controller(ActorMixin, ABCController):
 
         if rset is not None and rset.size() > 0:
             #self.logger.debug("SlottedSM close expiring for cycle {} expiring {}".format(self.current_cycle, rset))
-            #self.close_reservations(reservations=rset)
-            event = CloseEvent(actor=self, reservations=rset)
-            self.queue_event(incoming=event)
+            self.close_reservations(reservations=rset)
 
     def demand(self, *, rid: ID):
         if rid is None:
@@ -284,9 +282,7 @@ class Controller(ActorMixin, ABCController):
 
         if rset is not None and rset.size() > 0:
             #self.logger.debug("SlottedController redeem for cycle {} redeeming {}".format(self.current_cycle, rset))
-            #self.redeem_reservations(rset=rset)
-            event = RedeemEvent(actor=self, reservations=rset)
-            self.queue_event(incoming=event)
+            self.redeem_reservations(rset=rset)
 
     def redeem(self, *, reservation: ABCControllerReservation):
         if not self.recovered:
@@ -322,8 +318,8 @@ class Controller(ActorMixin, ABCController):
                 self.logger.error("Could not ticket for #{} e: {}".format(reservation.get_reservation_id(), e))
 
     def tick_handler(self):
-        self.close_expiring()
-        self.process_redeeming()
+        #self.close_expiring()
+        #self.process_redeeming()
         self.bid()
 
     def update_lease(self, *, reservation: ABCReservationMixin, update_data, caller: AuthToken):

@@ -648,9 +648,8 @@ class KernelWrapper:
         if reservation is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
-        slice_object = reservation.get_slice()
-
         '''
+        slice_object = reservation.get_slice()
         for r in slice_object.get_reservations().values():
             self.logger.debug("redeem() Reservation {} is in state: {}".format(r.get_reservation_id(),
                                                                                ReservationStates(r.get_state()).name))

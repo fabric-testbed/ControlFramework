@@ -70,21 +70,19 @@ class ExecutionStatus:
 
 
 class RedeemEvent(ABCActorEvent):
-    def __init__(self, *, actor, reservations: ReservationSet):
+    def __init__(self, *, actor):
         self.actor = actor
-        self.reservations = reservations
 
     def process(self):
-        self.actor.redeem_reservations(rset=self.reservations)
+        self.actor.process_redeeming()
 
 
 class CloseEvent(ABCActorEvent):
-    def __init__(self, *, actor, reservations: ReservationSet):
+    def __init__(self, *, actor):
         self.actor = actor
-        self.reservations = reservations
 
     def process(self):
-        self.actor.close_reservations(reservations=self.reservations)
+        self.actor.close_expiring()
 
 
 class TickEvent(ABCActorEvent):

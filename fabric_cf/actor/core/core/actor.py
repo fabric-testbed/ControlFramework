@@ -188,6 +188,10 @@ class ActorMixin(ABCActorMixin):
     def external_tick(self, *, cycle: int):
         self.logger.info("External Tick start cycle: {}".format(cycle))
         self.queue_event(incoming=TickEvent(actor=self, cycle=cycle))
+        if self.get_type() == ActorType.Orchestrator:
+            self.queue_event(incoming=CloseEvent(actor=self))
+            self.queue_event(incoming=RedeemEvent(actor=self))
+
         self.logger.info("External Tick end cycle: {}".format(cycle))
 
     def actor_tick(self, *, cycle: int):
