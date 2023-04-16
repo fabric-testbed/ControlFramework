@@ -35,7 +35,7 @@ from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.exceptions import ControllerException
-from fabric_cf.actor.core.core.event_processor import EventType
+from fabric_cf.actor.core.core.event_processor import EventType, CloseEvent, RedeemEvent
 from fabric_cf.actor.core.manage.controller_management_object import ControllerManagementObject
 from fabric_cf.actor.core.manage.kafka.services.kafka_controller_service import KafkaControllerService
 from fabric_cf.actor.core.proxies.kafka.services.controller_service import ControllerService
@@ -195,7 +195,9 @@ class Controller(ActorMixin, ABCController):
 
         if rset is not None and rset.size() > 0:
             #self.logger.debug("SlottedSM close expiring for cycle {} expiring {}".format(self.current_cycle, rset))
-            self.close_reservations(reservations=rset)
+            #self.close_reservations(reservations=rset)
+            event = CloseEvent(actor=self, reservations=rset)
+            self.queue_event(incoming=event)
 
     def demand(self, *, rid: ID):
         if rid is None:
@@ -282,7 +284,9 @@ class Controller(ActorMixin, ABCController):
 
         if rset is not None and rset.size() > 0:
             #self.logger.debug("SlottedController redeem for cycle {} redeeming {}".format(self.current_cycle, rset))
-            self.redeem_reservations(rset=rset)
+            #self.redeem_reservations(rset=rset)
+            event = RedeemEvent(actor=self, reservations=rset)
+            self.queue_event(incoming=event)
 
     def redeem(self, *, reservation: ABCControllerReservation):
         if not self.recovered:
