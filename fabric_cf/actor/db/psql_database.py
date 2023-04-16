@@ -138,7 +138,7 @@ class PsqlDatabase:
         try:
             # Delete the actor in the database
             with session_scope(self.db_engine) as session:
-                session.query(Actors).filter_by(Actors.act_name == name).delete()
+                session.query(Actors).filter_by(act_name=name).delete()
 
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
@@ -153,7 +153,7 @@ class PsqlDatabase:
         try:
             with session_scope(self.db_engine) as session:
                 for row in session.query(Actors).all():
-                    result.append(dict(row.items()))
+                    result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -171,7 +171,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 for row in session.query(Actors).filter(Actors.act_type == act_type).filter(
                         Actors.act_name.like(actor_name)).all():
-                    result.append(dict(row.items()))
+                    result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -187,7 +187,7 @@ class PsqlDatabase:
         try:
             with session_scope(self.db_engine) as session:
                 for row in session.query(Actors).filter(Actors.act_name.like(act_name)).all():
-                    result.append(dict(row.items()))
+                    result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -241,7 +241,7 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                msc_obj = session.query(Miscellaneous).filter_by(Miscellaneous.msc_path == name).one_or_none()
+                msc_obj = session.query(Miscellaneous).filter_by(msc_path=name).one_or_none()
                 if msc_obj is not None:
                     msc_obj.properties = properties
         except Exception as e:
@@ -255,7 +255,7 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                session.query(Miscellaneous).filter_by(Miscellaneous.msc_path == name).delete()
+                session.query(Miscellaneous).filter_by(msc_path=name).delete()
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -305,7 +305,7 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                session.query(ManagerObjects).filter_by(ManagerObjects.mo_key == manager_key).delete()
+                session.query(ManagerObjects).filter_by(mo_key=manager_key).delete()
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -317,7 +317,7 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                session.query(ManagerObjects).filter_by(ManagerObjects.mo_act_id == act_id).delete()
+                session.query(ManagerObjects).filter_by(mo_act_id=act_id).delete()
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -334,10 +334,10 @@ class PsqlDatabase:
                 if act_id is None:
                     rows = session.query(ManagerObjects).all()
                 else:
-                    rows = session.query(ManagerObjects).filter_by(ManagerObjects.mo_act_id == act_id).all()
+                    rows = session.query(ManagerObjects).filter_by(mo_act_id=act_id).all()
 
                 for row in rows:
-                    result.append(dict(row.items()))
+                    result.append(self.generate_dict_from_row(row=row))
 
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
@@ -371,7 +371,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 mo_obj = session.query(ManagerObjects).filter_by(mo_key=mo_key).one_or_none()
                 if mo_obj is not None:
-                    result = dict(mo_obj.items())
+                    result = self.generate_dict_from_row(mo_obj)
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Manager Object", mo_key))
         except Exception as e:
@@ -388,7 +388,7 @@ class PsqlDatabase:
         try:
             with session_scope(self.db_engine) as session:
                 for mo_obj in session.query(ManagerObjects).filter(ManagerObjects.mo_act_id.is_(None)).all():
-                    result.append(dict(mo_obj.items()))
+                    result.append(self.generate_dict_from_row(mo_obj))
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -441,7 +441,7 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                slc_obj = session.query(Slices).filter_by(Slices.slc_guid == slc_guid).one_or_none()
+                slc_obj = session.query(Slices).filter_by(slc_guid=slc_guid).one_or_none()
                 if slc_obj is not None:
                     slc_obj.properties = properties
                     slc_obj.slc_name = slc_name
@@ -465,30 +465,10 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                session.query(Slices).filter_by(Slices.slc_guid == slc_guid).delete()
+                session.query(Slices).filter_by(slc_guid=slc_guid).delete()
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
-
-    @staticmethod
-    def generate_slice_dict_from_row(row) -> dict:
-        """
-        Generate dictionary representing a slice row read from database
-        """
-        if row is None:
-            return None
-
-        '''
-        slice_obj = {'slc_id': row.slc_id, 'slc_guid': row.slc_guid, 'slc_name': row.slc_name,
-                     'slc_type': row.slc_type, 'slc_resource_type': row.slc_resource_type, 'slc_state': row.slc_state,
-                     'project_id': row.project_id, 'lease_start': row.lease_start, 'lease_end': row.lease_end,
-                     'properties': row.properties}
-        if row.slc_graph_id is not None:
-            slice_obj['slc_graph_id'] = row.slc_graph_id
-
-        return slice_obj
-        '''
-        return dict(row.items())
 
     def get_slice_ids(self) -> list:
         """
@@ -562,7 +542,7 @@ class PsqlDatabase:
                     rows = rows.offset(offset).limit(limit)
 
                 for row in rows.all():
-                    result.append(dict(row.items()))
+                    result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -577,9 +557,9 @@ class PsqlDatabase:
         result = {}
         try:
             with session_scope(self.db_engine) as session:
-                slc_obj = session.query(Slices).filter_by(Slices.slc_id == slc_id).one_or_none()
+                slc_obj = session.query(Slices).filter_by(slc_id=slc_id).one_or_none()
                 if slc_obj is not None:
-                    result = self.generate_slice_dict_from_row(slc_obj)
+                    result = self.generate_dict_from_row(slc_obj)
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_id))
         except Exception as e:
@@ -645,7 +625,7 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                rsv_obj = session.query(Reservations).filter_by(Reservations.rsv_resid == rsv_resid).one()
+                rsv_obj = session.query(Reservations).filter_by(rsv_resid=rsv_resid).one()
                 if rsv_obj is not None:
                     rsv_obj.rsv_category = rsv_category
                     rsv_obj.rsv_state = rsv_state
@@ -673,28 +653,10 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                session.query(Reservations).filter_by(Reservations.rsv_resid == rsv_resid).delete()
+                session.query(Reservations).filter_by(rsv_resid=rsv_resid).delete()
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
-
-    @staticmethod
-    def generate_reservation_dict_from_row(row) -> dict:
-        """
-        Generate a dictionary representing a reservation row read from database
-        @param row row
-        """
-        if row is None:
-            return None
-        '''
-        rsv_obj = {'rsv_id': row.rsv_id, 'rsv_slc_id': row.rsv_slc_id, 'rsv_resid': row.rsv_resid,
-                   'rsv_category': row.rsv_category, 'rsv_state': row.rsv_state,
-                   'rsv_pending': row.rsv_pending, 'rsv_joining': row.rsv_joining,
-                   'properties': row.properties, 'rsv_graph_node_id': row.rsv_graph_node_id}
-
-        return rsv_obj
-        '''
-        return dict(row.items())
 
     def create_reservation_filter(self, *, slice_id: str = None, graph_node_id: str = None, project_id: str = None,
                                   email: str = None, oidc_sub: str = None, rid: str = None, site: str = None) -> dict:
@@ -753,7 +715,7 @@ class PsqlDatabase:
                     rows = rows.filter(Reservations.rsv_category.in_(category))
 
                 for row in rows.all():
-                    result.append(dict(row.items()))
+                    result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -770,7 +732,7 @@ class PsqlDatabase:
         try:
             with session_scope(self.db_engine) as session:
                 for row in session.query(Reservations).filter(Reservations.rsv_resid.in_(rsv_resid_list)).all():
-                    result.append(dict(row.items()))
+                    result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -800,7 +762,7 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                prx_obj = session.query(Proxies).filter_by(Proxies.prx_act_id == act_id).filter(
+                prx_obj = session.query(Proxies).filter_by(prx_act_id=act_id).filter(
                     Proxies.prx_name == prx_name).one_or_none()
                 if prx_obj is not None:
                     prx_obj.properties = properties
@@ -824,22 +786,6 @@ class PsqlDatabase:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
-    @staticmethod
-    def generate_proxy_dict_from_row(row) -> dict:
-        """
-        Generate dictionary representing a proxy row read from database
-        """
-        if row is None:
-            return None
-
-        '''
-        prx_obj = {'prx_id': row.prx_id, 'prx_act_id': row.prx_act_id, 'prx_name': row.prx_name,
-                   'properties': row.properties}
-
-        return prx_obj
-        '''
-        return dict(row.items())
-
     def get_proxies(self, *, act_id: int) -> list:
         """
         Get Proxies
@@ -848,8 +794,8 @@ class PsqlDatabase:
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(Proxies).filter_by(Proxies.prx_act_id == act_id).all():
-                    result.append(dict(row.items()))
+                for row in session.query(Proxies).filter_by(prx_act_id=act_id).all():
+                    result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -896,26 +842,10 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                session.query(ConfigMappings).filter_by(ConfigMappings.cfgm_type == cfgm_type).delete()
+                session.query(ConfigMappings).filter_by(cfgm_type=cfgm_type).delete()
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
-
-    @staticmethod
-    def generate_config_mapping_dict_from_row(row) -> dict:
-        """
-        Generate dictionary representing a handlers mapping row read from database
-        """
-        if row is None:
-            return None
-
-        '''
-        cfg_obj = {'cfgm_id': row.cfgm_id, 'cfgm_act_id': row.cfgm_act_id, 'cfgm_type': row.cfgm_type,
-                   'properties': row.properties}
-
-        return cfg_obj
-        '''
-        return dict(row.items())
 
     def get_config_mappings(self, *, act_id: int) -> list:
         """
@@ -926,8 +856,8 @@ class PsqlDatabase:
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(ConfigMappings).filter_by(ConfigMappings.cfgm_act_id == act_id).all():
-                    result.append(dict(row.items()))
+                for row in session.query(ConfigMappings).filter_by(cfgm_act_id=act_id).all():
+                    result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -996,19 +926,6 @@ class PsqlDatabase:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
-    @staticmethod
-    def generate_client_dict_from_row(clt_obj) -> dict or None:
-        """
-        Generate dictionary representing a client row read from database
-        """
-        if clt_obj is None:
-            return None
-
-        result = {'clt_id': clt_obj.clt_id, 'clt_act_id': clt_obj.clt_act_id, 'clt_name': clt_obj.clt_name,
-                  'clt_guid': clt_obj.clt_guid, 'properties': clt_obj.properties}
-
-        return result
-
     def get_client_by_guid(self, *, clt_guid: str) -> dict:
         """
         Get Client by name
@@ -1019,10 +936,10 @@ class PsqlDatabase:
         result = None
         try:
             with session_scope(self.db_engine) as session:
-                clt_obj = session.query(Clients).filter_by(Clients.clt_guid == clt_guid).one_or_none()
+                clt_obj = session.query(Clients).filter_by(clt_guid=clt_guid).one_or_none()
                 if clt_obj is None:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Client", clt_guid))
-                result = self.generate_client_dict_from_row(clt_obj)
+                result = self.generate_dict_from_row(clt_obj)
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -1038,7 +955,7 @@ class PsqlDatabase:
         try:
             with session_scope(self.db_engine) as session:
                 for row in session.query(Clients).all():
-                    result.append(dict(row.items()))
+                    result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -1072,23 +989,6 @@ class PsqlDatabase:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
-    @staticmethod
-    def generate_unit_dict_from_row(row) -> dict:
-        """
-        Generate dictionary representing a unit row read from database
-        """
-        if row is None:
-            return None
-
-        '''
-        result = {'unt_id': row.unt_id, 'unt_uid': row.unt_uid, 'unt_unt_id': row.unt_unt_id,
-                  'unt_slc_id': row.unt_slc_id, 'unt_rsv_id': row.unt_rsv_id, 'unt_state': row.unt_state,
-                  'properties': row.properties}
-
-        return result
-        '''
-        return dict(row.items())
-
     def get_unit(self, *, unt_uid: str) -> dict or None:
         """
         Get Unit
@@ -1099,11 +999,11 @@ class PsqlDatabase:
         result = None
         try:
             with session_scope(self.db_engine) as session:
-                unt_obj = session.query(Units).filter_by(Units.unt_uid == unt_uid).one_or_none()
+                unt_obj = session.query(Units).filter_by(unt_uid=unt_uid).one_or_none()
                 if unt_obj is None:
                     self.logger.debug("Unit with guid {} not found".format(unt_uid))
                     return result
-                result = self.generate_unit_dict_from_row(unt_obj)
+                result = self.generate_dict_from_row(unt_obj)
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -1123,8 +1023,8 @@ class PsqlDatabase:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", rsv_resid))
 
             with session_scope(self.db_engine) as session:
-                for row in session.query(Units).filter_by(Units.unt_rsv_id == rsv_obj['rsv_id']).all():
-                    result.append(dict(row.items()))
+                for row in session.query(Units).filter_by(unt_rsv_id=rsv_obj['rsv_id']).all():
+                    result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -1137,7 +1037,7 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                session.query(Units).filter_by(Units.unt_uid == unt_uid).delete()
+                session.query(Units).filter_by(unt_uid=unt_uid).delete()
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -1151,7 +1051,7 @@ class PsqlDatabase:
         result = None
         try:
             with session_scope(self.db_engine) as session:
-                unt_obj = session.query(Units).filter_by(Units.unt_uid == unt_uid).one_or_none()
+                unt_obj = session.query(Units).filter_by(unt_uid=unt_uid).one_or_none()
                 if unt_obj is None:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Unit", unt_uid))
                 unt_obj.properties = properties
@@ -1188,7 +1088,7 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                dlg_obj = session.query(Delegations).filter_by(Delegations.dlg_graph_id == dlg_graph_id).one_or_none()
+                dlg_obj = session.query(Delegations).filter_by(dlg_graph_id=dlg_graph_id).one_or_none()
                 if dlg_obj is not None:
                     dlg_obj.dlg_state = dlg_state
                     dlg_obj.properties = properties
@@ -1207,25 +1107,10 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                session.query(Delegations).filter_by(Delegations.dlg_graph_id == dlg_graph_id).delete()
+                session.query(Delegations).filter_by(dlg_graph_id=dlg_graph_id).delete()
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
-
-    @staticmethod
-    def generate_delegation_dict_from_row(row) -> dict:
-        """
-        Generate dictionary representing a delegation row read from database
-        """
-        if row is None:
-            return None
-
-        '''
-        dlg_obj = {'dlg_id': row.dlg_id, 'dlg_slc_id': row.dlg_slc_id,
-                   'dlg_graph_id':row.dlg_graph_id, 'dlg_state': row.dlg_state, 'properties': row.properties}
-        return dlg_obj
-        '''
-        return dict(row.items())
 
     def get_slc_id_by_slice_id(self, *, slice_id: str) -> int:
         slices = self.get_slices(slice_id=slice_id)
@@ -1256,7 +1141,7 @@ class PsqlDatabase:
                 if states is not None:
                     rows = rows.filter(Delegations.dlg_state.in_(states))
                 for row in rows.all():
-                    result.append(dict(row.items()))
+                    result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -1271,9 +1156,9 @@ class PsqlDatabase:
         result = {}
         try:
             with session_scope(self.db_engine) as session:
-                dlg_obj = session.query(Delegations).filter_by(Delegations.dlg_graph_id == dlg_graph_id).one_or_none()
+                dlg_obj = session.query(Delegations).filter_by(dlg_graph_id=dlg_graph_id).one_or_none()
                 if dlg_obj is not None:
-                    result = self.generate_delegation_dict_from_row(dlg_obj)
+                    result = self.generate_dict_from_row(dlg_obj)
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Delegation", dlg_graph_id))
         except Exception as e:
@@ -1305,7 +1190,7 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                site_obj = session.query(Sites).filter_by(Sites.name == site_name).one_or_none()
+                site_obj = session.query(Sites).filter_by(name=site_name).one_or_none()
                 if site_obj is not None:
                     site_obj.properties = properties
                     site_obj.state = state
@@ -1322,24 +1207,10 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                session.query(Sites).filter_by(Sites.name == site_name).delete()
+                session.query(Sites).filter_by(name=site_name).delete()
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
-
-    @staticmethod
-    def generate_site_dict_from_row(row) -> dict:
-        """
-        Generate dictionary representing a site row read from database
-        """
-        if row is None:
-            return None
-        '''
-        site_obj = {'name': row.name, 'properties': row.properties}
-
-        return site_obj
-        '''
-        return dict(row.items())
 
     def get_sites(self) -> list:
         """
@@ -1349,7 +1220,7 @@ class PsqlDatabase:
         try:
             with session_scope(self.db_engine) as session:
                 for row in session.query(Sites).all():
-                    result.append(dict(row.items()))
+                    result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -1362,17 +1233,25 @@ class PsqlDatabase:
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(Sites).filter_by(Sites.name == site_name).all():
-                    result.append(dict(row.items()))
+                for row in session.query(Sites).filter_by(name=site_name).all():
+                    result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
+    @staticmethod
+    def generate_dict_from_row(row):
+        d = row.__dict__.copy()
+        for k in row.__dict__:
+            if d[k] is None:
+                d.pop(k)
+        return d
+
 
 def test():
     logger = logging.getLogger('PsqlDatabase')
-    db = PsqlDatabase(user='fabric', password='fabric', database='am', db_host='127.0.0.1:8432', logger=logger)
+    db = PsqlDatabase(user='fabric', password='fabric', database='am', db_host='127.0.0.1:5432', logger=logger)
     db.create_db()
     db.reset_db()
 
@@ -1455,10 +1334,10 @@ def test():
     print("Proxies after remove {}".format(db.get_proxies(act_id=actor_id)))
 
     # Config Mapping operations
-    db.add_config_mapping(act_id=actor_id, cfgm_type="cfg-1", properties=prop)
+    db.add_config_mapping(act_id=actor_id, cfgm_type="cfg-1", properties=pickle.dumps(prop))
     print("Config Mappings after add {}".format(db.get_config_mappings(act_id=actor_id)))
     prop['cfg-update'] = 'done'
-    db.update_config_mapping(act_id=actor_id, cfgm_type="cfg-1", properties=prop)
+    db.update_config_mapping(act_id=actor_id, cfgm_type="cfg-1", properties=pickle.dumps(prop))
     db.remove_config_mapping(cfgm_type="cfg-1")
     print("Config Mappings after remove {}".format(db.get_config_mappings(act_id=actor_id)))
 
@@ -1491,7 +1370,7 @@ def test():
 
 def test2():
     logger = logging.getLogger('PsqlDatabase')
-    db = PsqlDatabase(user='fabric', password='fabric', database='broker', db_host='152.54.15.56:5432', logger=logger)
+    db = PsqlDatabase(user='fabric', password='fabric', database='broker', db_host='127.0.0.1:5432', logger=logger)
     from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
     states = [ReservationStates.Active.value,
               ReservationStates.ActiveTicketed.value,
@@ -1552,5 +1431,5 @@ def test3():
 
 if __name__ == '__main__':
     test2()
-    test()
-    test3()
+    #test()
+    #test3()
