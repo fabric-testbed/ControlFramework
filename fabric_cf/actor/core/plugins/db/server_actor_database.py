@@ -58,7 +58,7 @@ class ServerActorDatabase(ActorDatabase, ClientDatabase):
         finally:
             self.lock.release()
 
-    def get_client(self, *, guid: ID) -> Client:
+    def get_client(self, *, guid: ID) -> Client or None:
         result = None
         try:
             self.lock.acquire()
