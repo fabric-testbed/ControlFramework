@@ -41,8 +41,8 @@ class EventType(enum.Enum):
     TickEvent = enum.auto(),
     InterActorEvent = enum.auto(),
     SyncEvent = enum.auto()
-    CloseEvent = enum.auto
-    RedeemEvent = enum.auto
+    CloseEvent = enum.auto()
+    RedeemEvent = enum.auto()
 
     def __str__(self):
         return self.name

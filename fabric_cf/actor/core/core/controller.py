@@ -60,6 +60,8 @@ class Controller(ActorMixin, ABCController):
     Implements Controller
     """
     saved_extended_renewable = ReservationSet()
+    SUPPORTED_EVENTS = [EventType.TickEvent, EventType.InterActorEvent, EventType.SyncEvent,
+                        EventType.CloseEvent, EventType.RedeemEvent]
 
     def __init__(self, *, identity: AuthToken = None, clock: ActorClock = None):
         super().__init__(auth=identity, clock=clock)
@@ -78,8 +80,6 @@ class Controller(ActorMixin, ABCController):
         # initialization status
         self.initialized = False
         self.type = ActorType.Orchestrator
-        self.SUPPORTED_EVENTS = [EventType.TickEvent, EventType.InterActorEvent, EventType.SyncEvent,
-                                 EventType.CloseEvent, EventType.RedeemEvent]
         self.asm_update_thread = AsmUpdateThread(name=f"{self.get_name()}-asm-thread", logger=self.logger)
 
     def __getstate__(self):

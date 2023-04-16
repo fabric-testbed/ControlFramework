@@ -855,6 +855,7 @@ class ActorMixin(ABCActorMixin):
             self.logger.debug("Added event to event queue {}".format(incoming.__class__.__name__))
         except Exception as e:
             self.logger.error(f"Failed to queue event: {incoming.__class__.__name__} e: {e}")
+            self.logger.error(traceback.format_exc())
 
     def queue_event_sync(self, *, incoming: ABCActorEvent):
         """
