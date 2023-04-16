@@ -75,7 +75,7 @@ class RedeemEvent(ABCActorEvent):
         self.reservations = reservations
 
     def process(self):
-        self.actor.redeem_reservations(reservations=self.reservations)
+        self.actor.redeem_reservations(rset=self.reservations)
 
 
 class CloseEvent(ABCActorEvent):
