@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import datetime
 import threading
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin

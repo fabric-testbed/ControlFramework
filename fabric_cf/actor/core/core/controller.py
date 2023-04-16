@@ -25,8 +25,6 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import queue
-import threading
 import traceback
 from typing import TYPE_CHECKING
 
@@ -37,6 +35,7 @@ from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.exceptions import ControllerException
+from fabric_cf.actor.core.core.event_processor import EventType
 from fabric_cf.actor.core.manage.controller_management_object import ControllerManagementObject
 from fabric_cf.actor.core.manage.kafka.services.kafka_controller_service import KafkaControllerService
 from fabric_cf.actor.core.proxies.kafka.services.controller_service import ControllerService
@@ -79,6 +78,8 @@ class Controller(ActorMixin, ABCController):
         # initialization status
         self.initialized = False
         self.type = ActorType.Orchestrator
+        self.SUPPORTED_EVENTS = [EventType.TickEvent, EventType.InterActorEvent, EventType.SyncEvent,
+                                 EventType.CloseEvent, EventType.RedeemEvent]
         self.asm_update_thread = AsmUpdateThread(name=f"{self.get_name()}-asm-thread", logger=self.logger)
 
     def __getstate__(self):
