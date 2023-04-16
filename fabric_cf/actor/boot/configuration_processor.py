@@ -459,7 +459,6 @@ class ConfigurationProcessor:
 
         container = ManagementUtils.connect(caller=self.actor.get_identity())
         mgmt_actor = container.get_actor(guid=actor_guid)
-        self.logger.info(f"Management Actor: {mgmt_actor} === {type(mgmt_actor)}")
         if mgmt_actor is None and container.get_last_error() is not None:
             self.logger.error(container.get_last_error())
 
