@@ -598,11 +598,31 @@ class Kernel:
         @throws Exception rare
         """
         try:
+            begin = time.time()
             reservation.lock()
+            now = time.time()
+            diff = int(now - begin)
+            if diff > 10:
+                self.logger.info(f"RES LOCK TIME: {diff} - {reservation.get_reservation_id()}")
+            begin = time.time()
             reservation.prepare_probe()
             reservation.probe_pending()
+            now = time.time()
+            diff = int(now - begin)
+            if diff > 10:
+                self.logger.info(f"RES PROBE TIME: {diff} - {reservation.get_reservation_id()}")
+            begin = time.time()
             self.plugin.get_database().update_reservation(reservation=reservation)
+            now = time.time()
+            diff = int(now - begin)
+            if diff > 10:
+                self.logger.info(f"RES DB UPDATE TIME: {diff} - {reservation.get_reservation_id()}")
+            begin = time.time()
             reservation.service_probe()
+            now = time.time()
+            diff = int(now - begin)
+            if diff > 10:
+                self.logger.info(f"RES SERVICE PROBE TIME: {diff} - {reservation.get_reservation_id()}")
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during probe pending for reservation #{reservation.get_reservation_id()}",

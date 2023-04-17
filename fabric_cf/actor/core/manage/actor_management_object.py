@@ -102,12 +102,36 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         self.set_actor(actor=actor)
 
+    def make_local_db_object(self, *, actor: ABCActorMixin):
+        # Make a read only instance to return queries to avoid locking with Actor processing
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        config = GlobalsSingleton.get().get_config()
+
+        user = config.get_global_config().get_database()[Constants.PROPERTY_CONF_DB_USER]
+        password = config.get_global_config().get_database()[Constants.PROPERTY_CONF_DB_PASSWORD]
+        db_host = config.get_global_config().get_database()[Constants.PROPERTY_CONF_DB_HOST]
+        db_name = config.get_global_config().get_database()[Constants.PROPERTY_CONF_DB_NAME]
+
+        from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
+        if actor.get_type() in [ActorType.Orchestrator, ActorType.Authority]:
+            from fabric_cf.actor.core.plugins.substrate.db.substrate_actor_database import SubstrateActorDatabase
+            self.db = SubstrateActorDatabase(user=user, password=password, database=db_name, db_host=db_host,
+                                             logger=self.logger)
+        else:
+            from fabric_cf.actor.core.plugins.db.server_actor_database import ServerActorDatabase
+            self.db = ServerActorDatabase(user=user, password=password, database=db_name, db_host=db_host,
+                                          logger=self.logger)
+        self.db.set_actor_name(name=self.actor.get_name())
+        self.db.initialize()
+        self.db.actor_added(actor=actor)
+
     def set_actor(self, *, actor: ABCActorMixin):
         if self.actor is None:
             self.actor = actor
-            self.db = actor.get_plugin().get_database()
+            #self.db = actor.get_plugin().get_database()
             self.logger = actor.get_logger()
             self.id = actor.get_guid()
+            self.make_local_db_object(actor=actor)
 
     def get_slices(self, *, slice_id: ID, caller: AuthToken, slice_name: str = None, email: str = None,
                    states: List[int] = None, project: str = None, limit: int = None,

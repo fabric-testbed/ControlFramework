@@ -115,7 +115,7 @@ class ActorDatabase(ABCDatabase):
 
     def get_actor_id_from_name(self, *, actor_name: str) -> int or None:
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             actor = self.db.get_actor(name=actor_name)
             self.actor_id = actor['act_id']
             self.actor_type = ActorType(actor['act_type'])
@@ -129,7 +129,7 @@ class ActorDatabase(ABCDatabase):
 
     def get_slice_by_id(self, *, slc_id: int) -> ABCSlice or None:
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             slice_dict = self.db.get_slice_by_id(slc_id=slc_id)
             if slice_dict is not None:
                 pickled_slice = slice_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
@@ -154,7 +154,7 @@ class ActorDatabase(ABCDatabase):
                 oidc_claim_sub = slice_object.get_owner().get_oidc_sub_claim()
                 email = slice_object.get_owner().get_email()
 
-            self.lock.acquire()
+            #self.lock.acquire()
             self.db.add_slice(slc_guid=str(slice_object.get_slice_id()),
                               slc_state=slice_object.get_state().value,
                               slc_name=slice_object.get_name(),
@@ -176,7 +176,7 @@ class ActorDatabase(ABCDatabase):
             return
         slice_object.clear_dirty()
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             properties = pickle.dumps(slice_object)
             self.db.update_slice(slc_guid=str(slice_object.get_slice_id()),
                                  slc_name=slice_object.get_name(),
@@ -192,7 +192,7 @@ class ActorDatabase(ABCDatabase):
 
     def remove_slice(self, *, slice_id: ID):
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             self.db.remove_slice(slc_guid=str(slice_id))
         finally:
             if self.lock.locked():
@@ -204,7 +204,7 @@ class ActorDatabase(ABCDatabase):
         result = []
         try:
             try:
-                self.lock.acquire()
+                #self.lock.acquire()
                 slice_type = None
                 if slc_type is not None:
                     slice_type = [x.value for x in slc_type]
@@ -230,7 +230,7 @@ class ActorDatabase(ABCDatabase):
 
     def add_reservation(self, *, reservation: ABCReservationMixin):
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             self.logger.debug("Adding reservation {} to slice {}".format(reservation.get_reservation_id(),
                                                                          reservation.get_slice()))
             properties = pickle.dumps(reservation)
@@ -267,7 +267,7 @@ class ActorDatabase(ABCDatabase):
             return
         reservation.clear_dirty()
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             self.logger.debug("Updating reservation {} in slice {}".format(reservation.get_reservation_id(),
                                                                            reservation.get_slice()))
 
@@ -293,7 +293,7 @@ class ActorDatabase(ABCDatabase):
 
     def remove_reservation(self, *, rid: ID):
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             self.logger.debug("Removing reservation {}".format(rid))
             try:
                 self.db.remove_unit(unt_uid=str(rid))
@@ -345,7 +345,7 @@ class ActorDatabase(ABCDatabase):
     def get_client_reservations(self, *, slice_id: ID = None) -> List[ABCReservationMixin]:
         result = []
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             sid = str(slice_id) if slice_id is not None else None
             res_dict_list = self.db.get_reservations(slice_id=sid,
                                                      category=[ReservationCategory.Broker.value,
@@ -363,7 +363,7 @@ class ActorDatabase(ABCDatabase):
     def get_holdings(self, *, slice_id: ID = None) -> List[ABCReservationMixin]:
         result = []
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             sid = str(slice_id) if slice_id is not None else None
             res_dict_list = self.db.get_reservations(slice_id=sid, category=[ReservationCategory.Client.value])
             if self.lock.locked():
@@ -379,7 +379,7 @@ class ActorDatabase(ABCDatabase):
     def get_broker_reservations(self) -> List[ABCReservationMixin]:
         result = []
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             res_dict_list = self.db.get_reservations(category=[ReservationCategory.Broker.value])
             if self.lock.locked():
                 self.lock.release()
@@ -394,7 +394,7 @@ class ActorDatabase(ABCDatabase):
     def get_authority_reservations(self) -> List[ABCReservationMixin]:
         result = []
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             result = []
             res_dict_list = self.db.get_reservations(category=[ReservationCategory.Authority.value])
             if self.lock.locked():
@@ -413,7 +413,7 @@ class ActorDatabase(ABCDatabase):
                          rsv_type: list[str] = None) -> List[ABCReservationMixin]:
         result = []
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             sid = str(slice_id) if slice_id is not None else None
             res_id = str(rid) if rid is not None else None
             res_dict_list = self.db.get_reservations(slice_id=sid, graph_node_id=graph_node_id,
@@ -432,7 +432,7 @@ class ActorDatabase(ABCDatabase):
     def get_reservations_by_rids(self, *, rid: List[str]) -> List[ABCReservationMixin]:
         result = []
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             res_dict_list = self.db.get_reservations_by_rids(rsv_resid_list=rid)
             if self.lock.locked():
                 self.lock.release()
@@ -446,7 +446,7 @@ class ActorDatabase(ABCDatabase):
 
     def add_broker(self, *, broker: ABCBrokerProxy):
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             self.logger.debug("Adding broker {}({})".format(broker.get_name(), broker.get_guid()))
             properties = pickle.dumps(broker)
             self.db.add_proxy(act_id=self.actor_id, prx_name=broker.get_name(), properties=properties)
@@ -456,7 +456,7 @@ class ActorDatabase(ABCDatabase):
 
     def update_broker(self, *, broker: ABCBrokerProxy):
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             self.logger.debug("Updating broker {}({})".format(broker.get_name(), broker.get_guid()))
             properties = pickle.dumps(broker)
             self.db.update_proxy(act_id=self.actor_id, prx_name=broker.get_name(), properties=properties)
@@ -466,7 +466,7 @@ class ActorDatabase(ABCDatabase):
 
     def remove_broker(self, *, broker: ABCBrokerProxy):
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             self.logger.debug("Removing broker {}({})".format(broker.get_name(), broker.get_guid()))
             self.db.remove_proxy(act_id=self.actor_id, prx_name=broker.get_name())
         finally:
@@ -478,7 +478,7 @@ class ActorDatabase(ABCDatabase):
 
     def get_brokers(self) -> List[ABCBrokerProxy] or None:
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             result = []
             broker_dict_list = self.db.get_proxies(act_id=self.actor_id)
             if broker_dict_list is not None:
@@ -499,7 +499,7 @@ class ActorDatabase(ABCDatabase):
         self.logger.debug("Adding delegation {} to slice {}".format(delegation.get_delegation_id(),
                                                                     delegation.get_slice_id()))
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             properties = pickle.dumps(delegation)
             self.db.add_delegation(slice_id=str(delegation.get_slice_id()),
                                    dlg_graph_id=str(delegation.get_delegation_id()),
@@ -518,7 +518,7 @@ class ActorDatabase(ABCDatabase):
             return
         delegation.clear_dirty()
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             self.logger.debug("Updating delegation {} in slice {}".format(delegation.get_delegation_id(),
                                                                           delegation.get_slice_id()))
             properties = pickle.dumps(delegation)
@@ -531,7 +531,7 @@ class ActorDatabase(ABCDatabase):
 
     def remove_delegation(self, *, dlg_graph_id: str):
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             self.logger.debug("Removing delegation {}".format(dlg_graph_id))
             self.db.remove_delegation(dlg_graph_id=str(dlg_graph_id))
         finally:
@@ -559,7 +559,7 @@ class ActorDatabase(ABCDatabase):
 
     def get_delegation(self, *, dlg_graph_id: str) -> ABCDelegation or None:
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             dlg_dict = self.db.get_delegation(dlg_graph_id=str(dlg_graph_id))
             if self.lock.locked():
                 self.lock.release()
@@ -574,10 +574,11 @@ class ActorDatabase(ABCDatabase):
     def get_delegations(self, *, slice_id: ID = None, states: List[int] = None) -> List[ABCDelegation]:
         result = []
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             sid = str(slice_id) if slice_id is not None else None
             dlg_dict_list = self.db.get_delegations(slc_guid=sid, states=states)
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
             result = self._load_delegation_from_db(dlg_dict_list=dlg_dict_list)
         except Exception as e:
             self.logger.error(e)
@@ -621,7 +622,7 @@ class ActorDatabase(ABCDatabase):
     def add_site(self, *, site: Site):
         self.logger.debug(f"Adding site {site.get_name()}")
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             properties = pickle.dumps(site)
             self.db.add_site(site_name=site.get_name(), state=site.get_state().value, properties=properties)
             self.logger.debug(f"Site {site.get_name()} added")
@@ -631,7 +632,7 @@ class ActorDatabase(ABCDatabase):
 
     def update_site(self, *, site: Site):
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             self.logger.debug(f"Updating site {site.get_name()}")
             properties = pickle.dumps(site)
             self.db.update_site(site_name=site.get_name(), state=site.get_state().value, properties=properties)
@@ -641,7 +642,7 @@ class ActorDatabase(ABCDatabase):
 
     def remove_site(self, *, site_name: str):
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             self.logger.debug(f"Removing site {site_name}")
             self.db.remove_site(site_name=site_name)
         finally:
@@ -662,7 +663,7 @@ class ActorDatabase(ABCDatabase):
 
     def get_site(self, *, site_name: str) -> Site or None:
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             site_list = self.db.get_site(site_name=site_name)
             if self.lock.locked():
                 self.lock.release()
@@ -679,9 +680,10 @@ class ActorDatabase(ABCDatabase):
     def get_sites(self) -> List[Site]:
         result = []
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             site_list = self.db.get_sites()
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
             result = self._load_site_from_db(site_list=site_list)
         except Exception as e:
             self.logger.error(e)
@@ -692,7 +694,7 @@ class ActorDatabase(ABCDatabase):
 
     def add_config_mapping(self, key: str, config_mapping: ConfigurationMapping):
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             properties = pickle.dumps(config_mapping)
             self.db.add_config_mapping(cfgm_type=key, act_id=self.actor_id, properties=properties)
         except Exception as e:
@@ -707,7 +709,7 @@ class ActorDatabase(ABCDatabase):
         cfg_map_list = None
         result = []
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             cfg_map_list = self.db.get_config_mappings(act_id=self.actor_id)
         except Exception as e:
             self.logger.error(e)

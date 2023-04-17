@@ -52,7 +52,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ABCSubstrateDatabase):
         try:
             if u.get_resource_type() is None:
                 raise DatabaseException(Constants.INVALID_ARGUMENT)
-            self.lock.acquire()
+            #self.lock.acquire()
             if self.get_unit(uid=u.get_id()) is not None:
                 self.logger.info("unit {} is already present in database".format(u.get_id()))
                 return
@@ -77,7 +77,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ABCSubstrateDatabase):
     def get_units(self, *, rid: ID):
         result = None
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             result = []
             unit_dict_list = self.db.get_units(rsv_resid=str(rid))
             if unit_dict_list is not None:
@@ -95,7 +95,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ABCSubstrateDatabase):
 
     def remove_unit(self, *, uid: ID):
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             self.db.remove_unit(unt_uid=str(uid))
         finally:
             if self.lock.locked():
@@ -103,7 +103,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ABCSubstrateDatabase):
 
     def update_unit(self, *, u: Unit):
         try:
-            self.lock.acquire()
+            #self.lock.acquire()
             properties = pickle.dumps(u)
             self.db.update_unit(unt_uid=str(u.get_id()), properties=properties)
         finally:
