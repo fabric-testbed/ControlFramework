@@ -40,7 +40,7 @@ from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.exceptions import ActorException
 from fabric_cf.actor.core.container.message_service import MessageService
-from fabric_cf.actor.core.core.event_processor import TickEvent, EventType, EventProcessor, CloseEvent, RedeemEvent
+from fabric_cf.actor.core.core.event_processor import TickEvent, EventType, EventProcessor
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.kernel_wrapper import KernelWrapper
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
@@ -188,10 +188,6 @@ class ActorMixin(ABCActorMixin):
     def external_tick(self, *, cycle: int):
         self.logger.info("External Tick start cycle: {}".format(cycle))
         self.queue_event(incoming=TickEvent(actor=self, cycle=cycle))
-        if self.get_type() == ActorType.Orchestrator:
-            self.queue_event(incoming=CloseEvent(actor=self))
-            self.queue_event(incoming=RedeemEvent(actor=self))
-
         self.logger.info("External Tick end cycle: {}".format(cycle))
 
     def actor_tick(self, *, cycle: int):
@@ -850,10 +846,6 @@ class ActorMixin(ABCActorMixin):
         try:
             if isinstance(incoming, TickEvent):
                 self.event_processors[EventType.TickEvent].enqueue(incoming=incoming)
-            elif isinstance(incoming, CloseEvent):
-                self.event_processors[EventType.CloseEvent].enqueue(incoming=incoming)
-            elif isinstance(incoming, RedeemEvent):
-                self.event_processors[EventType.RedeemEvent].enqueue(incoming=incoming)
             else:
                 self.event_processors[EventType.InterActorEvent].enqueue(incoming=incoming)
             self.logger.debug("Added event to event queue {}".format(incoming.__class__.__name__))

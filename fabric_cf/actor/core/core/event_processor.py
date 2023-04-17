@@ -34,15 +34,12 @@ from fabric_cf.actor.core.apis.abc_actor_event import ABCActorEvent
 from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
 from fabric_cf.actor.core.apis.abc_timer_task import ABCTimerTask
 from fabric_cf.actor.core.util.iterable_queue import IterableQueue
-from fabric_cf.actor.core.util.reservation_set import ReservationSet
 
 
 class EventType(enum.Enum):
     TickEvent = enum.auto(),
     InterActorEvent = enum.auto(),
     SyncEvent = enum.auto()
-    CloseEvent = enum.auto()
-    RedeemEvent = enum.auto()
 
     def __str__(self):
         return self.name
@@ -67,22 +64,6 @@ class ExecutionStatus:
         Mark as done
         """
         self.done = True
-
-
-class RedeemEvent(ABCActorEvent):
-    def __init__(self, *, actor):
-        self.actor = actor
-
-    def process(self):
-        self.actor.process_redeeming()
-
-
-class CloseEvent(ABCActorEvent):
-    def __init__(self, *, actor):
-        self.actor = actor
-
-    def process(self):
-        self.actor.close_expiring()
 
 
 class TickEvent(ABCActorEvent):

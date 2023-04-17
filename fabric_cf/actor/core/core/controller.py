@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import concurrent.futures
 import traceback
 from typing import TYPE_CHECKING
 
@@ -35,7 +36,6 @@ from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.exceptions import ControllerException
-from fabric_cf.actor.core.core.event_processor import EventType, CloseEvent, RedeemEvent
 from fabric_cf.actor.core.manage.controller_management_object import ControllerManagementObject
 from fabric_cf.actor.core.manage.kafka.services.kafka_controller_service import KafkaControllerService
 from fabric_cf.actor.core.proxies.kafka.services.controller_service import ControllerService
@@ -60,8 +60,6 @@ class Controller(ActorMixin, ABCController):
     Implements Controller
     """
     saved_extended_renewable = ReservationSet()
-    SUPPORTED_EVENTS = [EventType.TickEvent, EventType.InterActorEvent, EventType.SyncEvent,
-                        EventType.CloseEvent, EventType.RedeemEvent]
 
     def __init__(self, *, identity: AuthToken = None, clock: ActorClock = None):
         super().__init__(auth=identity, clock=clock)
@@ -81,6 +79,8 @@ class Controller(ActorMixin, ABCController):
         self.initialized = False
         self.type = ActorType.Orchestrator
         self.asm_update_thread = AsmUpdateThread(name=f"{self.get_name()}-asm-thread", logger=self.logger)
+        self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=2,
+                                                                 thread_name_prefix=self.__class__.__name__)
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -104,6 +104,7 @@ class Controller(ActorMixin, ABCController):
 
         del state['asm_update_thread']
         del state['event_processors']
+        del state['thread_pool']
         return state
 
     def __setstate__(self, state):
@@ -127,6 +128,8 @@ class Controller(ActorMixin, ABCController):
         self.registry = PeerRegistry()
         self.asm_update_thread = AsmUpdateThread(name=f"{self.get_name()}-asm-thread", logger=self.logger)
         self.event_processors = {}
+        self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=2,
+                                                                 thread_name_prefix=self.__class__.__name__)
 
     def set_logger(self, logger):
         super(Controller, self).set_logger(logger=logger)
@@ -318,9 +321,16 @@ class Controller(ActorMixin, ABCController):
                 self.logger.error("Could not ticket for #{} e: {}".format(reservation.get_reservation_id(), e))
 
     def tick_handler(self):
+        futures = [self.thread_pool.submit(self.close_expiring),
+                   self.thread_pool.submit(self.process_redeeming)]
         #self.close_expiring()
         #self.process_redeeming()
         self.bid()
+        # Wait for Close and Redeem processing to finish
+        while True:
+            done, not_done = concurrent.futures.wait(futures, timeout=1)
+            if not_done is None or len(not_done) == 0:
+                break
 
     def update_lease(self, *, reservation: ABCReservationMixin, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
