@@ -31,17 +31,11 @@ import traceback
 import connexion
 import prometheus_client
 import waitress
-from flask import jsonify, request
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.util.graceful_interrupt_handler import GracefulInterruptHandler
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.swagger_server import encoder
-
-
-import queue
-from waitress import serve
-import connexion
 
 
 def main():
@@ -75,30 +69,6 @@ def main():
             app = connexion.App(__name__, specification_dir='swagger_server/swagger/')
             app.json = encoder.JSONEncoder
             app.add_api('swagger.yaml', arguments={'title': 'Fabric Orchestrator API'}, pythonic_params=True)
-
-            class WaitressApp:
-                def __init__(self, max_depth):
-                    self.queue = queue.Queue()
-                    self.max_depth = max_depth
-
-                    # Add a middleware function that puts incoming requests into the task queue
-                    @app.app.before_request
-                    def enqueue_request():
-                        if request.method == "GET" and "slices" in request.path:
-                            self.queue.put(request.environ)
-
-                    # Add a middleware function that checks the task queue depth and
-                    # returns a "too busy" error if it exceeds a certain value
-                    @app.app.before_request
-                    def check_queue_depth():
-                        if self.queue.qsize() > self.max_depth:
-                            return {'message': 'Too many requests are being processed. Please try again later.'}, 503
-
-                def serve(self, port, threads):
-                    serve(app=app.app, port=port, threads=threads)
-
-            #waitress_app = WaitressApp(max_depth=8)
-            #waitress_app.serve(port=int(rest_port_str), threads=8)
 
             # Start up the server to expose the metrics.
             waitress.serve(app, port=int(rest_port_str), threads=8)
