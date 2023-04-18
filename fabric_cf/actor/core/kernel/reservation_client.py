@@ -203,6 +203,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         del state['service_pending']
         del state['suggested']
         del state['thread_lock']
+        del state['policy']
         return state
 
     def __setstate__(self, state):
@@ -218,6 +219,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         self.pending_recover = False
         self.state_transition = False
         self.service_pending = ReservationPendingStates.None_
+        self.policy = None
 
         self.suggested = True
         self.thread_lock = threading.Lock()
