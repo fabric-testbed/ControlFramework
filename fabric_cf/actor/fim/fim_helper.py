@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
 import random
+import traceback
 from typing import Tuple, List, Union
 
 from fim.graph.abc_property_graph import ABCPropertyGraph, ABCGraphImporter
