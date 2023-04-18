@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import time
 import traceback
 from datetime import datetime
 from typing import List, Dict
@@ -654,14 +655,26 @@ class KernelWrapper:
             self.logger.debug("redeem() Reservation {} is in state: {}".format(r.get_reservation_id(),
                                                                                ReservationStates(r.get_state()).name))
         '''
-
+        begin = time.time()
         target = self.kernel.validate(rid=reservation.get_reservation_id())
+        diff = int(time.time() - begin)
+        if diff > 0:
+            self.logger.info(f"REDEEM KERNEL VAL TIME: {diff}")
+        begin = time.time()
 
         if target is None:
             self.logger.error("Redeem on a reservation not registered with the kernel")
 
         target.validate_redeem()
+        diff = int(time.time() - begin)
+        if diff > 0:
+            self.logger.info(f"REDEEM VAL TIME: {diff}")
+        begin = time.time()
         self.kernel.redeem(reservation=target)
+        diff = int(time.time() - begin)
+        if diff > 0:
+            self.logger.info(f"REDEEM TIME: {diff}")
+        begin = time.time()
 
     def redeem_request(self, *, reservation: ABCAuthorityReservation, caller: AuthToken,
                        callback: ABCControllerCallbackProxy, compare_sequence_numbers: bool):

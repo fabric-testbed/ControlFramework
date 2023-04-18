@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import pickle
 import threading
+import time
 import traceback
 from datetime import datetime
 from typing import List
@@ -276,8 +277,12 @@ class ActorDatabase(ABCDatabase):
             if reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
                 site = reservation.get_resources().get_sliver().get_site()
                 rsv_type = reservation.get_resources().get_sliver().get_type().name
-
+            begin = time.time()
             properties = pickle.dumps(reservation)
+            diff = int(time.time() - begin)
+            if diff > 0:
+                self.logger.info(f"PICKLE TIME: {diff}")
+            begin = time.time()
             self.db.update_reservation(slc_guid=str(reservation.get_slice_id()),
                                        rsv_resid=str(reservation.get_reservation_id()),
                                        rsv_category=reservation.get_category().value,
@@ -287,6 +292,9 @@ class ActorDatabase(ABCDatabase):
                                        properties=properties,
                                        rsv_graph_node_id=reservation.get_graph_node_id(),
                                        site=site, rsv_type=rsv_type)
+            diff = int(time.time() - begin)
+            if diff > 0:
+                self.logger.info(f"DB TIME: {diff}")
         finally:
             if self.lock.locked():
                 self.lock.release()

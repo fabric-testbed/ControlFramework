@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 import concurrent.futures
+import time
 import traceback
 from typing import TYPE_CHECKING
 
@@ -194,11 +195,15 @@ class Controller(ActorMixin, ABCController):
         Issues close requests on all reservations scheduled for closing on the
         current cycle
         """
+        begin = time.time()
         rset = self.policy.get_closing(cycle=self.current_cycle)
 
         if rset is not None and rset.size() > 0:
             #self.logger.debug("SlottedSM close expiring for cycle {} expiring {}".format(self.current_cycle, rset))
             self.close_reservations(reservations=rset)
+        diff = int(time.time() - begin)
+        if diff > 0:
+            self.logger.info(f"Event close_expiring TIME: {diff}")
 
     def demand(self, *, rid: ID):
         if rid is None:
@@ -281,11 +286,15 @@ class Controller(ActorMixin, ABCController):
         """
         Issue redeem requests on all reservations scheduled for redeeming on the current cycle
         """
+        begin = time.time()
         rset = self.policy.get_redeeming(cycle=self.current_cycle)
 
         if rset is not None and rset.size() > 0:
             #self.logger.debug("SlottedController redeem for cycle {} redeeming {}".format(self.current_cycle, rset))
             self.redeem_reservations(rset=rset)
+        diff = int(time.time() - begin)
+        if diff > 0:
+            self.logger.info(f"Event close_expiring TIME: {diff}")
 
     def redeem(self, *, reservation: ABCControllerReservation):
         if not self.recovered:
