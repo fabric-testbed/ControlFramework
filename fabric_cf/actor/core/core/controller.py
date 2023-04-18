@@ -294,7 +294,7 @@ class Controller(ActorMixin, ABCController):
             self.redeem_reservations(rset=rset)
         diff = int(time.time() - begin)
         if diff > 0:
-            self.logger.info(f"Event close_expiring TIME: {diff}")
+            self.logger.info(f"Event redeeming TIME: {diff}")
 
     def redeem(self, *, reservation: ABCControllerReservation):
         if not self.recovered:
