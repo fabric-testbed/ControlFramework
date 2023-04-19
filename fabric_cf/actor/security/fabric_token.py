@@ -55,7 +55,7 @@ class FabricToken:
             verify_exp = self.oauth_config.get(Constants.PROPERTY_CONF_O_AUTH_VERIFY_EXP, True)
 
             if self.jwt_validator is not None:
-                self.logger.info("Validating CI Logon token")
+                self.logger.debug("Validating CI Logon token")
                 code, token_or_exception = self.jwt_validator.validate_jwt(token=self.encoded_token,
                                                                            verify_exp=verify_exp)
                 if code is not ValidateCode.VALID:

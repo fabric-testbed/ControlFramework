@@ -31,7 +31,6 @@ import traceback
 import connexion
 import prometheus_client
 import waitress
-from flask import jsonify
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.util.graceful_interrupt_handler import GracefulInterruptHandler
@@ -73,6 +72,7 @@ def main():
 
             # Start up the server to expose the metrics.
             waitress.serve(app, port=int(rest_port_str), threads=8)
+
             while True:
                 time.sleep(0.0001)
                 if h.interrupted:

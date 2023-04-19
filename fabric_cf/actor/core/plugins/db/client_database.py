@@ -60,7 +60,7 @@ class ClientDatabase:
         """
 
     @abstractmethod
-    def get_client(self, *, guid: ID) -> Client:
+    def get_client(self, *, guid: ID) -> Client or None:
         """
         Retrieves the specified client record
         @param guid client guid

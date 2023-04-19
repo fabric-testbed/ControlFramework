@@ -34,8 +34,8 @@ from typing import TYPE_CHECKING, List, Tuple
 
 from fim.slivers.attached_components import ComponentType
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.capacities_labels import Labels, ReservationInfo
-from fim.slivers.network_node import NodeSliver, NodeType
+from fim.slivers.capacities_labels import Labels
+from fim.slivers.network_node import NodeType
 from fim.slivers.network_service import NetworkServiceSliver
 
 from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
@@ -201,9 +201,9 @@ class ReservationClient(Reservation, ABCControllerReservation):
         del state['pending_recover']
         del state['state_transition']
         del state['service_pending']
-
         del state['suggested']
         del state['thread_lock']
+        del state['policy']
         return state
 
     def __setstate__(self, state):
@@ -219,6 +219,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         self.pending_recover = False
         self.state_transition = False
         self.service_pending = ReservationPendingStates.None_
+        self.policy = None
 
         self.suggested = True
         self.thread_lock = threading.Lock()
@@ -919,6 +920,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         assert self.resources.sliver is not None
         sliver = self.resources.sliver
 
+        '''
         self.logger.info(f"Redeem prepared for Sliver: {sliver}")
         if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info is not None:
             for ifs in sliver.interface_info.interfaces.values():
@@ -927,6 +929,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if isinstance(sliver, NodeSliver) and sliver.attached_components_info is not None:
             for c in sliver.attached_components_info.devices.values():
                 self.logger.info(f"Component: {c}")
+        '''
 
     def probe_join_state(self):
         """
@@ -1082,12 +1085,12 @@ class ReservationClient(Reservation, ABCControllerReservation):
             # Check dependencies
             closed_preds = 0
             for pred_state in self.get_redeem_predecessors():
-                if pred_state.get_reservation().is_closed():
+                if pred_state.get_reservation().is_closed() or pred_state.get_reservation().is_closing():
                     closed_preds += 1
 
             #if closed_preds > len(self.get_redeem_predecessors()):
             if closed_preds:
-                self.logger.debug(f"Found dependencies# {closed_preds} in closed state")
+                self.logger.debug(f"Found dependencies# {closed_preds} in closed/closing state")
                 ret_val = True
         return ret_val
 
@@ -1138,16 +1141,18 @@ class ReservationClient(Reservation, ABCControllerReservation):
         # "stick" once we enter the CloseWait state, if we never hear back from
         # the authority. There is no harm to purging a CloseWait reservation,
         # but we just leave them for now.
-        close_by_deps = self.__are_dependencies_closed()
-        if (self.pending_state == ReservationPendingStates.Closing and self.leased_resources.is_closed()) or \
-                close_by_deps:
+        #close_by_deps = self.__are_dependencies_closed()
+        #if (self.leased_resources is not None and self.pending_state == ReservationPendingStates.Closing and
+        #    self.leased_resources.is_closed()) or close_by_deps:
 
-            if not close_by_deps:
-                self.logger.debug("LEASED RESOURCES are closed")
-                msg = "local close complete"
-            else:
-                msg = "close by dependencies"
+        #    if not close_by_deps:
+        #        self.logger.debug("LEASED RESOURCES are closed")
+        #        msg = "local close complete"
+        #    else:
+        #        msg = "close by dependencies"
 
+        if self.pending_state == ReservationPendingStates.Closing:
+            msg = "local close complete"
             self.transition(prefix=msg, state=ReservationStates.CloseWait, pending=ReservationPendingStates.None_)
 
             try:
@@ -1805,7 +1810,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         except Exception as e:
             self.logger.error(f"Failed to update the ASM Graph: {e}")
             self.logger.error(traceback.format_exc())
-        self.logger.info(f"ASM TIME: {time.time() - begin:.0f}")
+        #self.logger.info(f"ASM TIME: {time.time() - begin:.0f}")
 
     def mark_close_by_ticket_review(self, *, update_data: UpdateData):
         if self.last_ticket_update is not None:

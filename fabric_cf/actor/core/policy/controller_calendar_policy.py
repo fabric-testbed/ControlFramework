@@ -72,7 +72,7 @@ class ControllerCalendarPolicy(Policy, ABCControllerPolicy):
         if rvset is None:
             return
 
-        for reservation in rvset.values():
+        for reservation in rvset.reservations.values():
             if reservation.is_failed():
                 # This reservation has failed. Remove it from the list. This is
                 # a separate case, because we may fail but not satisfy the
@@ -215,7 +215,7 @@ class ControllerCalendarPolicy(Policy, ABCControllerPolicy):
     def get_closing(self, *, cycle: int) -> ReservationSet:
         closing = self.calendar.get_closing(cycle=cycle)
         result = ReservationSet()
-        for reservation in closing.values():
+        for reservation in closing.reservations.values():
             if not reservation.is_failed():
                 self.calendar.add_pending(reservation=reservation)
                 result.add(reservation=reservation)

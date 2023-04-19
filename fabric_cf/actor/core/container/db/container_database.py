@@ -143,10 +143,10 @@ class ContainerDatabase(ABCContainerDatabase):
             self.logger.error(e)
         return result
 
-    def get_actor(self, *, actor_name: str) -> dict:
+    def get_actor(self, *, actor_name: str) -> ABCActorMixin or None:
         """
         Get Actor
-        @param name actor name
+        @param actor_name actor name
         @return actor
         """
         result = None
@@ -159,7 +159,7 @@ class ContainerDatabase(ABCContainerDatabase):
             self.logger.error(e)
         return result
 
-    def get_actor_id(self, *, actor_name: str) -> dict:
+    def get_actor_id(self, *, actor_name: str) -> int or None:
         """
         Get Actor
         @param name actor name
@@ -200,7 +200,7 @@ class ContainerDatabase(ABCContainerDatabase):
         """
         self.db.add_miscellaneous(name=self.PropertyContainer, properties=properties)
 
-    def get_container_properties(self) -> dict:
+    def get_container_properties(self) -> dict or None:
         """
         Get Container Properties
         @return properties
