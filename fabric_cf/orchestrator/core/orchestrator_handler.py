@@ -486,40 +486,51 @@ class OrchestratorHandler:
             if topology is not None and topology.graph_model is not None:
                 topology.graph_model.delete_graph()
 
-    def delete_slice(self, *, token: str, slice_id: str = None):
+    def delete_slices(self, *, token: str, slice_id: str = None, email: str = None):
         """
-        Delete User Slice
+        Delete a user slice identified by slice_id if specified otherwise all user slices within a project
         :param token Fabric Identity Token
         :param slice_id Slice Id
+        :param email Email
         :raises Raises an exception in case of failure
         """
         try:
+            failed_to_delete_slice_ids = []
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"delete_slice invoked for Controller: {controller}")
 
             slice_guid = ID(uid=slice_id) if slice_id is not None else None
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.delete)
+            project, tags, project_name = token.get_first_project()
 
-            slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email())
+            slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email(),
+                                               project=project)
 
             if slice_list is None or len(slice_list) == 0:
-                raise OrchestratorException(f"Slice# {slice_id} not found",
-                                            http_error_code=NOT_FOUND)
-
-            slice_object = next(iter(slice_list))
-
-            slice_state = SliceState(slice_object.get_state())
-            if SliceState.is_dead_or_closing(state=slice_state):
-                raise OrchestratorException(f"Slice# {slice_id} already closed",
-                                            http_error_code=BAD_REQUEST)
-
-            if not SliceState.is_stable(state=slice_state) and not SliceState.is_modified(state=slice_state):
-                self.logger.info(f"Unable to delete Slice# {slice_guid} that is not yet stable, try again later")
-                raise OrchestratorException(f"Unable to delete Slice# {slice_guid} that is not yet stable, "
-                                            f"try again later")
+                if slice_id is not None:
+                    msg = f"Slice# {slice_id} not found"
+                else:
+                    msg = f"Slices not found for user: {email}"
+                raise OrchestratorException(msg, http_error_code=NOT_FOUND)
 
             self.__authorize_request(id_token=token, action_id=ActionId.delete)
-            controller.close_reservations(slice_id=slice_guid)
+
+            for slice_object in slice_list:
+                slice_state = SliceState(slice_object.get_state())
+                if SliceState.is_dead_or_closing(state=slice_state):
+                    self.logger.debug(f"Slice# {slice_id} already closed")
+                    continue
+
+                if not SliceState.is_stable(state=slice_state) and not SliceState.is_modified(state=slice_state):
+                    self.logger.info(f"Unable to delete Slice# {slice_object.get_slice_id()} that is not yet stable, "
+                                     f"try again later")
+                    failed_to_delete_slice_ids.append(slice_object.get_slice_id())
+                    continue
+
+                controller.close_reservations(slice_id=slice_guid)
+            if len(failed_to_delete_slice_ids) > 0:
+                raise OrchestratorException(f"Unable to delete Slices {failed_to_delete_slice_ids} that are not yet "
+                                            f"stable, try again later")
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing delete_slice e: {e}")

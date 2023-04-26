@@ -369,8 +369,8 @@ paths:
         style: form
         explode: true
         schema:
-          type: string
           minLength: 3
+          type: string
       - name: ssh_key
         in: query
         description: User SSH Key
@@ -633,6 +633,63 @@ paths:
       - name: slice_id
         in: path
         description: Slice identified by universally unique identifier
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_200_ok_no_content'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_400_bad_request'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_401_unauthorized'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_403_forbidden'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_404_not_found'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_500_internal_server_error'
+      security:
+      - bearerAuth: []
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
+  /slices/delete/{email}:
+    delete:
+      tags:
+      - slices
+      summary: Delete all slices of a user identified by an email within a project.
+      description: "Request to delete all slices of a user identified by an email\
+        \ within a project. \n"
+      operationId: slices_delete_email_delete
+      parameters:
+      - name: email
+        in: path
+        description: User's email address
         required: true
         style: simple
         explode: false

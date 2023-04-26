@@ -87,6 +87,43 @@ def slices_create_post(body, name, ssh_key, lease_end_time) -> Slivers:  # noqa:
         return cors_error_response(error=e)
 
 
+def slices_delete_email_delete(email) -> Status200OkNoContent:  # noqa: E501
+    """Delete all slices of a user identified by an email within a project.
+
+    Request to delete all slices of a user identified by an email within a project.   # noqa: E501
+
+    :param email: User&#x27;s email address
+    :type email: str
+
+    :rtype: Status200OkNoContent
+    """
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+    try:
+        token = get_token()
+        handler.delete_slices(token=token, email=email)
+        success_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+
+        slice_info = Status200OkNoContentData()
+        slice_info.details = f"Slices for user '{email}' have been successfully deleted"
+        response = Status200OkNoContent()
+        response.data = [slice_info]
+        response.size = len(response.data)
+        response.status = 200
+        response.type = 'no_content'
+        return cors_success_response(response_body=response)
+
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+        return cors_error_response(error=e)
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+        return cors_error_response(error=e)
+
+
 def slices_delete_slice_id_delete(slice_id) -> Status200OkNoContent:  # noqa: E501
     """Delete slice.
 
@@ -103,7 +140,7 @@ def slices_delete_slice_id_delete(slice_id) -> Status200OkNoContent:  # noqa: E5
     received_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
     try:
         token = get_token()
-        handler.delete_slice(token=token, slice_id=slice_id)
+        handler.delete_slices(token=token, slice_id=slice_id)
         success_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
 
         slice_info = Status200OkNoContentData()
