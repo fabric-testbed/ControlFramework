@@ -502,9 +502,15 @@ class OrchestratorHandler:
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.delete)
             project, tags, project_name = fabric_token.get_first_project()
 
-            self.logger.debug(f"Get Slices: {slice_guid} {fabric_token.get_email()} ")
+            self.logger.debug(f"Get Slices: {project} {fabric_token.get_email()} ")
+            states = None
+            if slice_guid is None:
+                states = [SliceState.StableError.value,
+                          SliceState.StableOK.value,
+                          SliceState.ModifyOK.value,
+                          SliceState.ModifyError.value]
             slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email(),
-                                               project=project)
+                                               project=project, states=states)
 
             if slice_list is None or len(slice_list) == 0:
                 if slice_id is not None:
@@ -516,7 +522,7 @@ class OrchestratorHandler:
             for slice_object in slice_list:
                 slice_state = SliceState(slice_object.get_state())
                 if SliceState.is_dead_or_closing(state=slice_state):
-                    self.logger.debug(f"Slice# {slice_id} already closed")
+                    self.logger.debug(f"Slice# {slice_object.get_slice_id()} already closed")
                     continue
 
                 if not SliceState.is_stable(state=slice_state) and not SliceState.is_modified(state=slice_state):
@@ -525,7 +531,7 @@ class OrchestratorHandler:
                     failed_to_delete_slice_ids.append(slice_object.get_slice_id())
                     continue
 
-                controller.close_reservations(slice_id=slice_guid)
+                controller.close_reservations(slice_id=ID(uid=slice_object.get_slice_id()))
             if len(failed_to_delete_slice_ids) > 0:
                 raise OrchestratorException(f"Unable to delete Slices {failed_to_delete_slice_ids} that are not yet "
                                             f"stable, try again later")
