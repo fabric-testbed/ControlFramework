@@ -486,12 +486,11 @@ class OrchestratorHandler:
             if topology is not None and topology.graph_model is not None:
                 topology.graph_model.delete_graph()
 
-    def delete_slices(self, *, token: str, slice_id: str = None, email: str = None):
+    def delete_slices(self, *, token: str, slice_id: str = None):
         """
         Delete a user slice identified by slice_id if specified otherwise all user slices within a project
         :param token Fabric Identity Token
         :param slice_id Slice Id
-        :param email Email
         :raises Raises an exception in case of failure
         """
         try:
@@ -503,15 +502,14 @@ class OrchestratorHandler:
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.delete)
             project, tags, project_name = fabric_token.get_first_project()
 
+            self.logger.debug(f"Get Slices: {slice_guid} {fabric_token.get_email()} ")
             slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email(),
                                                project=project)
 
             if slice_list is None or len(slice_list) == 0:
                 if slice_id is not None:
                     msg = f"Slice# {slice_id} not found"
-                else:
-                    msg = f"Slices not found for user: {email}"
-                raise OrchestratorException(msg, http_error_code=NOT_FOUND)
+                    raise OrchestratorException(msg, http_error_code=NOT_FOUND)
 
             self.__authorize_request(id_token=token, action_id=ActionId.delete)
 

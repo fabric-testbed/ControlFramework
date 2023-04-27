@@ -1003,26 +1003,13 @@
         ]
       }
     },
-    "/slices/delete/{email}": {
+    "/slices/delete": {
       "delete": {
         "tags": [
           "slices"
         ],
-        "summary": "Delete all slices of a user identified by an email within a project.",
-        "description": "Request to delete all slices of a user identified by an email within a project. \n",
-        "parameters": [
-          {
-            "name": "email",
-            "in": "path",
-            "description": "User's email address",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "summary": "Delete all slices for a User within a project.",
+        "description": "Delete all slices for a User within a project. User identity email and project id is available in the bearer token.\n",
         "responses": {
           "200": {
             "description": "OK",

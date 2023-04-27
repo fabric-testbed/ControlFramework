@@ -29,17 +29,15 @@ def slices_create_post(body, name, ssh_key, lease_end_time=None):  # noqa: E501
     return rc.slices_create_post(body, name, ssh_key, lease_end_time)
 
 
-def slices_delete_email_delete(email):  # noqa: E501
-    """Delete all slices of a user identified by an email within a project.
+def slices_delete_delete():  # noqa: E501
+    """Delete all slices for a User within a project.
 
-    Request to delete all slices of a user identified by an email within a project.   # noqa: E501
+    Delete all slices for a User within a project. User identity email and project id is available in the bearer token.  # noqa: E501
 
-    :param email: User&#x27;s email address
-    :type email: str
 
     :rtype: Status200OkNoContent
     """
-    return 'do some magic!'
+    return rc.slices_delete_delete()
 
 
 def slices_delete_slice_id_delete(slice_id):  # noqa: E501

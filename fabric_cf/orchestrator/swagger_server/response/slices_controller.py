@@ -87,13 +87,11 @@ def slices_create_post(body, name, ssh_key, lease_end_time) -> Slivers:  # noqa:
         return cors_error_response(error=e)
 
 
-def slices_delete_email_delete(email) -> Status200OkNoContent:  # noqa: E501
-    """Delete all slices of a user identified by an email within a project.
+def slices_delete_delete():  # noqa: E501
+    """Delete all slices for a User within a project.
 
-    Request to delete all slices of a user identified by an email within a project.   # noqa: E501
+    Delete all slices for a User within a project. User identity email and project id is available in the bearer token.  # noqa: E501
 
-    :param email: User&#x27;s email address
-    :type email: str
 
     :rtype: Status200OkNoContent
     """
@@ -102,11 +100,11 @@ def slices_delete_email_delete(email) -> Status200OkNoContent:  # noqa: E501
     received_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
     try:
         token = get_token()
-        handler.delete_slices(token=token, email=email)
+        handler.delete_slices(token=token)
         success_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
 
         slice_info = Status200OkNoContentData()
-        slice_info.details = f"Slices for user '{email}' have been successfully deleted"
+        slice_info.details = f"Slices for user have been successfully deleted"
         response = Status200OkNoContent()
         response.data = [slice_info]
         response.size = len(response.data)
