@@ -501,7 +501,7 @@ class OrchestratorHandler:
 
             slice_guid = ID(uid=slice_id) if slice_id is not None else None
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.delete)
-            project, tags, project_name = token.get_first_project()
+            project, tags, project_name = fabric_token.get_first_project()
 
             slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email(),
                                                project=project)
