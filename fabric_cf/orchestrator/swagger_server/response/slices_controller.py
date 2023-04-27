@@ -34,7 +34,7 @@ from fabric_cf.orchestrator.swagger_server.models.status200_ok_no_content import
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
 from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD, SLICES_CREATE_PATH, DELETE_METHOD, \
     SLICES_DELETE_PATH, GET_METHOD, SLICES_GET_PATH, SLICES_RENEW_PATH, SLICES_GET_SLICE_ID_PATH, SLICES_MODIFY_PATH, \
-    SLICES_MODIFY_ACCEPT_PATH
+    SLICES_MODIFY_ACCEPT_PATH, SLICES_DELETE_SLICE_ID_PATH
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
@@ -135,11 +135,11 @@ def slices_delete_slice_id_delete(slice_id) -> Status200OkNoContent:  # noqa: E5
     """
     handler = OrchestratorHandler()
     logger = handler.get_logger()
-    received_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+    received_counter.labels(DELETE_METHOD, SLICES_DELETE_SLICE_ID_PATH).inc()
     try:
         token = get_token()
         handler.delete_slices(token=token, slice_id=slice_id)
-        success_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+        success_counter.labels(DELETE_METHOD, SLICES_DELETE_SLICE_ID_PATH).inc()
 
         slice_info = Status200OkNoContentData()
         slice_info.details = f"Slice '{slice_id}' has been successfully deleted"
@@ -152,11 +152,11 @@ def slices_delete_slice_id_delete(slice_id) -> Status200OkNoContent:  # noqa: E5
 
     except OrchestratorException as e:
         logger.exception(e)
-        failure_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+        failure_counter.labels(DELETE_METHOD, SLICES_DELETE_SLICE_ID_PATH).inc()
         return cors_error_response(error=e)
     except Exception as e:
         logger.exception(e)
-        failure_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+        failure_counter.labels(DELETE_METHOD, SLICES_DELETE_SLICE_ID_PATH).inc()
         return cors_error_response(error=e)
 
 
