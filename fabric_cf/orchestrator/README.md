@@ -120,7 +120,7 @@ Resource | Action | Input | Output
 `/create` | POST: Request to create slice as described in the request. Request would be a graph ML describing the requested resources. Resources may be requested to be created now or in future. On success, one or more slivers are allocated, containing resources satisfying the request, and assigned to the given slice. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of these resources asynchronously on the appropriate sites either now or in the future as requested. Experimenter can invoke get slice API to get the latest state of the requested resources. | `sliceName` Slice Name, `sshKey` SSH Key, `leaseEndTime` Lease End Time, `GraphML Representing the Slice` body | Slice Format
 `/renew/{slice_id}` | POST: Request to extend slice be renewed with their expiration extended. If possible, the orchestrator should extend the slivers to the requested expiration time, or to a sooner time if policy limits apply. | `slice_id` Slice ID, `newLeaseEndTime` New Lease End Time for the Slice | Slice Format
 `/delete/{slice_id}` | DELETE: Request to delete slice. On success, resources associated with slice or sliver are stopped if necessary, de-provisioned and un-allocated at the respective sites. | `slice_id` Slice ID | Slice Format
-`/delete/{email}` | DELETE: Request to delete all slices of a user identified by an email within a project. | `email` Email Address | Slice Format
+`/delete` | DELETE: Request to delete all slices of a user within a project. Email and Project Id information is available in the token. | | Slice Format
 
 Example: Slice format
 ```json
