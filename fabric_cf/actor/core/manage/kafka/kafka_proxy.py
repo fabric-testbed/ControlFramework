@@ -114,7 +114,7 @@ class KafkaProxy(ABCComponent):
 
         return request
 
-    def send_request(self, request: AbcMessageAvro) -> Tuple[ResultAvro, Any]:
+    def send_request(self, request: AbcMessageAvro, sync: bool = True) -> Tuple[ResultAvro, Any]:
         self.clear_last()
 
         status = ResultAvro()
@@ -127,22 +127,22 @@ class KafkaProxy(ABCComponent):
                                                                                        self.kafka_topic))
 
             if ret_val:
-                message_wrapper = self.message_processor.add_message(message=request)
+                if sync:
+                    message_wrapper = self.message_processor.add_message(message=request)
 
-                with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.MANAGEMENT_API_TIMEOUT_IN_SECONDS)
+                    with message_wrapper.condition:
+                        message_wrapper.condition.wait(Constants.MANAGEMENT_API_TIMEOUT_IN_SECONDS)
 
-                if not message_wrapper.done:
-                    self.logger.debug(Constants.MANAGEMENT_API_TIMEOUT_OCCURRED)
-                    self.message_processor.remove_message(msg_id=request.get_message_id())
-                    status.code = ErrorCodes.ErrorTransportTimeout.value
-                    status.message = ErrorCodes.ErrorTransportTimeout.interpret()
-                else:
-                    self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_INBOUND_MESSAGE.format(message_wrapper.response))
-                    status = message_wrapper.response.status
-                    if status.code == 0:
-                        rret_val = message_wrapper.response
-
+                    if not message_wrapper.done:
+                        self.logger.debug(Constants.MANAGEMENT_API_TIMEOUT_OCCURRED)
+                        self.message_processor.remove_message(msg_id=request.get_message_id())
+                        status.code = ErrorCodes.ErrorTransportTimeout.value
+                        status.message = ErrorCodes.ErrorTransportTimeout.interpret()
+                    else:
+                        self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_INBOUND_MESSAGE.format(message_wrapper.response))
+                        status = message_wrapper.response.status
+                        if status.code == 0:
+                            rret_val = message_wrapper.response
             else:
                 self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_MESSAGE_FAILED.format(
                     request.get_message_name(), self.kafka_topic))
