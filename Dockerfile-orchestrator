@@ -14,6 +14,7 @@ RUN apt-get install cron -y
 COPY docker-entrypoint.sh /usr/src/app/
 COPY fabric_cf /usr/src/app/fabric_cf
 COPY pyproject.toml /usr/src/app/
+COPY README.md /usr/src/app/
 COPY tools/cleanup.py /usr/src/app/
 COPY tools/install.sh /usr/src/app/
 
