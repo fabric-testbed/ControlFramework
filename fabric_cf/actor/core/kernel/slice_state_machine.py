@@ -246,6 +246,7 @@ class SliceStateMachine:
                 self.state = SliceState.Closing
 
         elif operation.command == SliceCommand.Reevaluate:
+            has_error = False
             if reservations is None or reservations.size() == 0:
                 return state_changed, self.state
 
@@ -259,10 +260,15 @@ class SliceStateMachine:
                                              ReservationPendingStates.Ticketing,
                                              ReservationPendingStates.Priming]:
                     bins.add(s=r.get_pending_state())
+                if not has_error and r.get_error_message() is not None and len(r.get_error_message()) > 0:
+                    has_error = True
 
             if self.state == SliceState.Nascent or self.state == SliceState.Configuring:
                 if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed):
-                    self.state = SliceState.StableOK
+                    if not has_error:
+                        self.state = SliceState.StableOK
+                    else:
+                        self.state = SliceState.StableError
 
                 if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
                                                   ReservationStates.Closed)) and \
