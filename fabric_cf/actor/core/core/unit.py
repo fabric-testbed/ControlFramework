@@ -26,6 +26,7 @@
 import threading
 from enum import Enum
 
+from fim.slivers.attached_components import ComponentType
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
@@ -512,6 +513,17 @@ class Unit(ConfigToken):
                 self.sliver.management_ip = sliver.management_ip
                 if sliver.attached_components_info is not None:
                     for device in sliver.attached_components_info.devices.values():
-                        self.sliver.attached_components_info.devices[device.get_name()].label_allocations = device.label_allocations
+                        existing_device = self.sliver.attached_components_info.devices[device.get_name()]
+                        existing_device.label_allocations = device.label_allocations
+
+                        # Copy label allocations for Interfaces
+                        if device.get_type() in [ComponentType.SmartNIC, ComponentType.SharedNIC]:
+                            ns_name = list(device.network_service_info.network_services.keys())[0]
+                            ns = device.network_service_info.network_services[ns_name]
+                            existing_ifs = existing_device.network_service_info.network_services[ns_name].interface_info.interfaces
+                            for ifs in ns.interface_info.interfaces.values():
+                                existing_ifs[ifs.get_name()].label_allocations = ifs.label_allocations
+
+                        #self.sliver.attached_components_info.devices[device.get_name()].label_allocations = device.label_allocations
         finally:
             self.lock.release()

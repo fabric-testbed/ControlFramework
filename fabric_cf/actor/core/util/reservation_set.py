@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import datetime
 import threading
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -216,9 +215,6 @@ class ReservationSet:
     def values(self) -> list:
         try:
             self.lock.acquire()
-            result = []
-            for r in self.reservations.values():
-                result.append(r)
-            return result
+            return list(self.reservations.values())
         finally:
             self.lock.release()

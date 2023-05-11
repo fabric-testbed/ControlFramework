@@ -309,7 +309,7 @@ class RPCManager:
         # Schedule a timeout
         rpc.timer = KernelTimer.schedule(queue=actor, task=ClaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_SECONDS)
         if proxy.get_logger() is not None:
-            proxy.get_logger().info(f"Timer started: {rpc.timer} for Claim")
+            proxy.get_logger().debug(f"Timer started: {rpc.timer} for Claim")
         self.enqueue(rpc=rpc)
 
     def do_reclaim_delegation(self, *, actor: ABCActorMixin, proxy: ABCBrokerProxy, delegation: ABCDelegation,
@@ -324,7 +324,7 @@ class RPCManager:
         # Schedule a timeout
         rpc.timer = KernelTimer.schedule(queue=actor, task=ReclaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_SECONDS)
         if proxy.get_logger() is not None:
-            proxy.get_logger().info(f"Timer started: {rpc.timer} for Reclaim")
+            proxy.get_logger().debug(f"Timer started: {rpc.timer} for Reclaim")
         self.enqueue(rpc=rpc)
 
     def do_ticket(self, *, actor: ABCActorMixin, proxy: ABCBrokerProxy, reservation: ABCClientReservation,
@@ -429,7 +429,7 @@ class RPCManager:
         rpc = RPCRequest(request=state, actor=actor, proxy=remote_actor, handler=handler)
         # Timer
         rpc.timer = KernelTimer.schedule(queue=actor, task=QueryTimeout(req=rpc), delay=self.QUERY_TIMEOUT_SECONDS)
-        remote_actor.get_logger().info(f"Timer started: {rpc.timer} for Query")
+        remote_actor.get_logger().debug(f"Timer started: {rpc.timer} for Query")
         self.enqueue(rpc=rpc)
 
     def do_query_result(self, *, actor: ABCActorMixin, remote_actor: ABCCallbackProxy, request_id: str,
@@ -454,7 +454,7 @@ class RPCManager:
                 if request.handler is not None:
                     rpc.set_response_handler(response_handler=request.handler)
 
-        actor.get_logger().info(f"Inbound {rpc.get_request_type()} request from "
+        actor.get_logger().debug(f"Inbound {rpc.get_request_type()} request from "
                                 f"<{rpc.get_caller().get_name()}>:{rpc.get()}")
 
         self.__log_sliver(reservation=rpc.get(), logger=actor.get_logger())
@@ -485,9 +485,9 @@ class RPCManager:
 
         else:
             actor.get_logger().debug("Added to actor queue to be processed")
-            start = time.time()
+            #start = time.time()
             actor.queue_event(incoming=IncomingRPCEvent(actor=actor, rpc=rpc))
-            actor.get_logger().info(f"Kafka Queue event: {time.time() - start:.0f}")
+            #actor.get_logger().info(f"Kafka Queue event: {time.time() - start:.0f}")
 
     def add_pending_request(self, *, guid: ID, request: RPCRequest):
         try:
@@ -530,7 +530,7 @@ class RPCManager:
     def enqueue(self, *, rpc: RPCRequest):
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         logger = GlobalsSingleton.get().get_logger()
-        logger.info(f"Outbound {rpc.get_request_type()} : {rpc.get()}")
+        logger.debug(f"Outbound {rpc.get_request_type()} : {rpc.get()}")
         self.__log_sliver(reservation=rpc.get(), logger=logger)
         if not self.started:
             logger.warning("Ignoring RPC request: container is shutting down")
@@ -569,4 +569,4 @@ class RPCManager:
                     sliver = reservation.get_resources().get_sliver()
 
             if sliver is not None:
-                logger.info(f"Sliver: {sliver_to_str(sliver=sliver)}")
+                logger.debug(f"Sliver: {sliver_to_str(sliver=sliver)}")

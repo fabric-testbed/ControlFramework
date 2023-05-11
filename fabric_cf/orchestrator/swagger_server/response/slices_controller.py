@@ -34,7 +34,7 @@ from fabric_cf.orchestrator.swagger_server.models.status200_ok_no_content import
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
 from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD, SLICES_CREATE_PATH, DELETE_METHOD, \
     SLICES_DELETE_PATH, GET_METHOD, SLICES_GET_PATH, SLICES_RENEW_PATH, SLICES_GET_SLICE_ID_PATH, SLICES_MODIFY_PATH, \
-    SLICES_MODIFY_ACCEPT_PATH
+    SLICES_MODIFY_ACCEPT_PATH, SLICES_DELETE_SLICE_ID_PATH
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
@@ -87,14 +87,11 @@ def slices_create_post(body, name, ssh_key, lease_end_time) -> Slivers:  # noqa:
         return cors_error_response(error=e)
 
 
-def slices_delete_slice_id_delete(slice_id) -> Status200OkNoContent:  # noqa: E501
-    """Delete slice.
+def slices_delete_delete():  # noqa: E501
+    """Delete all slices for a User within a project.
 
-    Request to delete slice. On success, resources associated with slice or sliver are stopped if necessary,
-    de-provisioned and un-allocated at the respective sites.  # noqa: E501
+    Delete all slices for a User within a project. User identity email and project id is available in the bearer token.  # noqa: E501
 
-    :param slice_id: Slice identified by universally unique identifier
-    :type slice_id: str
 
     :rtype: Status200OkNoContent
     """
@@ -103,11 +100,11 @@ def slices_delete_slice_id_delete(slice_id) -> Status200OkNoContent:  # noqa: E5
     received_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
     try:
         token = get_token()
-        handler.delete_slice(token=token, slice_id=slice_id)
+        handler.delete_slices(token=token)
         success_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
 
         slice_info = Status200OkNoContentData()
-        slice_info.details = f"Slice '{slice_id}' has been successfully deleted"
+        slice_info.details = f"Slices for user have been successfully deleted"
         response = Status200OkNoContent()
         response.data = [slice_info]
         response.size = len(response.data)
@@ -122,6 +119,44 @@ def slices_delete_slice_id_delete(slice_id) -> Status200OkNoContent:  # noqa: E5
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+        return cors_error_response(error=e)
+
+
+def slices_delete_slice_id_delete(slice_id) -> Status200OkNoContent:  # noqa: E501
+    """Delete slice.
+
+    Request to delete slice. On success, resources associated with slice or sliver are stopped if necessary,
+    de-provisioned and un-allocated at the respective sites.  # noqa: E501
+
+    :param slice_id: Slice identified by universally unique identifier
+    :type slice_id: str
+
+    :rtype: Status200OkNoContent
+    """
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(DELETE_METHOD, SLICES_DELETE_SLICE_ID_PATH).inc()
+    try:
+        token = get_token()
+        handler.delete_slices(token=token, slice_id=slice_id)
+        success_counter.labels(DELETE_METHOD, SLICES_DELETE_SLICE_ID_PATH).inc()
+
+        slice_info = Status200OkNoContentData()
+        slice_info.details = f"Slice '{slice_id}' has been successfully deleted"
+        response = Status200OkNoContent()
+        response.data = [slice_info]
+        response.size = len(response.data)
+        response.status = 200
+        response.type = 'no_content'
+        return cors_success_response(response_body=response)
+
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(DELETE_METHOD, SLICES_DELETE_SLICE_ID_PATH).inc()
+        return cors_error_response(error=e)
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(DELETE_METHOD, SLICES_DELETE_SLICE_ID_PATH).inc()
         return cors_error_response(error=e)
 
 

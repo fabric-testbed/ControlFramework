@@ -598,11 +598,31 @@ class Kernel:
         @throws Exception rare
         """
         try:
+            begin = time.time()
             reservation.lock()
+            now = time.time()
+            diff = int(now - begin)
+            if diff > 0:
+                self.logger.info(f"RES LOCK TIME: {diff} - {reservation.get_reservation_id()}")
+            begin = time.time()
             reservation.prepare_probe()
             reservation.probe_pending()
+            now = time.time()
+            diff = int(now - begin)
+            if diff > 0:
+                self.logger.info(f"RES PROBE TIME: {diff} - {reservation.get_reservation_id()}")
+            begin = time.time()
             self.plugin.get_database().update_reservation(reservation=reservation)
+            now = time.time()
+            diff = int(now - begin)
+            if diff > 0:
+                self.logger.info(f"RES DB UPDATE TIME: {diff} - {reservation.get_reservation_id()}")
+            begin = time.time()
             reservation.service_probe()
+            now = time.time()
+            diff = int(now - begin)
+            if diff > 0:
+                self.logger.info(f"RES SERVICE PROBE TIME: {diff} - {reservation.get_reservation_id()}")
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during probe pending for reservation #{reservation.get_reservation_id()}",
@@ -683,15 +703,31 @@ class Kernel:
         @param reservation reservation
         """
         try:
+            begin = time.time()
             reservation.lock()
+            diff = int(time.time() - begin)
+            if diff > 0:
+                self.logger.info(f"REDEEM LOCK TIME: {diff}")
+            begin = time.time()
             if reservation.can_redeem():
                 reservation.reserve(policy=self.policy)
             else:
                 raise KernelException("The current reservation state prevent it from being redeemed")
+            diff = int(time.time() - begin)
+            if diff > 0:
+                self.logger.info(f"REDEEM TIME: {diff}")
+            begin = time.time()
 
             self.plugin.get_database().update_reservation(reservation=reservation)
+            diff = int(time.time() - begin)
+            if diff > 0:
+                self.logger.info(f"REDEEM DB TIME: {diff}")
+            begin = time.time()
             if not reservation.is_failed():
                 reservation.service_reserve()
+            diff = int(time.time() - begin)
+            if diff > 0:
+                self.logger.info(f"REDEEM SERVICE TIME: {diff}")
         except Exception as e:
             self.logger.error(f"An error occurred during redeem for reservation #{reservation.get_reservation_id()} "
                               f"e: {e}")
@@ -1197,7 +1233,7 @@ class Kernel:
             begin = time.time()
             for reservation in self.reservations.values():
                 self.__probe_pending(reservation=reservation)
-            self.logger.info(f"KERNEL RES TICK TIME: {time.time() - begin:.0f}")
+            self.logger.info(f"KERNEL RES TICK TIME: {time.time() - begin:.0f} {self.reservations.size()}")
 
             begin = time.time()
             try:
@@ -1208,7 +1244,9 @@ class Kernel:
                 self.lock.release()
             self.logger.info(f"KERNEL SLC TICK TIME: {time.time() - begin:.0f}")
 
+            begin = time.time()
             self.__purge()
+            self.logger.info(f"KERNEL PURGE TICK TIME: {time.time() - begin:.0f}")
             self.check_nothing_pending()
         except Exception as e:
             self.logger.error(traceback.format_exc())

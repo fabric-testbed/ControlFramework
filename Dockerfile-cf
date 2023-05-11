@@ -10,12 +10,11 @@ EXPOSE 11000
 RUN apt-get update
 RUN apt-get install cron -y
 
-COPY requirements.txt /usr/src/app/
 COPY fabric_cf /usr/src/app/fabric_cf
 COPY tools/cleanup.py /usr/src/app/
 COPY tools/install.sh /usr/src/app/
 
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install .
 RUN mkdir -p "/etc/fabric/message_bus/schema"
 RUN mkdir -p "/etc/fabric/actor/config"
 RUN mkdir -p "/var/log/actor"

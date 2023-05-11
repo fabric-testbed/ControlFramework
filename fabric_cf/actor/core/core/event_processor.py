@@ -226,7 +226,9 @@ class EventProcessor:
                     event.execute()
                 else:
                     event.process()
-                self.logger.info(f"Event {event.__class__.__name__} TIME: {time.time() - begin:.0f}")
+                diff = int(time.time() - begin)
+                if diff > 0:
+                    self.logger.info(f"Event {event.__class__.__name__} TIME: {diff}")
             except Exception as e:
                 self.logger.error(f"Error while processing event {type(event)}, {e}")
                 self.logger.error(traceback.format_exc())

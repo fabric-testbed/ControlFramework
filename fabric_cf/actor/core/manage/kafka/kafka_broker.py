@@ -50,6 +50,7 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.apis.abc_mgmt_broker_mixin import ABCMgmtBrokerMixin
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.kafka.kafka_server_actor import KafkaServerActor
+from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.util.id import ID
 
 
@@ -136,6 +137,7 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
         request.message_id = str(ID())
         request.callback_topic = self.callback_topic
         request.rid = str(reservation)
+        request.end_time = ActorClock.to_milliseconds(when=new_end_time)
         request.sliver = sliver
 
         status, response = self.send_request(request)

@@ -321,7 +321,7 @@
             "style": "form",
             "explode": true,
             "schema": {
-              "maximum": 20,
+              "maximum": 200,
               "minimum": 1,
               "type": "integer",
               "format": "int32",
@@ -534,6 +534,7 @@
             "style": "form",
             "explode": true,
             "schema": {
+              "minLength": 3,
               "type": "string"
             }
           },
@@ -933,6 +934,82 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_200_ok_no_content"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_400_bad_request"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_401_unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_403_forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_404_not_found"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_500_internal_server_error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/slices/delete": {
+      "delete": {
+        "tags": [
+          "slices"
+        ],
+        "summary": "Delete all slices for a User within a project.",
+        "description": "Delete all slices for a User within a project. User identity email and project id is available in the bearer token.\n",
         "responses": {
           "200": {
             "description": "OK",
