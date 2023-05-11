@@ -483,7 +483,7 @@ class Kernel:
             self.register_slice(slice_object=result)
         return result
 
-    def get_reservation(self, *, rid: ID) -> ABCReservationMixin:
+    def get_reservation(self, *, rid: ID) -> ABCReservationMixin or None:
         """
         Returns the specified reservation.
         @param rid reservation id

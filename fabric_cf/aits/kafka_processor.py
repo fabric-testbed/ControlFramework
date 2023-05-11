@@ -70,15 +70,13 @@ class KafkaProcessor:
         Set up Kafka Producer and Consumer
         """
         producer_conf = {
-                Constants.BOOTSTRAP_SERVERS: "152.54.15.56:29092",
-                #Constants.BOOTSTRAP_SERVERS: "localhost:19092",
-                Constants.SECURITY_PROTOCOL: "SSL",
+                Constants.BOOTSTRAP_SERVERS: "localhost:19092",
+                Constants.SECURITY_PROTOCOL: "PLAINTEXT",
                 Constants.SSL_CA_LOCATION: "../../secrets/snakeoil-ca-1.crt",
                 Constants.SSL_CERTIFICATE_LOCATION: "../../secrets/kafkacat1-ca1-signed.pem",
                 Constants.SSL_KEY_LOCATION: "../../secrets/kafkacat1.client.key",
                 Constants.SSL_KEY_PASSWORD: "fabric",
-                #Constants.SCHEMA_REGISTRY_URL: "http://localhost:8081"
-                Constants.SCHEMA_REGISTRY_URL: "http://152.54.15.56:8081"
+                Constants.SCHEMA_REGISTRY_URL: "http://localhost:8081"
         }
 
         self.key_schema = "../actor/test/schema/key.avsc"
@@ -121,6 +119,12 @@ class KafkaProcessor:
                                     logger=self.logger, message_processor=self.message_processor, producer=self.producer)
 
             self.actor_cache[self.am_name] = mgmt_actor
+
+            mgmt_actor = KafkaActor(guid=ID(uid=self.net_am_guid), kafka_topic=self.net_am_topic, auth=self.auth,
+                                    logger=self.logger, message_processor=self.message_processor,
+                                    producer=self.producer)
+
+            self.actor_cache[self.net_am_name] = mgmt_actor
 
             mgmt_actor = KafkaActor(guid=ID(uid=self.orchestrator_guid), kafka_topic=self.orchestrator_topic,
                                     auth=self.auth, logger=self.logger, message_processor=self.message_processor,

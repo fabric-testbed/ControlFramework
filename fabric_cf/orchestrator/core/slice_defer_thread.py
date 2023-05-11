@@ -33,7 +33,6 @@ from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.iterable_queue import IterableQueue
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_slice_wrapper import OrchestratorSliceWrapper
-from fabric_cf.orchestrator.core.reservation_status_update import ReservationStatusUpdate
 
 
 class SliceDeferThread:
@@ -185,7 +184,7 @@ class SliceDeferThread:
                 self.logger.debug(f"Issuing extend for modified reservation: {rid}")
                 if not self.mgmt_actor.extend_reservation(reservation=ID(uid=rid), sliver=modified_res.sliver,
                                                           new_end_time=None, dependencies=modified_res.dependencies):
-                    self.logger.error(f"Could not demand resources: {self.mgmt_actor.get_last_error()}")
+                    self.logger.error(f"Could not extend rid: {rid} error: {self.mgmt_actor.get_last_error()}")
                     continue
                 self.logger.debug(f"Issued extend for reservation #{rid} successfully")
 
