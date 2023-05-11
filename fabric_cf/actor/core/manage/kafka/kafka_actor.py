@@ -164,10 +164,10 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
         return status.code == 0
 
-    def close_reservation(self, *, rid: ID, sync: bool = True) -> bool:
+    def close_reservation(self, *, rid: ID) -> bool:
         request = CloseReservationsAvro()
         request = self.fill_request_by_id_message(request=request, rid=rid)
-        status, response = self.send_request(request, sync=sync)
+        status, response = self.send_request(request)
 
         return status.code == 0
 
