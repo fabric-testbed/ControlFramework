@@ -121,6 +121,17 @@ time:
   # manually (true)
   time.manual: false
 
+audit:
+  name: audit
+  guid: audit-guid
+  description: audit
+  kafka-topic: audit
+  kafka-sasl-mechanism:
+  kafka-sasl-producer-username:
+  kafka-sasl-producer-password:
+  kafka-sasl-consumer-username:
+  kafka-sasl-consumer-password:
+
 actor:
   type: orchestrator
   name: orchestrator
