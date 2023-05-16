@@ -100,8 +100,25 @@ class Maintenance:
             if properties is not None:
                 s.set_properties(properties=properties)
 
-            if database.get_site(site_name=s.get_name()) is not None:
-                database.update_site(site=s)
+            existing_site = database.get_site(site_name=s.get_name())
+            # Site entry exists
+            if existing_site is not None:
+                # Site level Maintenance Update
+                if s.get_state() is not None:
+                    database.update_site(site=s)
+                # Worker level Maintenance Update
+                else:
+                    for worker_name, entry in s.get_maintenance_info().list_details():
+                        # Remove existing entry
+                        if existing_site.get_maintenance_info().get(worker_name):
+                            existing_site.get_maintenance_info().rem(worker_name)
+
+                        # Add worker entry using the new information only if worker is in Maintenance
+                        if entry.state != MaintenanceState.Active:
+                            existing_site.get_maintenance_info().add(worker_name, entry)
+                    existing_site.get_maintenance_info().finalize()
+                    database.update_site(site=existing_site)
+            # Adding Maintenance State First Time
             else:
                 database.add_site(site=s)
 
