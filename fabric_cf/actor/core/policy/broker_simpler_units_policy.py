@@ -47,6 +47,7 @@ from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservatio
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
+from fabric_cf.actor.core.container.maintenance import Maintenance
 from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicketFactory
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
@@ -508,6 +509,32 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return result
 
+    def __prune_nodes_in_maintenance(self, node_id_list: List[str], site: str, reservation: ABCBrokerReservation):
+        """
+        Prune the candidate node list to exclude the workers in Maintenance
+        @param node_id_list: Candidate Node List identified to allocate the reservation
+        @param site: Site Name
+        @param reservation: Reservation to be allocated
+        """
+        project_id = reservation.get_slice().get_project_id()
+        email = reservation.get_slice().get_owner().get_email()
+
+        nodes_to_remove = []
+        for node_id in node_id_list:
+            graph_node = self.get_network_node_from_graph(node_id=node_id)
+            status, error_message = Maintenance.is_sliver_provisioning_allowed(database=self.actor.get_plugin().get_database(),
+                                                                               project=project_id, site=site,
+                                                                               worker=graph_node.get_name(),
+                                                                               email=email)
+            if not status:
+                self.logger.info(f"Excluding {graph_node.get_name()} as allocation candidate due to {error_message}")
+                nodes_to_remove.append(node_id)
+
+        for x in nodes_to_remove:
+            node_id_list.remove(x)
+
+        return node_id_list
+
     def __find_first_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: InventoryForType,
                          reservation: ABCBrokerReservation) -> Tuple[str, BaseSliver, Any]:
         """
@@ -570,6 +597,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         """
         delegation_id = None
         node_id_list = self.__candidate_nodes(sliver=sliver)
+
+        node_id_list = self.__prune_nodes_in_maintenance(node_id_list=node_id_list,
+                                                         site=sliver.site,
+                                                         reservation=reservation)
 
         # no candidate nodes found
         if len(node_id_list) == 0:
