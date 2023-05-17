@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime, timezone
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Union
 
 from fim.slivers.maintenance_mode import MaintenanceInfo, MaintenanceState
 
@@ -92,31 +92,52 @@ class Site:
     def __str__(self):
         return f"Name: {self.name} MaintInfo: {self.maintenance_info} Properties: {self.properties}"
 
+    def clone_maintenance_info(self) -> Union[MaintenanceInfo or None]:
+        if self.maintenance_info is not None:
+            return self.maintenance_info.copy()
+        return None
+
+    def update_maintenance_info(self, maint_info: MaintenanceInfo):
+        self.maintenance_info = maint_info
+
 
 class Maintenance:
     @staticmethod
     def update_maintenance_mode(*, database: ABCDatabase, properties: Dict[str, str], sites: List[Site] = None):
+        """
+        Update Maintenance Mode at Testbed/Site/Worker Level
+        - Tesbed level Maintenance - single Site object is passed with Name = ALL
+        - Site level Maintenance - single Site object per site is passed with Name = SiteName
+        - Worker level Maintenance - single Site object per site with one entry per worker
+        @param database database
+        @param properties properties container project ids/ user emails
+        @param sites Maintenance information for the sites
+        """
         for s in sites:
+            # Set the list of allowed projects/users at the site level
             if properties is not None:
                 s.set_properties(properties=properties)
 
+            # Get Current Maintenance mode for the Site
             existing_site = database.get_site(site_name=s.get_name())
             # Site entry exists
             if existing_site is not None:
                 # Site level Maintenance Update
-                if s.get_state() is not None:
+                if s.get_maintenance_info().get(s.get_name()) is not None:
                     database.update_site(site=s)
                 # Worker level Maintenance Update
                 else:
+                    new_maint_info = existing_site.clone_maintenance_info()
                     for worker_name, entry in s.get_maintenance_info().list_details():
                         # Remove existing entry
-                        if existing_site.get_maintenance_info().get(worker_name):
-                            existing_site.get_maintenance_info().rem(worker_name)
+                        if new_maint_info.get(worker_name):
+                            new_maint_info.rem(worker_name)
 
                         # Add worker entry using the new information only if worker is in Maintenance
                         if entry.state != MaintenanceState.Active:
-                            existing_site.get_maintenance_info().add(worker_name, entry)
-                    existing_site.get_maintenance_info().finalize()
+                            new_maint_info.add(worker_name, entry)
+                    new_maint_info.finalize()
+                    existing_site.update_maintenance_info(maint_info=new_maint_info)
                     database.update_site(site=existing_site)
             # Adding Maintenance State First Time
             else:
@@ -153,9 +174,6 @@ class Maintenance:
         @return True if allowed; False otherwise
         """
         status, site = Maintenance.is_site_in_maintenance(database=database, site_name=site)
-
-        if not status:
-            return True, None
 
         projects = site.get_properties().get(Constants.PROJECT_ID)
         users = site.get_properties().get(Constants.USERS)
