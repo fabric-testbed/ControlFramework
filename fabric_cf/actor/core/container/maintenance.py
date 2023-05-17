@@ -128,6 +128,8 @@ class Maintenance:
                 # Worker level Maintenance Update
                 else:
                     new_maint_info = existing_site.clone_maintenance_info()
+                    if new_maint_info.get(s.get_name()):
+                        new_maint_info.rem(s.get_name())
                     for worker_name, entry in s.get_maintenance_info().list_details():
                         # Remove existing entry
                         if new_maint_info.get(worker_name):
