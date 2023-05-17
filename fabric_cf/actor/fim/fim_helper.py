@@ -326,7 +326,8 @@ class FimHelper:
                                 reservation_info=sliver.reservation_info,
                                 node_map=sliver.node_map,
                                 management_ip=sliver.management_ip,
-                                capacity_hints=sliver.capacity_hints)
+                                capacity_hints=sliver.capacity_hints,
+                                user_data=sliver.user_data)
             if sliver.attached_components_info is not None:
                 graph_sliver = asm_graph.build_deep_node_sliver(node_id=sliver.node_id)
                 diff = graph_sliver.diff(other_sliver=sliver)
