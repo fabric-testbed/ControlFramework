@@ -459,8 +459,6 @@ class OrchestratorSliceWrapper:
         new_topology = ExperimentTopology()
 
         new_topology.cast(asm_graph=new_slice_graph)
-        existing_topology.graph_model.log = self.logger
-        new_topology.graph_model.log = self.logger
         topology_diff = existing_topology.diff(new_topology)
 
         reservations = []

@@ -509,9 +509,6 @@ class Unit(ConfigToken):
         try:
             self.lock.acquire()
             self.sliver.set_label_allocations(sliver.get_label_allocations())
-
-            if sliver.get_user_data() is not None:
-                self.sliver.set_user_data(user_data=sliver.get_user_data())
             if isinstance(self.sliver, NodeSliver) and isinstance(sliver, NodeSliver):
                 self.sliver.management_ip = sliver.management_ip
                 if sliver.attached_components_info is not None:
