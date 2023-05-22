@@ -81,3 +81,9 @@ class HandlerBase(ABC):
         """
         Clean Restart - delete all existing VMs before start
         """
+
+    @abstractmethod
+    def poa(self):
+        """
+        POA - perform operational action on a VM
+        """

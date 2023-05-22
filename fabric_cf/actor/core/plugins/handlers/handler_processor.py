@@ -132,6 +132,16 @@ class HandlerProcessor:
         self.plugin.configuration_complete(token=unit, properties=result)
         self.logger.debug("Executing Modify completed")
 
+    def poa(self, unit: ConfigToken):
+        self.logger.debug("Executing POA")
+
+        result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_POA,
+                  Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
+                  Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
+
+        self.plugin.configuration_complete(token=unit, properties=result)
+        self.logger.debug("Executing POA completed")
+
     def set_logger(self, *, logger):
         self.logger = logger
 

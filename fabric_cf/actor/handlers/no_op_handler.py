@@ -190,3 +190,6 @@ class NoOpHandler(HandlerBase):
 
     def clean_restart(self):
         pass
+
+    def poa(self):
+        pass

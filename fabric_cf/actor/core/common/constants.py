@@ -271,6 +271,7 @@ class Constants:
     TARGET_CREATE = "create"
     TARGET_DELETE = "delete"
     TARGET_MODIFY = "modify"
+    TARGET_POA = "poa"
     TARGET_CLEAN_RESTART = "clean_restart"
 
     RSV_SLC_ID = 'rsv_slc_id'

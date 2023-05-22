@@ -195,6 +195,9 @@ class AnsibleHandlerProcessor(HandlerProcessor):
     def modify(self, unit: ConfigToken):
         self.invoke_handler(unit=unit, operation=Constants.TARGET_MODIFY)
 
+    def poa(self, unit: ConfigToken):
+        self.invoke_handler(unit=unit, operation=Constants.TARGET_POA)
+
     def delete(self, unit: ConfigToken):
         self.invoke_handler(unit=unit, operation=Constants.TARGET_DELETE)
 
@@ -285,6 +288,8 @@ class AnsibleHandlerProcessor(HandlerProcessor):
             return handler_obj.delete(unit)
         elif operation == Constants.TARGET_MODIFY:
             return handler_obj.modify(unit)
+        elif operation == Constants.TARGET_POA:
+            return handler_obj.poa(unit)
         elif operation == Constants.TARGET_CLEAN_RESTART:
             return handler_obj.clean_restart()
         else:

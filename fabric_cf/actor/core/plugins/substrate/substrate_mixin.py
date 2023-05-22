@@ -308,6 +308,29 @@ class SubstrateMixin(BasePlugin, ABCSubstrate):
         finally:
             self.logger.debug("process modify complete")
 
+    def process_poa_complete(self, *, unit: ConfigToken, properties: dict):
+        self.logger.debug("POA")
+        self.logger.debug(properties)
+
+        if self.actor.is_stopped():
+            raise PluginException(Constants.INVALID_ACTOR_STATE)
+
+        sequence = HandlerProcessor.get_action_sequence_number(properties=properties)
+        notice = None
+        if sequence != unit.get_sequence():
+            self.logger.warning("(poa complete) sequences mismatch: incoming ({}) local: ({}). "
+                                "Ignoring event.".format(sequence, unit.get_sequence()))
+            return
+        else:
+            self.logger.debug("(poa complete) incoming ({}) local: ({})".format(sequence, unit.get_sequence()))
+
+        result = HandlerProcessor.get_result_code(properties=properties)
+        msg = HandlerProcessor.get_exception_message(properties=properties)
+        if msg is None:
+            msg = HandlerProcessor.get_result_code_message(properties=properties)
+
+        self.logger.debug("process poa complete")
+
     def get_substrate_database(self) -> ABCSubstrateDatabase:
         return self.db
 
