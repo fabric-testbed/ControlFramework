@@ -142,7 +142,6 @@ class KafkaProxy(ABCComponent):
                     status = message_wrapper.response.status
                     if status.code == 0:
                         rret_val = message_wrapper.response
-
             else:
                 self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_MESSAGE_FAILED.format(
                     request.get_message_name(), self.kafka_topic))

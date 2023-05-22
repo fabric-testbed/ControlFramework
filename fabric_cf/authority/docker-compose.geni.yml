@@ -21,6 +21,7 @@ services:
       - NEO4J_dbms_connector_http_listen__address=${NEO4J_dbms_connector_http_advertised__address:-0.0.0.0:7474}
       - NEO4J_dbms_connector_https_advertised__address=${NEO4J_dbms_connector_https_advertised__address:-0.0.0.0:7473}
       - NEO4J_dbms_connector_https_listen__address=${NEO4J_dbms_connector_https_advertised__address:-0.0.0.0:7473}
+      - NEO4J_dbms_memory_pagecache_size=${NEO4J_dbms_memory_pagecache_size:-512M}
   database:
     image: fabrictestbed/postgres:12.3
     container_name: site1-am-db
@@ -51,7 +52,7 @@ services:
       network: host
       context: ../../../
       dockerfile: Dockerfile-auth
-    image: authority:1.4.5
+    image: authority:1.4.7
     container_name: site1-am
     restart: always
     depends_on:

@@ -38,6 +38,17 @@ class TestSlicesController(BaseTestCase):
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
+    def test_slices_delete_delete(self):
+        """Test case for slices_delete_delete
+
+        Delete all slices for a User within a project.
+        """
+        response = self.client.open(
+            '//slices/delete',
+            method='DELETE')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
     def test_slices_delete_slice_id_delete(self):
         """Test case for slices_delete_slice_id_delete
 
@@ -56,7 +67,7 @@ class TestSlicesController(BaseTestCase):
         """
         query_string = [('name', 'name_example'),
                         ('states', 'states_example'),
-                        ('limit', 20),
+                        ('limit', 200),
                         ('offset', 1)]
         response = self.client.open(
             '//slices',

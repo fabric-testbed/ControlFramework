@@ -25,8 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import queue
-import threading
+import concurrent.futures
+import time
 import traceback
 from typing import TYPE_CHECKING
 
@@ -80,6 +80,8 @@ class Controller(ActorMixin, ABCController):
         self.initialized = False
         self.type = ActorType.Orchestrator
         self.asm_update_thread = AsmUpdateThread(name=f"{self.get_name()}-asm-thread", logger=self.logger)
+        self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=2,
+                                                                 thread_name_prefix=self.__class__.__name__)
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -103,6 +105,7 @@ class Controller(ActorMixin, ABCController):
 
         del state['asm_update_thread']
         del state['event_processors']
+        del state['thread_pool']
         return state
 
     def __setstate__(self, state):
@@ -126,6 +129,8 @@ class Controller(ActorMixin, ABCController):
         self.registry = PeerRegistry()
         self.asm_update_thread = AsmUpdateThread(name=f"{self.get_name()}-asm-thread", logger=self.logger)
         self.event_processors = {}
+        self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=2,
+                                                                 thread_name_prefix=self.__class__.__name__)
 
     def set_logger(self, logger):
         super(Controller, self).set_logger(logger=logger)
@@ -190,11 +195,15 @@ class Controller(ActorMixin, ABCController):
         Issues close requests on all reservations scheduled for closing on the
         current cycle
         """
+        begin = time.time()
         rset = self.policy.get_closing(cycle=self.current_cycle)
 
         if rset is not None and rset.size() > 0:
-            self.logger.info("SlottedSM close expiring for cycle {} expiring {}".format(self.current_cycle, rset))
+            #self.logger.debug("SlottedSM close expiring for cycle {} expiring {}".format(self.current_cycle, rset))
             self.close_reservations(reservations=rset)
+        diff = int(time.time() - begin)
+        if diff > 0:
+            self.logger.info(f"Event close_expiring TIME: {diff}")
 
     def demand(self, *, rid: ID):
         if rid is None:
@@ -277,12 +286,15 @@ class Controller(ActorMixin, ABCController):
         """
         Issue redeem requests on all reservations scheduled for redeeming on the current cycle
         """
+        begin = time.time()
         rset = self.policy.get_redeeming(cycle=self.current_cycle)
 
         if rset is not None and rset.size() > 0:
-            self.logger.info("SlottedController redeem for cycle {} redeeming {}".format(self.current_cycle, rset))
-
+            #self.logger.debug("SlottedController redeem for cycle {} redeeming {}".format(self.current_cycle, rset))
             self.redeem_reservations(rset=rset)
+        diff = int(time.time() - begin)
+        if diff > 0:
+            self.logger.info(f"Event redeeming TIME: {diff}")
 
     def redeem(self, *, reservation: ABCControllerReservation):
         if not self.recovered:
@@ -291,7 +303,7 @@ class Controller(ActorMixin, ABCController):
             self.wrapper.redeem(reservation=reservation)
 
     def redeem_reservations(self, *, rset: ReservationSet):
-        for reservation in rset.values():
+        for reservation in rset.reservations.values():
             try:
                 if isinstance(reservation, ABCControllerReservation):
                     self.redeem(reservation=reservation)
@@ -318,9 +330,16 @@ class Controller(ActorMixin, ABCController):
                 self.logger.error("Could not ticket for #{} e: {}".format(reservation.get_reservation_id(), e))
 
     def tick_handler(self):
-        self.close_expiring()
-        self.process_redeeming()
+        futures = [self.thread_pool.submit(self.close_expiring),
+                   self.thread_pool.submit(self.process_redeeming)]
+        #self.close_expiring()
+        #self.process_redeeming()
         self.bid()
+        # Wait for Close and Redeem processing to finish
+        while True:
+            done, not_done = concurrent.futures.wait(futures, timeout=1)
+            if not_done is None or len(not_done) == 0:
+                break
 
     def update_lease(self, *, reservation: ABCReservationMixin, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():

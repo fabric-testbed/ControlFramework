@@ -68,7 +68,7 @@ class ABCClientActorManagementObject(ABC):
         """
 
     @abstractmethod
-    def extend_reservation(self, *, reservation: id, new_end_time: datetime, sliver: BaseSliver,
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver,
                            caller: AuthToken, dependencies: List[ReservationPredecessorAvro] = None) -> ResultAvro:
         """
         Extend a reservation

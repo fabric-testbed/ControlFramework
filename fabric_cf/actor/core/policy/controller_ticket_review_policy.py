@@ -84,7 +84,7 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
         @throws Exception in case of error
         """
         # add all of our pendingRedeem, so they can be checked
-        for reservation in self.pending_redeem.values():
+        for reservation in self.pending_redeem.reservations.values():
             self.calendar.add_pending(reservation=reservation)
 
         # get set of reservations that need to be redeemed
@@ -98,7 +98,7 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
             return
 
         # check the status of the Slice of each reservation
-        for reservation in my_pending.values():
+        for reservation in my_pending.reservations.values():
             slice_obj = reservation.get_slice()
             slice_id = slice_obj.get_slice_id()
 
@@ -111,7 +111,7 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
                     # examine every reservation contained within the slice,
                     # looking for either a Failed or Nascent reservation
                     # we have to look at everything in a slice once, to determine all/any Sites with failures
-                    for slice_reservation in slice_obj.get_reservations().values():
+                    for slice_reservation in slice_obj.get_reservations_list():
 
                         # If any Reservations that are being redeemed, that means the
                         # slice has already cleared TicketReview.

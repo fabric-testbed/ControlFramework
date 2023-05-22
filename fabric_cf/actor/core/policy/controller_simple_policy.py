@@ -177,12 +177,12 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
         if renewing is None or renewing.size() == 0:
             return result
 
-        self.logger.debug("Renewing = {}".format(renewing.size()))
+        #self.logger.debug("Renewing = {}".format(renewing.size()))
         for reservation in renewing.values():
-            self.logger.debug("Renewing res: {}".format(reservation))
+            #self.logger.debug("Renewing res: {}".format(reservation))
 
             if reservation.is_renewable():
-                self.logger.debug("Found a renewable reservation that needs an extension.")
+                #self.logger.debug("Found a renewable reservation that needs an extension.")
                 if reservation.is_closed() or reservation.is_closing() or reservation.is_failed():
                     self.logger.debug("Found a renewable reservation that is closing/closed/or failed")
                 else:

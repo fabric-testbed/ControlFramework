@@ -23,11 +23,12 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import time
 import traceback
 from typing import List, Dict
 
 from fabric_cf.actor.boot.configuration import ActorConfig
-from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation, DelegationState
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
 from fabric_cf.actor.core.apis.abc_timer_task import ABCTimerTask
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
@@ -40,7 +41,6 @@ from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.exceptions import ActorException
 from fabric_cf.actor.core.container.message_service import MessageService
 from fabric_cf.actor.core.core.event_processor import TickEvent, EventType, EventProcessor
-from fabric_cf.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.kernel_wrapper import KernelWrapper
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
@@ -152,19 +152,19 @@ class ActorMixin(ABCActorMixin):
     def close(self, *, reservation: ABCReservationMixin):
         if reservation is not None:
             if not self.recovered:
-                self.logger.debug("Adding reservation: {} to closing list".format(reservation.get_reservation_id()))
+                #self.logger.debug("Adding reservation: {} to closing list".format(reservation.get_reservation_id()))
                 self.closing.add(reservation=reservation)
             else:
-                self.logger.debug("Closing reservation: {}".format(reservation.get_reservation_id()))
+                #self.logger.debug("Closing reservation: {}".format(reservation.get_reservation_id()))
                 self.wrapper.close(rid=reservation.get_reservation_id())
 
     def close_slice_reservations(self, *, slice_id: ID):
         self.wrapper.close_slice_reservations(slice_id=slice_id)
 
     def close_reservations(self, *, reservations: ReservationSet):
-        for reservation in reservations.values():
+        for reservation in reservations.reservations.values():
             try:
-                self.logger.debug("Closing reservation: {}".format(reservation.get_reservation_id()))
+                #self.logger.debug("Closing reservation: {}".format(reservation.get_reservation_id()))
                 self.close(reservation=reservation)
             except Exception as e:
                 self.logger.error(traceback.format_exc())
@@ -208,15 +208,23 @@ class ActorMixin(ABCActorMixin):
             while current_cycle <= cycle:
                 self.logger.info("actor_tick: {} start".format(current_cycle))
                 self.current_cycle = current_cycle
+                begin = time.time()
                 self.policy.prepare(cycle=self.current_cycle)
+                self.logger.info(f"POLICY TIME: {time.time() - begin:.0f}")
 
                 if self.first_tick:
                     self.reset()
 
+                begin = time.time()
                 self.tick_handler()
+                self.logger.info(f"ACTOR TICK TIME: {time.time() - begin:.0f}")
+                begin = time.time()
                 self.policy.finish(cycle=self.current_cycle)
+                self.logger.info(f"POLICY FINISH TIME: {time.time() - begin:.0f}")
 
+                begin = time.time()
                 self.wrapper.tick()
+                self.logger.info(f"KERNEL TIME: {time.time() - begin:.0f}")
 
                 self.first_tick = False
                 self.logger.info("actor_tick: {} end".format(current_cycle))
@@ -843,6 +851,7 @@ class ActorMixin(ABCActorMixin):
             self.logger.debug("Added event to event queue {}".format(incoming.__class__.__name__))
         except Exception as e:
             self.logger.error(f"Failed to queue event: {incoming.__class__.__name__} e: {e}")
+            self.logger.error(traceback.format_exc())
 
     def queue_event_sync(self, *, incoming: ABCActorEvent):
         """
