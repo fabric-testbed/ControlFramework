@@ -5,7 +5,7 @@ from fabric_cf.orchestrator.swagger_server.models.status200_ok_no_content import
 from fabric_cf.orchestrator.swagger_server.response import slices_controller as rc
 
 
-def slices_create_post(body, name, ssh_key, lease_end_time=None):  # noqa: E501
+def slices_create_post(body, name, lease_end_time=None):  # noqa: E501
     """Create slice
 
     Request to create slice as described in the request. Request would be a graph ML describing the requested resources.
@@ -15,13 +15,11 @@ def slices_create_post(body, name, ssh_key, lease_end_time=None):  # noqa: E501
     resources asynchronously on the appropriate sites either now or in the future as requested. Experimenter can invoke
     get slice API to get the latest state of the requested resources.   # noqa: E501
 
-    :param body: 
+    :param body: Create new Slice
     :type body: dict | bytes
     :param name: Slice Name
     :type name: str
-    :param ssh_key: User SSH Key
-    :type ssh_key: str
-    :param lease_end_time: New Lease End Time for the Slice
+    :param lease_end_time: Lease End Time for the Slice
     :type lease_end_time: str
 
     :rtype: Slivers
@@ -54,13 +52,15 @@ def slices_delete_slice_id_delete(slice_id):  # noqa: E501
     return rc.slices_delete_slice_id_delete(slice_id)
 
 
-def slices_get(name=None, states=None, limit=None, offset=None):  # noqa: E501
+def slices_get(name=None, as_self=None, states=None, limit=None, offset=None):  # noqa: E501
     """Retrieve a listing of user slices
 
-    Retrieve a listing of user slices # noqa: E501
+    Retrieve a listing of user slices. It returns list of all slices belonging to all members in a project when &#x27;as_self&#x27; is False otherwise returns only the all user&#x27;s slices in a project. # noqa: E501
 
     :param name: Search for Slices with the name
     :type name: str
+    :param as_self: GET object as Self
+    :type as_self: bool
     :param states: Search for Slices in the specified states
     :type states: List[str]
     :param limit: maximum number of results to return per page (1 or more)
@@ -117,7 +117,7 @@ def slices_renew_slice_id_post(slice_id, lease_end_time):  # noqa: E501
     return rc.slices_renew_slice_id_post(slice_id, lease_end_time)
 
 
-def slices_slice_id_get(slice_id, graph_format):  # noqa: E501
+def slices_slice_id_get(slice_id, graph_format, as_self=None):  # noqa: E501
     """slice properties
 
     Retrieve Slice properties # noqa: E501

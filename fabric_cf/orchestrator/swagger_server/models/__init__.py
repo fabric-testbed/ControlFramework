@@ -8,6 +8,7 @@ from fabric_cf.orchestrator.swagger_server.models.resources import Resources
 from fabric_cf.orchestrator.swagger_server.models.slice import Slice
 from fabric_cf.orchestrator.swagger_server.models.slice_details import SliceDetails
 from fabric_cf.orchestrator.swagger_server.models.slices import Slices
+from fabric_cf.orchestrator.swagger_server.models.slices_post import SlicesPost
 from fabric_cf.orchestrator.swagger_server.models.sliver import Sliver
 from fabric_cf.orchestrator.swagger_server.models.slivers import Slivers
 from fabric_cf.orchestrator.swagger_server.models.status200_ok_no_content import Status200OkNoContent

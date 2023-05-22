@@ -273,7 +273,7 @@
           "slices"
         ],
         "summary": "Retrieve a listing of user slices",
-        "description": "Retrieve a listing of user slices",
+        "description": "Retrieve a listing of user slices. It returns list of all slices belonging to all members in a project when 'as_self' is False otherwise returns only the all user's slices in a project.",
         "parameters": [
           {
             "name": "name",
@@ -285,6 +285,18 @@
             "schema": {
               "minLength": 3,
               "type": "string"
+            }
+          },
+          {
+            "name": "as_self",
+            "in": "query",
+            "description": "GET object as Self",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           },
           {
@@ -432,6 +444,18 @@
             }
           },
           {
+            "name": "as_self",
+            "in": "query",
+            "description": "GET object as Self",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
             "name": "graph_format",
             "in": "query",
             "description": "graph format",
@@ -539,20 +563,9 @@
             }
           },
           {
-            "name": "ssh_key",
-            "in": "query",
-            "description": "User SSH Key",
-            "required": true,
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "lease_end_time",
             "in": "query",
-            "description": "New Lease End Time for the Slice",
+            "description": "Lease End Time for the Slice",
             "required": false,
             "style": "form",
             "explode": true,
@@ -1271,6 +1284,24 @@
   },
   "components": {
     "schemas": {
+      "slices_post": {
+        "required": [
+          "graph_model",
+          "ssh_keys"
+        ],
+        "type": "object",
+        "properties": {
+          "graph_model": {
+            "type": "string"
+          },
+          "ssh_keys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "status_200_ok_single": {
         "type": "object",
         "properties": {
@@ -1730,10 +1761,11 @@
     },
     "requestBodies": {
       "payload_slices": {
+        "description": "Create new Slice",
         "content": {
-          "text/plain": {
+          "application/json": {
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/slices_post"
             }
           }
         },
