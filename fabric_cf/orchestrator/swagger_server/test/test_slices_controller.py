@@ -66,7 +66,7 @@ class TestSlicesController(BaseTestCase):
         Retrieve a listing of user slices
         """
         query_string = [('name', 'name_example'),
-                        ('as_self', false),
+                        ('as_self', true),
                         ('states', 'states_example'),
                         ('limit', 200),
                         ('offset', 1)]
@@ -93,12 +93,12 @@ class TestSlicesController(BaseTestCase):
 
         Modify an existing slice
         """
-        body = SlicesPost()
+        body = 'body_example'
         response = self.client.open(
             '//slices/modify/{slice_id}'.format(slice_id='slice_id_example'),
             method='PUT',
             data=json.dumps(body),
-            content_type='application/json')
+            content_type='text/plain')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
@@ -120,7 +120,7 @@ class TestSlicesController(BaseTestCase):
 
         slice properties
         """
-        query_string = [('as_self', false),
+        query_string = [('as_self', true),
                         ('graph_format', 'GRAPHML')]
         response = self.client.open(
             '//slices/{slice_id}'.format(slice_id='slice_id_example'),

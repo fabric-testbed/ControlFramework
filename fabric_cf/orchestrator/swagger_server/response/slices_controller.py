@@ -26,7 +26,7 @@
 
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
-from fabric_cf.orchestrator.swagger_server.models import Status200OkNoContentData, Slice, Sliver
+from fabric_cf.orchestrator.swagger_server.models import Status200OkNoContentData, Slice, Sliver, SlicesPost
 from fabric_cf.orchestrator.swagger_server.models.slice_details import SliceDetails  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.models.slices import Slices  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.models.slivers import Slivers  # noqa: E501
@@ -38,7 +38,7 @@ from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
-def slices_create_post(body, name, ssh_key, lease_end_time) -> Slivers:  # noqa: E501
+def slices_create_post(body: SlicesPost, name, lease_end_time) -> Slivers:  # noqa: E501
     """Create slice
 
     Request to create slice as described in the request. Request would be a graph ML describing the requested resources.
@@ -49,11 +49,9 @@ def slices_create_post(body, name, ssh_key, lease_end_time) -> Slivers:  # noqa:
     invoke get slice API to get the latest state of the requested resources.   # noqa: E501
 
     :param body:
-    :type body: dict | bytes
+    :type body: SlicesPost
     :param name: Slice Name
     :type name: str
-    :param ssh_key: User SSH Key
-    :type ssh_key: str
     :param lease_end_time: New Lease End Time for the Slice
     :type lease_end_time: str
 
@@ -65,9 +63,10 @@ def slices_create_post(body, name, ssh_key, lease_end_time) -> Slivers:  # noqa:
 
     try:
         token = get_token()
-        slice_graph = body.decode("utf-8")
+        slice_graph = body.graph_model.decode("utf-8")
+        ssh_key = ','.join(body.ssh_keys)
         slivers_dict = handler.create_slice(token=token, slice_name=name, slice_graph=slice_graph,
-                                            ssh_key=ssh_key, lease_end_time=lease_end_time)
+                                            lease_end_time=lease_end_time, ssh_key=ssh_key)
         response = Slivers()
         response.data = []
         for s in slivers_dict:
@@ -160,7 +159,7 @@ def slices_delete_slice_id_delete(slice_id) -> Status200OkNoContent:  # noqa: E5
         return cors_error_response(error=e)
 
 
-def slices_get(name=None, states=None, limit=None, offset=None) -> Slices:  # noqa: E501
+def slices_get(name=None, states=None, limit=None, offset=None, as_self=True) -> Slices:  # noqa: E501
     """Retrieve a listing of user slices
 
     Retrieve a listing of user slices # noqa: E501
@@ -173,6 +172,8 @@ def slices_get(name=None, states=None, limit=None, offset=None) -> Slices:  # no
     :type limit: int
     :param offset: number of items to skip before starting to collect the result set
     :type offset: int
+    :param as_self: GET object as Self
+    :type as_self: bool
 
     :rtype: Slices
     """
@@ -181,7 +182,8 @@ def slices_get(name=None, states=None, limit=None, offset=None) -> Slices:  # no
     received_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
     try:
         token = get_token()
-        slices_dict = handler.get_slices(token=token, states=states, name=name, limit=limit, offset=offset)
+        slices_dict = handler.get_slices(token=token, states=states, name=name, limit=limit, offset=offset,
+                                         as_self=as_self)
         response = Slices()
         response.data = []
         response.type = 'slices'
@@ -319,7 +321,7 @@ def slices_renew_slice_id_post(slice_id, lease_end_time) -> Status200OkNoContent
         return cors_error_response(error=e)
 
 
-def slices_slice_id_get(slice_id, graph_format) -> SliceDetails:  # noqa: E501
+def slices_slice_id_get(slice_id, graph_format, as_self=True) -> SliceDetails:  # noqa: E501
     """slice properties
 
     Retrieve Slice properties # noqa: E501
@@ -328,6 +330,8 @@ def slices_slice_id_get(slice_id, graph_format) -> SliceDetails:  # noqa: E501
     :type slice_id: str
     :param graph_format: graph format
     :type graph_format: str
+    :param as_self: GET object as Self
+    :type as_self: bool
 
     :rtype: SliceDetails
     """
@@ -336,7 +340,8 @@ def slices_slice_id_get(slice_id, graph_format) -> SliceDetails:  # noqa: E501
     received_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
     try:
         token = get_token()
-        value = handler.get_slice_graph(token=token, slice_id=slice_id, graph_format_str=graph_format)
+        value = handler.get_slice_graph(token=token, slice_id=slice_id, graph_format_str=graph_format,
+                                        as_self=as_self)
         slice_object = Slice().from_dict(value)
         response = SliceDetails(data=[slice_object], size=1)
         response.type = 'slice_details'

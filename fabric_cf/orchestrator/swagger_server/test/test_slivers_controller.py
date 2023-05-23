@@ -22,7 +22,8 @@ class TestSliversController(BaseTestCase):
 
         Retrieve a listing of user slivers
         """
-        query_string = [('slice_id', 'slice_id_example')]
+        query_string = [('slice_id', 'slice_id_example'),
+                        ('as_self', true)]
         response = self.client.open(
             '//slivers',
             method='GET',
@@ -35,7 +36,8 @@ class TestSliversController(BaseTestCase):
 
         slivers properties
         """
-        query_string = [('slice_id', 'slice_id_example')]
+        query_string = [('slice_id', 'slice_id_example'),
+                        ('as_self', true)]
         response = self.client.open(
             '//slivers/{sliver_id}'.format(sliver_id='sliver_id_example'),
             method='GET',

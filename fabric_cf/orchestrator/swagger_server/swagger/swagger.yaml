@@ -202,7 +202,7 @@ paths:
         explode: true
         schema:
           type: boolean
-          default: false
+          default: true
       - name: states
         in: query
         description: Search for Slices in the specified states
@@ -312,7 +312,7 @@ paths:
         explode: true
         schema:
           type: boolean
-          default: false
+          default: true
       - name: graph_format
         in: query
         description: graph format
@@ -400,7 +400,7 @@ paths:
         schema:
           type: string
       requestBody:
-        $ref: '#/components/requestBodies/payload_slices'
+        $ref: '#/components/requestBodies/payload_slices_create'
       responses:
         "200":
           description: OK
@@ -468,7 +468,7 @@ paths:
         schema:
           type: string
       requestBody:
-        $ref: '#/components/requestBodies/payload_slices'
+        $ref: '#/components/requestBodies/payload_slices_modify'
       responses:
         "200":
           description: OK
@@ -754,6 +754,15 @@ paths:
         explode: true
         schema:
           type: string
+      - name: as_self
+        in: query
+        description: GET object as Self
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: true
       responses:
         "200":
           description: OK
@@ -818,6 +827,15 @@ paths:
         explode: false
         schema:
           type: string
+      - name: as_self
+        in: query
+        description: GET object as Self
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: true
       responses:
         "200":
           description: OK
@@ -1178,7 +1196,14 @@ components:
         model:
           type: string
   requestBodies:
-    payload_slices:
+    payload_slices_modify:
+      description: Modify a Slice
+      content:
+        text/plain:
+          schema:
+            type: string
+      required: true
+    payload_slices_create:
       description: Create new Slice
       content:
         application/json:
