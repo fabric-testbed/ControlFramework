@@ -63,9 +63,8 @@ def slices_create_post(body: SlicesPost, name, lease_end_time) -> Slivers:  # no
 
     try:
         token = get_token()
-        slice_graph = body.graph_model.decode("utf-8")
         ssh_key = ','.join(body.ssh_keys)
-        slivers_dict = handler.create_slice(token=token, slice_name=name, slice_graph=slice_graph,
+        slivers_dict = handler.create_slice(token=token, slice_name=name, slice_graph=body.graph_model,
                                             lease_end_time=lease_end_time, ssh_key=ssh_key)
         response = Slivers()
         response.data = []
