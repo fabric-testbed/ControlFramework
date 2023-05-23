@@ -324,12 +324,13 @@ class OrchestratorHandler:
                 new_slice_object.unlock()
             self.logger.info(f"OH : TIME= {time.time() - start:.0f}")
 
-    def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None) -> List[dict]:
+    def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None, as_self: bool = True) -> List[dict]:
         """
         Get Slivers for a Slice
         :param token Fabric Identity Token
         :param slice_id Slice Id
         :param sliver_id Sliver Id
+        :param as_self flag; True - return calling user's slivers otherwise, return all slivers in the project
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
         """
@@ -342,8 +343,12 @@ class OrchestratorHandler:
 
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
-            reservations = controller.get_reservations(slice_id=slice_guid, rid=rid, email=fabric_token.get_email(),
-                                                       oidc_claim_sub=fabric_token.get_subject())
+            # Filter slices based on user's email only when querying as_self
+            email = fabric_token.get_email()
+            if not as_self:
+                email = None
+
+            reservations = controller.get_reservations(slice_id=slice_guid, rid=rid, email=email)
             if reservations is None:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
@@ -363,7 +368,8 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing get_slivers e: {e}")
             raise e
 
-    def get_slices(self, *, token: str, states: List[str], name: str, limit: int, offset: int) -> List[dict]:
+    def get_slices(self, *, token: str, states: List[str], name: str, limit: int, offset: int,
+                   as_self: bool = True) -> List[dict]:
         """
         Get User Slices
         :param token Fabric Identity Token
@@ -371,6 +377,7 @@ class OrchestratorHandler:
         :param name Slice name
         :param limit Number of slices to return
         :param offset Offset
+        :param as_self flag; True - return calling user's slices otherwise, return all slices in the project
         :raises Raises an exception in case of failure
         :returns List of Slices on success
         """
@@ -386,7 +393,14 @@ class OrchestratorHandler:
             project = None
             if len(projects) == 1:
                 project, tags, project_name = fabric_token.get_first_project()
-            slice_list = controller.get_slices(states=slice_states, email=fabric_token.get_email(), project=project,
+            else:
+                as_self = True
+
+            # Filter slices based on user's email only when querying as_self
+            email = fabric_token.get_email()
+            if not as_self:
+                email = None
+            slice_list = controller.get_slices(states=slice_states, email=email, project=project,
                                                slice_name=name, limit=limit, offset=offset)
             return ResponseBuilder.get_slice_summary(slice_list=slice_list)
         except Exception as e:
@@ -584,12 +598,13 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing modify_accept e: {e}")
             raise e
 
-    def get_slice_graph(self, *, token: str, slice_id: str, graph_format_str: str) -> dict:
+    def get_slice_graph(self, *, token: str, slice_id: str, graph_format_str: str, as_self: bool) -> dict:
         """
         Get User Slice
         :param token Fabric Identity Token
         :param slice_id Slice Id
         :param graph_format_str
+        :param as_self flag; True - return calling user's slices otherwise, return all slices in the project
         :raises Raises an exception in case of failure
         :returns Slice Graph on success
         """
@@ -599,9 +614,14 @@ class OrchestratorHandler:
 
             slice_guid = ID(uid=slice_id) if slice_id is not None else None
 
-            self.__authorize_request(id_token=token, action_id=ActionId.query)
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
-            slice_list = controller.get_slices(slice_id=slice_guid)
+            # Filter slices based on user's email only when querying as_self
+            email = fabric_token.get_email()
+            if not as_self:
+                email = None
+
+            slice_list = controller.get_slices(slice_id=slice_guid, email=email)
             if slice_list is None or len(slice_list) == 0:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
