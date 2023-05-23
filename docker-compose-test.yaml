@@ -70,7 +70,7 @@ services:
        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-fabric}
        - PGDATA=${PGDATA:-/var/lib/postgresql/data}
   neo4j1:
-    image: fabrictestbed/neo4j-apoc:4.0.3
+    image: fabrictestbed/neo4j-apoc:5.3.0
     container_name: neo4j1
     user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
     restart: always
@@ -93,7 +93,7 @@ services:
       - NEO4J_dbms_connector_https_advertised__address=0.0.0.0:7473
       - NEO4J_dbms_connector_https_listen__address=0.0.0.0:7473
   neo4j2:
-    image: fabrictestbed/neo4j-apoc:4.0.3
+    image: fabrictestbed/neo4j-apoc:5.3.0
     container_name: neo4j2
     user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
     restart: always
@@ -116,7 +116,7 @@ services:
       - NEO4J_dbms_connector_https_advertised__address=0.0.0.0:8473
       - NEO4J_dbms_connector_https_listen__address=0.0.0.0:8473
   neo4j3:
-    image: fabrictestbed/neo4j-apoc:4.0.3
+    image: fabrictestbed/neo4j-apoc:5.3.0
     container_name: neo4j3
     user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
     restart: always
@@ -139,7 +139,7 @@ services:
       - NEO4J_dbms_connector_https_advertised__address=0.0.0.0:9473
       - NEO4J_dbms_connector_https_listen__address=0.0.0.0:9473
   neo4j4:
-    image: fabrictestbed/neo4j-apoc:4.0.3
+    image: fabrictestbed/neo4j-apoc:5.3.0
     container_name: neo4j4
     user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
     restart: always
@@ -162,7 +162,7 @@ services:
       - NEO4J_dbms_connector_https_advertised__address=0.0.0.0:6473
       - NEO4J_dbms_connector_https_listen__address=0.0.0.0:6473
   neo4j5:
-    image: fabrictestbed/neo4j-apoc:4.0.3
+    image: fabrictestbed/neo4j-apoc:5.3.0
     container_name: neo4j5
     user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
     restart: always

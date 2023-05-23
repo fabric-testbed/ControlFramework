@@ -16,7 +16,7 @@ services:
       - ./certs/privkey.pem:/etc/ssl/private.pem
     restart: always
   neo4j:
-    image: fabrictestbed/neo4j-apoc:4.0.3
+    image: fabrictestbed/neo4j-apoc:5.3.0
     container_name: orchestrator-neo4j
     restart: always
     user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
