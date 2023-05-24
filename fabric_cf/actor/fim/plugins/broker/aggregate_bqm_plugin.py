@@ -34,7 +34,7 @@ from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
 from fim.graph.resources.abc_bqm import ABCBQMPropertyGraph
 from fim.graph.networkx_property_graph import NetworkXGraphImporter
 from fim.graph.resources.networkx_abqm import NetworkXAggregateBQM
-from fim.slivers.capacities_labels import Capacities
+from fim.slivers.capacities_labels import Capacities, Flags
 from fim.slivers.delegations import DelegationFormat
 from fim.slivers.maintenance_mode import MaintenanceInfo, MaintenanceEntry, MaintenanceState
 from fim.slivers.network_node import CompositeNodeSliver, NodeType
@@ -137,6 +137,7 @@ class AggregatedBQMPlugin:
             return cbm.clone_graph(new_graph_id=str(uuid.uuid4()))
 
         # do a one-pass aggregation of servers, their components and interfaces
+        # and some flags (e.g. PTP availability)
         # this includes facilities
         nnodes = cbm.get_all_nodes_by_class(label=ABCPropertyGraph.CLASS_NetworkNode)
         slivers_by_site = defaultdict(list)
@@ -172,6 +173,7 @@ class AggregatedBQMPlugin:
             site_sliver.maintenance_info = self.__site_maintenance_info(site_name=s)
 
             loc = None
+            ptp = False
             for sliver in ls:
                 if sliver.get_type() != NodeType.Server:
                     # skipping NAS, Facility and dataplane switches
@@ -190,6 +192,11 @@ class AggregatedBQMPlugin:
                 # get the location if available
                 if loc is None:
                     loc = sliver.get_location()
+
+                # look at flags
+                flags = sliver.get_flags()
+                if flags and not ptp and flags.ptp:
+                    ptp = True
 
                 # calculate available node capacities based on delegations
                 if sliver.get_capacity_delegations() is not None:
@@ -221,6 +228,7 @@ class AggregatedBQMPlugin:
             # set location to whatever is available
             site_sliver.set_location(loc)
             site_sliver.set_site(s)
+            site_sliver.set_flags(Flags(ptp=ptp))
 
             # create a Composite node for every site
             site_to_composite_node_id[s] = site_sliver.node_id

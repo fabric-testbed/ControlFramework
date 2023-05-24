@@ -273,7 +273,7 @@
           "slices"
         ],
         "summary": "Retrieve a listing of user slices",
-        "description": "Retrieve a listing of user slices",
+        "description": "Retrieve a listing of user slices. It returns list of all slices belonging to all members in a project when 'as_self' is False otherwise returns only the all user's slices in a project.",
         "parameters": [
           {
             "name": "name",
@@ -285,6 +285,18 @@
             "schema": {
               "minLength": 3,
               "type": "string"
+            }
+          },
+          {
+            "name": "as_self",
+            "in": "query",
+            "description": "GET object as Self",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "default": true
             }
           },
           {
@@ -432,6 +444,18 @@
             }
           },
           {
+            "name": "as_self",
+            "in": "query",
+            "description": "GET object as Self",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          {
             "name": "graph_format",
             "in": "query",
             "description": "graph format",
@@ -539,20 +563,9 @@
             }
           },
           {
-            "name": "ssh_key",
-            "in": "query",
-            "description": "User SSH Key",
-            "required": true,
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "lease_end_time",
             "in": "query",
-            "description": "New Lease End Time for the Slice",
+            "description": "Lease End Time for the Slice",
             "required": false,
             "style": "form",
             "explode": true,
@@ -562,7 +575,7 @@
           }
         ],
         "requestBody": {
-          "$ref": "#/components/requestBodies/payload_slices"
+          "$ref": "#/components/requestBodies/payload_slices_create"
         },
         "responses": {
           "200": {
@@ -654,7 +667,7 @@
           }
         ],
         "requestBody": {
-          "$ref": "#/components/requestBodies/payload_slices"
+          "$ref": "#/components/requestBodies/payload_slices_modify"
         },
         "responses": {
           "200": {
@@ -1097,6 +1110,18 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "as_self",
+            "in": "query",
+            "description": "GET object as Self",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
           }
         ],
         "responses": {
@@ -1197,6 +1222,18 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "as_self",
+            "in": "query",
+            "description": "GET object as Self",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
           }
         ],
         "responses": {
@@ -1271,6 +1308,24 @@
   },
   "components": {
     "schemas": {
+      "slices_post": {
+        "required": [
+          "graph_model",
+          "ssh_keys"
+        ],
+        "type": "object",
+        "properties": {
+          "graph_model": {
+            "type": "string"
+          },
+          "ssh_keys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "status_200_ok_single": {
         "type": "object",
         "properties": {
@@ -1729,11 +1784,23 @@
       }
     },
     "requestBodies": {
-      "payload_slices": {
+      "payload_slices_modify": {
+        "description": "Modify a Slice",
         "content": {
           "text/plain": {
             "schema": {
               "type": "string"
+            }
+          }
+        },
+        "required": true
+      },
+      "payload_slices_create": {
+        "description": "Create new Slice",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/slices_post"
             }
           }
         },

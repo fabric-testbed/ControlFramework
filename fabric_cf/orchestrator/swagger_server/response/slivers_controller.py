@@ -33,13 +33,15 @@ from fabric_cf.orchestrator.swagger_server.response.constants import GET_METHOD,
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
-def slivers_get(slice_id) -> Slivers:  # noqa: E501
+def slivers_get(slice_id, as_self = True) -> Slivers:  # noqa: E501
     """Retrieve a listing of user slivers
 
     Retrieve a listing of user slivers # noqa: E501
 
     :param slice_id: Slice identifier as UUID
     :type slice_id: str
+    :param as_self: GET object as Self
+    :type as_self: bool
 
     :rtype: Slivers
     """
@@ -48,7 +50,7 @@ def slivers_get(slice_id) -> Slivers:  # noqa: E501
     received_counter.labels(GET_METHOD, SLIVERS_GET_PATH).inc()
     try:
         token = get_token()
-        slivers_dict = handler.get_slivers(slice_id=slice_id, token=token)
+        slivers_dict = handler.get_slivers(slice_id=slice_id, token=token, as_self=as_self)
         response = Slivers()
         response.data = []
         for s in slivers_dict:
@@ -68,7 +70,7 @@ def slivers_get(slice_id) -> Slivers:  # noqa: E501
         return cors_error_response(error=e)
 
 
-def slivers_sliver_id_get(slice_id, sliver_id) -> Slivers:  # noqa: E501
+def slivers_sliver_id_get(slice_id, sliver_id, as_self = True) -> Slivers:  # noqa: E501
     """slivers properties
 
     Retrieve Sliver properties # noqa: E501
@@ -77,6 +79,8 @@ def slivers_sliver_id_get(slice_id, sliver_id) -> Slivers:  # noqa: E501
     :type slice_id: str
     :param sliver_id: Sliver identified by universally unique identifier
     :type sliver_id: str
+    :param as_self: GET object as Self
+    :type as_self: bool
 
     :rtype: Slivers
     """
@@ -85,7 +89,7 @@ def slivers_sliver_id_get(slice_id, sliver_id) -> Slivers:  # noqa: E501
     received_counter.labels(GET_METHOD, SLIVERS_GET_SLIVER_ID_PATH).inc()
     try:
         token = get_token()
-        slivers_dict = handler.get_slivers(slice_id=slice_id, token=token, sliver_id=sliver_id)
+        slivers_dict = handler.get_slivers(slice_id=slice_id, token=token, sliver_id=sliver_id, as_self=as_self)
         response = Slivers()
         response.data = []
         for s in slivers_dict:
