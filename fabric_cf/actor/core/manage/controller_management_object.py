@@ -125,6 +125,9 @@ class ControllerManagementObject(ActorManagementObject, ABCClientActorManagement
     def modify_reservation(self, *, rid: ID, modified_sliver: BaseSliver, caller: AuthToken) -> ResultAvro:
         return self.client_helper.modify_reservation(rid=rid, modified_sliver=modified_sliver, caller=caller)
 
+    def poa(self, *, rid: ID, operation: str, data: dict, caller: AuthToken) -> ResultAvro:
+        return self.client_helper.poa(rid=rid, operation=operation, data=data, caller=caller)
+
     def get_reservation_units(self, *, caller: AuthToken, rid: ID) -> ResultUnitsAvro:
         result = ResultUnitsAvro()
         result.status = ResultAvro()

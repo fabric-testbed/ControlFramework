@@ -56,6 +56,12 @@ class LocalAuthority(LocalBroker, ABCAuthorityProxy):
                              caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
+    def prepare_poa(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
+                    caller: AuthToken, operation: str, data: dict) -> ABCRPCRequestState:
+        """
+        TODO: Add support
+        """
+
     def prepare_close(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
                       caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)

@@ -251,6 +251,11 @@ class Reservation(ABCReservationMixin):
         Modify lease on reservation
         """
 
+    def poa(self, *, operation: str, data: dict):
+        """
+        POA on reservation
+        """
+
     def extend_ticket(self, *, actor: ABCActorMixin):
         """
         Extend a ticket

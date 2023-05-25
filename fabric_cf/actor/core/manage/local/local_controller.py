@@ -231,3 +231,15 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
+
+    def poa(self, *, rid: ID, operation: str, data: dict):
+        self.clear_last()
+        try:
+            result = self.manager.poa(rid=rid, operation=operation, data=data, caller=self.auth)
+            self.last_status = result
+
+            return result.get_code() == 0
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+        return False

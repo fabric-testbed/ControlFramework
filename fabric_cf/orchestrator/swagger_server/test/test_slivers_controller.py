@@ -5,6 +5,8 @@ from __future__ import absolute_import
 from flask import json
 from six import BytesIO
 
+from fabric_cf.orchestrator.swagger_server.models.poa import Poa  # noqa: E501
+from fabric_cf.orchestrator.swagger_server.models.poa_post import PoaPost  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.models.slivers import Slivers  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.models.status400_bad_request import Status400BadRequest  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.models.status401_unauthorized import Status401Unauthorized  # noqa: E501
@@ -28,6 +30,20 @@ class TestSliversController(BaseTestCase):
             '//slivers',
             method='GET',
             query_string=query_string)
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
+    def test_slivers_poa_sliver_id_post(self):
+        """Test case for slivers_poa_sliver_id_post
+
+        Perform an operational action on a sliver.
+        """
+        body = PoaPost()
+        response = self.client.open(
+            '//slivers/poa/{sliver_id}'.format(sliver_id='sliver_id_example'),
+            method='POST',
+            data=json.dumps(body),
+            content_type='application/json')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 

@@ -453,6 +453,25 @@ class KernelWrapper:
         target.validate_redeem()
         self.kernel.modify_lease(reservation=target)
 
+    def poa(self, *, reservation: ABCControllerReservation, operation: str, data: dict):
+        """
+        Initiates a request to trigger POA for a sliver
+        Role: Controller
+        @param reservation reservation
+        @param operation
+        @param data
+        @throws Exception in case of error
+        """
+        if reservation is None:
+            raise KernelException(Constants.INVALID_ARGUMENT)
+
+        target = self.kernel.validate(rid=reservation.get_reservation_id())
+
+        if target is None:
+            self.logger.error("modifyLease for a reservation not registered with the kernel")
+
+        self.kernel.poa(reservation=target, operation=operation, data=data)
+
     def relinquish_request(self, *, reservation: ABCBrokerReservation, caller: AuthToken):
         if reservation is None or caller is None:
             raise KernelException(Constants.INVALID_ARGUMENT)

@@ -112,8 +112,12 @@ class ReservationClient(Reservation, ABCControllerReservation):
         self.sequence_ticket_out = 0
         # Sequence number for incoming updateLease messages.
         self.sequence_lease_in = 0
+        # Sequence number for incoming poa messages.
+        self.sequence_poa_in = 0
         # Sequence number for outgoing redeem/extend lease messages. Increases with every new message.
         self.sequence_lease_out = 0
+        # Sequence number for outgoing poa messages. Increases with every new message.
+        self.sequence_poa_out = 0
         # Does this reservation represent resources exported by a broker?
         self.exported = False
         # The most recent granted term for a ticket. If the reservation has
@@ -702,6 +706,17 @@ class ReservationClient(Reservation, ABCControllerReservation):
         else:
             self.error(err="Wrong state to initiate modify lease: {}".format(ReservationStates(self.state).name))
 
+    def poa(self, *, operation: str, data: dict):
+        # Not permitted if there is a pending operation.
+        self.nothing_pending()
+
+        if self.state == ReservationStates.Active:
+            self.sequence_poa_out += 1
+            RPCManagerSingleton.get().poa(proxy=self.authority, reservation=self, operation=operation, data=data,
+                                          caller=self.slice.get_owner())
+        else:
+            self.error(err="Wrong state to initiate modify lease: {}".format(ReservationStates(self.state).name))
+
     def extend_ticket(self, *, actor: ABCActorMixin):
         # Not permitted if there is a pending operation: cannot renew while a
         # previous renew or redeem is in progress (see note above).
@@ -767,6 +782,12 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
     def get_lease_sequence_out(self) -> int:
         return self.sequence_lease_out
+
+    def get_poa_sequence_in(self) -> int:
+        return self.sequence_poa_in
+
+    def get_poa_sequence_out(self) -> int:
+        return self.sequence_poa_out
 
     def get_lease_term(self) -> Term:
         return self.lease_term
@@ -1773,7 +1794,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
     @staticmethod
     def __remove_special_characters(message: str) -> str:
-        message = re.sub('(\\\\r\\\\n|[%!{}\'\"])', '', message)
+        message = re.sub('(\\\\t\\\\r\\\\n|[%!{}\'\"])', '', message)
+        message = message.replace("\\", "")
         return message
 
     def update_slice_graph(self, *, sliver: BaseSliver):

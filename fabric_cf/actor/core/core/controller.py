@@ -380,6 +380,25 @@ class Controller(ActorMixin, ABCController):
         else:
             self.wrapper.modify_lease(reservation=reservation)
 
+    def poa(self, *, reservation_id: ID, operation: str, data: dict):
+        if reservation_id is None or operation is None:
+            self.logger.error(f"rid {reservation_id} operation {operation}")
+
+        reservation = None
+        try:
+            reservation = self.get_reservation(rid=reservation_id)
+        except Exception as e:
+            self.logger.error("Could not find reservation #{} e: {}".format(reservation_id, e))
+
+        if reservation is None:
+            raise ControllerException("Unknown reservation: {}".format(reservation_id))
+
+        if reservation.get_leased_resources() is None:
+            self.logger.warning(f"There are no approved resources for {reservation_id}, do nothin!")
+            return
+
+        self.wrapper.poa(reservation=reservation, operation=operation, data=data)
+
     def save_extending_renewable(self):
         """
         For recovery, mark extending reservations renewable or the opposite

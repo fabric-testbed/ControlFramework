@@ -794,3 +794,31 @@ class OrchestratorHandler:
                     if not status:
                         raise OrchestratorException(message=message,
                                                     http_error_code=Constants.INTERNAL_SERVER_ERROR_MAINT_MODE)
+
+    def poa(self, *, token: str, sliver_id: str, operation, data: dict = None):
+        try:
+            controller = self.controller_state.get_management_actor()
+            self.logger.debug(f"poa invoked for Controller: {controller}")
+
+            rid = ID(uid=sliver_id) if sliver_id is not None else None
+
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
+            email = fabric_token.get_email()
+
+            reservations = controller.get_reservations(rid=rid, email=email)
+            if reservations is None:
+                if controller.get_last_error() is not None:
+                    self.logger.error(controller.get_last_error())
+                    if controller.get_last_error().status.code == ErrorCodes.ErrorNoSuchReservation:
+                        raise OrchestratorException(f"Reservation# {rid} not found",
+                                                    http_error_code=NOT_FOUND)
+
+                raise OrchestratorException(f"{controller.get_last_error()}")
+
+
+
+            return None
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing poa e: {e}")
+            raise e

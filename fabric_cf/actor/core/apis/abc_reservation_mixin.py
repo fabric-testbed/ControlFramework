@@ -304,6 +304,14 @@ class ABCReservationMixin(ABCReservationResources, ABCReservationStatus):
         """
 
     @abstractmethod
+    def poa(self, *, operation: str, data: dict):
+        """
+        Trigger POA the reservation.
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
     def extend_ticket(self, *, actor: ABCActorMixin):
         """
         Extends the ticket.

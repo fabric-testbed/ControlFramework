@@ -109,3 +109,6 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
 
     def modify_reservation(self, *, rid: ID, modify_properties: dict) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)
+
+    def poa(self, *, rid: ID, operation: str, data: dict):
+        raise ManageException(Constants.NOT_IMPLEMENTED)

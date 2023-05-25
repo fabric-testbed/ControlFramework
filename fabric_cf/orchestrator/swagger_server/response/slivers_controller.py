@@ -26,10 +26,10 @@
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
-from fabric_cf.orchestrator.swagger_server.models import Sliver
+from fabric_cf.orchestrator.swagger_server.models import Sliver, Poa, PoaData, PoaPost
 from fabric_cf.orchestrator.swagger_server.models.slivers import Slivers  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.response.constants import GET_METHOD, SLIVERS_GET_PATH, \
-    SLIVERS_GET_SLIVER_ID_PATH
+    SLIVERS_GET_SLIVER_ID_PATH, POST_METHOD, SLIVERS_POA_POST_SLIVER_ID_PATH
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
@@ -106,4 +106,43 @@ def slivers_sliver_id_get(slice_id, sliver_id, as_self = True) -> Slivers:  # no
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_GET_SLIVER_ID_PATH).inc()
+        return cors_error_response(error=e)
+
+
+def slivers_poa_sliver_id_post(body: PoaPost, sliver_id):  # noqa: E501
+    """Perform an operational action on a sliver.
+
+    Request to perform an operation action on a sliver. Supported actions include - reboot a VM sliver, get cpu info,
+    get numa info, pin vCPUs, pin memory to a numa node etc.    # noqa: E501
+
+    :param body: Perform Operation Action
+    :type body: dict | bytes
+    :param sliver_id: Sliver identified by universally unique identifier
+    :type sliver_id: str
+
+    :rtype: Poa
+    """
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(POST_METHOD, SLIVERS_POA_POST_SLIVER_ID_PATH).inc()
+    try:
+        token = get_token()
+        poa_data = handler.poa(sliver_id=sliver_id, operation=body.operation, token=token, data=body.data)
+        # TODO figure out response
+        response = Poa()
+        response.data = []
+        for p in poa_data:
+            poa = PoaData().from_dict(p)
+            response.data.append(poa)
+        response.size = len(response.data)
+        response.type = body.operation
+        success_counter.labels(POST_METHOD, SLIVERS_POA_POST_SLIVER_ID_PATH).inc()
+        return cors_success_response(response_body=response)
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(POST_METHOD, SLIVERS_POA_POST_SLIVER_ID_PATH).inc()
+        return cors_error_response(error=e)
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(POST_METHOD, SLIVERS_POA_POST_SLIVER_ID_PATH).inc()
         return cors_error_response(error=e)

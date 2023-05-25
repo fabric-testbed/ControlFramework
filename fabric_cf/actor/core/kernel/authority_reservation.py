@@ -180,6 +180,11 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
         self.pending_recover = False
         self.map_and_update_modify_lease()
 
+    def poa(self, *, operation: str, data: dict):
+        self.nothing_pending()
+        self.incoming_request()
+
+
     def service_extend_lease(self):
         assert (self.state == ReservationStates.Failed and self.pending_state == ReservationPendingStates.None_) or \
                 self.pending_state == ReservationPendingStates.ExtendingLease or \

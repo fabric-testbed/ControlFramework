@@ -59,3 +59,9 @@ class ABCMgmtControllerMixin(ABCMgmtActor, ABCMgmtClientActor):
         @params modified_sliver: modified_sliver
         @returns true for success and false for failure
         """
+
+    @abstractmethod
+    def poa(self, *, rid: ID, operation: str, data: dict):
+        """
+        Issue a POA
+        """

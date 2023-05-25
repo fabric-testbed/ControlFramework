@@ -508,6 +508,41 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
+    def poa(self, *, rid: ID, operation: str, data: dict, caller: AuthToken) -> ResultAvro:
+        result = ResultAvro()
+
+        if rid is None or operation  is None:
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            return result
+
+        self.logger.debug(f"reservation: {rid} | operation = {operation} | data = {data}")
+        try:
+
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCClientActor):
+                    self.actor = actor
+
+                def run(self):
+                    result = ResultAvro()
+                    r = self.actor.get_reservation(rid=rid)
+                    if r is None:
+                        result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+                        result.set_message(ErrorCodes.ErrorNoSuchReservation.interpret())
+                        return result
+
+                    self.actor.poa(reservation_id=rid, operation=operation, data=data)
+
+                    return result
+            result = self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client))
+        except Exception as e:
+            self.logger.error("modify_reservation {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result = ManagementObject.set_exception_details(result=result, e=e)
+
+        return result
+
     def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()

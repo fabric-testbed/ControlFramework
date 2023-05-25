@@ -173,6 +173,18 @@ class ABCClientActor(ABCActorMixin):
         """
 
     @abstractmethod
+    def poa(self, *, reservation_id: ID, operation: str, data: dict):
+        """
+        Issue POA request for given reservation. Note: the reservation
+        must have already been registered with the actor.
+
+        @param reservation_id reservationID for the reservation
+        @param operation operation
+        @param data data
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ABCSlice = None,
                                 broker: ABCBrokerProxy = None) -> ABCDelegation:
         """

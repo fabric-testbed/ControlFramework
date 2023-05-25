@@ -430,6 +430,9 @@ class Broker(ActorMixin, ABCBrokerMixin):
     def modify(self, *, reservation_id: ID, modified_sliver: BaseSliver):
         return
 
+    def poa(self, *, reservation_id: ID, operation: str, data: dict):
+        return
+
     @staticmethod
     def get_management_object_class() -> str:
         return BrokerManagementObject.__name__

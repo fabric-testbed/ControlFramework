@@ -73,6 +73,16 @@ class ABCAuthorityProxy(ABCBrokerProxy):
         """
 
     @abstractmethod
+    def prepare_poa(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
+                    caller: AuthToken, operation: str, data: dict) -> ABCRPCRequestState:
+        """
+        Prepare a modify lease
+        @params reservation: reservation
+        @params callback: callback
+        @params caller: caller
+        """
+
+    @abstractmethod
     def prepare_redeem(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
                        caller: AuthToken) -> ABCRPCRequestState:
         """

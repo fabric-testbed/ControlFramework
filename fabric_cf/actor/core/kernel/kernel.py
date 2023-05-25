@@ -337,6 +337,25 @@ class Kernel:
         finally:
             reservation.unlock()
 
+    def poa(self, *, reservation: ABCReservationMixin, operation: str, data: dict):
+        """
+        Handles a modify lease operation for the reservation.
+        Client: issue a modify lease request.
+
+        Authority: process a request for a modifying a lease.
+        @param reservation reservation for which to perform extend lease
+        @throws Exception
+        """
+        try:
+            reservation.lock()
+            reservation.poa(operation=operation, data=data)
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.error(err=f"An error occurred during poa for reservation #{reservation.get_reservation_id()}",
+                       e=e)
+        finally:
+            reservation.unlock()
+
     def extend_reservation(self, *, rid: ID, resources: ResourceSet, term: Term, dependencies: List[ABCReservationMixin]) -> int:
         """
         Extends the reservation with the given resources and term.

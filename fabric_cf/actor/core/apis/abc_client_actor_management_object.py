@@ -157,3 +157,24 @@ class ABCClientActorManagementObject(ABC):
         @param caller: caller
         @return ResultDelegationAvro
         """
+
+    @abstractmethod
+    def modify_reservation(self, *, rid: ID, modified_sliver: BaseSliver, caller: AuthToken) -> ResultAvro:
+        """
+        Modify Reservation
+        @param rid reservation id
+        @param modified_sliver modified sliver
+        @param caller caller
+        @return ResultAvro
+        """
+
+    @abstractmethod
+    def poa(self, *, rid: ID, operation: str, data: dict, caller: AuthToken) -> ResultAvro:
+        """
+        Modify Reservation
+        @param rid reservation id
+        @param operation operation
+        @param data data
+        @param caller caller
+        @return ResultAvro
+        """
