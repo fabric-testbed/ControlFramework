@@ -191,5 +191,5 @@ class NoOpHandler(HandlerBase):
     def clean_restart(self):
         pass
 
-    def poa(self):
+    def poa(self, unit: ConfigToken, operation: str, data: dict = None) -> dict:
         pass

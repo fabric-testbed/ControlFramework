@@ -83,7 +83,7 @@ class HandlerBase(ABC):
         """
 
     @abstractmethod
-    def poa(self):
+    def poa(self, unit: ConfigToken, operation: str, data: dict = None) -> dict:
         """
         POA - perform operational action on a VM
         """
