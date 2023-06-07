@@ -6,6 +6,7 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from fabric_cf.orchestrator.swagger_server.models.base_model_ import Model
+from fabric_cf.orchestrator.swagger_server.models.poa_data_info import PoaDataInfo  # noqa: F401,E501
 from fabric_cf.orchestrator.swagger_server import util
 
 
@@ -14,20 +15,30 @@ class PoaData(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, data: str=None):  # noqa: E501
+    def __init__(self, operation: str=None, request_id: str=None, info: PoaDataInfo=None):  # noqa: E501
         """PoaData - a model defined in Swagger
 
-        :param data: The data of this PoaData.  # noqa: E501
-        :type data: str
+        :param operation: The operation of this PoaData.  # noqa: E501
+        :type operation: str
+        :param request_id: The request_id of this PoaData.  # noqa: E501
+        :type request_id: str
+        :param info: The info of this PoaData.  # noqa: E501
+        :type info: PoaDataInfo
         """
         self.swagger_types = {
-            'data': str
+            'operation': str,
+            'request_id': str,
+            'info': PoaDataInfo
         }
 
         self.attribute_map = {
-            'data': 'data'
+            'operation': 'operation',
+            'request_id': 'request_id',
+            'info': 'info'
         }
-        self._data = data
+        self._operation = operation
+        self._request_id = request_id
+        self._info = info
 
     @classmethod
     def from_dict(cls, dikt) -> 'PoaData':
@@ -41,24 +52,64 @@ class PoaData(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def data(self) -> str:
-        """Gets the data of this PoaData.
+    def operation(self) -> str:
+        """Gets the operation of this PoaData.
 
 
-        :return: The data of this PoaData.
+        :return: The operation of this PoaData.
         :rtype: str
         """
-        return self._data
+        return self._operation
 
-    @data.setter
-    def data(self, data: str):
-        """Sets the data of this PoaData.
+    @operation.setter
+    def operation(self, operation: str):
+        """Sets the operation of this PoaData.
 
 
-        :param data: The data of this PoaData.
-        :type data: str
+        :param operation: The operation of this PoaData.
+        :type operation: str
         """
-        if data is None:
-            raise ValueError("Invalid value for `data`, must not be `None`")  # noqa: E501
 
-        self._data = data
+        self._operation = operation
+
+    @property
+    def request_id(self) -> str:
+        """Gets the request_id of this PoaData.
+
+
+        :return: The request_id of this PoaData.
+        :rtype: str
+        """
+        return self._request_id
+
+    @request_id.setter
+    def request_id(self, request_id: str):
+        """Sets the request_id of this PoaData.
+
+
+        :param request_id: The request_id of this PoaData.
+        :type request_id: str
+        """
+
+        self._request_id = request_id
+
+    @property
+    def info(self) -> PoaDataInfo:
+        """Gets the info of this PoaData.
+
+
+        :return: The info of this PoaData.
+        :rtype: PoaDataInfo
+        """
+        return self._info
+
+    @info.setter
+    def info(self, info: PoaDataInfo):
+        """Sets the info of this PoaData.
+
+
+        :param info: The info of this PoaData.
+        :type info: PoaDataInfo
+        """
+
+        self._info = info

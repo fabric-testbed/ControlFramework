@@ -23,13 +23,15 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
+
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
 from fabric_cf.orchestrator.swagger_server.models import Sliver, Poa, PoaData, PoaPost
 from fabric_cf.orchestrator.swagger_server.models.slivers import Slivers  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.response.constants import GET_METHOD, SLIVERS_GET_PATH, \
-    SLIVERS_GET_SLIVER_ID_PATH, POST_METHOD, SLIVERS_POA_POST_SLIVER_ID_PATH
+    SLIVERS_GET_SLIVER_ID_PATH, POST_METHOD, SLIVERS_POA_POST_SLIVER_ID_PATH, SLIVERS_POA_GET_SLIVER_ID_POA_ID_PATH
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
@@ -127,13 +129,14 @@ def slivers_poa_sliver_id_post(body: PoaPost, sliver_id):  # noqa: E501
     received_counter.labels(POST_METHOD, SLIVERS_POA_POST_SLIVER_ID_PATH).inc()
     try:
         token = get_token()
-        poa_data = handler.poa(sliver_id=sliver_id, operation=body.operation, token=token, data=body.data)
-        # TODO figure out response
+        poa_avro = PoaAvro(operation=body.operation, rid=sliver_id)
+        if body.data is not None:
+            poa_avro.node_set = body.data.node_set
+            poa_avro.vcpu_cpu_map = body.data.vcpu_cpu_map
+        poa_id = handler.poa(sliver_id=sliver_id, token=token, poa=poa_avro)
+        poa_data = PoaData(request_id=poa_id, operation=body.operation)
         response = Poa()
-        response.data = []
-        for p in poa_data:
-            poa = PoaData().from_dict(p)
-            response.data.append(poa)
+        response.data = [poa_data]
         response.size = len(response.data)
         response.type = body.operation
         success_counter.labels(POST_METHOD, SLIVERS_POA_POST_SLIVER_ID_PATH).inc()
@@ -145,4 +148,41 @@ def slivers_poa_sliver_id_post(body: PoaPost, sliver_id):  # noqa: E501
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(POST_METHOD, SLIVERS_POA_POST_SLIVER_ID_PATH).inc()
+        return cors_error_response(error=e)
+
+
+def slivers_poa_sliver_id_request_id_get(sliver_id, request_id):  # noqa: E501
+    """Perform an operational action on a sliver.
+
+    Request get the status of the POA identified by request_id.    # noqa: E501
+
+    :param sliver_id: Sliver identified by universally unique identifier
+    :type sliver_id: str
+    :param request_id: Request Id for the POA triggered
+    :type request_id: str
+
+    :rtype: Poa
+    """
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(POST_METHOD, SLIVERS_POA_GET_SLIVER_ID_POA_ID_PATH).inc()
+    try:
+        token = get_token()
+        poa_list = handler.get_poa(sliver_id=sliver_id, token=token, poa_id=request_id)
+        response = Poa()
+        response.data = []
+        for p in poa_list:
+            poa = PoaData().from_dict(p)
+            response.data.append(poa)
+        response.size = len(response.data)
+        response.type = "poas"
+        success_counter.labels(POST_METHOD, SLIVERS_POA_GET_SLIVER_ID_POA_ID_PATH).inc()
+        return cors_success_response(response_body=response)
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(POST_METHOD, SLIVERS_POA_GET_SLIVER_ID_POA_ID_PATH).inc()
+        return cors_error_response(error=e)
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(POST_METHOD, SLIVERS_POA_GET_SLIVER_ID_POA_ID_PATH).inc()
         return cors_error_response(error=e)

@@ -53,6 +53,12 @@ class ConfigToken(ABC):
         """
 
     @abstractmethod
+    def complete_poa(self, poa_info: dict):
+        """
+        Complete the poa operation
+        """
+
+    @abstractmethod
     def get_sequence(self) -> int:
         """
         Get Sequence number

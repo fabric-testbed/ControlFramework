@@ -28,6 +28,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
 from fabric_mb.message_bus.messages.reservation_predecessor_avro import ReservationPredecessorAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
@@ -123,3 +124,9 @@ class BrokerManagementObject(ServerActorManagementObject, ABCClientActorManageme
 
     def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
         return self.client_helper.reclaim_delegations(broker=broker, did=did, caller=caller)
+
+    def modify_reservation(self, *, rid: ID, modified_sliver: BaseSliver, caller: AuthToken) -> ResultAvro:
+        return self.client_helper.modify_reservation(rid=rid, modified_sliver=modified_sliver, caller=caller)
+
+    def poa(self, *, poa: PoaAvro, caller: AuthToken) -> ResultAvro:
+        return self.client_helper.poa(poa=poa, caller=caller)

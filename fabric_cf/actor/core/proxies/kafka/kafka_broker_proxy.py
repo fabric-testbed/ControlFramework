@@ -46,7 +46,7 @@ from fabric_cf.actor.core.proxies.kafka.translate import Translate
 if TYPE_CHECKING:
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
-    from fabric_cf.actor.core.apis.abc_client_callback_proxy import ABCClientCallbackProxy
+    from fabric_cf.actor.core.proxies.kafka.kafka_retun import KafkaReturn
     from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 
 
@@ -55,7 +55,7 @@ class KafkaBrokerProxy(KafkaProxy, ABCBrokerProxy):
         super().__init__(kafka_topic=kafka_topic, identity=identity, logger=logger)
         self.type = KafkaProxy.TypeBroker
 
-    def execute(self, *, request: ABCRPCRequestState, producer: AvroProducerApi):
+    def execute(self, *, request: KafkaProxyRequestState, producer: AvroProducerApi):
         avro_message = None
         if request.get_type() == RPCRequestType.Ticket:
             avro_message = TicketAvro()
@@ -101,7 +101,7 @@ class KafkaBrokerProxy(KafkaProxy, ABCBrokerProxy):
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
                                                                                        self.kafka_topic, producer))
 
-    def _prepare_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
+    def _prepare_delegation(self, *, delegation: ABCDelegation, callback: KafkaReturn,
                             caller: AuthToken) -> ABCRPCRequestState:
         request = KafkaProxyRequestState()
         request.delegation = self.pass_broker_delegation(delegation=delegation, auth=caller)
@@ -109,15 +109,15 @@ class KafkaBrokerProxy(KafkaProxy, ABCBrokerProxy):
         request.caller = caller
         return request
 
-    def prepare_claim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
+    def prepare_claim_delegation(self, *, delegation: ABCDelegation, callback: KafkaReturn,
                                  caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller)
 
-    def prepare_reclaim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
+    def prepare_reclaim_delegation(self, *, delegation: ABCDelegation, callback: KafkaReturn,
                                    caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller)
 
-    def _prepare(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy,
+    def _prepare(self, *, reservation: ABCReservationMixin, callback: KafkaReturn,
                  caller: AuthToken) -> ABCRPCRequestState:
         request = KafkaProxyRequestState()
         request.reservation = self.pass_broker_reservation(reservation=reservation, auth=caller)
@@ -125,15 +125,15 @@ class KafkaBrokerProxy(KafkaProxy, ABCBrokerProxy):
         request.caller = caller
         return request
 
-    def prepare_ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy,
+    def prepare_ticket(self, *, reservation: ABCReservationMixin, callback: KafkaReturn,
                        caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    def prepare_extend_ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy,
+    def prepare_extend_ticket(self, *, reservation: ABCReservationMixin, callback: KafkaReturn,
                               caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    def prepare_relinquish(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy,
+    def prepare_relinquish(self, *, reservation: ABCReservationMixin, callback: KafkaReturn,
                            caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 

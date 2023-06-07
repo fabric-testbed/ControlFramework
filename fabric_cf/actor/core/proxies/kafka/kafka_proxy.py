@@ -52,8 +52,10 @@ class KafkaProxyRequestState(RPCRequestState):
         super().__init__()
         self.callback_topic = None
         self.reservation = None
+        self.delegation = None
         self.udd = None
         self.query = None
+        self.poa = None
         self.request_id = None
         self.failed_reservation_id = None
         self.failed_request_type = None
@@ -88,7 +90,7 @@ class KafkaProxy(Proxy, ABCCallbackProxy):
             self.kafka_topic = peer.get_kafka_topic()
         self.logger = None
 
-    def execute(self, *, request: ABCRPCRequestState, producer: AvroProducerApi):
+    def execute(self, *, request: KafkaProxyRequestState, producer: AvroProducerApi):
         avro_message = None
         if request.get_type() == RPCRequestType.Query:
             avro_message = QueryAvro()
@@ -115,7 +117,7 @@ class KafkaProxy(Proxy, ABCCallbackProxy):
                 avro_message.reservation_id = request.failed_reservation_id
             else:
                 avro_message.reservation_id = ""
-            avro_message.error_details = request.error_details
+            avro_message.error_details = request.error_detail
 
         else:
             raise ProxyException("Unsupported RPC: type={}".format(request.get_type()))

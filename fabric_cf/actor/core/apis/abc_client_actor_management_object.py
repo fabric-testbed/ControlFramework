@@ -29,6 +29,7 @@ from abc import abstractmethod, ABC
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.reservation_predecessor_avro import ReservationPredecessorAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_strings_avro import ResultStringsAvro
@@ -169,12 +170,10 @@ class ABCClientActorManagementObject(ABC):
         """
 
     @abstractmethod
-    def poa(self, *, rid: ID, operation: str, data: dict, caller: AuthToken) -> ResultAvro:
+    def poa(self, *, poa: PoaAvro, caller: AuthToken) -> ResultAvro:
         """
         Modify Reservation
-        @param rid reservation id
-        @param operation operation
-        @param data data
+        @param poa POA
         @param caller caller
         @return ResultAvro
         """

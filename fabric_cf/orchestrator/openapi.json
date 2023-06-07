@@ -1396,6 +1396,106 @@
           }
         ]
       }
+    },
+    "/slivers/poa/{sliver_id}/{request_id}": {
+      "get": {
+        "tags": [
+          "slivers"
+        ],
+        "summary": "Perform an operational action on a sliver.",
+        "description": "Request get the status of the POA identified by request_id.  \n",
+        "parameters": [
+          {
+            "name": "sliver_id",
+            "in": "path",
+            "description": "Sliver identified by universally unique identifier",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "request_id",
+            "in": "path",
+            "description": "Request Id for the POA triggered",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/poa"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_400_bad_request"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_401_unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_403_forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_404_not_found"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_500_internal_server_error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -1412,11 +1512,12 @@
               "cpuinfo",
               "numainfo",
               "cpupin",
-              "numatune"
+              "numatune",
+              "reboot"
             ]
           },
           "data": {
-            "type": "object"
+            "$ref": "#/components/schemas/poa_post_data"
           }
         }
       },
@@ -1431,6 +1532,7 @@
             "type": "string"
           },
           "ssh_keys": {
+            "maxItems": 10,
             "type": "array",
             "items": {
               "type": "string"
@@ -1914,12 +2016,60 @@
         ]
       },
       "poa_data": {
-        "required": [
-          "data"
-        ],
         "type": "object",
         "properties": {
-          "data": {
+          "operation": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "info": {
+            "$ref": "#/components/schemas/poa_data_info"
+          }
+        }
+      },
+      "poa_post_data_vcpu_cpu_map": {
+        "type": "object",
+        "properties": {
+          "vcpu": {
+            "type": "string"
+          },
+          "cpu": {
+            "type": "string"
+          }
+        }
+      },
+      "poa_post_data": {
+        "type": "object",
+        "properties": {
+          "vcpu_cpu_map": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/poa_post_data_vcpu_cpu_map"
+            }
+          },
+          "node_set": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "poa_data_info": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string"
+          },
+          "host_info": {
+            "type": "string"
+          },
+          "vm": {
+            "type": "string"
+          },
+          "vm_info": {
             "type": "string"
           }
         }

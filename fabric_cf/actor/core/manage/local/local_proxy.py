@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING
 
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 
+from fabric_cf.actor.core.apis.abc_actor_management_object import ABCActorManagementObject
 from fabric_cf.actor.core.common.constants import ErrorCodes
 from fabric_cf.actor.core.manage.error import Error
 from fabric_cf.actor.core.apis.abc_component import ABCComponent
@@ -38,7 +39,7 @@ if TYPE_CHECKING:
 
 
 class LocalProxy(ABCComponent):
-    def __init__(self, *, manager: ManagementObject, auth: AuthToken):
+    def __init__(self, *, manager: ABCActorManagementObject, auth: AuthToken):
         self.manager = manager
         self.auth = auth
         self.last_status = None

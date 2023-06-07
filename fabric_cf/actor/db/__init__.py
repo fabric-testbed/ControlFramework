@@ -191,3 +191,25 @@ class Sites(Base):
     name = Column(String, index=True)
     state = Column(Integer, nullable=False)
     properties = Column(LargeBinary)
+
+
+class Poas(Base):
+    """
+    Represents Poas Database Table
+    """
+    __tablename__ = 'Poas'
+    poa_id = Column(Integer, Sequence('poa_id', start=1, increment=1), autoincrement=True, primary_key=True)
+    poa_guid = Column(String, nullable=False, index=True)
+    email = Column(String, nullable=True, index=True)
+    project_id = Column(String, nullable=True, index=True)
+    sliver_id = Column(String, nullable=True, index=True)
+    state = Column(Integer, nullable=False, index=True)
+    slice_id = Column(String, nullable=True, index=True)
+    last_update_time = Column(TIMESTAMP, nullable=True)
+    properties = Column(LargeBinary)
+
+    Index('idx_poa_guid_email', poa_guid, email)
+    Index('idx_poa_guid_project_id', poa_guid, project_id)
+    Index('idx_poa_guid_sliver_id', poa_guid, sliver_id)
+    Index('idx_poa_guid_email_sliver_id', poa_guid, email, sliver_id)
+    Index('idx_poa_guid_email_project_id', poa_guid, email, project_id)

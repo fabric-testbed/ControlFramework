@@ -28,6 +28,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fim.slivers.base_sliver import BaseSliver
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
@@ -41,6 +42,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.util.reservation_set import ReservationSet
     from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
     from fabric_cf.actor.security.auth_token import AuthToken
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class ABCClientActor(ABCActorMixin):
@@ -173,18 +175,6 @@ class ABCClientActor(ABCActorMixin):
         """
 
     @abstractmethod
-    def poa(self, *, reservation_id: ID, operation: str, data: dict):
-        """
-        Issue POA request for given reservation. Note: the reservation
-        must have already been registered with the actor.
-
-        @param reservation_id reservationID for the reservation
-        @param operation operation
-        @param data data
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ABCSlice = None,
                                 broker: ABCBrokerProxy = None) -> ABCDelegation:
         """
@@ -253,5 +243,25 @@ class ABCClientActor(ABCActorMixin):
         @param update_data status of the remote operation.
         @param caller identity of the caller
 
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def poa(self, *, poa: Poa):
+        """
+        Issue POA request for given reservation. Note: the reservation
+        must have already been registered with the actor.
+
+        @param poa Poa
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def poa_info(self, *, poa: Poa, caller: AuthToken):
+        """
+        Process POA response from the Authority
+
+        @param poa Poa
+        @param caller caller
         @throws Exception in case of error
         """

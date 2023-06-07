@@ -43,6 +43,7 @@ from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerRe
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ReservationException
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
+from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.util.rpc_exception import RPCError
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin, ReservationCategory
 from fabric_cf.actor.core.kernel.predecessor_state import PredecessorState
@@ -112,12 +113,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
         self.sequence_ticket_out = 0
         # Sequence number for incoming updateLease messages.
         self.sequence_lease_in = 0
-        # Sequence number for incoming poa messages.
-        self.sequence_poa_in = 0
         # Sequence number for outgoing redeem/extend lease messages. Increases with every new message.
         self.sequence_lease_out = 0
-        # Sequence number for outgoing poa messages. Increases with every new message.
-        self.sequence_poa_out = 0
         # Does this reservation represent resources exported by a broker?
         self.exported = False
         # The most recent granted term for a ticket. If the reservation has
@@ -191,6 +188,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         self.approved_term = term
         self.approved = True
         self.category = ReservationCategory.Client
+        self.poas = {}
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -208,6 +206,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         del state['suggested']
         del state['thread_lock']
         del state['policy']
+        del state['poas']
         return state
 
     def __setstate__(self, state):
@@ -226,6 +225,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         self.policy = None
 
         self.suggested = True
+        self.poas = {}
         self.thread_lock = threading.Lock()
 
     def restore(self, *, actor: ABCActorMixin, slice_obj: ABCSlice):
@@ -706,17 +706,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
         else:
             self.error(err="Wrong state to initiate modify lease: {}".format(ReservationStates(self.state).name))
 
-    def poa(self, *, operation: str, data: dict):
-        # Not permitted if there is a pending operation.
-        self.nothing_pending()
-
-        if self.state == ReservationStates.Active:
-            self.sequence_poa_out += 1
-            RPCManagerSingleton.get().poa(proxy=self.authority, reservation=self, operation=operation, data=data,
-                                          caller=self.slice.get_owner())
-        else:
-            self.error(err="Wrong state to initiate modify lease: {}".format(ReservationStates(self.state).name))
-
     def extend_ticket(self, *, actor: ABCActorMixin):
         # Not permitted if there is a pending operation: cannot renew while a
         # previous renew or redeem is in progress (see note above).
@@ -782,12 +771,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
     def get_lease_sequence_out(self) -> int:
         return self.sequence_lease_out
-
-    def get_poa_sequence_in(self) -> int:
-        return self.sequence_poa_in
-
-    def get_poa_sequence_out(self) -> int:
-        return self.sequence_poa_out
 
     def get_lease_term(self) -> Term:
         return self.lease_term
@@ -1120,6 +1103,16 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if self.joinstate != JoinState.NoJoin:
             self.probe_join_state()
         else:
+            if self.is_active() and self.pending_state == ReservationPendingStates.PrimingPoa:
+                from fabric_cf.actor.core.container.globals import GlobalsSingleton
+                if self.exceeds_timeout(timeout=GlobalsSingleton.get().RPC_TIMEOUT):
+                    self.logger.info(f"Res# {self.get_reservation_id()} POA timeout! "
+                                     f"No response received in {GlobalsSingleton.get().RPC_TIMEOUT} seconds!")
+
+                    self.transition(prefix="POA timeout", state=self.state,
+                                    pending=ReservationPendingStates.None_)
+                    self.probe_pending_poa()
+
             # Handle pending response for a Redeem or Ticket from AM or broker respectively
             # This happens usually in case of Kafka Message Timeout
             # To avoid the slice from being stuck in Configuring state
@@ -1837,6 +1830,59 @@ class ReservationClient(Reservation, ABCControllerReservation):
     def mark_close_by_ticket_review(self, *, update_data: UpdateData):
         if self.last_ticket_update is not None:
             self.last_ticket_update.absorb(other=update_data)
+
+    def poa(self, *, poa: Poa):
+        # Not permitted if there is a pending operation.
+        self.nothing_pending()
+
+        if poa.get_poa_id() in self.poas:
+            self.logger.error(f"POA {poa.get_poa_id()} has already been processed!")
+            return
+
+        if self.state == ReservationStates.Active:
+            self.transition(prefix="performing poa", state=ReservationStates.Active,
+                            pending=ReservationPendingStates.PrimingPoa)
+            # Trigger POA to the Authority
+            poa.issue_poa()
+        else:
+            msg = f"Wrong state to initiate POA: {self.state}"
+            poa.fail(message=msg)
+            self.error(err=msg)
+
+        # Add POA
+        self.poas[poa.get_poa_id()] = poa
+
+    def probe_pending_poa(self):
+        try:
+            failed_poas = []
+            for poa_id, poa in self.poas.items():
+                if poa.is_issued():
+                    poa.fail(message="POA timeout")
+                    failed_poas.append(poa_id)
+                self.actor.get_plugin().get_database().update_poa(poa=poa)
+            for poa_id in failed_poas:
+                if poa_id in self.poas:
+                    self.poas.pop(poa_id)
+        except Exception as e:
+            self.logger.error(f"Error occurred during probe POA - {e}", stack_info=True)
+
+    def poa_info(self, *, incoming: Poa):
+        try:
+            if incoming is None:
+                return
+            target = self.poas.get(incoming.poa_id)
+
+            if target is None:
+                self.logger.error(f"POA Request# {incoming.poa_id} not found, Ignoring POA response {incoming}")
+                return
+
+            self.transition(prefix=f"POA {incoming.poa_id} completed", state=self.state,
+                            pending=ReservationPendingStates.None_)
+
+            target.accept_poa_info(incoming=incoming)
+            self.actor.get_plugin().get_database().update_poa(poa=target)
+        except Exception as e:
+            self.logger.error(f"Error occurred during processing POA Info - {e}", stack_info=True)
 
 
 class ClientReservationFactory:

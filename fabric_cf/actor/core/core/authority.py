@@ -26,6 +26,7 @@
 import queue
 import threading
 
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 
@@ -40,6 +41,7 @@ from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import AuthorityException
 from fabric_cf.actor.core.core.actor import ActorMixin
+from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.manage.authority_management_object import AuthorityManagementObject
@@ -334,3 +336,22 @@ class Authority(ActorMixin, ABCAuthority):
     def load_model(self, *, graph_id: str):
         self.policy.set_aggregate_resource_model_graph_id(graph_id=graph_id)
         self.policy.load_aggregate_resource_model()
+
+    def poa(self, *, poa: Poa):
+        if not self.recovered:
+            raise AuthorityException(Constants.INVALID_ACTOR_STATE)
+
+        if poa.sliver_id is None or poa.operation is None:
+            self.logger.error(f"rid {poa.sliver_id} operation {poa.operation}")
+            raise AuthorityException(f"Unknown reservation: {poa.sliver_id}")
+
+        reservation = None
+        try:
+            reservation = self.get_reservation(rid=poa.get_sliver_id())
+        except Exception as e:
+            self.logger.error(f"Could not find reservation #{poa.sliver_id} e: {e}")
+
+        if reservation is None:
+            raise AuthorityException(f"Unknown reservation: {poa.sliver_id}")
+
+        self.wrapper.poa(reservation=reservation, poa=poa)

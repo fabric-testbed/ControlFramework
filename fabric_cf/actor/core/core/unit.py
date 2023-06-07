@@ -46,6 +46,7 @@ class UnitState(Enum):
     CLOSING = 4
     CLOSED = 5
     FAILED = 6
+    POA_IN_PROGRESS = 7
 
 
 class Unit(ConfigToken):
@@ -79,12 +80,14 @@ class Unit(ConfigToken):
         self.transfer_out_started = False
         self.sliver = sliver
         self.lock = threading.Lock()
+        self.poa_info = {}
 
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['transfer_out_started']
         del state['reservation']
         del state['lock']
+        del state['poa_info']
 
         return state
 
@@ -93,6 +96,7 @@ class Unit(ConfigToken):
         self.transfer_out_started = False
         self.reservation = None
         self.lock = threading.Lock()
+        self.poa_info = {}
 
     def transition(self, *, to_state: UnitState):
         """
@@ -129,6 +133,19 @@ class Unit(ConfigToken):
         finally:
             self.lock.release()
 
+    def fail_on_poa(self, *, message: str, exception: Exception = None):
+        """
+        Fail on modify
+        @param message message
+        @param exception exception
+        """
+        try:
+            self.lock.acquire()
+            self.notices.add(msg=message, ex=exception)
+            self.transition(to_state=UnitState.ACTIVE)
+        finally:
+            self.lock.release()
+
     def set_state(self, *, state: UnitState):
         """
         Set state
@@ -148,6 +165,16 @@ class Unit(ConfigToken):
             self.lock.acquire()
             self.transition(to_state=UnitState.CLOSING)
             self.transfer_out_started = True
+        finally:
+            self.lock.release()
+
+    def start_poa(self):
+        """
+        Start close on a unit
+        """
+        try:
+            self.lock.acquire()
+            self.transition(to_state=UnitState.POA_IN_PROGRESS)
         finally:
             self.lock.release()
 
@@ -422,6 +449,17 @@ class Unit(ConfigToken):
             self.transition(to_state=UnitState.ACTIVE)
             self.sliver = self.modified
             self.modified = None
+        finally:
+            self.lock.release()
+
+    def complete_poa(self, poa_info: dict):
+        """
+        Complete POA operation
+        """
+        try:
+            self.lock.acquire()
+            self.poa_info = poa_info.copy()
+            self.transition(to_state=UnitState.ACTIVE)
         finally:
             self.lock.release()
 

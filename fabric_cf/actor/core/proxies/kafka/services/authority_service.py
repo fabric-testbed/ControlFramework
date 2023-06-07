@@ -29,12 +29,14 @@ from typing import TYPE_CHECKING
 from fabric_mb.message_bus.messages.close_avro import CloseAvro
 from fabric_mb.message_bus.messages.extend_lease_avro import ExtendLeaseAvro
 from fabric_mb.message_bus.messages.modify_lease_avro import ModifyLeaseAvro
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.redeem_avro import RedeemAvro
 from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
 from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 
 from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservationFactory
+from fabric_cf.actor.core.kernel.incoming_poa_rpc import IncomingPoaRPC
 from fabric_cf.actor.core.kernel.incoming_reservation_rpc import IncomingReservationRPC
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
@@ -119,6 +121,16 @@ class AuthorityService(BrokerService):
             raise e
         self.do_dispatch(rpc=rpc)
 
+    def poa(self, *, request: PoaAvro):
+        try:
+            poa_obj = Translate.translate_poa(poa_avro=request)
+            rpc = IncomingPoaRPC(message_id=ID(uid=request.message_id), request_type=RPCRequestType.Poa,
+                                 poa=poa_obj, caller=request.auth)
+        except Exception as e:
+            self.logger.error("Invalid update_lease request: {}".format(e))
+            raise e
+        self.do_dispatch(rpc=rpc)
+
     def process(self, *, message: AbcMessageAvro):
         if message.get_message_name() == AbcMessageAvro.close:
             self.close(request=message)
@@ -128,6 +140,8 @@ class AuthorityService(BrokerService):
             self.extend_lease(request=message)
         elif message.get_message_name() == AbcMessageAvro.modify_lease:
             self.modify_lease(request=message)
+        elif message.get_message_name() == AbcMessageAvro.poa:
+            self.poa(request=message)
         elif message.get_message_name() == AbcMessageAvro.result_reservation:
             self.logger.debug("Claim Resources Response receieved: {}".format(message))
         elif message.get_message_name() == AbcMessageAvro.result_delegation:

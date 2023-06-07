@@ -6,6 +6,7 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from fabric_cf.orchestrator.swagger_server.models.base_model_ import Model
+from fabric_cf.orchestrator.swagger_server.models.poa_post_data import PoaPostData  # noqa: F401,E501
 from fabric_cf.orchestrator.swagger_server import util
 
 
@@ -14,17 +15,17 @@ class PoaPost(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, operation: str=None, data: object=None):  # noqa: E501
+    def __init__(self, operation: str=None, data: PoaPostData=None):  # noqa: E501
         """PoaPost - a model defined in Swagger
 
         :param operation: The operation of this PoaPost.  # noqa: E501
         :type operation: str
         :param data: The data of this PoaPost.  # noqa: E501
-        :type data: object
+        :type data: PoaPostData
         """
         self.swagger_types = {
             'operation': str,
-            'data': object
+            'data': PoaPostData
         }
 
         self.attribute_map = {
@@ -63,7 +64,7 @@ class PoaPost(Model):
         :param operation: The operation of this PoaPost.
         :type operation: str
         """
-        allowed_values = ["cpuinfo", "numainfo", "cpupin", "numatune"]  # noqa: E501
+        allowed_values = ["cpuinfo", "numainfo", "cpupin", "numatune", "reboot"]  # noqa: E501
         if operation not in allowed_values:
             raise ValueError(
                 "Invalid value for `operation` ({0}), must be one of {1}"
@@ -73,22 +74,22 @@ class PoaPost(Model):
         self._operation = operation
 
     @property
-    def data(self) -> object:
+    def data(self) -> PoaPostData:
         """Gets the data of this PoaPost.
 
 
         :return: The data of this PoaPost.
-        :rtype: object
+        :rtype: PoaPostData
         """
         return self._data
 
     @data.setter
-    def data(self, data: object):
+    def data(self, data: PoaPostData):
         """Sets the data of this PoaPost.
 
 
         :param data: The data of this PoaPost.
-        :type data: object
+        :type data: PoaPostData
         """
 
         self._data = data

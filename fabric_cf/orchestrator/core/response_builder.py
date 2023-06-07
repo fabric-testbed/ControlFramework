@@ -26,6 +26,7 @@
 from typing import List
 
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
+from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.abc_property_graph import ABCPropertyGraph
@@ -54,6 +55,9 @@ class ResponseBuilder:
     PROP_SLIVER = "sliver"
     PROP_SLIVER_TYPE = "sliver_type"
     PROP_NOTICE = "notice"
+
+    PROP_OPERATION = "operation"
+    PROP_REQUEST_ID = "request_id"
 
     @staticmethod
     def get_reservation_summary(*, res_list: List[ReservationMng]) -> List[dict]:
@@ -144,3 +148,21 @@ class ResponseBuilder:
         :return:
         """
         return {ResponseBuilder.PROP_MODEL: bqm}
+
+    @staticmethod
+    def get_poa_summary(*, poa_list: List[PoaInfoAvro]) -> List[dict]:
+        """
+        Get POA summary
+        :param poa_list:
+        :return:
+        """
+        poas = []
+
+        if poa_list is not None:
+            for poa in poa_list:
+                poa_dict = {ResponseBuilder.PROP_REQUEST_ID: poa.poa_id,
+                            ResponseBuilder.PROP_OPERATION: poa.operation}
+                poas.append(poa_dict)
+                #TODO add more info
+
+        return poas

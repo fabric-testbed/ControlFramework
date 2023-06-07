@@ -23,26 +23,37 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
-from fabric_cf.actor.core.util.id import ID
-from .delegation import Delegation
-from ..apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.kernel.incoming_rpc import IncomingRPC
+from fabric_cf.actor.core.kernel.poa import Poa
+
+if TYPE_CHECKING:
+    from fabric_cf.actor.core.util.id import ID
+    from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+    from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
+    from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class DelegationFactory:
+class IncomingPoaRPC(IncomingRPC):
     """
-    Factory class to create delegation instances
+    Represents Incoming RPC message carrying a reservation
     """
-    @staticmethod
-    def create(did: str, slice_id: ID, delegation_name: str = None, site: str = None) -> ABCDelegation:
+    def __init__(self, *, message_id: ID, request_type: RPCRequestType, callback: ABCCallbackProxy = None,
+                 caller: AuthToken = None, poa: Poa = None):
+        super().__init__(message_id=message_id, request_type=request_type, callback=callback, caller=caller)
+        self.poa = poa
+
+    def get(self):
         """
-        Create a delegation
-        @param did delegation id
-        @param slice_id slice id
-        @param delegation_name delegation_name
-        @param site site name
-        @return delegation
+        Get POA
+        @return POA
         """
-        delegation = Delegation(dlg_graph_id=did, slice_id=slice_id, delegation_name=delegation_name,
-                                site=site)
-        return delegation
+        return self.poa
+
+    def __str__(self):
+        return f"{self.poa.poa_id}"
+
+    def get_update_data(self):
+        return None

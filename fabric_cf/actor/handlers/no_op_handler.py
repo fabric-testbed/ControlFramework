@@ -191,5 +191,29 @@ class NoOpHandler(HandlerBase):
     def clean_restart(self):
         pass
 
-    def poa(self, unit: ConfigToken, operation: str, data: dict = None) -> dict:
-        pass
+    def poa(self, unit: ConfigToken, data: dict) -> Tuple[dict, ConfigToken]:
+        print(f"KOMAL AM handler {data}")
+        result = None
+        try:
+            self.get_logger().info(f"POA invoked for unit: {unit}")
+
+            result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_POA,
+                      Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
+                      Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0,
+                      Constants.PROPERTY_POA_INFO: {
+                          "operation": data.get("operation"),
+                          "poa_id": data.get("poa_id"),
+                          "cpu_info": {"host": "abc",
+                                       "host_info": {"a": "b"}},
+                          "numa_info": {"host": "abc",
+                                        "host_info": {"a": "b"}}
+                      }}
+        except Exception as e:
+            self.get_logger().error(e)
+            self.get_logger().error(traceback.format_exc())
+            result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_POA,
+                      Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_EXCEPTION,
+                      Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
+        finally:
+            self.get_logger().info(f"Modify completed")
+        return result, unit

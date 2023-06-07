@@ -28,6 +28,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, List
 
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fim.slivers.base_sliver import BaseSliver
 
 from fabric_cf.actor.core.apis.abc_mgmt_client_actor import ABCMgmtClientActor
@@ -61,7 +62,7 @@ class ABCMgmtControllerMixin(ABCMgmtActor, ABCMgmtClientActor):
         """
 
     @abstractmethod
-    def poa(self, *, rid: ID, operation: str, data: dict):
+    def poa(self, *, poa: PoaAvro) -> bool:
         """
         Issue a POA
         """

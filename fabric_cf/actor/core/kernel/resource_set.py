@@ -33,7 +33,7 @@ from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ResourcesException
-from fabric_cf.actor.core.util.utils import sliver_to_str
+
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.time.term import Term
@@ -41,6 +41,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.util.notice import Notice
     from fabric_cf.actor.core.apis.abc_concrete_set import ABCConcreteSet
     from fabric_cf.actor.core.util.resource_type import ResourceType
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class ResourceSet:
@@ -252,6 +253,9 @@ class ResourceSet:
             result -= self.resources.get_units()
 
         return result
+
+    def get_poa_info(self) -> dict:
+        return self.resources.get_poa_info()
 
     def get_notices(self) -> Notice:
         """
@@ -546,3 +550,10 @@ class ResourceSet:
         clone = ResourceSet(units=self.units, rtype=self.type, sliver=self.sliver)
         clone.resources = self.resources.clone()
         return clone
+
+    def service_poa(self, *, poa: Poa):
+        """
+        Complete service for a POA.
+        """
+        self.service_check()
+        self.resources.poa(poa=poa)

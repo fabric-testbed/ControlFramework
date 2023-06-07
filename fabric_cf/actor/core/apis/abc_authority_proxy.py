@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
     from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
     from fabric_cf.actor.security.auth_token import AuthToken
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class ABCAuthorityProxy(ABCBrokerProxy):
@@ -73,11 +74,11 @@ class ABCAuthorityProxy(ABCBrokerProxy):
         """
 
     @abstractmethod
-    def prepare_poa(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
-                    caller: AuthToken, operation: str, data: dict) -> ABCRPCRequestState:
+    def prepare_poa(self, *, callback: ABCControllerCallbackProxy, caller: AuthToken,
+                    poa: Poa) -> ABCRPCRequestState:
         """
         Prepare a modify lease
-        @params reservation: reservation
+        @params poa: poa
         @params callback: callback
         @params caller: caller
         """

@@ -38,6 +38,7 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.core.ticket import Ticket
 from fabric_cf.actor.core.core.unit_set import UnitSet
+from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.proxies.kafka.kafka_broker_proxy import KafkaBrokerProxy
 from fabric_cf.actor.core.proxies.kafka.kafka_proxy import KafkaProxyRequestState
@@ -46,9 +47,9 @@ from fabric_cf.actor.core.proxies.kafka.translate import Translate
 if TYPE_CHECKING:
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
-    from fabric_cf.actor.core.apis.abc_controller_callback_proxy import ABCControllerCallbackProxy
     from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
     from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+    from fabric_cf.actor.core.proxies.kafka.kafka_retun import KafkaReturn
 
 
 class KafkaAuthorityProxy(KafkaBrokerProxy, ABCAuthorityProxy):
@@ -56,8 +57,7 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, ABCAuthorityProxy):
         super().__init__(kafka_topic=kafka_topic, identity=identity, logger=logger)
         self.type = self.TypeSite
 
-    def execute(self, *, request: ABCRPCRequestState, producer: AvroProducerApi):
-        avro_message = None
+    def execute(self, *, request: KafkaProxyRequestState, producer: AvroProducerApi):
         if request.get_type() == RPCRequestType.Redeem:
             avro_message = RedeemAvro()
             avro_message.message_id = str(request.get_message_id())
@@ -86,6 +86,10 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, ABCAuthorityProxy):
             avro_message.reservation = request.reservation
             avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
+        elif request.get_type() == RPCRequestType.Poa:
+            avro_message = request.poa
+            avro_message.message_id = str(request.get_message_id())
+            avro_message.callback_topic = request.callback_topic
         else:
             super().execute(request=request, producer=producer)
             return
@@ -96,7 +100,7 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, ABCAuthorityProxy):
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
                                                                                        self.kafka_topic, producer))
 
-    def _prepare(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
+    def _prepare(self, *, reservation: ABCControllerReservation, callback: KafkaReturn,
                  caller: AuthToken) -> ABCRPCRequestState:
         request = KafkaProxyRequestState()
         request.callback_topic = callback.get_kafka_topic()
@@ -104,25 +108,27 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, ABCAuthorityProxy):
         request.caller = caller
         return request
 
-    def prepare_redeem(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
+    def prepare_redeem(self, *, reservation: ABCControllerReservation, callback: KafkaReturn,
                        caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    def prepare_extend_lease(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
+    def prepare_extend_lease(self, *, reservation: ABCControllerReservation, callback: KafkaReturn,
                              caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    def prepare_modify_lease(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
+    def prepare_modify_lease(self, *, reservation: ABCControllerReservation, callback: KafkaReturn,
                              caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    def prepare_poa(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
-                    caller: AuthToken, operation: str, data: dict) -> ABCRPCRequestState:
-        """
-        TODO: Add support
-        """
+    def prepare_poa(self, *, callback: KafkaReturn, caller: AuthToken,
+                    poa: Poa) -> ABCRPCRequestState:
+        request = KafkaProxyRequestState()
+        request.callback_topic = callback.get_kafka_topic()
+        request.poa = Translate.translate_poa_to_avro(poa=poa)
+        request.caller = caller
+        return request
 
-    def prepare_close(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
+    def prepare_close(self, *, reservation: ABCControllerReservation, callback: KafkaReturn,
                       caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 

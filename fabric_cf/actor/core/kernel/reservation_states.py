@@ -82,7 +82,9 @@ class ReservationPendingStates(Enum):
     ModifyingLease = 22
     AbsorbUpdate = 23
     SendUpdate = 24
-    Unknown = 25
+    PrimingPoa = 25
+    WaitingPoaResponse = 26
+    Unknown = 27
 
     def __repr__(self):
         return self.name

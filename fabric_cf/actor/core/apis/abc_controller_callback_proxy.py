@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.util.update_data import UpdateData
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class ABCControllerCallbackProxy(ABCClientCallbackProxy):
@@ -47,6 +48,17 @@ class ABCControllerCallbackProxy(ABCClientCallbackProxy):
     @abstractmethod
     def prepare_update_lease(self, *, reservation: ABCAuthorityReservation, update_data: UpdateData,
                              callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
+        """
+        Prepare Update Lease
+        @params reservation: reservation
+        @params update_data: Update Data
+        @params callback: callback
+        @params caller: caller
+        @returns returns IRPCRequestState
+        """
+
+    @abstractmethod
+    def prepare_poa_result(self, *, poa: Poa, callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
         """
         Prepare Update Lease
         @params reservation: reservation

@@ -46,5 +46,6 @@ SLICE_STATUS_SLICE_ID_PATH = '/slices/status/{slice_id}'
 SLIVERS_GET_PATH = '/slivers'
 SLIVERS_GET_SLIVER_ID_PATH = '/slivers/{sliver_id}'
 SLIVERS_POA_POST_SLIVER_ID_PATH = '/slivers/poa/{sliver_id}'
+SLIVERS_POA_GET_SLIVER_ID_POA_ID_PATH = '/slivers/poa/{sliver_id}/{request_id}'
 
 VERSIONS_PATH = '/version'

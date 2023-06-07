@@ -28,6 +28,8 @@ from typing import TYPE_CHECKING
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
+from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fabric_mb.message_bus.messages.result_poa_avro import ResultPoaAvro
 from fabric_mb.message_bus.messages.update_delegation_avro import UpdateDelegationAvro
 from fabric_mb.message_bus.messages.update_lease_avro import UpdateLeaseAvro
 from fabric_mb.message_bus.messages.update_ticket_avro import UpdateTicketAvro
@@ -45,10 +47,10 @@ if TYPE_CHECKING:
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
     from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
-    from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
     from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
     from fabric_cf.actor.core.apis.abc_server_reservation import ABCServerReservation
     from fabric_cf.actor.core.util.update_data import UpdateData
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class KafkaReturn(KafkaProxy, ABCControllerCallbackProxy):
@@ -57,8 +59,7 @@ class KafkaReturn(KafkaProxy, ABCControllerCallbackProxy):
         self.type = KafkaProxy.TypeReturn
         self.callback = True
 
-    def execute(self, *, request: ABCRPCRequestState, producer: AvroProducerApi):
-        avro_message = None
+    def execute(self, *, request: KafkaProxyRequestState, producer: AvroProducerApi):
         if request.get_type() == RPCRequestType.UpdateTicket:
             avro_message = UpdateTicketAvro()
             avro_message.message_id = str(request.get_message_id())
@@ -83,6 +84,14 @@ class KafkaReturn(KafkaProxy, ABCControllerCallbackProxy):
             avro_message.update_data = request.udd
             avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
+        elif request.get_type() == RPCRequestType.PoaInfo:
+            avro_message = ResultPoaAvro()
+            avro_message.message_id = str(request.get_message_id())
+            if request.poa is not None:
+                avro_message.poas = [request.poa]
+            avro_message.callback_topic = request.callback_topic
+            avro_message.status = ResultAvro()
+
         else:
             super().execute(request=request, producer=producer)
             return
@@ -94,7 +103,7 @@ class KafkaReturn(KafkaProxy, ABCControllerCallbackProxy):
                                                                                        self.kafka_topic, producer))
 
     def prepare_update_delegation(self, *, delegation: ABCDelegation, update_data: UpdateData,
-                                  callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
+                                  callback: KafkaProxy, caller: AuthToken) -> ABCRPCRequestState:
         request = KafkaProxyRequestState()
         request.delegation = self.pass_delegation(delegation=delegation, auth=caller)
         request.udd = Translate.translate_udd(udd=update_data)
@@ -103,7 +112,7 @@ class KafkaReturn(KafkaProxy, ABCControllerCallbackProxy):
         return request
 
     def _prepare(self, *, reservation: ABCServerReservation, update_data: UpdateData,
-                 callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
+                 callback: KafkaProxy, caller: AuthToken) -> ABCRPCRequestState:
         request = KafkaProxyRequestState()
         request.reservation = self.pass_reservation(reservation=reservation, auth=caller)
         request.udd = Translate.translate_udd(udd=update_data)
@@ -112,18 +121,24 @@ class KafkaReturn(KafkaProxy, ABCControllerCallbackProxy):
         return request
 
     def prepare_update_ticket(self, *, reservation: ABCBrokerReservation, update_data: UpdateData,
-                              callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
+                              callback: KafkaProxy, caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, update_data=update_data, callback=callback, caller=caller)
 
     def prepare_update_lease(self, *, reservation: ABCAuthorityReservation, update_data: UpdateData,
-                             callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
+                             callback: KafkaProxy, caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, update_data=update_data, callback=callback, caller=caller)
+
+    def prepare_poa_result(self, *, poa: Poa, callback: KafkaProxy, caller: AuthToken) -> ABCRPCRequestState:
+        request = KafkaProxyRequestState()
+        request.poa = Translate.translate_poa_to_poa_info_avro(poa=poa)
+        request.callback_topic = callback.get_kafka_topic()
+        request.caller = caller
+        return request
 
     @staticmethod
     def pass_reservation(reservation: ABCServerReservation, auth: AuthToken) -> ReservationAvro:
         avro_reservation = ReservationAvro()
         avro_reservation.slice = Translate.translate_slice_to_avro(slice_obj=reservation.get_slice())
-        term = None
         if reservation.get_term() is None:
             term = reservation.get_requested_term().clone()
         else:
@@ -132,7 +147,6 @@ class KafkaReturn(KafkaProxy, ABCControllerCallbackProxy):
         avro_reservation.term = Translate.translate_term(term=term)
         avro_reservation.reservation_id = str(reservation.get_reservation_id())
 
-        rset = None
         if reservation.get_resources() is None:
             from fabric_cf.actor.core.kernel.resource_set import ResourceSet
             rset = Translate.translate_resource_set(resource_set=ResourceSet(units=0,

@@ -28,8 +28,7 @@ import threading
 import time
 import traceback
 from datetime import datetime
-from typing import List
-
+from typing import List, Union
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
 from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
@@ -40,6 +39,7 @@ from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin,
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
+from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
 from fabric_cf.actor.core.container.maintenance import Site
@@ -512,7 +512,8 @@ class ActorDatabase(ABCDatabase):
             self.db.add_delegation(slice_id=str(delegation.get_slice_id()),
                                    dlg_graph_id=str(delegation.get_delegation_id()),
                                    dlg_state=delegation.get_state().value,
-                                   properties=properties)
+                                   properties=properties,
+                                   site=delegation.get_site())
             self.logger.debug(
                 "Delegation {} added to slice {}".format(delegation.get_delegation_id(),
                                                          delegation.get_slice_id()))
@@ -532,7 +533,8 @@ class ActorDatabase(ABCDatabase):
             properties = pickle.dumps(delegation)
             self.db.update_delegation(dlg_graph_id=str(delegation.get_delegation_id()),
                                       dlg_state=delegation.get_state().value,
-                                      properties=properties)
+                                      properties=properties,
+                                      site=delegation.get_site())
         finally:
             if self.lock.locked():
                 self.lock.release()
@@ -731,3 +733,81 @@ class ActorDatabase(ABCDatabase):
                 cfg_obj = pickle.loads(pickled_cfg_map)
                 result.append(cfg_obj)
         return result
+
+    def _load_poa_from_db(self, *, poa_dict_list: List[dict]) -> List[Poa]:
+        result = []
+        if poa_dict_list is None:
+            return result
+
+        for p in poa_dict_list:
+            pickled_poa = p.get(Constants.PROPERTY_PICKLE_PROPERTIES)
+            poa_obj = pickle.loads(pickled_poa)
+            sliver_id = poa_obj.get_sliver_id()
+            reservations = self.get_reservations(rid=sliver_id)
+            if reservations is not None:
+                poa_obj.restore(actor=self.actor, reservation=reservations[0])
+            result.append(poa_obj)
+        return result
+
+    def get_poas(self, *, poa_id: str = None, email: str = None, sliver_id: ID = None, slice_id: ID = None,
+                 project_id: str = None, limit: int = None, offset: int = None, last_update_time: datetime = None,
+                 states: list[int] = None) -> Union[List[Poa] or None]:
+        result = []
+        try:
+            try:
+                sliver_id_str = str(sliver_id) if sliver_id is not None else None
+                slice_id_str = str(slice_id) if slice_id is not None else None
+
+                poa_dict_list = self.db.get_poas(poa_guid=poa_id, email=email, sliver_id=sliver_id_str, limit=limit,
+                                                 offset=offset, last_update_time=last_update_time,
+                                                 project_id=project_id, slice_id=slice_id_str, states=states)
+            finally:
+                if self.lock.locked():
+                    self.lock.release()
+            if poa_dict_list is not None:
+                result = self._load_poa_from_db(poa_dict_list=poa_dict_list)
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error(traceback.format_exc())
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+        return result
+
+    def add_poa(self, *, poa: Poa):
+        try:
+            poa_list = self.get_poas(poa_id=poa.poa_id)
+            if len(poa_list) > 0:
+                raise DatabaseException("Slice # {} already exists".format(poa.poa_id))
+
+            properties = pickle.dumps(poa)
+            email = None
+            project_id = None
+            slice_id = None
+            if poa.get_slice().get_owner() is not None:
+                email = poa.get_slice().get_owner().get_email()
+                project_id = poa.get_slice().get_project_id()
+                slice_id = str(poa.get_slice().get_slice_id())
+
+            self.db.add_poa(poa_guid=poa.poa_id, sliver_id=str(poa.get_sliver_id()), email=email, project_id=project_id,
+                            slice_id=slice_id, properties=properties, state=poa.get_state().value)
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+
+    def update_poa(self, *, poa: Poa):
+        try:
+            #self.lock.acquire()
+            properties = pickle.dumps(poa)
+            self.db.update_poa(poa_guid=poa.poa_id, state=poa.get_state().value, properties=properties)
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+
+    def remove_poa(self, *, poa_id: str):
+        try:
+            #self.lock.acquire()
+            self.db.remove_poa(poa_guid=poa_id)
+        finally:
+            if self.lock.locked():
+                self.lock.release()

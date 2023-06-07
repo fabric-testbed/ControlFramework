@@ -28,6 +28,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.reservation_predecessor_avro import ReservationPredecessorAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_units_avro import ResultUnitsAvro
@@ -125,8 +126,8 @@ class ControllerManagementObject(ActorManagementObject, ABCClientActorManagement
     def modify_reservation(self, *, rid: ID, modified_sliver: BaseSliver, caller: AuthToken) -> ResultAvro:
         return self.client_helper.modify_reservation(rid=rid, modified_sliver=modified_sliver, caller=caller)
 
-    def poa(self, *, rid: ID, operation: str, data: dict, caller: AuthToken) -> ResultAvro:
-        return self.client_helper.poa(rid=rid, operation=operation, data=data, caller=caller)
+    def poa(self, *, poa: PoaAvro, caller: AuthToken) -> ResultAvro:
+        return self.client_helper.poa(poa=poa, caller=caller)
 
     def get_reservation_units(self, *, caller: AuthToken, rid: ID) -> ResultUnitsAvro:
         result = ResultUnitsAvro()

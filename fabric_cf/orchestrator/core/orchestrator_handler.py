@@ -27,9 +27,10 @@ import time
 import traceback
 from datetime import datetime, timedelta, timezone
 from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
-from typing import List
+from typing import List, Dict
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.networkx_property_graph_disjoint import NetworkXGraphImporterDisjoint
@@ -238,6 +239,8 @@ class OrchestratorHandler:
             # Check if an Active slice exists already with the same name for the user
             create_ts = time.time()
             project, tags, project_name = fabric_token.get_first_project()
+            if tags is not None and isinstance(tags, list):
+                tags = ','.join(tags)
             existing_slices = controller.get_slices(slice_name=slice_name,
                                                     email=fabric_token.get_email(), project=project)
             self.logger.info(f"GET slices: TIME= {time.time() - create_ts:.0f}")
@@ -260,7 +263,7 @@ class OrchestratorHandler:
             slice_obj.graph_id = asm_graph.get_graph_id()
             slice_obj.set_config_properties(value={Constants.USER_SSH_KEY: ssh_key,
                                                    Constants.PROJECT_ID: project,
-                                                   Constants.TAGS: ','.join(tags),
+                                                   Constants.TAGS: tags,
                                                    Constants.CLAIMS_EMAIL: fabric_token.get_email()})
             slice_obj.set_lease_end(lease_end=end_time)
             auth = AuthAvro()
@@ -795,15 +798,25 @@ class OrchestratorHandler:
                         raise OrchestratorException(message=message,
                                                     http_error_code=Constants.INTERNAL_SERVER_ERROR_MAINT_MODE)
 
-    def poa(self, *, token: str, sliver_id: str, operation, data: dict = None):
+    def poa(self, *, token: str, sliver_id: str, poa: PoaAvro) -> str:
         try:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"poa invoked for Controller: {controller}")
 
             rid = ID(uid=sliver_id) if sliver_id is not None else None
 
-            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.poa)
             email = fabric_token.get_email()
+            project, tags, project_name = fabric_token.get_first_project()
+
+            auth = AuthAvro()
+            auth.name = self.controller_state.get_management_actor().get_name()
+            auth.guid = self.controller_state.get_management_actor().get_guid()
+            auth.oidc_sub_claim = fabric_token.get_uuid()
+            auth.email = fabric_token.get_email()
+            poa.auth = auth
+            poa.project_id = project
+            poa.rid = sliver_id
 
             reservations = controller.get_reservations(rid=rid, email=email)
             if reservations is None:
@@ -815,9 +828,47 @@ class OrchestratorHandler:
 
                 raise OrchestratorException(f"{controller.get_last_error()}")
 
+            res_state = ReservationStates(reservations[0].get_state())
 
+            if res_state != ReservationStates.Active:
+                raise OrchestratorException(f"Cannot trigger POA; Reservation# {rid} is not {ReservationStates.Active}")
 
-            return None
+            if not controller.poa(poa=poa):
+                raise OrchestratorException(f"Failed to trigger POA: {controller.get_last_error().get_status().get_message()}")
+            self.logger.debug(f"POA {poa.operation}/{sliver_id} added successfully")
+            return poa.poa_id
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing poa e: {e}")
+            raise e
+
+    def get_poa(self, *, token: str, sliver_id: str, poa_id: str):
+        try:
+            controller = self.controller_state.get_management_actor()
+            self.logger.debug(f"poa invoked for Controller: {controller}")
+
+            rid = ID(uid=sliver_id) if sliver_id is not None else None
+
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
+            email = fabric_token.get_email()
+            project, tags, project_name = fabric_token.get_first_project()
+
+            auth = AuthAvro()
+            auth.name = self.controller_state.get_management_actor().get_name()
+            auth.guid = self.controller_state.get_management_actor().get_guid()
+            auth.oidc_sub_claim = fabric_token.get_uuid()
+            auth.email = fabric_token.get_email()
+
+            poa_list = controller.get_poas(rid=rid, poa_id=poa_id, email=email, project_id=project)
+            if poa_list is None:
+                if controller.get_last_error() is not None:
+                    self.logger.error(controller.get_last_error())
+                    if controller.get_last_error().status.code == ErrorCodes.ErrorNoSuchPoa:
+                        raise OrchestratorException(f"Reservation# {rid} not found",
+                                                    http_error_code=NOT_FOUND)
+
+                raise OrchestratorException(f"{controller.get_last_error()}")
+            return ResponseBuilder.get_poa_summary(poa_list=poa_list)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing poa e: {e}")

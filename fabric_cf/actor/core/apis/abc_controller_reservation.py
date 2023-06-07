@@ -78,20 +78,6 @@ class ABCControllerReservation(ABCClientReservation):
         """
 
     @abstractmethod
-    def get_poa_sequence_out(self) -> int:
-        """
-        Returns the reservation sequence number for outgoing poa messages.
-        @returns reservation sequence number for outgoing poa messages
-        """
-
-    @abstractmethod
-    def get_poa_sequence_in(self) -> int:
-        """
-        Returns the reservation sequence number for incoming poa messages.
-        @returns reservation sequence number for incoming poa messages
-        """
-
-    @abstractmethod
     def get_lease_term(self) -> Term:
         """
         Returns the term of the current lease.

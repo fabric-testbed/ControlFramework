@@ -41,6 +41,7 @@ from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.apis.abc_server_reservation import ABCServerReservation
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
+from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
 from fabric_cf.actor.core.kernel.reservation import Reservation
 from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
@@ -333,25 +334,6 @@ class Kernel:
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during modify lease for reservation #{reservation.get_reservation_id()}",
-                       e=e)
-        finally:
-            reservation.unlock()
-
-    def poa(self, *, reservation: ABCReservationMixin, operation: str, data: dict):
-        """
-        Handles a modify lease operation for the reservation.
-        Client: issue a modify lease request.
-
-        Authority: process a request for a modifying a lease.
-        @param reservation reservation for which to perform extend lease
-        @throws Exception
-        """
-        try:
-            reservation.lock()
-            reservation.poa(operation=operation, data=data)
-        except Exception as e:
-            self.logger.error(traceback.format_exc())
-            self.error(err=f"An error occurred during poa for reservation #{reservation.get_reservation_id()}",
                        e=e)
         finally:
             reservation.unlock()
@@ -1528,3 +1510,55 @@ class Kernel:
     def update_maintenance_mode(self, *, properties: Dict[str, str], sites: List[Site] = None):
         Maintenance.update_maintenance_mode(database=self.plugin.get_database(),
                                             properties=properties, sites=sites)
+
+    def poa(self, *, reservation: ABCReservationMixin, poa: Poa):
+        """
+        Handles a POA for the sliver
+        Client: Issues a POA
+
+        Authority: process a POA
+        @param reservation reservation for which to perform POA
+        @param poa POA
+        @throws Exception
+        """
+        try:
+            # Add POA to the database
+            self.plugin.get_database().add_poa(poa=poa)
+            reservation.lock()
+
+            # Process POA
+            reservation.poa(poa=poa)
+
+            # Update POA
+            self.plugin.get_database().update_poa(poa=poa)
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.error(err=f"An error occurred during poa for reservation #{reservation.get_reservation_id()}",
+                       e=e)
+        finally:
+            reservation.unlock()
+
+    def poa_info(self, *, reservation: ABCReservationMixin, poa: Poa):
+        """
+        Handles a POA Response for the sliver
+        Client: Issues a POA
+
+        Authority: process a POA
+        @param reservation reservation for which to perform POA
+        @param poa POA
+        @throws Exception
+        """
+        try:
+            reservation.lock()
+
+            # Process POA Info from Authority
+            reservation.poa_info(incoming=poa)
+
+            # Update Reservation
+            self.plugin.get_database().update_reservation(reservation=reservation)
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.error(err=f"An error occurred during poa for reservation #{reservation.get_reservation_id()}",
+                       e=e)
+        finally:
+            reservation.unlock()
