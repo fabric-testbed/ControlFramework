@@ -39,7 +39,7 @@ from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin,
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
-from fabric_cf.actor.core.kernel.poa import Poa
+from fabric_cf.actor.core.kernel.poa import Poa, PoaStates
 from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
 from fabric_cf.actor.core.container.maintenance import Site
@@ -331,6 +331,18 @@ class ActorDatabase(ABCDatabase):
                             parent = self.get_reservations(rid=p.reservation_id)
                             if parent is not None and len(parent) > 0:
                                 p.set_reservation(reservation=parent[0])
+
+            # Load in progress POAs
+            poa_list = self.get_poas(sliver_id=result.get_reservation_id(), include_res_info=False,
+                                     states=[PoaStates.Nascent.value, PoaStates.Performing.value,
+                                             PoaStates.AwaitingCompletion.value, PoaStates.SentToAuthority.value])
+
+            from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
+            from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservation
+            if isinstance(result, ReservationClient) or isinstance(result, AuthorityReservation):
+                for poa in poa_list:
+                    poa.restore(actor=self.actor, reservation=result)
+                    result.poas[poa.get_poa_id()] = poa
 
             return result
         except Exception as e:
@@ -734,7 +746,7 @@ class ActorDatabase(ABCDatabase):
                 result.append(cfg_obj)
         return result
 
-    def _load_poa_from_db(self, *, poa_dict_list: List[dict]) -> List[Poa]:
+    def _load_poa_from_db(self, *, poa_dict_list: List[dict], include_res_info: bool) -> List[Poa]:
         result = []
         if poa_dict_list is None:
             return result
@@ -743,15 +755,16 @@ class ActorDatabase(ABCDatabase):
             pickled_poa = p.get(Constants.PROPERTY_PICKLE_PROPERTIES)
             poa_obj = pickle.loads(pickled_poa)
             sliver_id = poa_obj.get_sliver_id()
-            reservations = self.get_reservations(rid=sliver_id)
-            if reservations is not None:
-                poa_obj.restore(actor=self.actor, reservation=reservations[0])
+            if include_res_info:
+                reservations = self.get_reservations(rid=sliver_id)
+                if reservations is not None:
+                    poa_obj.restore(actor=self.actor, reservation=reservations[0])
             result.append(poa_obj)
         return result
 
     def get_poas(self, *, poa_id: str = None, email: str = None, sliver_id: ID = None, slice_id: ID = None,
                  project_id: str = None, limit: int = None, offset: int = None, last_update_time: datetime = None,
-                 states: list[int] = None) -> Union[List[Poa] or None]:
+                 states: list[int] = None, include_res_info: bool = True) -> Union[List[Poa] or None]:
         result = []
         try:
             try:
@@ -765,7 +778,7 @@ class ActorDatabase(ABCDatabase):
                 if self.lock.locked():
                     self.lock.release()
             if poa_dict_list is not None:
-                result = self._load_poa_from_db(poa_dict_list=poa_dict_list)
+                result = self._load_poa_from_db(poa_dict_list=poa_dict_list, include_res_info=include_res_info)
         except Exception as e:
             self.logger.error(e)
             self.logger.error(traceback.format_exc())

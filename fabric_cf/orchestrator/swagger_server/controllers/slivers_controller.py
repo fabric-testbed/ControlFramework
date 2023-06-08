@@ -31,7 +31,7 @@ def slivers_poa_get_poa_id_get(poa_id):  # noqa: E501
 
     :rtype: Poa
     """
-    return 'do some magic!'
+    return rc.slivers_poa_get_poa_id_get(poa_id=poa_id)
 
 
 def slivers_poa_get_sliver_id_get(sliver_id):  # noqa: E501
@@ -44,7 +44,7 @@ def slivers_poa_get_sliver_id_get(sliver_id):  # noqa: E501
 
     :rtype: Poa
     """
-    return 'do some magic!'
+    return rc.slivers_poa_get_sliver_id_get(sliver_id=sliver_id)
 
 
 def slivers_poa_sliver_id_post(body, sliver_id):  # noqa: E501

@@ -528,7 +528,6 @@ class ActorMixin(ABCActorMixin):
         """
         self.logger.info(
             "Starting to recover reservations in slice {}({})".format(slice_obj.get_name(), slice_obj.get_slice_id()))
-        reservations = None
         try:
             reservations = self.plugin.get_database().get_reservations(slice_id=slice_obj.get_slice_id())
         except Exception as e:
