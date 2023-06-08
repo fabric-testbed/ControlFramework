@@ -29,13 +29,13 @@ from abc import abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING, List, Dict
 
+
 from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
 from fabric_cf.actor.core.apis.abc_timer_queue import ABCTimerQueue
 from fabric_cf.actor.core.apis.abc_actor_identity import ABCActorIdentity
 
 from fabric_cf.actor.core.apis.abc_tick import ABCTick
-from fabric_cf.actor.core.container.maintenance import Site
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_actor_event import ABCActorEvent
@@ -53,6 +53,8 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.util.reservation_set import ReservationSet
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.core.time.term import Term
+    from fabric_cf.actor.core.kernel.poa import Poa
+    from fabric_cf.actor.core.container.maintenance import Site
 
 
 class ActorType(Enum):

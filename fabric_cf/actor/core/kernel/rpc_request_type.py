@@ -44,6 +44,8 @@ class RPCRequestType(Enum):
     ClaimDelegation = 17
     ReclaimDelegation = 18
     DeliveryAck = 19
+    Poa = 20
+    PoaInfo = 21
 
     def __str__(self):
         return self.name

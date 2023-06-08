@@ -138,6 +138,8 @@ class BasePlugin(ABCBasePlugin):
             self.process_delete_complete(unit=unit, properties=properties)
         elif target == Constants.TARGET_MODIFY:
             self.process_modify_complete(unit=unit, properties=properties)
+        elif target == Constants.TARGET_POA:
+            self.process_poa_complete(unit=unit, properties=properties)
         else:
             unsupported = True
             self.logger.warning("Unsupported target in configurationComplete(): {}".format(target))
@@ -178,6 +180,9 @@ class BasePlugin(ABCBasePlugin):
         return
 
     def process_modify_complete(self, *, unit: ConfigToken, properties: dict):
+        return
+
+    def process_poa_complete(self, *, unit: ConfigToken, properties: dict):
         return
 
     def set_actor(self, *, actor: ABCActorMixin):

@@ -31,6 +31,9 @@ from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
+from fabric_cf.actor.core.apis.abc_delegation import DelegationState
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.manage.error import Error
 from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor
 from fabric_cf.actor.core.util.id import ID
@@ -53,8 +56,59 @@ class ManageHelper:
         actor = KafkaProcessorSingleton.get().get_mgmt_actor(name=actor_name)
         return actor
 
-    def do_get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str = None,
-                      id_token: str = None) -> Tuple[List[SliceAvro] or None, Error]:
+    def do_get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str = None, slice_name: str = None,
+                      id_token: str = None, email: str = None, states: str = None) -> Tuple[
+        List[SliceAvro] or None, Error]:
+        actor = self.get_actor(actor_name=actor_name)
+
+        if actor is None:
+            raise Exception("Invalid arguments actor {} not found".format(actor_name))
+        try:
+            actor.prepare(callback_topic=callback_topic)
+            sid = ID(uid=slice_id) if slice_id is not None else None
+            slice_states = None
+            if states is not None:
+                states_list = states.split(",")
+                for x in states_list:
+                    if slice_states is None:
+                        slice_states = []
+                    slice_states.append(SliceState.translate(state_name=x).value)
+
+            result = actor.get_slices(slice_id=sid, slice_name=slice_name, email=email, states=slice_states)
+            return result, actor.get_last_error()
+        except Exception:
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)
+        return None, actor.get_last_error()
+
+    def do_get_reservations(self, *, actor_name: str, callback_topic: str, slice_id: str = None, rid: str = None,
+                            states: str = None, id_token: str = None, email: str = None, site: str = None,
+                            type: str = None) -> Tuple[List[ReservationMng] or None, Error]:
+        actor = self.get_actor(actor_name=actor_name)
+
+        if actor is None:
+            raise Exception("Invalid arguments actor {} not found".format(actor_name))
+        try:
+            actor.prepare(callback_topic=callback_topic)
+            sid = ID(uid=slice_id) if slice_id is not None else None
+            reservation_id = ID(uid=rid) if rid is not None else None
+            reservation_states = None
+            if states is not None:
+                states_list = states.split(",")
+                for x in states_list:
+                    if reservation_states is None:
+                        reservation_states = []
+                    reservation_states.append(ReservationStates.translate(state_name=x).value)
+            return actor.get_reservations(slice_id=sid, rid=reservation_id, states=reservation_states, email=email,
+                                          site=site, type=type), actor.get_last_error()
+        except Exception as e:
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)
+            traceback.print_exc()
+        return None, actor.get_last_error()
+
+    def do_get_delegations(self, *, actor_name: str, callback_topic: str, slice_id: str = None, did: str = None,
+                           states: str = None, id_token: str = None) -> Tuple[List[DelegationAvro] or None, Error]:
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
@@ -64,46 +118,22 @@ class ManageHelper:
             sid = None
             if slice_id is not None:
                 sid = ID(uid=slice_id)
-            return actor.get_slices(id_token=id_token, slice_id=sid), actor.get_last_error()
-        except Exception:
-            ex_str = traceback.format_exc()
-            self.logger.error(ex_str)
-        return None, actor.get_last_error()
-
-    def do_get_reservations(self, *, actor_name: str, callback_topic: str, rid: str = None,
-                            id_token: str = None) -> Tuple[List[ReservationMng] or None, Error]:
-        actor = self.get_actor(actor_name=actor_name)
-
-        if actor is None:
-            raise Exception("Invalid arguments actor {} not found".format(actor_name))
-        try:
-            actor.prepare(callback_topic=callback_topic)
-            reservation_id = None
-            if rid is not None:
-                reservation_id = ID(uid=rid)
-            return actor.get_reservations(id_token=id_token, rid=reservation_id), actor.get_last_error()
+            delegation_states = None
+            if states is not None:
+                for x in states:
+                    if delegation_states is None:
+                        delegation_states = []
+                    delegation_states.append(DelegationState.translate(state_name=x).value)
+            return actor.get_delegations(delegation_id=did, slice_id=sid,
+                                         states=delegation_states), actor.get_last_error()
         except Exception as e:
-            ex_str = traceback.format_exc()
-            self.logger.error(ex_str)
-        return None, actor.get_last_error()
-
-    def do_get_delegations(self, *, actor_name: str, callback_topic: str, did: str = None,
-                           id_token: str = None) -> Tuple[List[DelegationAvro] or None, Error]:
-        actor = self.get_actor(actor_name=actor_name)
-
-        if actor is None:
-            raise Exception("Invalid arguments actor {} not found".format(actor_name))
-        try:
-            actor.prepare(callback_topic=callback_topic)
-            return actor.get_delegations(id_token=id_token, delegation_id=did), actor.get_last_error()
-        except Exception as e:
+            self.logger.error(f"Exception occurred while fetching delegations: e {e}")
+            self.logger.error(traceback.format_exc())
             traceback.print_exc()
-            ex_str = traceback.format_exc()
-            self.logger.error(ex_str)
         return None, actor.get_last_error()
 
     def do_claim_delegations(self, *, broker: str, am_guid: ID, callback_topic: str, id_token: str = None,
-                             did: str = None) -> Tuple[DelegationAvro or None, Error]:
+                             did: str = None) -> Tuple[DelegationAvro, Error]:
         """
         Claim delegations by invoking Management Actor Claim Delegations API
         @param broker broker guid
@@ -120,7 +150,7 @@ class ManageHelper:
         try:
             actor.prepare(callback_topic=callback_topic)
 
-            dlg = actor.claim_delegations(broker=am_guid, did=did, id_token=id_token)
+            dlg = actor.claim_delegations(broker=am_guid, did=did)
             return dlg, actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
@@ -128,56 +158,10 @@ class ManageHelper:
 
         return None, actor.get_last_error()
 
-    def claim_delegations(self, *, broker: str, am: str, callback_topic: str, did: str = None, id_token: str = None):
-        """
-        Claim delegations
-        @param broker broker name
-        @param am am name
-        @param callback_topic callback topic
-        @param id_token id token
-        @param did delegation id
-        """
-        try:
-            am_actor = self.get_actor(actor_name=am)
-            broker_actor = self.get_actor(actor_name=broker)
-
-            if am_actor is None or broker_actor is None:
-                raise Exception("Invalid arguments am_actor {} or broker_actor {} not found".format(am_actor,
-                                                                                                    broker_actor))
-
-            delegations, error = self.do_get_delegations(actor_name=am, callback_topic=callback_topic, did=did,
-                                                         id_token=id_token)
-            if delegations is None:
-                self.logger.debug("Error occurred while getting delegations for actor: {}".format(am))
-                self.print_result(status=error.get_status())
-                return
-
-            if delegations is None or len(delegations) == 0:
-                self.logger.debug("No delegations to be claimed from {} by {}:".format(am, broker))
-                return
-
-            claimed = False
-            for d in delegations:
-                if d.get_slice_object().get_slice_name() == broker:
-                    self.logger.debug("Claiming Delegation# {}".format(d.get_delegation_id()))
-                    delegation, error = self.do_claim_delegations(broker=broker, am_guid=am_actor.get_guid(),
-                                                                  did=d.get_delegation_id(), callback_topic=callback_topic,
-                                                                  id_token=id_token)
-                    claimed = True
-                    if delegation is not None:
-                        self.logger.debug("Delegation claimed: {} ".format(delegation.get_delegation_id()))
-                    else:
-                        self.print_result(status=error.get_status())
-            if not claimed:
-                self.logger.error(f"No delegations found for Broker# {broker}")
-        except Exception as e:
-            self.logger.error(f"Exception occurred e: {e}")
-            self.logger.error(traceback.format_exc())
-
     def do_reclaim_delegations(self, *, broker: str, am_guid: ID, callback_topic: str, id_token: str = None,
-                               did: str = None) -> Tuple[DelegationAvro or None, Error]:
+                               did: str = None) -> Tuple[DelegationAvro, Error]:
         """
-        ReClaim delegations by invoking Management Actor ReClaim Delegations API
+        Reclaim delegations by invoking Management Actor Claim Delegations API
         @param broker broker guid
         @param am_guid am guid
         @param callback_topic callback topic
@@ -192,58 +176,10 @@ class ManageHelper:
         try:
             actor.prepare(callback_topic=callback_topic)
 
-            dlg = actor.reclaim_delegations(broker=am_guid, did=did, id_token=id_token)
+            dlg = actor.reclaim_delegations(broker=am_guid, did=did)
             return dlg, actor.get_last_error()
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
 
         return None, actor.get_last_error()
-
-    def reclaim_delegations(self, *, broker: str, am: str, callback_topic: str, did: str = None,
-                            id_token: str = None) -> bool:
-        """
-        ReClaim delegations
-        @param broker broker name
-        @param am am name
-        @param callback_topic callback topic
-        @param id_token id token
-        @param did delegation id
-        """
-        try:
-            am_actor = self.get_actor(actor_name=am)
-            broker_actor = self.get_actor(actor_name=broker)
-
-            if am_actor is None or broker_actor is None:
-                raise Exception("Invalid arguments am_actor {} or broker_actor {} not found".format(am_actor,
-                                                                                                    broker_actor))
-
-            delegations, error = self.do_get_delegations(actor_name=am, callback_topic=callback_topic, did=did,
-                                                         id_token=id_token)
-            if delegations is None:
-                self.logger.debug("Error occurred while getting delegations for actor: {}".format(am))
-                self.print_result(status=error.get_status())
-                return
-
-            if delegations is None or len(delegations) == 0:
-                self.logger.debug("No delegations to be reclaimed from {} by {}:".format(am, broker))
-                return
-
-            reclaim_failed = False
-            for d in delegations:
-                if d.get_slice_object().get_slice_name() == broker:
-                    self.logger.debug("Reclaiming Delegation# {}".format(d.get_delegation_id()))
-                    delegation, error = self.do_reclaim_delegations(broker=broker, am_guid=am_actor.get_guid(),
-                                                                    did=d.get_delegation_id(),
-                                                                    callback_topic=callback_topic,
-                                                                    id_token=id_token)
-                    if delegation is not None:
-                        self.logger.debug("Delegation reclaimed: {} ".format(delegation.get_delegation_id()))
-                    else:
-                        reclaim_failed = True
-                        self.print_result(status=error.get_status())
-            return not reclaim_failed
-        except Exception as e:
-            self.logger.error(f"Exception occurred e: {e}")
-            self.logger.error(traceback.format_exc())
-        return False

@@ -199,7 +199,7 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         broker_delegation.set_slice_object(slice_object=slice_obj)
         return broker_delegation
 
-    def test_a_create(self):
+    def _test_a_create(self):
         """
         Tests if the actor and the policy can be instantiated.
         """

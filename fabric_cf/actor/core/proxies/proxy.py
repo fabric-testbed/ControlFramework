@@ -119,7 +119,6 @@ class Proxy(ABCProxy):
     def decode(*, encoded, plugin: ABCBasePlugin) -> ABCConcreteSet:
         try:
             decoded_resource = pickle.loads(encoded)
-            print("Decoded object is of type={}".format(type(decoded_resource)))
             decoded_resource.restore(plugin=plugin, reservation=None)
             return decoded_resource
         except Exception as e:

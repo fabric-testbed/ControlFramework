@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING
 from fim.slivers.base_sliver import BaseSliver
 
 from fabric_cf.actor.core.common.exceptions import UnitException
+from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.notice import Notice
 
@@ -415,3 +416,21 @@ class UnitSet(ABCConcreteSet):
         Get a copy of the units
         """
         return self.units.copy()
+
+    def poa(self, *, poa: Poa):
+        units = self.units.copy()
+        for u in units.values():
+            if u.transfer_out_started:
+                continue
+
+            try:
+                u.start_modify()
+                self.plugin.poa(unit=u, poa=poa)
+            except Exception as e:
+                self.fail(u=u, message="POA error", e=e)
+
+    def get_poa_info(self) -> dict:
+        result = {}
+        for u in self.units.values():
+            return u.poa_info
+        return result

@@ -49,6 +49,7 @@ class ErrorCodes(Enum):
     ErrorNoSuchDelegation = 14
     ErrorInvalidToken = 15
     ErrorSliceExists = 16
+    ErrorNoSuchPoa = 17
 
     def interpret(self, exception=None):
         interpretations = {
@@ -67,7 +68,8 @@ class ErrorCodes(Enum):
             13: "Transport timeout",
             14: "No such delegation found",
             15: "Invalid Token",
-            16: "Slice exists"
+            16: "Slice exists",
+            17: "No such poa found"
           }
         if exception is None:
             return interpretations[self.value]
@@ -265,12 +267,17 @@ class Constants:
     PROPERTY_TARGET_RESULT_CODE = "target.code"
     PROPERTY_TARGET_RESULT_CODE_MESSAGE = "target.code.message"
     PROPERTY_ACTION_SEQUENCE_NUMBER = "action.sequence"
+    PROPERTY_POA_INFO = "poa_info"
+    PROPERTY_INFO = "info"
+    PROPERTY_CODE = "code"
+    POA_ID = "poa_id"
 
     RESULT_CODE_EXCEPTION = -1
     RESULT_CODE_OK = 0
     TARGET_CREATE = "create"
     TARGET_DELETE = "delete"
     TARGET_MODIFY = "modify"
+    TARGET_POA = "poa"
     TARGET_CLEAN_RESTART = "clean_restart"
 
     RSV_SLC_ID = 'rsv_slc_id'

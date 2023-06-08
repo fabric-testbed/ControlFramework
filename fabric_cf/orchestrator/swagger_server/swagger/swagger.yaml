@@ -876,8 +876,196 @@ paths:
       security:
       - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
+  /slivers/poa/{sliver_id}:
+    post:
+      tags:
+      - slivers
+      summary: Perform an operational action on a sliver.
+      description: "Request to perform an operation action on a sliver. Supported\
+        \ actions include - reboot a VM sliver, get cpu info, get numa info, pin vCPUs,\
+        \ pin memory to a numa node etc.  \n"
+      operationId: slivers_poa_sliver_id_post
+      parameters:
+      - name: sliver_id
+        in: path
+        description: Sliver identified by universally unique identifier
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        $ref: '#/components/requestBodies/payload_poa'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/poa'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_400_bad_request'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_401_unauthorized'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_403_forbidden'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_404_not_found'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_500_internal_server_error'
+      security:
+      - bearerAuth: []
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
+  /slivers/poa_get/{sliver_id}:
+    get:
+      tags:
+      - slivers
+      summary: Perform an operational action on a sliver.
+      description: "Request get the status of the POAs for a sliver identified by\
+        \ sliver_id.  \n"
+      operationId: slivers_poa_get_sliver_id_get
+      parameters:
+      - name: sliver_id
+        in: path
+        description: Sliver identified by universally unique identifier
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/poa'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_400_bad_request'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_401_unauthorized'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_403_forbidden'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_404_not_found'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_500_internal_server_error'
+      security:
+      - bearerAuth: []
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
+  /slivers/poa_get/{poa_id}:
+    get:
+      tags:
+      - slivers
+      summary: Perform an operational action on a sliver.
+      description: "Request get the status of the POA identified by poa_id.  \n"
+      operationId: slivers_poa_get_poa_id_get
+      parameters:
+      - name: poa_id
+        in: path
+        description: Poa Id for the POA triggered
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/poa'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_400_bad_request'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_401_unauthorized'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_403_forbidden'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_404_not_found'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_500_internal_server_error'
+      security:
+      - bearerAuth: []
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
 components:
   schemas:
+    poa_post:
+      required:
+      - operation
+      type: object
+      properties:
+        operation:
+          type: string
+          enum:
+          - cpuinfo
+          - numainfo
+          - cpupin
+          - numatune
+          - reboot
+        data:
+          $ref: '#/components/schemas/poa_post_data'
     slices_post:
       required:
       - graph_model
@@ -887,6 +1075,7 @@ components:
         graph_model:
           type: string
         ssh_keys:
+          maxItems: 10
           type: array
           items:
             type: string
@@ -1195,6 +1384,47 @@ components:
       properties:
         model:
           type: string
+    poa:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/status_200_ok_single'
+      - type: object
+        properties:
+          data:
+            type: array
+            items:
+              $ref: '#/components/schemas/poa_data'
+    poa_data:
+      type: object
+      properties:
+        operation:
+          type: string
+        poa_id:
+          type: string
+        sliver_id:
+          type: string
+        slice_id:
+          type: string
+        info:
+          type: object
+    poa_post_data_vcpu_cpu_map:
+      type: object
+      properties:
+        vcpu:
+          type: string
+        cpu:
+          type: string
+    poa_post_data:
+      type: object
+      properties:
+        vcpu_cpu_map:
+          type: array
+          items:
+            $ref: '#/components/schemas/poa_post_data_vcpu_cpu_map'
+        node_set:
+          type: array
+          items:
+            type: string
   requestBodies:
     payload_slices_modify:
       description: Modify a Slice
@@ -1209,6 +1439,13 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/slices_post'
+      required: true
+    payload_poa:
+      description: Perform Operation Action
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/poa_post'
       required: true
   securitySchemes:
     bearerAuth:

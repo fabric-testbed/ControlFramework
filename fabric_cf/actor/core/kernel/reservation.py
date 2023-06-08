@@ -50,6 +50,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.time.term import Term
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.util.resource_type import ResourceType
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class Reservation(ABCReservationMixin):
@@ -708,3 +709,14 @@ class Reservation(ABCReservationMixin):
     def unlock(self):
         if self.thread_lock.locked():
             self.thread_lock.release()
+
+    def service_poa(self):
+        pass
+
+    def poa_info(self, *, incoming: Poa):
+        pass
+
+    def poa(self, *, poa: Poa):
+        """
+        POA on reservation
+        """

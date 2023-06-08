@@ -410,3 +410,9 @@ class ABCDelegation(ABC):
         """
         Unlock delegation
         """
+
+    @abstractmethod
+    def get_site(self) -> str:
+        """
+        Return Site name
+        """

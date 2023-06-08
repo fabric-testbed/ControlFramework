@@ -25,8 +25,6 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import queue
-import threading
 from typing import TYPE_CHECKING
 
 from fim.graph.abc_property_graph import ABCPropertyGraph
@@ -38,6 +36,7 @@ from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
 from fabric_cf.actor.core.delegation.broker_delegation_factory import BrokerDelegationFactory
 from fabric_cf.actor.core.delegation.delegation_factory import DelegationFactory
+from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.manage.broker_management_object import BrokerManagementObject
 from fabric_cf.actor.core.manage.kafka.services.kafka_broker_service import KafkaBrokerService
@@ -429,6 +428,12 @@ class Broker(ActorMixin, ABCBrokerMixin):
 
     def modify(self, *, reservation_id: ID, modified_sliver: BaseSliver):
         return
+
+    def poa(self, *, poa: Poa):
+        pass
+
+    def poa_info(self, *, poa: Poa, caller: AuthToken):
+        pass
 
     @staticmethod
     def get_management_object_class() -> str:

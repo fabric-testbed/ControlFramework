@@ -50,6 +50,7 @@ class LocalProxy(Proxy, ABCCallbackProxy):
             self.update_data = None
             self.callback = None
             self.query = None
+            self.poa = None
             self.request_id = None
             self.failed_reservation_id = None
             self.failed_request_type = None

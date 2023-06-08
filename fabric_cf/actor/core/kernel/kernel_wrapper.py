@@ -28,6 +28,7 @@ import traceback
 from datetime import datetime
 from typing import List, Dict
 
+from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
 from fim.slivers.base_sliver import BaseSliver
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
@@ -48,8 +49,8 @@ from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.kernel.kernel import Kernel
 from fabric_cf.actor.core.common.exceptions import KernelException
+from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
-from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.sequence_comparison_codes import SequenceComparisonCodes
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
@@ -232,10 +233,9 @@ class KernelWrapper:
 
     def advertise(self, *, delegation: ABCDelegation, client: AuthToken):
         """
-        Initiates a ticket export.
+        Advertise a delegation
         Role: Broker or Authority
-        Prepare/hold a ticket for "will call" claim by a client.
-        @param delegation reservation to be exported
+        @param delegation delegation to be exported
         @param client client identity
         @throws Exception in case of error
         """
@@ -554,6 +554,11 @@ class KernelWrapper:
                 delegation.get_slice_object().get_slice_id() is None or delegation.get_delegation_id() is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
+        if delegation.get_site() is None:
+            site_name = self.actor.get_name()
+            site_name = site_name.replace("-am", "")
+            delegation.site = site_name
+
         # Obtain the previously created slice or create a new slice. When this
         # function returns we will have a slice object that is registered with the kernel
         s = self.kernel.get_slice(slice_id=delegation.get_slice_id())
@@ -674,7 +679,6 @@ class KernelWrapper:
         diff = int(time.time() - begin)
         if diff > 0:
             self.logger.info(f"REDEEM TIME: {diff}")
-        begin = time.time()
 
     def redeem_request(self, *, reservation: ABCAuthorityReservation, caller: AuthToken,
                        callback: ABCControllerCallbackProxy, compare_sequence_numbers: bool):
@@ -917,10 +921,9 @@ class KernelWrapper:
 
     def delegate(self, *, delegation: ABCDelegation, destination: ABCActorIdentity):
         """
-        Initiates a delegate request. If the exported flag is set, this is a claim
-        on a pre-reserved "will call" ticket.
-        Role: Broker or Controller.
-        @param delegation delegation parameters for ticket request
+        Trigger a Claim Delegation
+        Role: Broker
+        @param delegation delegation
         @param destination identity of the actor the request must be sent to
         @throws Exception in case of error
         """
@@ -1142,3 +1145,56 @@ class KernelWrapper:
 
     def update_maintenance_mode(self, *, properties: Dict[str, str], sites: List[Site] = None):
         self.kernel.update_maintenance_mode(properties=properties, sites=sites)
+
+    def poa(self, *, reservation: ABCReservationMixin, poa: Poa, raise_exception: bool = False):
+        """
+        Initiates a request to trigger POA for a sliver
+        Role: Controller
+        @param reservation reservation
+        @param poa
+        @param raise_exception
+        @throws Exception in case of error
+        """
+
+        if reservation is None:
+            raise KernelException(Constants.INVALID_ARGUMENT)
+
+        target = self.kernel.validate(rid=reservation.get_reservation_id())
+
+        if target is None:
+            self.logger.error("POA for a reservation not registered with the kernel")
+            raise KernelException("POA for a reservation not registered with the kernel")
+
+        try:
+            self.__authorize_request(action_id=ActionId.poa, reservation=reservation,
+                                     sliver=reservation.get_requested_resources().get_sliver(),
+                                     lease_end_time=None)
+
+            poa.restore(actor=self.actor, reservation=target)
+
+            # NOTE: this call does not require access control check, since
+            # it is executed in the context of the actor represented by KernelWrapper.
+            self.kernel.poa(reservation=target, poa=poa)
+
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error("Exception occurred in processing POA request {}".format(e))
+            if raise_exception:
+                raise e
+
+    def poa_info(self, *, poa: Poa, caller: AuthToken):
+        if poa.get_sliver_id() is None:
+            raise KernelException(Constants.INVALID_ARGUMENT)
+
+        target = self.kernel.validate(rid=poa.get_sliver_id())
+
+        if target is None:
+            self.logger.error("POA response for a reservation not registered with the kernel")
+            raise KernelException("POA response for a reservation not registered with the kernel")
+
+        try:
+            poa.restore(actor=self.actor, reservation=target)
+            self.kernel.poa_info(reservation=target, poa=poa)
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error("Exception occurred in processing POA response {}".format(e))

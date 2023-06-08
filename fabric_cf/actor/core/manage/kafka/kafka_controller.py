@@ -28,6 +28,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List
 
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.reservation_predecessor_avro import ReservationPredecessorAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
@@ -108,4 +109,7 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def modify_reservation(self, *, rid: ID, modify_properties: dict) -> bool:
+        raise ManageException(Constants.NOT_IMPLEMENTED)
+
+    def poa(self, *, poa: PoaAvro) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)

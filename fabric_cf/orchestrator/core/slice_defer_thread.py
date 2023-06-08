@@ -33,7 +33,6 @@ from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.iterable_queue import IterableQueue
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_slice_wrapper import OrchestratorSliceWrapper
-from fabric_cf.orchestrator.core.reservation_status_update import ReservationStatusUpdate
 
 
 class SliceDeferThread:

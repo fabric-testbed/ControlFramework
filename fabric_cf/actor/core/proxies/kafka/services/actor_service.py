@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
 from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
+from fabric_mb.message_bus.messages.result_poa_avro import ResultPoaAvro
 from fabric_mb.message_bus.messages.update_delegation_avro import UpdateDelegationAvro
 
 from fabric_cf.actor.core.apis.abc_concrete_set import ABCConcreteSet
@@ -39,6 +40,7 @@ from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.delegation.broker_delegation_factory import BrokerDelegationFactory
 from fabric_cf.actor.core.kernel.incoming_delegation_rpc import IncomingDelegationRPC
 from fabric_cf.actor.core.kernel.incoming_failed_rpc import IncomingFailedRPC
+from fabric_cf.actor.core.kernel.incoming_poa_rpc import IncomingPoaRPC
 from fabric_cf.actor.core.kernel.incoming_query_rpc import IncomingQueryRPC
 from fabric_cf.actor.core.kernel.incoming_rpc import IncomingRPC
 from fabric_cf.actor.core.kernel.incoming_reservation_rpc import IncomingReservationRPC
@@ -85,8 +87,6 @@ class ActorService:
         if unit_set is not None:
             return Translate.translate_unit_set_from_avro(unit_list=unit_set)
 
-        return None
-
     def pass_client(self, *, reservation: ReservationAvro) -> ABCClientReservation:
         slice_obj = Translate.translate_slice(slice_avro=reservation.slice)
         term = Translate.translate_term_from_avro(term=reservation.term)
@@ -102,7 +102,8 @@ class ActorService:
 
         dlg = BrokerDelegationFactory.create(did=delegation.get_delegation_id(),
                                              slice_id=slice_obj.get_slice_id(),
-                                             broker=None)
+                                             broker=None,
+                                             site=delegation.get_site())
         dlg.restore(actor=self.actor, slice_obj=slice_obj)
 
         site_proxy = ActorRegistrySingleton.get().get_proxy(protocol=Constants.PROTOCOL_KAFKA,
@@ -146,8 +147,22 @@ class ActorService:
             raise e
         self.do_dispatch(rpc=rpc)
 
+    def poa_info(self, *, request: ResultPoaAvro):
+        try:
+            poa = Translate.translate_result_poa_avro_to_poa(poa_result=request)
+            if request.poas is not None and len(request.poas) > 0:
+                poa_info = request.poas[0]
+                auth_token = Translate.translate_auth_from_avro(auth_avro=poa_info.auth)
+            else:
+                auth_token = None
+            rpc = IncomingPoaRPC(message_id=ID(uid=request.message_id), request_type=RPCRequestType.PoaInfo,
+                                 poa=poa, caller=auth_token)
+        except Exception as e:
+            self.logger.error("Invalid update_lease request: {}".format(e))
+            raise e
+        self.do_dispatch(rpc=rpc)
+
     def update_lease(self, *, request: UpdateLeaseAvro):
-        rpc = None
         auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_client(reservation=request.reservation)
@@ -160,7 +175,6 @@ class ActorService:
         self.do_dispatch(rpc=rpc)
 
     def update_ticket(self, *, request: UpdateTicketAvro):
-        rpc = None
         auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_client(reservation=request.reservation)
@@ -174,7 +188,6 @@ class ActorService:
         self.do_dispatch(rpc=rpc)
 
     def update_delegation(self, *, request: UpdateDelegationAvro):
-        rpc = None
         auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             dlg = self.pass_client_delegation(delegation=request.delegation, caller=auth_token)
@@ -188,7 +201,6 @@ class ActorService:
         self.do_dispatch(rpc=rpc)
 
     def failed_rpc(self, *, request: FailedRpcAvro):
-        rpc = None
         auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             failed_request_type = RPCRequestType(request.request_type)
@@ -217,6 +229,8 @@ class ActorService:
             self.update_ticket(request=message)
         elif message.get_message_name() == AbcMessageAvro.update_delegation:
             self.update_delegation(request=message)
+        elif message.get_message_name() == AbcMessageAvro.result_poa:
+            self.poa_info(request=message)
         else:
             self.logger.error("Unsupported message {}".format(message))
             raise ProxyException("Unsupported message {}".format(message.get_message_name()))

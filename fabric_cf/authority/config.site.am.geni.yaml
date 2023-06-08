@@ -60,7 +60,7 @@ logging:
   handler-log-file: handler.log
 
   ## The default log level for actor.
-  log-level: DEBUG
+  log-level: INFO
 
   ## actor rotates log files. You may specify how many archived log files to keep here.
   log-retain: 5

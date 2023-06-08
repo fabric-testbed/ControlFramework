@@ -34,6 +34,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
     from fabric_cf.actor.core.core.unit import Unit
     from fabric_cf.actor.core.apis.abc_substrate_database import ABCSubstrateDatabase
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class ABCSubstrate(ABCBasePlugin):
@@ -79,4 +80,12 @@ class ABCSubstrate(ABCBasePlugin):
         Updates only the properties of an existing unit that is already part of the substrate.
         @param reservation reservation that contains the unit
         @param unit unit to be modified.
+        """
+
+    @abstractmethod
+    def poa(self, *, unit: Unit, poa: Poa):
+        """
+        POA on an existing unit that is already part of the substrate.
+        @param poa POA that contains the unit
+        @param unit unit on which to perform operational action
         """

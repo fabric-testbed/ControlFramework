@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
+
 from fabric_cf.actor.core.apis.abc_authority_proxy import ABCAuthorityProxy
 from fabric_cf.actor.core.apis.abc_controller_callback_proxy import ABCControllerCallbackProxy
 from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
@@ -31,6 +33,7 @@ from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservationFactory
+from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.proxies.local.local_broker import LocalBroker
 from fabric_cf.actor.core.proxies.local.local_proxy import LocalProxy
 from fabric_cf.actor.security.auth_token import AuthToken
@@ -56,11 +59,19 @@ class LocalAuthority(LocalBroker, ABCAuthorityProxy):
                              caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
+    def prepare_poa(self, *, callback: ABCControllerCallbackProxy, caller: AuthToken,
+                    poa: Poa) -> ABCRPCRequestState:
+        state = LocalProxy.LocalProxyRequestState()
+        state.poa = poa.clone()
+        state.callback = callback
+        return state
+
     def prepare_close(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
                       caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    def pass_reservation_authority(self, *, reservation: ABCControllerReservation, auth: AuthToken) -> ABCReservationMixin:
+    def pass_reservation_authority(self, *, reservation: ABCControllerReservation,
+                                   auth: AuthToken) -> ABCReservationMixin:
         if reservation.get_resources().get_resources() is None:
             raise ProxyException(Constants.NOT_SPECIFIED_PREFIX.format("concrete set"))
 

@@ -11,10 +11,10 @@ EXPOSE 8700
 RUN apt-get update
 RUN apt-get install cron -y
 
-COPY pyproject.toml /usr/src/app/
-COPY README.md /usr/src/app/
 COPY docker-entrypoint.sh /usr/src/app/
 COPY fabric_cf /usr/src/app/fabric_cf
+COPY pyproject.toml /usr/src/app/
+COPY README.md /usr/src/app/
 COPY tools/audit.py /usr/src/app/
 COPY tools/install.sh /usr/src/app/
 

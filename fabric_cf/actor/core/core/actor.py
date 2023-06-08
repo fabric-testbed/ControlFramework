@@ -27,6 +27,9 @@ import time
 import traceback
 from typing import List, Dict
 
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
+from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
+
 from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
@@ -43,6 +46,7 @@ from fabric_cf.actor.core.container.message_service import MessageService
 from fabric_cf.actor.core.core.event_processor import TickEvent, EventType, EventProcessor
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.kernel_wrapper import KernelWrapper
+from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.slice import SliceTypes
@@ -524,7 +528,6 @@ class ActorMixin(ABCActorMixin):
         """
         self.logger.info(
             "Starting to recover reservations in slice {}({})".format(slice_obj.get_name(), slice_obj.get_slice_id()))
-        reservations = None
         try:
             reservations = self.plugin.get_database().get_reservations(slice_id=slice_obj.get_slice_id())
         except Exception as e:
@@ -818,7 +821,7 @@ class ActorMixin(ABCActorMixin):
     def unregister_slice(self, *, slice_object: ABCSlice):
         """
         Unregister slice
-        @param slice_obj slice object
+        @param slice_object slice object
         """
         self.wrapper.unregister_slice(slice_id=slice_object.get_slice_id())
 

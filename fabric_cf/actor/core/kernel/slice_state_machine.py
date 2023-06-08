@@ -258,7 +258,9 @@ class SliceStateMachine:
                                              ReservationPendingStates.ExtendingLease,
                                              ReservationPendingStates.Redeeming,
                                              ReservationPendingStates.Ticketing,
-                                             ReservationPendingStates.Priming]:
+                                             ReservationPendingStates.Priming,
+                                             ReservationPendingStates.PrimingPoa,
+                                             ReservationPendingStates.WaitingPoaResponse]:
                     bins.add(s=r.get_pending_state())
                 if not has_error and r.get_error_message() is not None and len(r.get_error_message()) > 0:
                     has_error = True
