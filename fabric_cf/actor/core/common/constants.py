@@ -268,6 +268,9 @@ class Constants:
     PROPERTY_TARGET_RESULT_CODE_MESSAGE = "target.code.message"
     PROPERTY_ACTION_SEQUENCE_NUMBER = "action.sequence"
     PROPERTY_POA_INFO = "poa_info"
+    PROPERTY_INFO = "info"
+    PROPERTY_CODE = "code"
+    POA_ID = "poa_id"
 
     RESULT_CODE_EXCEPTION = -1
     RESULT_CODE_OK = 0

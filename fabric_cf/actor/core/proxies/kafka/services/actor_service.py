@@ -149,7 +149,7 @@ class ActorService:
 
     def poa_info(self, *, request: ResultPoaAvro):
         try:
-            poa = Translate.translate_result_poa(poa_result=request)
+            poa = Translate.translate_result_poa_avro_to_poa(poa_result=request)
             if request.poas is not None and len(request.poas) > 0:
                 poa_info = request.poas[0]
                 auth_token = Translate.translate_auth_from_avro(auth_avro=poa_info.auth)

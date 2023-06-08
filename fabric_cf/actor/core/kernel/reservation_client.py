@@ -1832,18 +1832,24 @@ class ReservationClient(Reservation, ABCControllerReservation):
             self.last_ticket_update.absorb(other=update_data)
 
     def poa(self, *, poa: Poa):
+        """
+        POA triggered by Orchestrator; Send to Authority
+        @param poa
+        """
         # Not permitted if there is a pending operation.
         self.nothing_pending()
 
+        # POA already processed
         if poa.get_poa_id() in self.poas:
             self.logger.error(f"POA {poa.get_poa_id()} has already been processed!")
             return
 
+        # Move the reservation to PrimingPoa state
         if self.state == ReservationStates.Active:
             self.transition(prefix="performing poa", state=ReservationStates.Active,
                             pending=ReservationPendingStates.PrimingPoa)
             # Trigger POA to the Authority
-            poa.issue_poa()
+            poa.send_poa_to_authority()
         else:
             msg = f"Wrong state to initiate POA: {self.state}"
             poa.fail(message=msg)
@@ -1853,6 +1859,9 @@ class ReservationClient(Reservation, ABCControllerReservation):
         self.poas[poa.get_poa_id()] = poa
 
     def probe_pending_poa(self):
+        """
+        Probe Pending POAs and mark them failed due to timeout
+        """
         try:
             failed_poas = []
             for poa_id, poa in self.poas.items():
@@ -1867,11 +1876,17 @@ class ReservationClient(Reservation, ABCControllerReservation):
             self.logger.error(f"Error occurred during probe POA - {e}", stack_info=True)
 
     def poa_info(self, *, incoming: Poa):
+        """
+        Accept POA Result response back from the Authority
+        """
         try:
             if incoming is None:
                 return
+
+            # Find the target POA
             target = self.poas.get(incoming.poa_id)
 
+            # Return if target is not found
             if target is None:
                 self.logger.error(f"POA Request# {incoming.poa_id} not found, Ignoring POA response {incoming}")
                 return
@@ -1879,6 +1894,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
             self.transition(prefix=f"POA {incoming.poa_id} completed", state=self.state,
                             pending=ReservationPendingStates.None_)
 
+            # Accept POA response from Authority
             target.accept_poa_info(incoming=incoming)
             self.actor.get_plugin().get_database().update_poa(poa=target)
         except Exception as e:

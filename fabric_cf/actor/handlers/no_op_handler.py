@@ -203,10 +203,12 @@ class NoOpHandler(HandlerBase):
                       Constants.PROPERTY_POA_INFO: {
                           "operation": data.get("operation"),
                           "poa_id": data.get("poa_id"),
-                          "cpu_info": {"host": "abc",
-                                       "host_info": {"a": "b"}},
-                          "numa_info": {"host": "abc",
-                                        "host_info": {"a": "b"}}
+                          "code": Constants.RESULT_CODE_OK,
+                          "info": {"cpu_info": {"uky-w1.fabric-tested.net": {"value": {"a": "b"},
+                                                                             "pinned_cpus": ["1", "2"]},
+                                                "instance-1111": {"value": {"a": "b"}}},
+                                   "numa_info": {"uky-w1.fabric-tested.net": {"value": {"a": "b"}},
+                                                 "instance-1111": {"value": {"a": "b"}}}}
                       }}
         except Exception as e:
             self.get_logger().error(e)

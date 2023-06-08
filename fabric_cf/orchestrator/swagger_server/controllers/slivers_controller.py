@@ -21,11 +21,36 @@ def slivers_get(slice_id, as_self=None):  # noqa: E501
     return rc.slivers_get(slice_id=slice_id, as_self=as_self)
 
 
+def slivers_poa_get_poa_id_get(poa_id):  # noqa: E501
+    """Perform an operational action on a sliver.
+
+    Request get the status of the POA identified by poa_id.    # noqa: E501
+
+    :param poa_id: Poa Id for the POA triggered
+    :type poa_id: str
+
+    :rtype: Poa
+    """
+    return 'do some magic!'
+
+
+def slivers_poa_get_sliver_id_get(sliver_id):  # noqa: E501
+    """Perform an operational action on a sliver.
+
+    Request get the status of the POAs for a sliver identified by sliver_id.    # noqa: E501
+
+    :param sliver_id: Sliver identified by universally unique identifier
+    :type sliver_id: str
+
+    :rtype: Poa
+    """
+    return 'do some magic!'
+
+
 def slivers_poa_sliver_id_post(body, sliver_id):  # noqa: E501
     """Perform an operational action on a sliver.
 
-    Request to perform an operation action on a sliver. Supported actions include - reboot a VM sliver, get cpu info,
-    get numa info, pin vCPUs, pin memory to a numa node etc.    # noqa: E501
+    Request to perform an operation action on a sliver. Supported actions include - reboot a VM sliver, get cpu info, get numa info, pin vCPUs, pin memory to a numa node etc.    # noqa: E501
 
     :param body: Perform Operation Action
     :type body: dict | bytes
@@ -37,21 +62,6 @@ def slivers_poa_sliver_id_post(body, sliver_id):  # noqa: E501
     if connexion.request.is_json:
         body = PoaPost.from_dict(connexion.request.get_json())  # noqa: E501
     return rc.slivers_poa_sliver_id_post(body=body, sliver_id=sliver_id)
-
-
-def slivers_poa_sliver_id_request_id_get(sliver_id, request_id):  # noqa: E501
-    """Perform an operational action on a sliver.
-
-    Request get the status of the POA identified by request_id.    # noqa: E501
-
-    :param sliver_id: Sliver identified by universally unique identifier
-    :type sliver_id: str
-    :param request_id: Request Id for the POA triggered
-    :type request_id: str
-
-    :rtype: Poa
-    """
-    return rc.slivers_poa_sliver_id_request_id_get(sliver_id=sliver_id, request_id=request_id)
 
 
 def slivers_sliver_id_get(slice_id, sliver_id, as_self=None):  # noqa: E501

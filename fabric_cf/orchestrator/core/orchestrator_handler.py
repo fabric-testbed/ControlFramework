@@ -834,7 +834,8 @@ class OrchestratorHandler:
                 raise OrchestratorException(f"Cannot trigger POA; Reservation# {rid} is not {ReservationStates.Active}")
 
             if not controller.poa(poa=poa):
-                raise OrchestratorException(f"Failed to trigger POA: {controller.get_last_error().get_status().get_message()}")
+                raise OrchestratorException(f"Failed to trigger POA: "
+                                            f"{controller.get_last_error().get_status().get_message()}")
             self.logger.debug(f"POA {poa.operation}/{sliver_id} added successfully")
             return poa.poa_id
         except Exception as e:
@@ -842,8 +843,11 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing poa e: {e}")
             raise e
 
-    def get_poa(self, *, token: str, sliver_id: str, poa_id: str):
+    def get_poas(self, *, token: str, sliver_id: str = None, poa_id: str = None):
         try:
+            if sliver_id is None and poa_id is None:
+                raise OrchestratorException(f"Sliver ID or POA ID must be specified")
+
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"poa invoked for Controller: {controller}")
 

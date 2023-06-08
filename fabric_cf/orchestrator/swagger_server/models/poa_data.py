@@ -6,7 +6,6 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from fabric_cf.orchestrator.swagger_server.models.base_model_ import Model
-from fabric_cf.orchestrator.swagger_server.models.poa_data_info import PoaDataInfo  # noqa: F401,E501
 from fabric_cf.orchestrator.swagger_server import util
 
 
@@ -15,29 +14,39 @@ class PoaData(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, operation: str=None, request_id: str=None, info: PoaDataInfo=None):  # noqa: E501
+    def __init__(self, operation: str=None, poa_id: str=None, sliver_id: str=None, slice_id: str=None, info: object=None):  # noqa: E501
         """PoaData - a model defined in Swagger
 
         :param operation: The operation of this PoaData.  # noqa: E501
         :type operation: str
-        :param request_id: The request_id of this PoaData.  # noqa: E501
-        :type request_id: str
+        :param poa_id: The poa_id of this PoaData.  # noqa: E501
+        :type poa_id: str
+        :param sliver_id: The sliver_id of this PoaData.  # noqa: E501
+        :type sliver_id: str
+        :param slice_id: The slice_id of this PoaData.  # noqa: E501
+        :type slice_id: str
         :param info: The info of this PoaData.  # noqa: E501
-        :type info: PoaDataInfo
+        :type info: object
         """
         self.swagger_types = {
             'operation': str,
-            'request_id': str,
-            'info': PoaDataInfo
+            'poa_id': str,
+            'sliver_id': str,
+            'slice_id': str,
+            'info': object
         }
 
         self.attribute_map = {
             'operation': 'operation',
-            'request_id': 'request_id',
+            'poa_id': 'poa_id',
+            'sliver_id': 'sliver_id',
+            'slice_id': 'slice_id',
             'info': 'info'
         }
         self._operation = operation
-        self._request_id = request_id
+        self._poa_id = poa_id
+        self._sliver_id = sliver_id
+        self._slice_id = slice_id
         self._info = info
 
     @classmethod
@@ -73,43 +82,85 @@ class PoaData(Model):
         self._operation = operation
 
     @property
-    def request_id(self) -> str:
-        """Gets the request_id of this PoaData.
+    def poa_id(self) -> str:
+        """Gets the poa_id of this PoaData.
 
 
-        :return: The request_id of this PoaData.
+        :return: The poa_id of this PoaData.
         :rtype: str
         """
-        return self._request_id
+        return self._poa_id
 
-    @request_id.setter
-    def request_id(self, request_id: str):
-        """Sets the request_id of this PoaData.
+    @poa_id.setter
+    def poa_id(self, poa_id: str):
+        """Sets the poa_id of this PoaData.
 
 
-        :param request_id: The request_id of this PoaData.
-        :type request_id: str
+        :param poa_id: The poa_id of this PoaData.
+        :type poa_id: str
         """
 
-        self._request_id = request_id
+        self._poa_id = poa_id
 
     @property
-    def info(self) -> PoaDataInfo:
+    def sliver_id(self) -> str:
+        """Gets the sliver_id of this PoaData.
+
+
+        :return: The sliver_id of this PoaData.
+        :rtype: str
+        """
+        return self._sliver_id
+
+    @sliver_id.setter
+    def sliver_id(self, sliver_id: str):
+        """Sets the sliver_id of this PoaData.
+
+
+        :param sliver_id: The sliver_id of this PoaData.
+        :type sliver_id: str
+        """
+
+        self._sliver_id = sliver_id
+
+    @property
+    def slice_id(self) -> str:
+        """Gets the slice_id of this PoaData.
+
+
+        :return: The slice_id of this PoaData.
+        :rtype: str
+        """
+        return self._slice_id
+
+    @slice_id.setter
+    def slice_id(self, slice_id: str):
+        """Sets the slice_id of this PoaData.
+
+
+        :param slice_id: The slice_id of this PoaData.
+        :type slice_id: str
+        """
+
+        self._slice_id = slice_id
+
+    @property
+    def info(self) -> object:
         """Gets the info of this PoaData.
 
 
         :return: The info of this PoaData.
-        :rtype: PoaDataInfo
+        :rtype: object
         """
         return self._info
 
     @info.setter
-    def info(self, info: PoaDataInfo):
+    def info(self, info: object):
         """Sets the info of this PoaData.
 
 
         :param info: The info of this PoaData.
-        :type info: PoaDataInfo
+        :type info: object
         """
 
         self._info = info

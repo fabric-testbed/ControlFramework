@@ -123,7 +123,7 @@ class AuthorityService(BrokerService):
 
     def poa(self, *, request: PoaAvro):
         try:
-            poa_obj = Translate.translate_poa(poa_avro=request)
+            poa_obj = Translate.translate_poa_avro_to_poa(poa_avro=request)
             rpc = IncomingPoaRPC(message_id=ID(uid=request.message_id), request_type=RPCRequestType.Poa,
                                  poa=poa_obj, caller=request.auth)
         except Exception as e:

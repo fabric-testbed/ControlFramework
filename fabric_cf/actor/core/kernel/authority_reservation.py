@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory
 from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import AuthorityException
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
@@ -609,7 +610,12 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
             self.actor.close(reservation=self)
 
     def service_poa(self):
+        """
+        Service POA
+        """
         assert self.pending_state == ReservationPendingStates.WaitingPoaResponse
+
+        # Traverse the POAs and invoke the handler for POAs in Performing state
         for poa_id, poa in self.poas.items():
             try:
                 if poa.is_performing():
@@ -620,47 +626,62 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
                 self.logger.error("authority failed servicing POA probe e:{}".format(e))
                 poa.fail(message=f"authority failed servicing POA probe e:{e}")
 
-    def generate_update_poa(self):
-        try:
-            print("Trigger POA response")
-            print(f"KOMAL ---- {self.get_resources().get_poa_info()}")
-        except Exception as e:
-            traceback.print_exc()
+            # Update POA
+            self.actor.get_plugin().get_database().update_poa(poa=poa)
 
+    def generate_update_poa(self):
+        """
+        Generate POA Result to Orchestrator
+        """
         if self.callback is None:
             self.logger.warning("cannot generate update: no callback")
             return
 
+        # Get POA info from the handler completion
         poa_info = self.get_resources().get_poa_info()
-        if poa_info is None or poa_info.get("poa_id") is None:
+        if poa_info is None or poa_info.get(Constants.POA_ID) is None:
             self.logger.warning("cannot generate update: no poa")
             return
 
-        poa = self.poas.get(poa_info.get("poa_id"))
+        # get the corresponding POA
+        poa = self.poas.get(poa_info.get(Constants.POA_ID))
         if poa is None:
             self.logger.warning("cannot generate update: no poa")
             return
 
         try:
-            poa.process_poa_info(poa_info=poa_info)
-            poa.send_poa_info()
+            # process handler response and send response to orchestrator
+            poa.accept_authority_poa_info(poa_info=poa_info, notice=self.resources.get_notices())
+
+            # Update POA
+            self.actor.get_plugin().get_database().update_poa(poa=poa)
+
+            # Remove processed POA from Reservation
+            self.poas.pop(poa.get_poa_id())
         except Exception as e:
-            self.logger.error("callback failed e:{}".format(e))
+            self.logger.error(f"callback failed e:{e}", stack_info=True)
 
     def poa(self, *, poa: Poa):
+        """
+        Process incoming POA received from orchestrator
+        @param poa poa
+        """
         if poa.get_poa_id() in self.poas:
             self.logger.error(f"POA {poa.get_poa_id()} has already been processed!")
             return
+
+        # Ensure no pending operation
         self.nothing_pending()
 
+        # Setup POA to point to the correct reservation
         poa.restore(actor=self.actor, reservation=self)
         if self.state == ReservationStates.Active:
             # Process POA at the Authority
-            poa.process_poa()
+            poa.process_poa_authority()
         else:
             msg = f"Wrong state to process POA: {self.state}"
             poa.fail(message=msg, notify=True)
-            # TODO - POA state doesn't get saved as self.error raises an exception
+            self.actor.get_plugin().get_database.update_poa(poa=poa)
             self.error(err=msg)
 
         self.poas[poa.get_poa_id()] = poa

@@ -85,12 +85,9 @@ class KafkaReturn(KafkaProxy, ABCControllerCallbackProxy):
             avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
         elif request.get_type() == RPCRequestType.PoaInfo:
-            avro_message = ResultPoaAvro()
+            avro_message = request.poa
             avro_message.message_id = str(request.get_message_id())
-            if request.poa is not None:
-                avro_message.poas = [request.poa]
             avro_message.callback_topic = request.callback_topic
-            avro_message.status = ResultAvro()
 
         else:
             super().execute(request=request, producer=producer)
@@ -130,7 +127,7 @@ class KafkaReturn(KafkaProxy, ABCControllerCallbackProxy):
 
     def prepare_poa_result(self, *, poa: Poa, callback: KafkaProxy, caller: AuthToken) -> ABCRPCRequestState:
         request = KafkaProxyRequestState()
-        request.poa = Translate.translate_poa_to_poa_info_avro(poa=poa)
+        request.poa = Translate.translate_poa_to_result_poa_avro(poa=poa)
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
         return request

@@ -90,6 +90,7 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, ABCAuthorityProxy):
             avro_message = request.poa
             avro_message.message_id = str(request.get_message_id())
             avro_message.callback_topic = request.callback_topic
+
         else:
             super().execute(request=request, producer=producer)
             return
@@ -124,7 +125,7 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, ABCAuthorityProxy):
                     poa: Poa) -> ABCRPCRequestState:
         request = KafkaProxyRequestState()
         request.callback_topic = callback.get_kafka_topic()
-        request.poa = Translate.translate_poa_to_avro(poa=poa)
+        request.poa = Translate.translate_poa_to_poa_avro(poa=poa)
         request.caller = caller
         return request
 

@@ -1397,13 +1397,13 @@
         ]
       }
     },
-    "/slivers/poa/{sliver_id}/{request_id}": {
+    "/slivers/poa_get/{sliver_id}": {
       "get": {
         "tags": [
           "slivers"
         ],
         "summary": "Perform an operational action on a sliver.",
-        "description": "Request get the status of the POA identified by request_id.  \n",
+        "description": "Request get the status of the POAs for a sliver identified by sliver_id.  \n",
         "parameters": [
           {
             "name": "sliver_id",
@@ -1415,11 +1415,89 @@
             "schema": {
               "type": "string"
             }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/poa"
+                }
+              }
+            }
           },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_400_bad_request"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_401_unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_403_forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_404_not_found"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_500_internal_server_error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
           {
-            "name": "request_id",
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/slivers/poa_get/{poa_id}": {
+      "get": {
+        "tags": [
+          "slivers"
+        ],
+        "summary": "Perform an operational action on a sliver.",
+        "description": "Request get the status of the POA identified by poa_id.  \n",
+        "parameters": [
+          {
+            "name": "poa_id",
             "in": "path",
-            "description": "Request Id for the POA triggered",
+            "description": "Poa Id for the POA triggered",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -2021,11 +2099,17 @@
           "operation": {
             "type": "string"
           },
-          "request_id": {
+          "poa_id": {
+            "type": "string"
+          },
+          "sliver_id": {
+            "type": "string"
+          },
+          "slice_id": {
             "type": "string"
           },
           "info": {
-            "$ref": "#/components/schemas/poa_data_info"
+            "type": "object"
           }
         }
       },
@@ -2054,23 +2138,6 @@
             "items": {
               "type": "string"
             }
-          }
-        }
-      },
-      "poa_data_info": {
-        "type": "object",
-        "properties": {
-          "host": {
-            "type": "string"
-          },
-          "host_info": {
-            "type": "string"
-          },
-          "vm": {
-            "type": "string"
-          },
-          "vm_info": {
-            "type": "string"
           }
         }
       }

@@ -33,6 +33,28 @@ class TestSliversController(BaseTestCase):
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
+    def test_slivers_poa_get_poa_id_get(self):
+        """Test case for slivers_poa_get_poa_id_get
+
+        Perform an operational action on a sliver.
+        """
+        response = self.client.open(
+            '//slivers/poa_get/{poa_id}'.format(poa_id='poa_id_example'),
+            method='GET')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
+    def test_slivers_poa_get_sliver_id_get(self):
+        """Test case for slivers_poa_get_sliver_id_get
+
+        Perform an operational action on a sliver.
+        """
+        response = self.client.open(
+            '//slivers/poa_get/{sliver_id}'.format(sliver_id='sliver_id_example'),
+            method='GET')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
     def test_slivers_poa_sliver_id_post(self):
         """Test case for slivers_poa_sliver_id_post
 
@@ -44,17 +66,6 @@ class TestSliversController(BaseTestCase):
             method='POST',
             data=json.dumps(body),
             content_type='application/json')
-        self.assert200(response,
-                       'Response body is : ' + response.data.decode('utf-8'))
-
-    def test_slivers_poa_sliver_id_request_id_get(self):
-        """Test case for slivers_poa_sliver_id_request_id_get
-
-        Perform an operational action on a sliver.
-        """
-        response = self.client.open(
-            '//slivers/poa/{sliver_id}/{request_id}'.format(sliver_id='sliver_id_example', request_id='request_id_example'),
-            method='GET')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 

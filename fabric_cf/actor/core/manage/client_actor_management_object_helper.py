@@ -616,7 +616,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                         result.set_message(ErrorCodes.ErrorNoSuchReservation.interpret())
                         return result
 
-                    poa_obj = Translate.translate_poa(poa_avro=poa)
+                    poa_obj = Translate.translate_poa_avro_to_poa(poa_avro=poa)
 
                     self.actor.poa(poa=poa_obj)
 

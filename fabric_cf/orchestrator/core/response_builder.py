@@ -161,8 +161,10 @@ class ResponseBuilder:
         if poa_list is not None:
             for poa in poa_list:
                 poa_dict = {ResponseBuilder.PROP_REQUEST_ID: poa.poa_id,
-                            ResponseBuilder.PROP_OPERATION: poa.operation}
+                            ResponseBuilder.PROP_OPERATION: poa.operation,
+                            ResponseBuilder.PROP_SLIVER_ID: poa.rid,
+                            ResponseBuilder.PROP_SLICE_ID: poa.get_slice_id()}
+                if poa.get_info() is not None:
+                    poa_dict[Constants.PROPERTY_INFO] = poa.get_info()
                 poas.append(poa_dict)
-                #TODO add more info
-
         return poas

@@ -110,7 +110,7 @@ class SubstrateMixin(BasePlugin, ABCSubstrate):
 
     def poa(self, *, unit: Unit, poa: Poa):
         try:
-            # prepare the transfer out
+            # prepare the POA
             self.prepare_poa(unit=unit)
             # perform the node configuration
             self.do_poa(poa=poa, unit=unit)
