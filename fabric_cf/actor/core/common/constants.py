@@ -288,7 +288,7 @@ class Constants:
     ALGORITHM = 'algorithm'
 
     # Orchestrator Lease params
-    TWO_WEEKS = timedelta(days=30)
+    TWO_WEEKS = timedelta(days=15)
     DEFAULT_MAX_DURATION = TWO_WEEKS
     LEASE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S %z"
     DEFAULT_LEASE_IN_HOURS = 24
@@ -335,3 +335,5 @@ class Constants:
     SUPPORTED_SERVICES = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP, ServiceType.FABNetv6,
                           ServiceType.FABNetv4, ServiceType.PortMirror, ServiceType.FABNetv4Ext,
                           ServiceType.FABNetv6Ext, ServiceType.L3VPN]
+
+    SLICE_NO_LIMIT_LIFETIME = "Slice.NoLimitLifetime"

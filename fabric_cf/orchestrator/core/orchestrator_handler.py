@@ -215,7 +215,11 @@ class OrchestratorHandler:
         asm_graph = None
         topology = None
         try:
-            end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time)
+            from fabric_cf.actor.security.access_checker import AccessChecker
+            fabric_token = AccessChecker.validate_and_decode_token(token=token, logger=self.logger)
+            project, tags, project_name = fabric_token.get_first_project()
+            allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
+            end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time, allow_long_lived=allow_long_lived)
 
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
@@ -232,17 +236,16 @@ class OrchestratorHandler:
 
             # Authorize the slice
             create_ts = time.time()
-            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.create, resource=topology,
+            self.__authorize_request(id_token=token, action_id=ActionId.create, resource=topology,
                                                     lease_end_time=end_time)
             self.logger.info(f"PDP authorize: TIME= {time.time() - create_ts:.0f}")
 
             # Check if an Active slice exists already with the same name for the user
             create_ts = time.time()
-            project, tags, project_name = fabric_token.get_first_project()
             if tags is not None and isinstance(tags, list):
                 tags = ','.join(tags)
-            existing_slices = controller.get_slices(slice_name=slice_name,
-                                                    email=fabric_token.get_email(), project=project)
+            existing_slices = controller.get_slices(slice_name=slice_name, email=fabric_token.get_email(),
+                                                    project=project)
             self.logger.info(f"GET slices: TIME= {time.time() - create_ts:.0f}")
 
             if existing_slices is not None and len(existing_slices) != 0:
@@ -686,7 +689,12 @@ class OrchestratorHandler:
                 raise OrchestratorException(f"Unable to renew Slice# {slice_guid} that is not yet stable, "
                                             f"try again later")
 
-            new_end_time = self.__validate_lease_end_time(lease_end_time=new_lease_end_time)
+            from fabric_cf.actor.security.access_checker import AccessChecker
+            fabric_token = AccessChecker.validate_and_decode_token(token=token, logger=self.logger)
+            project, tags, project_name = fabric_token.get_first_project()
+            allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
+            new_end_time = self.__validate_lease_end_time(lease_end_time=new_lease_end_time,
+                                                          allow_long_lived=allow_long_lived)
 
             reservations = controller.get_reservations(slice_id=slice_id)
             if reservations is None or len(reservations) < 1:
@@ -732,14 +740,14 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing renew e: {e}")
             raise e
 
-    def __validate_lease_end_time(self, lease_end_time: str) -> datetime:
+    def __validate_lease_end_time(self, lease_end_time: str, allow_long_lived: bool = False) -> datetime:
         """
         Validate Lease End Time
         :param lease_end_time: New End Time
+        :param allow_long_lived: Allow long lived tokens
         :return End Time
         :raises Exception if new end time is in past
         """
-        new_end_time = None
         if lease_end_time is None:
             new_end_time = datetime.now(timezone.utc) + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
             return new_end_time
@@ -754,7 +762,7 @@ class OrchestratorHandler:
             raise OrchestratorException(f"New term end time {new_end_time} is in the past! ",
                                         http_error_code=BAD_REQUEST)
 
-        if (new_end_time - now) > Constants.DEFAULT_MAX_DURATION:
+        if not allow_long_lived and (new_end_time - now) > Constants.DEFAULT_MAX_DURATION:
             self.logger.info(f"New term end time {new_end_time} exceeds system default "
                              f"{Constants.DEFAULT_MAX_DURATION}, setting to system default: ")
 
