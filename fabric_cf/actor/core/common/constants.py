@@ -292,6 +292,7 @@ class Constants:
     DEFAULT_MAX_DURATION = TWO_WEEKS
     LEASE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S %z"
     DEFAULT_LEASE_IN_HOURS = 24
+    LONG_LIVED_SLICE_TIME_WEEKS = timedelta(weeks=9)
 
     ALL = "ALL"
     AL2S = "AL2S"

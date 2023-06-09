@@ -762,11 +762,15 @@ class OrchestratorHandler:
             raise OrchestratorException(f"New term end time {new_end_time} is in the past! ",
                                         http_error_code=BAD_REQUEST)
 
-        if not allow_long_lived and (new_end_time - now) > Constants.DEFAULT_MAX_DURATION:
+        if allow_long_lived:
+            default_long_lived_duration = Constants.LONG_LIVED_SLICE_TIME_WEEKS
+        else:
+            default_long_lived_duration = Constants.DEFAULT_MAX_DURATION
+        if (new_end_time - now) > default_long_lived_duration:
             self.logger.info(f"New term end time {new_end_time} exceeds system default "
-                             f"{Constants.DEFAULT_MAX_DURATION}, setting to system default: ")
+                             f"{default_long_lived_duration}, setting to system default: ")
 
-            new_end_time = now + Constants.DEFAULT_MAX_DURATION
+            new_end_time = now + default_long_lived_duration
 
         return new_end_time
 
