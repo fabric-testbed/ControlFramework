@@ -33,7 +33,7 @@ from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservatio
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.common.event_logger import EventLogger
+from fabric_cf.actor.core.common.event_logger import EventLogger, EventLoggerSingleton
 from fabric_cf.actor.core.common.exceptions import ReservationNotFoundException, DelegationNotFoundException, \
     KernelException
 from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservation
@@ -584,7 +584,7 @@ class Kernel:
                 slice_obj.set_dirty()
                 if slice_state == SliceState.Closing:
                     slice_avro = Translate.translate_slice_to_avro(slice_obj=slice_obj)
-                    EventLogger.log_slice_event(logger=self.logger, slice_object=slice_avro, action=ActionId.delete)
+                    EventLoggerSingleton.get().log_slice_event(slice_object=slice_avro, action=ActionId.delete)
             self.plugin.get_database().update_slice(slice_object=slice_obj)
         except Exception as e:
             self.logger.error(traceback.format_exc())

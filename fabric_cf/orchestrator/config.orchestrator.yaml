@@ -59,6 +59,9 @@ logging:
   ## The filename to be used for actor's log file.
   log-file: actor.log
 
+  ## The filename to be used for metrics log file.
+  metrics-log-file: metrics.log
+
   ## The default log level for actor.
   log-level: INFO
 

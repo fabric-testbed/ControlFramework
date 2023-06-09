@@ -57,6 +57,9 @@ logging:
 
   handler-log-file: handler.log
 
+  ## The filename to be used for metrics log file.
+  metrics-log-file: metrics.log
+
   ## The default log level for actor.
   log-level: DEBUG
   ## actor rotates log files. You may specify how many archived log files to keep here.

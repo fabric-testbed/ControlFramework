@@ -34,7 +34,7 @@ from fim.slivers.capacities_labels import ReservationInfo
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin, ReservationCategory
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.common.event_logger import EventLogger
+from fabric_cf.actor.core.common.event_logger import EventLogger, EventLoggerSingleton
 from fabric_cf.actor.core.common.exceptions import ReservationException
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
@@ -632,9 +632,8 @@ class Reservation(ABCReservationMixin):
                     sliver.reservation_info = ReservationInfo()
                 sliver.reservation_info.reservation_id = str(self.get_reservation_id())
                 sliver.reservation_info.reservation_state = str(self.state)
-                EventLogger.log_sliver_event(logger=self.logger,
-                                             slice_object=Translate.translate_slice_to_avro(slice_obj=self.slice),
-                                             sliver=sliver)
+                EventLoggerSingleton.get().log_sliver_event(
+                    slice_object=Translate.translate_slice_to_avro(slice_obj=self.slice), sliver=sliver)
 
     def update_lease(self, *, incoming: ABCReservationMixin, update_data):
         self.internal_error(err="abstract update_lease trap")

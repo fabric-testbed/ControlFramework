@@ -39,7 +39,7 @@ from fim.slivers.network_service import NetworkServiceSliver
 from fim.user import GraphFormat
 from fim.user.topology import ExperimentTopology
 
-from fabric_cf.actor.core.common.event_logger import EventLogger
+from fabric_cf.actor.core.common.event_logger import EventLogger, EventLoggerSingleton
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.fim.fim_helper import FimHelper
@@ -309,8 +309,8 @@ class OrchestratorHandler:
             create_ts = time.time()
             self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
             self.logger.info(f"QU queue: TIME= {time.time() - create_ts:.0f}")
-            EventLogger.log_slice_event(logger=self.logger, slice_object=slice_obj, action=ActionId.create,
-                                        topology=topology)
+            EventLoggerSingleton.get().log_slice_event(slice_object=slice_obj, action=ActionId.create,
+                                                       topology=topology)
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
@@ -489,8 +489,8 @@ class OrchestratorHandler:
             # Helps improve the create response time
             self.controller_state.get_defer_thread().queue_slice(controller_slice=slice_object)
 
-            EventLogger.log_slice_event(logger=self.logger, slice_object=slice_obj, action=ActionId.modify,
-                                        topology=topology)
+            EventLoggerSingleton.get().log_slice_event(slice_object=slice_obj, action=ActionId.modify,
+                                                       topology=topology)
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
             if asm_graph is not None:
@@ -726,7 +726,7 @@ class OrchestratorHandler:
             if len(failed_to_extend_rid_list) > 0:
                 raise OrchestratorException(f"Failed to extend reservation# {failed_to_extend_rid_list}")
 
-            EventLogger.log_slice_event(logger=self.logger, slice_object=slice_object, action=ActionId.renew)
+            EventLoggerSingleton.get().log_slice_event(slice_object=slice_object, action=ActionId.renew)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing renew e: {e}")
