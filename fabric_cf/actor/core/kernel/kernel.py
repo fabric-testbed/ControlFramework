@@ -1532,6 +1532,9 @@ class Kernel:
             # Update POA
             self.plugin.get_database().update_poa(poa=poa)
         except Exception as e:
+            if isinstance(reservation, ABCClientReservation):
+                self.logger.warning(f"Removing failed POA {poa.get_poa_id()}")
+                self.plugin.get_database().remove_poa(poa_id=poa.get_poa_id())
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during poa for reservation #{reservation.get_reservation_id()}",
                        e=e)
