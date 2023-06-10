@@ -27,7 +27,7 @@ import time
 import traceback
 from datetime import datetime, timedelta, timezone
 from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.poa_avro import PoaAvro
@@ -40,6 +40,7 @@ from fim.user import GraphFormat
 from fim.user.topology import ExperimentTopology
 
 from fabric_cf.actor.core.common.event_logger import EventLogger, EventLoggerSingleton
+from fabric_cf.actor.core.kernel.poa import PoaStates
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.fim.fim_helper import FimHelper
@@ -810,7 +811,7 @@ class OrchestratorHandler:
                         raise OrchestratorException(message=message,
                                                     http_error_code=Constants.INTERNAL_SERVER_ERROR_MAINT_MODE)
 
-    def poa(self, *, token: str, sliver_id: str, poa: PoaAvro) -> str:
+    def poa(self, *, token: str, sliver_id: str, poa: PoaAvro) -> Tuple[str, str]:
         try:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"poa invoked for Controller: {controller}")
@@ -849,17 +850,15 @@ class OrchestratorHandler:
                 raise OrchestratorException(f"Failed to trigger POA: "
                                             f"{controller.get_last_error().get_status().get_message()}")
             self.logger.debug(f"POA {poa.operation}/{sliver_id} added successfully")
-            return poa.poa_id
+            return poa.poa_id, reservations[0].get_slice_id()
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing poa e: {e}")
             raise e
 
-    def get_poas(self, *, token: str, sliver_id: str = None, poa_id: str = None):
+    def get_poas(self, *, token: str, sliver_id: str = None, poa_id: str = None, states: List[str] = None,
+                 limit: int = 200, offset: int = 0):
         try:
-            if sliver_id is None and poa_id is None:
-                raise OrchestratorException(f"Sliver ID or POA ID must be specified")
-
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"poa invoked for Controller: {controller}")
 
@@ -869,13 +868,16 @@ class OrchestratorHandler:
             email = fabric_token.get_email()
             project, tags, project_name = fabric_token.get_first_project()
 
+            poa_states = PoaStates.translate_list(states=states)
+
             auth = AuthAvro()
             auth.name = self.controller_state.get_management_actor().get_name()
             auth.guid = self.controller_state.get_management_actor().get_guid()
             auth.oidc_sub_claim = fabric_token.get_uuid()
             auth.email = fabric_token.get_email()
 
-            poa_list = controller.get_poas(rid=rid, poa_id=poa_id, email=email, project_id=project)
+            poa_list = controller.get_poas(rid=rid, poa_id=poa_id, email=email, project_id=project,
+                                           states=states, limit=limit, offset=offset)
             if poa_list is None:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())

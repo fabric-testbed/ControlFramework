@@ -230,5 +230,6 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
         return status.code == 0
 
     def get_poas(self, *, states: List[int] = None, slice_id: ID = None, rid: ID = None,
-                 email: str = None, poa_id: str = None, project_id: str = None) -> List[PoaInfoAvro]:
+                 email: str = None, poa_id: str = None, project_id: str = None,
+                 limit: int = 200, offset: int = 0) -> List[PoaInfoAvro]:
         raise NotImplemented

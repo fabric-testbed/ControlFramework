@@ -786,7 +786,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
     def get_poas(self, *, caller: AuthToken, states: List[int] = None,
                  slice_id: ID = None, rid: ID = None, email: str = None,
-                 poa_id: str = None, project_id: str = None) -> ResultPoaAvro:
+                 poa_id: str = None, project_id: str = None,
+                 limit: int = 200, offset: int = 0) -> ResultPoaAvro:
 
         result = ResultPoaAvro()
         result.status = ResultAvro()
@@ -799,7 +800,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         try:
             poa_list = None
             try:
-                poa_list = self.db.get_poas(poa_id=poa_id, sliver_id=rid, email=email, project_id=project_id)
+                poa_list = self.db.get_poas(poa_id=poa_id, sliver_id=rid, email=email, project_id=project_id,
+                                            states=states, limit=limit, offset=offset)
             except Exception as e:
                 self.logger.error("get_poas:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)

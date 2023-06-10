@@ -258,7 +258,8 @@ class ABCMgmtActor(ABCComponent):
 
     @abstractmethod
     def get_poas(self, *, states: List[int] = None, slice_id: ID = None, rid: ID = None,
-                 email: str = None, poa_id: str = None, project_id: str = None) -> List[PoaInfoAvro]:
+                 email: str = None, poa_id: str = None, project_id: str = None,
+                 limit: int = 200, offset: int = 0) -> List[PoaInfoAvro]:
         """
         Get POA
         @param states states
@@ -267,6 +268,7 @@ class ABCMgmtActor(ABCComponent):
         @param email: user email
         @param project_id: project_id
         @param poa_id: poa_id
-        Obtains all POAs
+        @param limit: limit of records to be returned
+        @param offset: offset
         @return returns list of the poas
         """

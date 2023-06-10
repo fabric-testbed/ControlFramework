@@ -57,7 +57,7 @@ class ResponseBuilder:
     PROP_NOTICE = "notice"
 
     PROP_OPERATION = "operation"
-    PROP_REQUEST_ID = "request_id"
+    PROP_POA_ID = "poa_id"
 
     @staticmethod
     def get_reservation_summary(*, res_list: List[ReservationMng]) -> List[dict]:
@@ -160,7 +160,7 @@ class ResponseBuilder:
 
         if poa_list is not None:
             for poa in poa_list:
-                poa_dict = {ResponseBuilder.PROP_REQUEST_ID: poa.poa_id,
+                poa_dict = {ResponseBuilder.PROP_POA_ID: poa.get_poa_id(),
                             ResponseBuilder.PROP_OPERATION: poa.operation,
                             ResponseBuilder.PROP_SLIVER_ID: poa.rid,
                             ResponseBuilder.PROP_SLICE_ID: poa.get_slice_id()}

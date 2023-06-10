@@ -1305,10 +1305,10 @@
         ]
       }
     },
-    "/slivers/poa/{sliver_id}": {
+    "/poas/create/{sliver_id}": {
       "post": {
         "tags": [
-          "slivers"
+          "poas"
         ],
         "summary": "Perform an operational action on a sliver.",
         "description": "Request to perform an operation action on a sliver. Supported actions include - reboot a VM sliver, get cpu info, get numa info, pin vCPUs, pin memory to a numa node etc.  \n",
@@ -1397,23 +1397,75 @@
         ]
       }
     },
-    "/slivers/poa_get/{sliver_id}": {
+    "/poas/": {
       "get": {
         "tags": [
-          "slivers"
+          "poas"
         ],
-        "summary": "Perform an operational action on a sliver.",
-        "description": "Request get the status of the POAs for a sliver identified by sliver_id.  \n",
+        "summary": "Request get the status of the POAs.",
+        "description": "Request get the status of the POAs  \n",
         "parameters": [
           {
             "name": "sliver_id",
-            "in": "path",
-            "description": "Sliver identified by universally unique identifier",
-            "required": true,
-            "style": "simple",
-            "explode": false,
+            "in": "query",
+            "description": "Search for POAs for a sliver",
+            "required": false,
+            "style": "form",
+            "explode": true,
             "schema": {
+              "minLength": 3,
               "type": "string"
+            }
+          },
+          {
+            "name": "states",
+            "in": "query",
+            "description": "Search for POAs in the specified states",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "Nascent",
+                  "SentToAuthority",
+                  "Performing",
+                  "AwaitingCompletion",
+                  "Success",
+                  "Failed"
+                ]
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "maximum number of results to return per page (1 or more)",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 5
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "number of items to skip before starting to collect the result set",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
             }
           }
         ],
@@ -1486,10 +1538,10 @@
         ]
       }
     },
-    "/slivers/poa_get/{poa_id}": {
+    "/poas/{poa_id}": {
       "get": {
         "tags": [
-          "slivers"
+          "poas"
         ],
         "summary": "Perform an operational action on a sliver.",
         "description": "Request get the status of the POA identified by poa_id.  \n",

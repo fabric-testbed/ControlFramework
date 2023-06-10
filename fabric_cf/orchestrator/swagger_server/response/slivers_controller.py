@@ -23,16 +23,14 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
-from fabric_cf.orchestrator.swagger_server.models import Sliver, Poa, PoaData, PoaPost
+from fabric_cf.orchestrator.swagger_server.models import Sliver
 from fabric_cf.orchestrator.swagger_server.models.slivers import Slivers  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.response.constants import GET_METHOD, SLIVERS_GET_PATH, \
-    SLIVERS_GET_SLIVER_ID_PATH, POST_METHOD, SLIVERS_POA_POST_SLIVER_ID_PATH, \
-    SLIVERS_POA_GET_SLIVER_ID_PATH, SLIVERS_POA_GET_POA_ID_PATH
+    SLIVERS_GET_SLIVER_ID_PATH
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
@@ -109,114 +107,4 @@ def slivers_sliver_id_get(slice_id, sliver_id, as_self = True) -> Slivers:  # no
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_GET_SLIVER_ID_PATH).inc()
-        return cors_error_response(error=e)
-
-
-def slivers_poa_get_poa_id_get(poa_id):  # noqa: E501
-    """Perform an operational action on a sliver.
-
-    Request get the status of the POA identified by poa_id.    # noqa: E501
-
-    :param poa_id: Poa Id for the POA triggered
-    :type poa_id: str
-
-    :rtype: Poa
-    """
-    handler = OrchestratorHandler()
-    logger = handler.get_logger()
-    received_counter.labels(POST_METHOD, SLIVERS_POA_GET_POA_ID_PATH).inc()
-    try:
-        token = get_token()
-        poa_list = handler.get_poas(token=token, poa_id=poa_id)
-        response = Poa()
-        response.data = []
-        for p in poa_list:
-            poa = PoaData().from_dict(p)
-            response.data.append(poa)
-        response.size = len(response.data)
-        response.type = "poas"
-        success_counter.labels(POST_METHOD, SLIVERS_POA_GET_POA_ID_PATH).inc()
-        return cors_success_response(response_body=response)
-    except OrchestratorException as e:
-        logger.exception(e)
-        failure_counter.labels(POST_METHOD, SLIVERS_POA_GET_POA_ID_PATH).inc()
-        return cors_error_response(error=e)
-    except Exception as e:
-        logger.exception(e)
-        failure_counter.labels(POST_METHOD, SLIVERS_POA_GET_POA_ID_PATH).inc()
-        return cors_error_response(error=e)
-
-
-def slivers_poa_get_sliver_id_get(sliver_id):  # noqa: E501
-    """Perform an operational action on a sliver.
-
-    Request get the status of the POAs for a sliver identified by sliver_id.    # noqa: E501
-
-    :param sliver_id: Sliver identified by universally unique identifier
-    :type sliver_id: str
-
-    :rtype: Poa
-    """
-    handler = OrchestratorHandler()
-    logger = handler.get_logger()
-    received_counter.labels(POST_METHOD, SLIVERS_POA_GET_SLIVER_ID_PATH).inc()
-    try:
-        token = get_token()
-        poa_list = handler.get_poas(sliver_id=sliver_id, token=token)
-        response = Poa()
-        response.data = []
-        for p in poa_list:
-            poa = PoaData().from_dict(p)
-            response.data.append(poa)
-        response.size = len(response.data)
-        response.type = "poas"
-        success_counter.labels(POST_METHOD, SLIVERS_POA_GET_SLIVER_ID_PATH).inc()
-        return cors_success_response(response_body=response)
-    except OrchestratorException as e:
-        logger.exception(e)
-        failure_counter.labels(POST_METHOD, SLIVERS_POA_GET_SLIVER_ID_PATH).inc()
-        return cors_error_response(error=e)
-    except Exception as e:
-        logger.exception(e)
-        failure_counter.labels(POST_METHOD, SLIVERS_POA_GET_SLIVER_ID_PATH).inc()
-        return cors_error_response(error=e)
-
-
-def slivers_poa_sliver_id_post(body: PoaPost, sliver_id):  # noqa: E501
-    """Perform an operational action on a sliver.
-
-    Request to perform an operation action on a sliver. Supported actions include - reboot a VM sliver, get cpu info,
-    get numa info, pin vCPUs, pin memory to a numa node etc.    # noqa: E501
-
-    :param body: Perform Operation Action
-    :type body: dict | bytes
-    :param sliver_id: Sliver identified by universally unique identifier
-    :type sliver_id: str
-
-    :rtype: Poa
-    """
-    handler = OrchestratorHandler()
-    logger = handler.get_logger()
-    received_counter.labels(POST_METHOD, SLIVERS_POA_POST_SLIVER_ID_PATH).inc()
-    try:
-        token = get_token()
-        poa_avro = PoaAvro(operation=body.operation, rid=sliver_id)
-        if body.data is not None:
-            poa_avro.node_set = body.data.node_set
-            poa_avro.vcpu_cpu_map = body.data.vcpu_cpu_map
-        poa_id = handler.poa(sliver_id=sliver_id, token=token, poa=poa_avro)
-        poa_data = PoaData(poa_id=poa_id, operation=body.operation)
-        response = Poa()
-        response.data = [poa_data]
-        response.size = len(response.data)
-        response.type = body.operation
-        success_counter.labels(POST_METHOD, SLIVERS_POA_POST_SLIVER_ID_PATH).inc()
-        return cors_success_response(response_body=response)
-    except OrchestratorException as e:
-        logger.exception(e)
-        failure_counter.labels(POST_METHOD, SLIVERS_POA_POST_SLIVER_ID_PATH).inc()
-        return cors_error_response(error=e)
-    except Exception as e:
-        logger.exception(e)
-        failure_counter.labels(POST_METHOD, SLIVERS_POA_POST_SLIVER_ID_PATH).inc()
         return cors_error_response(error=e)

@@ -876,15 +876,15 @@ paths:
       security:
       - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
-  /slivers/poa/{sliver_id}:
+  /poas/create/{sliver_id}:
     post:
       tags:
-      - slivers
+      - poas
       summary: Perform an operational action on a sliver.
       description: "Request to perform an operation action on a sliver. Supported\
         \ actions include - reboot a VM sliver, get cpu info, get numa info, pin vCPUs,\
         \ pin memory to a numa node etc.  \n"
-      operationId: slivers_poa_sliver_id_post
+      operationId: poas_create_sliver_id_post
       parameters:
       - name: sliver_id
         in: path
@@ -935,24 +935,65 @@ paths:
                 $ref: '#/components/schemas/status_500_internal_server_error'
       security:
       - bearerAuth: []
-      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
-  /slivers/poa_get/{sliver_id}:
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.poas_controller
+  /poas/:
     get:
       tags:
-      - slivers
-      summary: Perform an operational action on a sliver.
-      description: "Request get the status of the POAs for a sliver identified by\
-        \ sliver_id.  \n"
-      operationId: slivers_poa_get_sliver_id_get
+      - poas
+      summary: Request get the status of the POAs.
+      description: "Request get the status of the POAs  \n"
+      operationId: poas_get
       parameters:
       - name: sliver_id
-        in: path
-        description: Sliver identified by universally unique identifier
-        required: true
-        style: simple
-        explode: false
+        in: query
+        description: Search for POAs for a sliver
+        required: false
+        style: form
+        explode: true
         schema:
+          minLength: 3
           type: string
+      - name: states
+        in: query
+        description: Search for POAs in the specified states
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - Nascent
+            - SentToAuthority
+            - Performing
+            - AwaitingCompletion
+            - Success
+            - Failed
+      - name: limit
+        in: query
+        description: maximum number of results to return per page (1 or more)
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+          default: 5
+      - name: offset
+        in: query
+        description: number of items to skip before starting to collect the result
+          set
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 0
+          type: integer
+          format: int32
+          default: 0
       responses:
         "200":
           description: OK
@@ -992,14 +1033,14 @@ paths:
                 $ref: '#/components/schemas/status_500_internal_server_error'
       security:
       - bearerAuth: []
-      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
-  /slivers/poa_get/{poa_id}:
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.poas_controller
+  /poas/{poa_id}:
     get:
       tags:
-      - slivers
+      - poas
       summary: Perform an operational action on a sliver.
       description: "Request get the status of the POA identified by poa_id.  \n"
-      operationId: slivers_poa_get_poa_id_get
+      operationId: poas_poa_id_get
       parameters:
       - name: poa_id
         in: path
@@ -1048,7 +1089,7 @@ paths:
                 $ref: '#/components/schemas/status_500_internal_server_error'
       security:
       - bearerAuth: []
-      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.poas_controller
 components:
   schemas:
     poa_post:

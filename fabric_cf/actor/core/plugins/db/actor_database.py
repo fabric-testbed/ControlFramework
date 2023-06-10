@@ -791,7 +791,7 @@ class ActorDatabase(ABCDatabase):
         try:
             poa_list = self.get_poas(poa_id=poa.poa_id)
             if len(poa_list) > 0:
-                raise DatabaseException("Slice # {} already exists".format(poa.poa_id))
+                raise DatabaseException(f"POA # {poa.get_poa_id()} already exists")
 
             properties = pickle.dumps(poa)
             email = None
@@ -802,8 +802,9 @@ class ActorDatabase(ABCDatabase):
                 project_id = poa.get_slice().get_project_id()
                 slice_id = str(poa.get_slice().get_slice_id())
 
-            self.db.add_poa(poa_guid=poa.poa_id, sliver_id=str(poa.get_sliver_id()), email=email, project_id=project_id,
-                            slice_id=slice_id, properties=properties, state=poa.get_state().value)
+            self.db.add_poa(poa_guid=poa.get_poa_id(), sliver_id=str(poa.get_sliver_id()), email=email,
+                            project_id=project_id, slice_id=slice_id, properties=properties,
+                            state=poa.get_state().value)
         finally:
             if self.lock.locked():
                 self.lock.release()

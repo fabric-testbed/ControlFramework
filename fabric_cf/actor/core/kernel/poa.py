@@ -60,6 +60,25 @@ class PoaStates(Enum):
     def __str__(self):
         return self.name
 
+    @classmethod
+    def list_values(cls) -> List[int]:
+        return list(map(lambda c: c.value, cls))
+
+    @staticmethod
+    def translate_list(states: List[str]) -> List[int] or None:
+        result = PoaStates.list_values()
+
+        if states is None or len(states) == 0:
+            return result
+
+        incoming_states = list(map(lambda x: x.lower(), states))
+
+        for s in PoaStates:
+            if s.name.lower() not in incoming_states:
+                result.remove(s.value)
+
+        return result
+
 
 class Poa:
     """

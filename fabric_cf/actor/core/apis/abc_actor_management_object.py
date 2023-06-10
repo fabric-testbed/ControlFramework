@@ -69,7 +69,8 @@ class ABCActorManagementObject(ABCManagementObject):
 
     def get_poas(self, *, caller: AuthToken, states: List[int] = None,
                  slice_id: ID = None, rid: ID = None, email: str = None,
-                 poa_id: str = None, project_id: str = None) -> ResultPoaAvro:
+                 poa_id: str = None, project_id: str = None,
+                 limit: int = 200, offset: int = 0) -> ResultPoaAvro:
         """
         Get Reservations
         @param states states
@@ -80,6 +81,8 @@ class ABCActorManagementObject(ABCManagementObject):
         @param project_id project id
         Obtains all poa with error information in case of failure
         @param caller caller
+        @param limit: limit of records to be returned
+        @param offset: offset
         @return returns list of the poa
         """
 

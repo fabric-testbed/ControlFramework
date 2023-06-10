@@ -279,11 +279,13 @@ class LocalActor(LocalProxy, ABCMgmtActor):
         return self.manager.is_sliver_provisioning_allowed(project=project, email=email, site=site, worker=worker)
 
     def get_poas(self, *, states: List[int] = None, slice_id: ID = None, rid: ID = None,
-                 email: str = None, poa_id: str = None, project_id: str = None) -> List[PoaInfoAvro]:
+                 email: str = None, poa_id: str = None, project_id: str = None,
+                 limit: int = 200, offset: int = 0) -> List[PoaInfoAvro]:
         self.clear_last()
         try:
             result = self.manager.get_poas(caller=self.auth, states=states, slice_id=slice_id, rid=rid,
-                                           email=email, poa_id=poa_id, project_id=project_id)
+                                           email=email, poa_id=poa_id, project_id=project_id,
+                                           limit=limit, offset=offset)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
