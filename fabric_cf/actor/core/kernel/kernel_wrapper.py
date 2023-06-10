@@ -1166,9 +1166,10 @@ class KernelWrapper:
             raise KernelException("POA for a reservation not registered with the kernel")
 
         try:
-            self.__authorize_request(action_id=ActionId.poa, reservation=reservation,
-                                     sliver=reservation.get_requested_resources().get_sliver(),
-                                     lease_end_time=None)
+            # TODO - uncomment after policy update
+            #self.__authorize_request(action_id=ActionId.poa, reservation=reservation,
+            #                         sliver=reservation.get_requested_resources().get_sliver(),
+            #                         lease_end_time=None)
 
             poa.restore(actor=self.actor, reservation=target)
 
