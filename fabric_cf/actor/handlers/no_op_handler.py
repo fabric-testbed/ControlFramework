@@ -192,11 +192,9 @@ class NoOpHandler(HandlerBase):
         pass
 
     def poa(self, unit: ConfigToken, data: dict) -> Tuple[dict, ConfigToken]:
-        print(f"KOMAL AM handler {data}")
         result = None
         try:
             self.get_logger().info(f"POA invoked for unit: {unit}")
-            raise Exception("Komal error")
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_POA,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
                       Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0,
