@@ -163,7 +163,8 @@ class ResponseBuilder:
                 poa_dict = {ResponseBuilder.PROP_POA_ID: poa.get_poa_id(),
                             ResponseBuilder.PROP_OPERATION: poa.operation,
                             ResponseBuilder.PROP_SLIVER_ID: poa.rid,
-                            ResponseBuilder.PROP_SLICE_ID: poa.get_slice_id()}
+                            ResponseBuilder.PROP_SLICE_ID: poa.get_slice_id(),
+                            ResponseBuilder.PROP_STATE: poa.get_state()}
                 if poa.get_info() is not None:
                     poa_dict[Constants.PROPERTY_INFO] = poa.get_info()
                 poas.append(poa_dict)

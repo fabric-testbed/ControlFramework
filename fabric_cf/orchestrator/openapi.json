@@ -2154,6 +2154,9 @@
           "poa_id": {
             "type": "string"
           },
+          "state": {
+            "type": "string"
+          },
           "sliver_id": {
             "type": "string"
           },

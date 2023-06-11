@@ -14,13 +14,15 @@ class PoaData(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, operation: str=None, poa_id: str=None, sliver_id: str=None, slice_id: str=None, info: object=None):  # noqa: E501
+    def __init__(self, operation: str=None, poa_id: str=None, state: str=None, sliver_id: str=None, slice_id: str=None, info: object=None):  # noqa: E501
         """PoaData - a model defined in Swagger
 
         :param operation: The operation of this PoaData.  # noqa: E501
         :type operation: str
         :param poa_id: The poa_id of this PoaData.  # noqa: E501
         :type poa_id: str
+        :param state: The state of this PoaData.  # noqa: E501
+        :type state: str
         :param sliver_id: The sliver_id of this PoaData.  # noqa: E501
         :type sliver_id: str
         :param slice_id: The slice_id of this PoaData.  # noqa: E501
@@ -31,6 +33,7 @@ class PoaData(Model):
         self.swagger_types = {
             'operation': str,
             'poa_id': str,
+            'state': str,
             'sliver_id': str,
             'slice_id': str,
             'info': object
@@ -39,12 +42,14 @@ class PoaData(Model):
         self.attribute_map = {
             'operation': 'operation',
             'poa_id': 'poa_id',
+            'state': 'state',
             'sliver_id': 'sliver_id',
             'slice_id': 'slice_id',
             'info': 'info'
         }
         self._operation = operation
         self._poa_id = poa_id
+        self._state = state
         self._sliver_id = sliver_id
         self._slice_id = slice_id
         self._info = info
@@ -101,6 +106,27 @@ class PoaData(Model):
         """
 
         self._poa_id = poa_id
+
+    @property
+    def state(self) -> str:
+        """Gets the state of this PoaData.
+
+
+        :return: The state of this PoaData.
+        :rtype: str
+        """
+        return self._state
+
+    @state.setter
+    def state(self, state: str):
+        """Sets the state of this PoaData.
+
+
+        :param state: The state of this PoaData.
+        :type state: str
+        """
+
+        self._state = state
 
     @property
     def sliver_id(self) -> str:
