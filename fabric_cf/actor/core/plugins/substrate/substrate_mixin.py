@@ -195,11 +195,9 @@ class SubstrateMixin(BasePlugin, ABCSubstrate):
         else:
             unit.fail_on_modify(message=message, exception=e)
 
-    def fail_poa_no_update(self, *, unit: Unit, message: str, e: Exception = None):
+    def fail_poa_no_update(self, *, unit: Unit, message: str, poa_info: dict):
         self.logger.error(message)
-        if e:
-            self.logger.error(e)
-        unit.fail_on_poa(message=message, exception=e)
+        unit.fail_on_poa(message=message, poa_info=poa_info)
 
     def merge_unit_properties(self, *, unit: Unit, properties: dict):
         # TODO
@@ -365,13 +363,13 @@ class SubstrateMixin(BasePlugin, ABCSubstrate):
 
         elif result == -1:
             self.logger.debug("poa code -1 with message: {}".format(msg))
-            notice = "Exception during poa for unit: {} {}".format(unit.get_id(), msg)
-            self.fail_poa_no_update(unit=unit, message=notice)
+            notice = "Exception during poa for unit: {} msg {}".format(unit.get_id(), msg)
+            self.fail_poa_no_update(unit=unit, message=notice, poa_info=poa_info)
 
         else:
             self.logger.debug("modify code {} with message: {}".format(result, msg))
             notice = "Error code= {} during modify for unit: {} with message: {}".format(result, unit.get_id(), msg)
-            self.fail_poa_no_update(unit=unit, message=notice)
+            self.fail_poa_no_update(unit=unit, message=notice, poa_info=poa_info)
 
         self.logger.debug("process poa complete")
 

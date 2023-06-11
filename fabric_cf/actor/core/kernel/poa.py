@@ -270,10 +270,13 @@ class Poa:
             if incoming.get_info() is not None:
                 self.info = incoming.get_info().copy()
         else:
+            # Copy the error message
+            self.error_code = incoming.get_error_code()
+            self.message = incoming.get_message()
             # Fail the POA
             self.fail(message=f"POA failed: {incoming.get_message()}")
 
-    def accept_authority_poa_info(self, *, poa_info: dict, notice: Notice):
+    def accept_authority_poa_info(self, *, poa_info: dict):
         """
         Accept the response from Authority Handler execution and send the response to orchestrator
         @param poa_info poa information returned by the handler
@@ -287,8 +290,8 @@ class Poa:
         self.error_code = poa_info.get(Constants.PROPERTY_CODE)
 
         # Get any success/error messages
-        if notice is not None:
-            self.message = notice.get_notice()
+        if poa_info.get(Constants.PROPERTY_MESSAGE) is not None:
+            self.message = poa_info.get(Constants.PROPERTY_MESSAGE)
 
         # send poa info back to the orchestrator
         self.send_poa_info_to_orchestrator()

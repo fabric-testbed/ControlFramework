@@ -832,14 +832,15 @@ class OrchestratorHandler:
             poa.rid = sliver_id
 
             reservations = controller.get_reservations(rid=rid, email=email)
-            if reservations is None:
+            if reservations is None or len(reservations) != 1:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
                     if controller.get_last_error().status.code == ErrorCodes.ErrorNoSuchReservation:
                         raise OrchestratorException(f"Reservation# {rid} not found",
                                                     http_error_code=NOT_FOUND)
 
-                raise OrchestratorException(f"{controller.get_last_error()}")
+                raise OrchestratorException(f"Reservation# {rid} not found",
+                                            http_error_code=NOT_FOUND)
 
             res_state = ReservationStates(reservations[0].get_state())
 

@@ -196,7 +196,7 @@ class NoOpHandler(HandlerBase):
         result = None
         try:
             self.get_logger().info(f"POA invoked for unit: {unit}")
-
+            raise Exception("Komal error")
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_POA,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
                       Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0,
@@ -215,7 +215,12 @@ class NoOpHandler(HandlerBase):
             self.get_logger().error(traceback.format_exc())
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_POA,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_EXCEPTION,
-                      Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
+                      Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0,
+                      Constants.PROPERTY_POA_INFO: {
+                          "operation": data.get("operation"),
+                          "poa_id": data.get("poa_id"),
+                          "code": Constants.RESULT_CODE_EXCEPTION
+                      }}
         finally:
             self.get_logger().info(f"Modify completed")
         return result, unit

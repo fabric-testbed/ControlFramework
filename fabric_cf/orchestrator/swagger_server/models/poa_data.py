@@ -14,7 +14,7 @@ class PoaData(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, operation: str=None, poa_id: str=None, state: str=None, sliver_id: str=None, slice_id: str=None, info: object=None):  # noqa: E501
+    def __init__(self, operation: str=None, poa_id: str=None, state: str=None, sliver_id: str=None, slice_id: str=None, error: str=None, info: object=None):  # noqa: E501
         """PoaData - a model defined in Swagger
 
         :param operation: The operation of this PoaData.  # noqa: E501
@@ -27,6 +27,8 @@ class PoaData(Model):
         :type sliver_id: str
         :param slice_id: The slice_id of this PoaData.  # noqa: E501
         :type slice_id: str
+        :param error: The error of this PoaData.  # noqa: E501
+        :type error: str
         :param info: The info of this PoaData.  # noqa: E501
         :type info: object
         """
@@ -36,6 +38,7 @@ class PoaData(Model):
             'state': str,
             'sliver_id': str,
             'slice_id': str,
+            'error': str,
             'info': object
         }
 
@@ -45,6 +48,7 @@ class PoaData(Model):
             'state': 'state',
             'sliver_id': 'sliver_id',
             'slice_id': 'slice_id',
+            'error': 'error',
             'info': 'info'
         }
         self._operation = operation
@@ -52,6 +56,7 @@ class PoaData(Model):
         self._state = state
         self._sliver_id = sliver_id
         self._slice_id = slice_id
+        self._error = error
         self._info = info
 
     @classmethod
@@ -169,6 +174,27 @@ class PoaData(Model):
         """
 
         self._slice_id = slice_id
+
+    @property
+    def error(self) -> str:
+        """Gets the error of this PoaData.
+
+
+        :return: The error of this PoaData.
+        :rtype: str
+        """
+        return self._error
+
+    @error.setter
+    def error(self, error: str):
+        """Sets the error of this PoaData.
+
+
+        :param error: The error of this PoaData.
+        :type error: str
+        """
+
+        self._error = error
 
     @property
     def info(self) -> object:

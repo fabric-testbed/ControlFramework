@@ -41,6 +41,7 @@ class ResponseBuilder:
     PROP_SLICE_ID = "slice_id"
     PROP_NAME = "name"
     PROP_STATE = "state"
+    PROP_ERROR = "error"
     PROP_PROJECT_ID = "project_id"
     PROP_PROJECT_NAME = "project_name"
     PROP_MODEL = "model"
@@ -164,7 +165,8 @@ class ResponseBuilder:
                             ResponseBuilder.PROP_OPERATION: poa.operation,
                             ResponseBuilder.PROP_SLIVER_ID: poa.rid,
                             ResponseBuilder.PROP_SLICE_ID: poa.get_slice_id(),
-                            ResponseBuilder.PROP_STATE: poa.get_state()}
+                            ResponseBuilder.PROP_STATE: poa.get_state(),
+                            ResponseBuilder.PROP_ERROR: poa.get_error()}
                 if poa.get_info() is not None:
                     poa_dict[Constants.PROPERTY_INFO] = poa.get_info()
                 poas.append(poa_dict)

@@ -640,7 +640,7 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
         # Get POA info from the handler completion
         poa_info = self.get_resources().get_poa_info()
         if poa_info is None or poa_info.get(Constants.POA_ID) is None:
-            self.logger.warning("cannot generate update: no poa")
+            self.logger.warning(f"cannot generate update: no poa {poa_info}")
             return
 
         # get the corresponding POA
@@ -651,13 +651,13 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
 
         try:
             # process handler response and send response to orchestrator
-            poa.accept_authority_poa_info(poa_info=poa_info, notice=self.resources.get_notices())
+            poa.accept_authority_poa_info(poa_info=poa_info)
 
             # Update POA
             self.actor.get_plugin().get_database().update_poa(poa=poa)
 
             # Remove processed POA from Reservation
-            #self.poas.pop(poa.get_poa_id())
+            self.poas.pop(poa.get_poa_id())
         except Exception as e:
             self.logger.error(f"callback failed e:{e}", stack_info=True)
 

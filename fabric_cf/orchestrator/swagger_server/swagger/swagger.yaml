@@ -1448,6 +1448,8 @@ components:
           type: string
         slice_id:
           type: string
+        error:
+          type: string
         info:
           type: object
     poa_post_data_vcpu_cpu_map:

@@ -2163,6 +2163,9 @@
           "slice_id": {
             "type": "string"
           },
+          "error": {
+            "type": "string"
+          },
           "info": {
             "type": "object"
           }

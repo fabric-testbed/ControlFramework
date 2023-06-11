@@ -128,6 +128,9 @@ class KafkaReturn(KafkaProxy, ABCControllerCallbackProxy):
     def prepare_poa_result(self, *, poa: Poa, callback: KafkaProxy, caller: AuthToken) -> ABCRPCRequestState:
         request = KafkaProxyRequestState()
         request.poa = Translate.translate_poa_to_result_poa_avro(poa=poa)
+        print(f"KOMAL --Result POA---- {request.poa}")
+        for x in request.poa.poas:
+            print(f"KOMAL POA info: {x}")
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
         return request

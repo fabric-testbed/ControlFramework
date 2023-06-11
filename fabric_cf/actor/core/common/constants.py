@@ -271,6 +271,7 @@ class Constants:
     PROPERTY_POA_INFO = "poa_info"
     PROPERTY_INFO = "info"
     PROPERTY_CODE = "code"
+    PROPERTY_MESSAGE = "message"
     POA_ID = "poa_id"
 
     RESULT_CODE_EXCEPTION = -1

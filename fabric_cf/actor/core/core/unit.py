@@ -32,6 +32,7 @@ from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.notice import Notice
@@ -133,7 +134,7 @@ class Unit(ConfigToken):
         finally:
             self.lock.release()
 
-    def fail_on_poa(self, *, message: str, exception: Exception = None):
+    def fail_on_poa(self, *, message: str, poa_info:dict):
         """
         Fail on modify
         @param message message
@@ -141,7 +142,8 @@ class Unit(ConfigToken):
         """
         try:
             self.lock.acquire()
-            self.notices.add(msg=message, ex=exception)
+            self.poa_info = poa_info.copy()
+            self.poa_info[Constants.PROPERTY_MESSAGE] = message
             self.transition(to_state=UnitState.ACTIVE)
         finally:
             self.lock.release()

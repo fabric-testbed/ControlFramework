@@ -420,7 +420,8 @@ class Translate:
         auth_avro = Translate.translate_auth_to_avro(auth=poa.get_slice().get_owner())
         poa_avro = PoaInfoAvro(operation=poa.operation, rid=str(poa.sliver_id), poa_id=str(poa.poa_id),
                                auth=auth_avro, project_id=poa.get_slice().get_project_id(),
-                               slice_id=str(poa.get_slice().get_slice_id()), state=str(poa.get_state()))
+                               slice_id=str(poa.get_slice().get_slice_id()), state=str(poa.get_state()),
+                               error=poa.get_message())
 
         if poa.get_info() is not None:
             poa_avro.info = poa.get_info().copy()
