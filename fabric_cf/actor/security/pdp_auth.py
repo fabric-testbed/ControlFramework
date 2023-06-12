@@ -79,6 +79,7 @@ class ActionId(Enum):
     extend = 15
     relinquish = 16
     accept = 17
+    poa = 18
 
     def __str__(self):
         return self.name

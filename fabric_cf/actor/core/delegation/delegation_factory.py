@@ -34,13 +34,15 @@ class DelegationFactory:
     Factory class to create delegation instances
     """
     @staticmethod
-    def create(did: str, slice_id: ID, delegation_name: str = None) -> ABCDelegation:
+    def create(did: str, slice_id: ID, delegation_name: str = None, site: str = None) -> ABCDelegation:
         """
         Create a delegation
         @param did delegation id
         @param slice_id slice id
         @param delegation_name delegation_name
+        @param site site name
         @return delegation
         """
-        delegation = Delegation(dlg_graph_id=did, slice_id=slice_id, delegation_name=delegation_name)
+        delegation = Delegation(dlg_graph_id=did, slice_id=slice_id, delegation_name=delegation_name,
+                                site=site)
         return delegation

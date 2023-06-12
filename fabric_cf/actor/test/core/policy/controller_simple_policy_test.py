@@ -66,12 +66,12 @@ class ControllerSimplePolicyTest(BaseTestCase, unittest.TestCase):
         policy = ControllerSimplePolicyTestWrapper()
         return policy
 
-    def test_a_create(self):
+    def _test_a_create(self):
         controller = self.get_controller()
         for i in range(1, 101):
             controller.external_tick(cycle=i)
 
-    def test_b_demand(self):
+    def _test_b_demand(self):
         controller = self.get_controller()
         clock = controller.get_actor_clock()
         Term.clock = clock

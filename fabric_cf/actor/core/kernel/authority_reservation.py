@@ -28,8 +28,10 @@ from __future__ import annotations
 import threading
 import traceback
 from typing import TYPE_CHECKING
+
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory
 from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import AuthorityException
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
@@ -48,6 +50,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.core.time.term import Term
     from fabric_cf.actor.core.util.id import ID
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
@@ -69,6 +72,7 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
         # Creates a new "blank" reservation instance. Used during recovery.
         self.category = ReservationCategory.Authority
         self.broker_callback = None
+        self.poas = {}
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -88,6 +92,7 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
 
         del state['notified_about_failure']
         del state['thread_lock']
+        del state['poas']
 
         return state
 
@@ -108,6 +113,7 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
         self.policy = None
 
         self.notified_about_failure = False
+        self.poas = {}
         self.thread_lock = threading.Lock()
 
     def restore(self, *, actor: ABCActorMixin, slice_obj: ABCSlice):
@@ -226,12 +232,12 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
         else:
             raise AuthorityException("Unsupported operation: {}".format(operation))
 
-    def map_and_update(self, *, extend: bool) -> bool:
+    def map_and_update(self, *, extend: bool, poa: bool = False) -> bool:
         """
         Calls the policy to fill a request, with associated state transitions.
 
-        @param extend
-                   true if this request is an extend
+        @param extend true if this request is an extend
+        @param poa true if this request is a poa
         @return boolean success
         """
         success = False
@@ -240,7 +246,7 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
             # Must be a previous failure, or policy marked it as failed. Send update to reset client.
             self.generate_update()
         elif self.state == ReservationStates.Ticketed:
-            assert not extend
+            assert not extend and not poa
             try:
                 self.transition(prefix="redeeming", state=ReservationStates.Ticketed,
                                 pending=ReservationPendingStates.Redeeming)
@@ -274,7 +280,18 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
                     self.logger.error(traceback.format_exc())
                     self.fail_notify(message=str(e))
         elif self.state == ReservationStates.Active:
-            assert extend
+            if poa:
+                success = True
+                assert not extend
+                if self.pending_state == ReservationPendingStates.PrimingPoa:
+                    self.transition(prefix="performing poa", state=ReservationStates.Active,
+                                    pending=ReservationPendingStates.WaitingPoaResponse)
+                else:
+                    self.transition(prefix="perform poa", state=ReservationStates.Active,
+                                    pending=ReservationPendingStates.PrimingPoa)
+                return success
+            else:
+                assert extend
             try:
                 self.transition(prefix="extending lease", state=ReservationStates.Active,
                                 pending=ReservationPendingStates.ExtendingLease)
@@ -406,6 +423,18 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
                 self.pending_recover = False
                 self.generate_update()
 
+        elif self.pending_state == ReservationPendingStates.PrimingPoa:
+            assert self.state == ReservationStates.Active
+            if self.map_and_update(extend=False, poa=True):
+                self.logger.debug("Poa execution (poa) for #{} started".format(self.rid))
+                self.service_pending = ReservationPendingStates.PrimingPoa
+
+        elif self.pending_state == ReservationPendingStates.WaitingPoaResponse and self.resources.is_active():
+            assert self.state == ReservationStates.Active
+            self.transition(prefix="Poa complete", state=ReservationStates.Active,
+                            pending=ReservationPendingStates.None_)
+            self.generate_update_poa()
+
         elif self.pending_state == ReservationPendingStates.Priming and self.resources.is_active():
             # We are an authority filling a ticket claim. Got resources? Note
             # that active() just means no primes/closes/modifies are still in
@@ -468,6 +497,8 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
             elif self.service_pending == ReservationPendingStates.ModifyingLease:
                 self.service_modify_lease()
 
+            elif self.service_pending == ReservationPendingStates.PrimingPoa:
+                self.service_poa()
         except Exception as e:
             self.logger.error("authority failed servicing probe e:{}".format(e))
             self.fail_notify(message="post-op exception: {}".format(e))
@@ -577,6 +608,84 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
             self.logger.error(f"Closing reservation due to non-recoverable RPC error {failed.get_error_type()}")
             self.update_data.error(message=str(failed.get_error()))
             self.actor.close(reservation=self)
+
+    def service_poa(self):
+        """
+        Service POA
+        """
+        assert self.pending_state == ReservationPendingStates.WaitingPoaResponse
+
+        # Traverse the POAs and invoke the handler for POAs in Performing state
+        for poa_id, poa in self.poas.items():
+            try:
+                if poa.is_performing():
+                    self.resources.service_poa(poa=poa)
+                    poa.service_poa()
+            except Exception as e:
+                traceback.print_exc()
+                self.logger.error("authority failed servicing POA probe e:{}".format(e))
+                poa.fail(message=f"authority failed servicing POA probe e:{e}")
+
+            # Update POA
+            self.actor.get_plugin().get_database().update_poa(poa=poa)
+
+    def generate_update_poa(self):
+        """
+        Generate POA Result to Orchestrator
+        """
+        if self.callback is None:
+            self.logger.warning("cannot generate update: no callback")
+            return
+
+        # Get POA info from the handler completion
+        poa_info = self.get_resources().get_poa_info()
+        if poa_info is None or poa_info.get(Constants.POA_ID) is None:
+            self.logger.warning(f"cannot generate update: no poa {poa_info}")
+            return
+
+        # get the corresponding POA
+        poa = self.poas.get(poa_info.get(Constants.POA_ID))
+        if poa is None:
+            self.logger.warning(f"cannot generate update: no poa - {poa_info.get(Constants.POA_ID)}")
+            return
+
+        try:
+            # process handler response and send response to orchestrator
+            poa.accept_authority_poa_info(poa_info=poa_info)
+
+            # Update POA
+            self.actor.get_plugin().get_database().update_poa(poa=poa)
+
+            # Remove processed POA from Reservation
+            self.poas.pop(poa.get_poa_id())
+        except Exception as e:
+            self.logger.error(f"callback failed e:{e}", stack_info=True)
+
+    def poa(self, *, poa: Poa):
+        """
+        Process incoming POA received from orchestrator
+        @param poa poa
+        """
+        if poa.get_poa_id() in self.poas:
+            self.logger.error(f"POA {poa.get_poa_id()} has already been processed!")
+            return
+
+        # Ensure no pending operation
+        self.nothing_pending()
+
+        # Setup POA to point to the correct reservation
+        poa.restore(actor=self.actor, reservation=self)
+        if self.state == ReservationStates.Active:
+            # Process POA at the Authority
+            poa.process_poa_authority()
+        else:
+            msg = f"Wrong state to process POA: {self.state}"
+            poa.fail(message=msg, notify=True)
+            self.actor.get_plugin().get_database.update_poa(poa=poa)
+            self.error(err=msg)
+
+        self.poas[poa.get_poa_id()] = poa
+        self.map_and_update(poa=True, extend=False)
 
 
 class AuthorityReservationFactory:

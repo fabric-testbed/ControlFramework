@@ -28,8 +28,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List, Dict, Tuple
 
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
+from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
+from fabric_mb.message_bus.messages.result_poa_avro import ResultPoaAvro
 from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric_mb.message_bus.messages.result_reservation_state_avro import ResultReservationStateAvro
 from fabric_mb.message_bus.messages.result_sites_avro import ResultSitesAvro
@@ -517,8 +520,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         if self.actor is not None:
             return self.actor.get_name()
 
-        return None
-
     def update_reservation(self, *, reservation: ReservationMng, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
         if reservation is None or caller is None:
@@ -780,5 +781,47 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             result.set_code(ErrorCodes.ErrorInternalError.value)
             result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result = ManagementObject.set_exception_details(result=result, e=e)
+
+        return result
+
+    def get_poas(self, *, caller: AuthToken, states: List[int] = None,
+                 slice_id: ID = None, rid: ID = None, email: str = None,
+                 poa_id: str = None, project_id: str = None,
+                 limit: int = 200, offset: int = 0) -> ResultPoaAvro:
+
+        result = ResultPoaAvro()
+        result.status = ResultAvro()
+
+        if caller is None:
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            return result
+
+        try:
+            poa_list = None
+            try:
+                poa_list = self.db.get_poas(poa_id=poa_id, sliver_id=rid, email=email, project_id=project_id,
+                                            states=states, limit=limit, offset=offset)
+            except Exception as e:
+                self.logger.error("get_poas:db access {}".format(e))
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
+                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+            if poa_list is not None:
+                result.poas = []
+                for p in poa_list:
+                    poa_info_avro = Translate.translate_poa_to_poa_info_avro(poa=p)
+                    result.poas.append(poa_info_avro)
+
+        except ReservationNotFoundException as e:
+            self.logger.error("get_poas: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.status.set_message(e.text)
+        except Exception as e:
+            self.logger.error("get_poas: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result

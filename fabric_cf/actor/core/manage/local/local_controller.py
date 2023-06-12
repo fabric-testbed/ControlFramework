@@ -31,13 +31,13 @@ from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryModelAvro
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.reservation_predecessor_avro import ReservationPredecessorAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 
-from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.controller_management_object import ControllerManagementObject
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
@@ -48,12 +48,12 @@ if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 
-    from fabric_cf.actor.core.manage.management_object import ManagementObject
+    from fabric_cf.actor.core.apis.abc_client_actor_management_object import ABCClientActorManagementObject
     from fabric_cf.actor.security.auth_token import AuthToken
 
 
 class LocalController(LocalActor, ABCMgmtControllerMixin):
-    def __init__(self, *, manager: ManagementObject, auth: AuthToken):
+    def __init__(self, *, manager: ABCClientActorManagementObject, auth: AuthToken):
         super().__init__(manager=manager, auth=auth)
 
         if not isinstance(manager, ControllerManagementObject):
@@ -93,8 +93,6 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
-        return None
-
     def get_broker_query_model(self, *, broker: ID, id_token: str, level: int,
                                graph_format: GraphFormat) -> BrokerQueryModelAvro:
         self.clear_last()
@@ -108,8 +106,6 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
-        return None
-
     def claim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:
         self.clear_last()
         try:
@@ -120,8 +116,6 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
                 return self.get_first(result_list=result.delegations)
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
-
-        return None
 
     def reclaim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:
         self.clear_last()
@@ -134,8 +128,6 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
-        return None
-
     def get_reservation_units(self, *, rid: ID, id_token: str = None) -> List[UnitAvro]:
         self.clear_last()
         try:
@@ -145,8 +137,6 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
                 return result.units
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
-
-        return None
 
     def add_reservation(self, *, reservation: TicketReservationAvro) -> ID:
         self.clear_last()
@@ -158,8 +148,6 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
                 return ID(uid=result.get_result())
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
-
-        return None
 
     def add_reservations(self, *, reservations: List[TicketReservationAvro]) -> List[ID]:
         self.clear_last()
@@ -175,8 +163,6 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
                 return rids
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
-
-        return None
 
     def demand_reservation_rid(self, *, rid: ID) -> bool:
         self.clear_last()
@@ -224,6 +210,18 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
         self.clear_last()
         try:
             result = self.manager.modify_reservation(rid=rid, modified_sliver=modified_sliver, caller=self.auth)
+            self.last_status = result
+
+            return result.get_code() == 0
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+        return False
+
+    def poa(self, *, poa: PoaAvro) -> bool:
+        self.clear_last()
+        try:
+            result = self.manager.poa(poa=poa, caller=self.auth)
             self.last_status = result
 
             return result.get_code() == 0

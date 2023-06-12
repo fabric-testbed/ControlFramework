@@ -29,6 +29,8 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, List, Tuple, Dict
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
+from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
 from fabric_mb.message_bus.messages.site_avro import SiteAvro
 
 from fabric_cf.actor.core.apis.abc_component import ABCComponent
@@ -98,6 +100,7 @@ class ABCMgmtActor(ABCComponent):
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
                          type: str = None, site: str = None, node_id: str = None) -> List[ReservationMng]:
         """
+        Get Reservations
         @param states states
         @param slice_id slice ID
         @param rid reservation id
@@ -252,3 +255,20 @@ class ABCMgmtActor(ABCComponent):
         @return True if allowed; False otherwise
         """
         return True
+
+    @abstractmethod
+    def get_poas(self, *, states: List[int] = None, slice_id: ID = None, rid: ID = None,
+                 email: str = None, poa_id: str = None, project_id: str = None,
+                 limit: int = 200, offset: int = 0) -> List[PoaInfoAvro]:
+        """
+        Get POA
+        @param states states
+        @param slice_id slice ID
+        @param rid reservation id
+        @param email: user email
+        @param project_id: project_id
+        @param poa_id: poa_id
+        @param limit: limit of records to be returned
+        @param offset: offset
+        @return returns list of the poas
+        """

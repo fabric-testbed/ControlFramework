@@ -40,6 +40,18 @@ class AccessChecker:
     Check access for Incoming operation against Policy Decision Point PDP
     """
     @staticmethod
+    def validate_and_decode_token(*, token: str, logger=None) -> FabricToken or None:
+        if token is None:
+            return token
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        oauth_config = GlobalsSingleton.get().get_config().get_global_config().get_oauth()
+        jwt_validator = GlobalsSingleton.get().get_jwt_validator()
+
+        fabric_token = FabricToken(oauth_config=oauth_config, jwt_validator=jwt_validator, logger=logger, token=token)
+        fabric_token.validate()
+        return fabric_token
+
+    @staticmethod
     def check_access(*, action_id: ActionId, token: str,
                      resource: BaseSliver or ExperimentTopology = None,
                      lease_end_time: datetime = None, logger=None) -> FabricToken or None:

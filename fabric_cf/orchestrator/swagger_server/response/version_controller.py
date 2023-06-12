@@ -28,7 +28,7 @@ from fabric_cf.orchestrator.swagger_server.models.version import Version  # noqa
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter, __API_REFERENCE__
 from fabric_cf.orchestrator.swagger_server.response.constants import VERSIONS_PATH, GET_METHOD
 
-from fabric_cf import __VERSION__
+from fabric_cf import __version__
 from fabric_cf.orchestrator.swagger_server.response.cors_response import cors_500, cors_200
 
 
@@ -46,7 +46,7 @@ def version_get() -> Version:  # noqa: E501
     try:
         version = VersionData()
         version.reference = __API_REFERENCE__
-        version.version = __VERSION__
+        version.version = __version__
         response = Version()
         response.data = [version]
         response.size = len(response.data)

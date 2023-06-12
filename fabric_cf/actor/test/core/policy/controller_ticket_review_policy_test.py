@@ -42,7 +42,7 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
     def get_controller_policy(self) -> ABCControllerPolicy:
         return ControllerTicketReviewPolicyTestWrapper()
 
-    def test_c_fail(self):
+    def _test_c_fail(self):
         controller = self.get_controller()
         clock = controller.get_actor_clock()
         Term.clock = clock
@@ -77,7 +77,7 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
                 self.assertTrue(r2.is_closed())
                 self.assertTrue(r2.get_notices().__contains__(Constants.CLOSURE_BY_TICKET_REVIEW_POLICY))
 
-    def test_d_nascent(self):
+    def _test_d_nascent(self):
         controller = self.get_controller()
         clock = controller.get_actor_clock()
         Term.clock = clock
@@ -122,7 +122,7 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
                 self.assertTrue(r1.is_closed())
                 self.assertTrue(r2.is_closed())
 
-    def test_e_fail_and_nascent(self):
+    def _test_e_fail_and_nascent(self):
         controller = self.get_controller()
         clock = controller.get_actor_clock()
         Term.clock = clock

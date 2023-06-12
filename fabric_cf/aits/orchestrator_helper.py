@@ -24,17 +24,10 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import enum
-from datetime import datetime
 from typing import Tuple, Union, List
 
 import requests
 from fim.user import GraphFormat
-
-from fabric_cf.actor.core.common.constants import Constants as CFConstants
-from fabric_cf.aits.elements.constants import Constants
-from fabric_cf.aits.elements.reservation import ReservationFactory, Reservation
-from fabric_cf.aits.elements.slice import SliceFactory, Slice
-
 
 @enum.unique
 class Status(enum.Enum):
@@ -45,10 +38,13 @@ class Status(enum.Enum):
 
 class OrchestratorHelper:
     HTTP_OK = 200
+    PROP_DATA = "data"
+    PROP_SLIVERS = "slivers"
+    PROP_SLICES = "slices"
 
     def __init__(self):
         self.host = "http://localhost:8700"
-        self.token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImI0MTUxNjcyMTExOTFlMmUwNWIyMmI1NGIxZDNiNzY2N2U3NjRhNzQ3NzIyMTg1ZTcyMmU1MmUxNDZmZTQzYWEifQ.eyJlbWFpbCI6Imt0aGFyZTEwQGVtYWlsLnVuYy5lZHUiLCJnaXZlbl9uYW1lIjoiS29tYWwiLCJmYW1pbHlfbmFtZSI6IlRoYXJlamEiLCJuYW1lIjoiS29tYWwgVGhhcmVqYSIsImlzcyI6Imh0dHBzOi8vY2lsb2dvbi5vcmciLCJzdWIiOiJodHRwOi8vY2lsb2dvbi5vcmcvc2VydmVyQS91c2Vycy8xMTkwNDEwMSIsImF1ZCI6ImNpbG9nb246L2NsaWVudF9pZC8xMjUzZGVmYzYwYTMyM2ZjYWEzYjQ0OTMyNjQ3NjA5OSIsInRva2VuX2lkIjoiaHR0cHM6Ly9jaWxvZ29uLm9yZy9vYXV0aDIvaWRUb2tlbi82ZmMxYTYyNjY5ZmE0NTk4OTExMjY1ODI0OTgxZThkOC8xNjA2NjU4NjE3NzA4IiwiYXV0aF90aW1lIjoiMTYwNjY1ODYxNyIsImV4cCI6MTYxMDgzMDQzNCwiaWF0IjoxNjEwNzQ0MDM0LCJyb2xlcyI6WyJwcm9qZWN0LWxlYWRzIl0sInByb2plY3RzIjp7IlJFTkNJLVRFU1QiOlsidGFnIDEiLCJ0YWcgMiJdfSwic2NvcGUiOiJhbGwifQ.Gttyz2HQohcj0_fOF00RIGUAMiGtdCBfh5IPs3L2KMKL9Rddy7G_zoqtIynpGr58E8Fn4n4ssGOn9Mutas3kJBCZhF_DawI9uNYGxjhVeinE-Rq7r1Mciwcvj8dA4GPASeurU0yWucioNCxx6u-X4IxbGf2Z01ONPfDN09gSKFk9D_oWy-GTEdiwddr2c_AhtxhCJLS1ZQZ2-mY8R6BJMIZsHU_nv8PJb3luPuRD9b8oVN0W1bIm6JorTja7Tz3P5YcD86ZnBJgPLQW65HoXOfKfxmV4gEHx5c-APjQs1LnbpiL4SvOFdOobgTZYDOV9ei03iXlLdw0GymvQmg53GQ"
+        self.token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImI0MTUxNjcyMTExOTFlMmUwNWIyMmI1NGIxZDNiNzY2N2U3NjRhNzQ3NzIyMTg1ZTcyMmU1MmUxNDZmZTQzYWEifQ.eyJlbWFpbCI6Imt0aGFyZTEwQGVtYWlsLnVuYy5lZHUiLCJnaXZlbl9uYW1lIjoiS29tYWwiLCJmYW1pbHlfbmFtZSI6IlRoYXJlamEiLCJuYW1lIjoiS29tYWwgVGhhcmVqYSIsImlzcyI6Imh0dHBzOi8vY2lsb2dvbi5vcmciLCJzdWIiOiJodHRwOi8vY2lsb2dvbi5vcmcvc2VydmVyQS91c2Vycy8xMTkwNDEwMSIsImF1ZCI6ImNpbG9nb246L2NsaWVudF9pZC82MTdjZWNkZDc0ZTMyYmU0ZDgxOGNhMTE1MTUzMWRmZiIsImp0aSI6Imh0dHBzOi8vY2lsb2dvbi5vcmcvb2F1dGgyL2lkVG9rZW4vMTQ4NDVkZDI4MTU4YjJlOWQxMjk3YzhmMWRmMzk2ZTcvMTY3MTMwNTA2Nzg5MyIsImF1dGhfdGltZSI6MTY3MTMwNTA2NywiZXhwIjoxNjcxMzA4NzI0LCJpYXQiOjE2NzEzMDUxMjQsInByb2plY3RzIjpbeyJuYW1lIjoiQ0YgVGVzdCIsInV1aWQiOiIxMGMwMDk0YS1hYmFmLTRlZjktYTUzMi0yYmU1M2UyYTg5NmIiLCJ0YWdzIjpbIkNvbXBvbmVudC5HUFUiLCJDb21wb25lbnQuU3RvcmFnZSJdLCJtZW1iZXJzaGlwcyI6eyJpc19jcmVhdG9yIjp0cnVlLCJpc19tZW1iZXIiOnRydWUsImlzX293bmVyIjp0cnVlfX1dLCJyb2xlcyI6W3siZGVzY3JpcHRpb24iOiJUZXN0MiIsIm5hbWUiOiIwZmM3ZGNiOS03MjBiLTRhMDMtYjdlNC01NjFiMDZjNjBkOTgtcGMifSx7ImRlc2NyaXB0aW9uIjoiVGVzdDIiLCJuYW1lIjoiMGZjN2RjYjktNzIwYi00YTAzLWI3ZTQtNTYxYjA2YzYwZDk4LXBvIn0seyJkZXNjcmlwdGlvbiI6IkNGIFRlc3QgYW5kIHRlc3QgYW5kIHRlc3QiLCJuYW1lIjoiMTBjMDA5NGEtYWJhZi00ZWY5LWE1MzItMmJlNTNlMmE4OTZiLXBjIn0seyJkZXNjcmlwdGlvbiI6IkNGIFRlc3QgYW5kIHRlc3QgYW5kIHRlc3QiLCJuYW1lIjoiMTBjMDA5NGEtYWJhZi00ZWY5LWE1MzItMmJlNTNlMmE4OTZiLXBtIn0seyJkZXNjcmlwdGlvbiI6IkNGIFRlc3QgYW5kIHRlc3QgYW5kIHRlc3QiLCJuYW1lIjoiMTBjMDA5NGEtYWJhZi00ZWY5LWE1MzItMmJlNTNlMmE4OTZiLXBvIn0seyJkZXNjcmlwdGlvbiI6IlByb2plY3QtVGFncyIsIm5hbWUiOiJiOGQ2NmZiMy1lN2FkLTRkZjktYTY1Mi0yZDhlMzIzMjM2ZTUtcGMifSx7ImRlc2NyaXB0aW9uIjoiUHJvamVjdC1UYWdzIiwibmFtZSI6ImI4ZDY2ZmIzLWU3YWQtNGRmOS1hNjUyLTJkOGUzMjMyMzZlNS1wbyJ9LHsiZGVzY3JpcHRpb24iOiJBY3RpdmUgVXNlcnMgb2YgRkFCUklDIC0gaW5pdGlhbGx5IHNldCBieSBlbnJvbGxtZW50IHdvcmtmbG93IiwibmFtZSI6ImZhYnJpYy1hY3RpdmUtdXNlcnMifSx7ImRlc2NyaXB0aW9uIjoiRmFjaWxpdHkgT3BlcmF0b3JzIGZvciBGQUJSSUMiLCJuYW1lIjoiZmFjaWxpdHktb3BlcmF0b3JzIn0seyJkZXNjcmlwdGlvbiI6IiBKdXB5dGVyaHViIGFjY2VzcyAtIGJhc2VkIG9uIHByb2plY3QgcGFydGljaXBhdGlvbiIsIm5hbWUiOiJKdXB5dGVyaHViIn0seyJkZXNjcmlwdGlvbiI6IlByb2plY3QgTGVhZHMgZm9yIEZBQlJJQyIsIm5hbWUiOiJwcm9qZWN0LWxlYWRzIn1dLCJzY29wZSI6ImFsbCIsInV1aWQiOiIyMjY1YTRkYS1lMWZjLTRmZmMtYmJiNy1kODZkNTY1NzViZmYifQ.bjSrZgGQDXM4g50wcw-sWEJVMR5g614Od6Sav0Im9fg8MsU68Jpi3uJ8wEkGR8cVO6_FsaYsAhJPDSSuElaeN8bUrkRuCUpx6BoaQ-G7J_JmlAQvH-GIgmYhu9T9epBQLUf_wKFVrbsemEPPzAKofJ58hTchtHTlRWt0hJ7m7eEeBirXJDQeKOSyRFKJ5R61to69tqlf5G_QxuqsaWRcIHdgGxkPlNKNW2aV2aKVvwyde2rbr647NFyXzACpj4ir1aS8WBoTBEhVAa6NV8V9r3QQq6OqKLktj65rRKX4q6DyhEl01QiFBg--JLAAZ2NaOntY4DC8yP_6VnfbvM_8zsYBKdZMgii6Wf0-UNXNEyK47ZfXTCa5v7Tp0ozTNc0_Hd3TFRdNqQ3kCicVZFa671mapBC43lD-pYRloTASUADa89L2VAxxRCl89-i5Gc01le-6ZiUy0moLT_COD8qEQvixnOD4vnb_7VMSiCVSNLzkGM-qCtdMGeYC9PF3y35np1aEkttVGg_mKljsvDp7NMMBcGFP9YJCWVNEQZTvGqvm-HX5iQvXzTXr7jdcxljko1jZH2lHlD9hlNeLazhm6caAiGsSITMXjpzM7rbXfPVf1mEIqIha3NxrQnKDK3vAsWVnFNrOg74LWCwVXZGQggR9yg2XHpV9dBpOscECHHQ"
         self.headers = {
             'accept': 'application/json',
             'Authorization': f"Bearer {self.token}"
@@ -61,24 +57,23 @@ class OrchestratorHelper:
         self.ssh_key = "empty ssh string"
 
     def resources(self, level: int = 1):
-        url = f"{self.host}/resources?level={level}"
+        url = f"{self.host}/resources?level={level}&force_refresh=true"
         return requests.get(url, headers=self.headers, verify=False)
 
     def portal_resources(self, graph_format: GraphFormat = GraphFormat.JSON_NODELINK):
-        url = f"{self.host}/portalresources?graphFormat={graph_format.name}"
+        url = f"{self.host}/portalresources?graph_format={graph_format.name}"
         headers = {'accept': 'application/json'}
         return requests.get(url, headers=headers, verify=False)
 
     def create(self, slice_graph: str, slice_name: str,
-               lease_end_time: str = None) -> Tuple[Status, Union[List[Reservation], requests.Response]]:
+               lease_end_time: str = None) -> Tuple[Status, Union[list, requests.Response]]:
         if lease_end_time is None:
-            url = f"{self.host}/slices/create?sliceName={slice_name}&sshKey={self.ssh_key}"
+            url = f"{self.host}/slices/create?name={slice_name}&ssh_key={self.ssh_key}"
         else:
-            url = f"{self.host}/slices/create?sliceName={slice_name}&sshKey={self.ssh_key}&leaseEndTime={lease_end_time}"
+            url = f"{self.host}/slices/create?name={slice_name}&ssh_key={self.ssh_key}&lease_end_time={lease_end_time}"
         response = requests.post(url, headers=self.headers_with_content, verify=False, data=slice_graph)
         if response.status_code == self.HTTP_OK:
-            reservations = ReservationFactory.create_reservations(reservation_list=
-                                                                  response.json()[Constants.PROP_VALUE][Constants.PROP_RESERVATIONS])
+            reservations = response.json()[self.PROP_DATA]
             return Status.OK, reservations
         else:
             return Status.FAILURE, response
@@ -91,58 +86,28 @@ class OrchestratorHelper:
         else:
             return Status.FAILURE, response
 
-    def slice_status(self, slice_id: str) -> Tuple[Status, Union[Slice, requests.Response]]:
-        url = f"{self.host}/slices/status/{slice_id}"
-        response = requests.get(url, headers=self.headers, verify=False)
-        if response.status_code == self.HTTP_OK:
-            slices = SliceFactory.create_slices(slice_list=response.json()[Constants.PROP_VALUE][Constants.PROP_SLICES])
-            result = None
-            if slices is not None and len(slices) > 0:
-                result = next(iter(slices))
-            return Status.OK, result
-        else:
-            return Status.FAILURE, response
-
     def slices(self, slice_id: str = None,
-               state: str = "Active") -> Tuple[Status, Union[List[Slice], str, requests.Response]]:
+               state: str = "Active") -> Tuple[Status, Union[list, str, requests.Response]]:
         url = f"{self.host}/slices?state={state}"
         if slice_id is not None:
-            url = f"{self.host}/slices/{slice_id}"
+            url = f"{self.host}/slices/{slice_id}?graph_format=GRAPHML"
 
         response = requests.get(url, headers=self.headers, verify=False)
         if response.status_code == self.HTTP_OK:
-            if slice_id is None:
-                slices = SliceFactory.create_slices(slice_list=response.json()[Constants.PROP_VALUE][Constants.PROP_SLICES])
-                return Status.OK, slices
-            else:
-                slice_graph = response.json()[Constants.PROP_VALUE][Constants.PROP_SLICE_MODEL]
-                return Status.OK, slice_graph
+            slices = response.json()[self.PROP_DATA]
+            return Status.OK, slices
         else:
             return Status.FAILURE, response
 
-    def slivers(self, slice_id: str, sliver_id: str = None) -> Tuple[Status, Union[List[Reservation], str, requests.Response]]:
-        url = f"{self.host}/slivers?sliceID={slice_id}"
+    def slivers(self, slice_id: str, sliver_id: str = None) -> Tuple[Status, Union[list, str, requests.Response]]:
+        url = f"{self.host}/slivers?slice_id={slice_id}"
         if sliver_id is not None:
-            url = f"{self.host}/slivers/{sliver_id}?sliceID={slice_id}"
+            url = f"{self.host}/slivers/{sliver_id}?slice_id={slice_id}"
 
         response = requests.get(url, headers=self.headers, verify=False)
         if response.status_code == self.HTTP_OK:
-            reservations = ReservationFactory.create_reservations(reservation_list=
-                                                                  response.json()[Constants.PROP_VALUE][Constants.PROP_RESERVATIONS])
+            reservations = response.json()[self.PROP_DATA]
             return Status.OK, reservations
-        else:
-            return Status.FAILURE, response
-
-    def sliver_status(self, slice_id: str, sliver_id: str) -> Tuple[Status, Union[Reservation, requests.Response]]:
-        url = f"{self.host}/slivers/status/{sliver_id}?sliceID={slice_id}"
-        response = requests.get(url, headers=self.headers, verify=False)
-        if response.status_code == self.HTTP_OK:
-            reservations = ReservationFactory.create_reservations(reservation_list=
-                                                                  response.json()[Constants.PROP_VALUE][Constants.PROP_RESERVATIONS])
-            result = None
-            if reservations is not None and len(reservations) > 0:
-                result = next(iter(reservations))
-            return Status.OK, result
         else:
             return Status.FAILURE, response
 
@@ -157,7 +122,7 @@ class OrchestratorHelper:
         response = None
         try:
             # Set the tokens
-            url = f"{self.host}/slices/renew/{slice_id}?newLeaseEndTime={new_lease_end_time}"
+            url = f"{self.host}/slices/renew/{slice_id}?new_lease_end_time={new_lease_end_time}"
             response = requests.post(url, headers=self.headers, verify=False)
             if response.status_code != self.HTTP_OK:
                 return Status.FAILURE, response

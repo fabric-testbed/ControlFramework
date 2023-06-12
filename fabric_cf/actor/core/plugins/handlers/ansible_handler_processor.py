@@ -157,7 +157,7 @@ class AnsibleHandlerProcessor(HandlerProcessor):
             self.logger.debug("Added future to Future queue")
             self.future_lock.notify_all()
 
-    def invoke_handler(self, unit: ConfigToken, operation: str):
+    def invoke_handler(self, unit: ConfigToken, operation: str, data: dict = None):
         try:
             # clean restart
             if unit is None:
@@ -170,7 +170,7 @@ class AnsibleHandlerProcessor(HandlerProcessor):
                 raise AuthorityException(f"No handler found for resource type {unit.get_resource_type()}")
 
             future = self.executor.submit(self.process_pool_main, operation, handler.get_class_name(),
-                                          handler.get_module_name(), handler.get_properties(), unit,
+                                          handler.get_module_name(), handler.get_properties(), unit, data,
                                           self.process_pool_lock)
 
             self.queue_future(future=future, unit=unit)
@@ -195,6 +195,9 @@ class AnsibleHandlerProcessor(HandlerProcessor):
     def modify(self, unit: ConfigToken):
         self.invoke_handler(unit=unit, operation=Constants.TARGET_MODIFY)
 
+    def poa(self, unit: ConfigToken, data: dict):
+        self.invoke_handler(unit=unit, operation=Constants.TARGET_POA, data=data)
+
     def delete(self, unit: ConfigToken):
         self.invoke_handler(unit=unit, operation=Constants.TARGET_DELETE)
 
@@ -205,8 +208,10 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         try:
             self.lock.acquire()
             self.logger.debug(f"Properties: {properties} Unit: {unit}")
-            # Copy the sliver from the Unit to
-            old_unit.update_sliver(sliver=unit.get_sliver())
+            target = properties.get(Constants.PROPERTY_TARGET_NAME)
+            if target != Constants.TARGET_POA:
+                # Copy the sliver from the Unit to
+                old_unit.update_sliver(sliver=unit.get_sliver())
             self.plugin.configuration_complete(token=old_unit, properties=properties)
         except Exception as e:
             self.logger.error(f"Exception occurred {e}")
@@ -273,7 +278,7 @@ class AnsibleHandlerProcessor(HandlerProcessor):
 
     @staticmethod
     def process_pool_main(operation: str, handler_class: str, handler_module: str, properties: dict,
-                          unit: ConfigToken, process_lock: multiprocessing.Lock):
+                          unit: ConfigToken, data: dict, process_lock: multiprocessing.Lock):
         global process_pool_logger
         handler_class = ReflectionUtils.create_instance_with_params(module_name=handler_module,
                                                                     class_name=handler_class)
@@ -285,6 +290,8 @@ class AnsibleHandlerProcessor(HandlerProcessor):
             return handler_obj.delete(unit)
         elif operation == Constants.TARGET_MODIFY:
             return handler_obj.modify(unit)
+        elif operation == Constants.TARGET_POA:
+            return handler_obj.poa(unit, data)
         elif operation == Constants.TARGET_CLEAN_RESTART:
             return handler_obj.clean_restart()
         else:

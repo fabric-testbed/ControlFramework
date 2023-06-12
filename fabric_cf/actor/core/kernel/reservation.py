@@ -33,7 +33,8 @@ from datetime import datetime, timezone
 from fim.slivers.capacities_labels import ReservationInfo
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin, ReservationCategory
-from fabric_cf.actor.core.common.event_logger import EventLogger
+from fabric_cf.actor.core.common.constants import Constants
+from fabric_cf.actor.core.common.event_logger import EventLogger, EventLoggerSingleton
 from fabric_cf.actor.core.common.exceptions import ReservationException
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
@@ -49,6 +50,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.time.term import Term
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.util.resource_type import ResourceType
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class Reservation(ABCReservationMixin):
@@ -477,7 +479,7 @@ class Reservation(ABCReservationMixin):
         @throws Exception if the reservation has a pending operation.
         """
         if self.pending_state != ReservationPendingStates.None_:
-            self.error(err="reservation has a pending operation")
+            self.error(err=Constants.PENDING_OPERATION_ERROR)
 
     def prepare_probe(self):
         return
@@ -630,9 +632,8 @@ class Reservation(ABCReservationMixin):
                     sliver.reservation_info = ReservationInfo()
                 sliver.reservation_info.reservation_id = str(self.get_reservation_id())
                 sliver.reservation_info.reservation_state = str(self.state)
-                EventLogger.log_sliver_event(logger=self.logger,
-                                             slice_object=Translate.translate_slice_to_avro(slice_obj=self.slice),
-                                             sliver=sliver)
+                EventLoggerSingleton.get().log_sliver_event(
+                    slice_object=Translate.translate_slice_to_avro(slice_obj=self.slice), sliver=sliver)
 
     def update_lease(self, *, incoming: ABCReservationMixin, update_data):
         self.internal_error(err="abstract update_lease trap")
@@ -707,3 +708,14 @@ class Reservation(ABCReservationMixin):
     def unlock(self):
         if self.thread_lock.locked():
             self.thread_lock.release()
+
+    def service_poa(self):
+        pass
+
+    def poa_info(self, *, incoming: Poa):
+        pass
+
+    def poa(self, *, poa: Poa):
+        """
+        POA on reservation
+        """

@@ -28,7 +28,7 @@
 # actor will use sane defaults, in the absence of this configuration file.
 
 runtime:
-  kafka-server: 152.54.15.56:29092
+  kafka-server: localhost:19092
   kafka-schema-registry-url: http://152.54.15.56:8081
   kafka-key-schema: ./schema/key.avsc
   kafka-value-schema: ./schema/message.avsc
@@ -36,7 +36,7 @@ runtime:
   kafka-ssl-certificate-location:  ../../../secrets/kafkacat1-ca1-signed.pem
   kafka-ssl-key-location:  ../../../secrets/kafkacat1.client.key
   kafka-ssl-key-password:  fabric
-  kafka-security-protocol: SSL
+  kafka-security-protocol: PLAINTEXT
   kafka-group-id: fabric-cf
   kafka-sasl-mechanism:
   kafka-sasl-producer-username:
@@ -75,7 +75,7 @@ database:
   db-user: fabric
   db-password: fabric
   db-name: test
-  db-host: 152.54.15.56:5432
+  db-host: localhost:5432
 
 container:
   container.guid: orchestrator-conainer

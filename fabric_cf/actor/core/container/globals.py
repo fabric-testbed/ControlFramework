@@ -39,6 +39,7 @@ from fim.graph.neo4j_property_graph import Neo4jGraphImporter
 from fim.graph.resources.abc_arm import ABCARMPropertyGraph
 from fss_utils.jwt_validate import JWTValidator
 
+from fabric_cf.actor.core.common.event_logger import EventLoggerSingleton
 from fabric_cf.actor.core.common.exceptions import InitializationException
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.container.container import Container
@@ -84,6 +85,8 @@ class Globals:
         log_config = self.config.get_global_config().get_logging()
         if log_config is None:
             raise RuntimeError('No logging  config information available')
+
+        EventLoggerSingleton.get().make_logger(log_config=log_config)
 
         log_dir = log_config.get(Constants.PROPERTY_CONF_LOG_DIRECTORY, ".")
         log_file = log_config.get(Constants.PROPERTY_CONF_LOG_FILE, "actor.log")

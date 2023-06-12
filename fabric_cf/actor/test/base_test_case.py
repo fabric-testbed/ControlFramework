@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
 
+from fabric_cf.actor.boot.configuration import Configuration
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
 from fabric_cf.actor.core.apis.abc_authority import ABCAuthority
 from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
@@ -64,7 +65,7 @@ class BaseTestCase:
     db_user = 'fabric'
     db_pwd = 'fabric'
     db_name = 'test'
-    db_host = '152.54.15.56:5432'
+    db_host = 'localhost:5432'
 
     logger = logging.getLogger('BaseTestCase')
     log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
@@ -72,6 +73,10 @@ class BaseTestCase:
     logger.setLevel(logging.INFO)
 
     Term.set_cycles = False
+
+    def get_config(self) -> Configuration:
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        return GlobalsSingleton.get().get_config()
 
     def get_container_database(self) -> ABCContainerDatabase:
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
@@ -218,25 +223,25 @@ class BaseTestCase:
 
     def get_actor(self, *, name: str = actor_name, guid: ID = actor_guid) -> ABCActorMixin:
         actor = self.get_uninitialized_actor(name=name, guid=guid)
-        actor.initialize(config=None)
+        actor.initialize(config=self.get_config().get_actor_config())
         self.register_new_actor(actor=actor)
         return actor
 
     def get_controller(self, *, name: str = controller_name, guid: ID = controller_guid) -> ABCController:
         actor = self.get_uninitialized_controller(name=name, guid=guid)
-        actor.initialize(config=None)
+        actor.initialize(config=self.get_config().get_actor_config())
         self.register_new_actor(actor=actor)
         return actor
 
     def get_broker(self, *, name: str = broker_name, guid: ID = broker_guid) -> ABCBrokerMixin:
         actor = self.get_uninitialized_broker(name=name, guid=guid)
-        actor.initialize(config=None)
+        actor.initialize(config=self.get_config().get_actor_config())
         self.register_new_actor(actor=actor)
         return actor
 
     def get_authority(self, *, name: str = authority_name, guid: ID = authority_guid) -> ABCAuthority:
         actor = self.get_uninitialized_authority(name=name, guid=guid)
-        actor.initialize(config=None)
+        actor.initialize(config=self.get_config().get_actor_config())
         self.register_new_actor(actor=actor)
         return actor
 
@@ -246,7 +251,7 @@ class BaseTestCase:
         db.add_actor(actor=actor)
         ActorRegistrySingleton.get().unregister(actor=actor)
         ActorRegistrySingleton.get().register_actor(actor=actor)
-        actor.actor_added(config=None)
+        actor.actor_added(config=self.get_config().get_actor_config())
         actor.start()
 
     def get_registered_new_actor(self) -> ABCActorMixin:

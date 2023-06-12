@@ -33,7 +33,7 @@ from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservatio
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.common.event_logger import EventLogger
+from fabric_cf.actor.core.common.event_logger import EventLogger, EventLoggerSingleton
 from fabric_cf.actor.core.common.exceptions import ReservationNotFoundException, DelegationNotFoundException, \
     KernelException
 from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservation
@@ -41,6 +41,7 @@ from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.apis.abc_server_reservation import ABCServerReservation
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
+from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
 from fabric_cf.actor.core.kernel.reservation import Reservation
 from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
@@ -583,7 +584,7 @@ class Kernel:
                 slice_obj.set_dirty()
                 if slice_state == SliceState.Closing:
                     slice_avro = Translate.translate_slice_to_avro(slice_obj=slice_obj)
-                    EventLogger.log_slice_event(logger=self.logger, slice_object=slice_avro, action=ActionId.delete)
+                    EventLoggerSingleton.get().log_slice_event(slice_object=slice_avro, action=ActionId.delete)
             self.plugin.get_database().update_slice(slice_object=slice_obj)
         except Exception as e:
             self.logger.error(traceback.format_exc())
@@ -1509,3 +1510,58 @@ class Kernel:
     def update_maintenance_mode(self, *, properties: Dict[str, str], sites: List[Site] = None):
         Maintenance.update_maintenance_mode(database=self.plugin.get_database(),
                                             properties=properties, sites=sites)
+
+    def poa(self, *, reservation: ABCReservationMixin, poa: Poa):
+        """
+        Handles a POA for the sliver
+        Client: Issues a POA
+
+        Authority: process a POA
+        @param reservation reservation for which to perform POA
+        @param poa POA
+        @throws Exception
+        """
+        try:
+            # Add POA to the database
+            self.plugin.get_database().add_poa(poa=poa)
+            reservation.lock()
+
+            # Process POA
+            reservation.poa(poa=poa)
+
+            # Update POA
+            self.plugin.get_database().update_poa(poa=poa)
+        except Exception as e:
+            if isinstance(reservation, ABCClientReservation):
+                self.logger.warning(f"Removing failed POA {poa.get_poa_id()}")
+                self.plugin.get_database().remove_poa(poa_id=poa.get_poa_id())
+            self.logger.error(traceback.format_exc())
+            self.error(err=f"An error occurred during poa for reservation #{reservation.get_reservation_id()}",
+                       e=e)
+        finally:
+            reservation.unlock()
+
+    def poa_info(self, *, reservation: ABCReservationMixin, poa: Poa):
+        """
+        Handles a POA Response for the sliver
+        Client: Issues a POA
+
+        Authority: process a POA
+        @param reservation reservation for which to perform POA
+        @param poa POA
+        @throws Exception
+        """
+        try:
+            reservation.lock()
+
+            # Process POA Info from Authority
+            reservation.poa_info(incoming=poa)
+
+            # Update Reservation
+            self.plugin.get_database().update_reservation(reservation=reservation)
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.error(err=f"An error occurred during poa for reservation #{reservation.get_reservation_id()}",
+                       e=e)
+        finally:
+            reservation.unlock()

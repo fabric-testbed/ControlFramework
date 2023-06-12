@@ -97,7 +97,7 @@ class LocalBroker(LocalProxy, ABCBrokerProxy):
 
         broker_delegation = BrokerDelegationFactory.create(did=str(delegation.get_delegation_id()),
                                                            slice_id=slice_obj.get_slice_id(),
-                                                           broker=self)
+                                                           broker=self, site=delegation.get_site())
         broker_delegation.set_sequence_in(sequence=delegation.get_sequence_out())
         broker_delegation.set_owner(owner=self.get_identity())
 

@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.util.notice import Notice
     from fabric_cf.actor.core.util.resource_type import ResourceType
     from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class ABCConcreteSet(ABC):
@@ -248,4 +249,14 @@ class ABCConcreteSet(ABC):
         Restore the Concrete set
         @param plugin plugin
         @param reservation reservation
+        """
+
+    def poa(self, *, poa: Poa):
+        """
+        Initiates POA operations on all resources contained in the set.
+        """
+
+    def get_poa_info(self) -> dict:
+        """
+        Get POA info returned by handler
         """

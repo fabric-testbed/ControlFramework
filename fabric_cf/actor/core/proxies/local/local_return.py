@@ -29,11 +29,12 @@ from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
 from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 from fabric_cf.actor.core.apis.abc_controller_callback_proxy import ABCControllerCallbackProxy
-from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation, DelegationState
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.apis.abc_server_reservation import ABCServerReservation
 from fabric_cf.actor.core.delegation.delegation_factory import DelegationFactory
+from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.proxies.local.local_proxy import LocalProxy
@@ -73,6 +74,12 @@ class LocalReturn(LocalProxy, ABCControllerCallbackProxy):
     def prepare_update_lease(self, *, reservation: ABCAuthorityReservation, update_data, callback: ABCCallbackProxy,
                              caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, update_data=update_data, callback=callback, caller=caller)
+
+    def prepare_poa_result(self, *, poa: Poa, callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
+        state = LocalProxy.LocalProxyRequestState()
+        state.poa = poa.clone()
+        state.callback = callback
+        return state
 
     @staticmethod
     def pass_reservation(*, reservation: ABCServerReservation, plugin: ABCBasePlugin) -> ABCReservationMixin:
@@ -114,7 +121,8 @@ class LocalReturn(LocalProxy, ABCControllerCallbackProxy):
         slice_obj = delegation.get_slice_object().clone_request()
 
         delegation_new = DelegationFactory.create(did=delegation.get_delegation_id(),
-                                                  slice_id=delegation.get_slice_id())
+                                                  slice_id=delegation.get_slice_id(),
+                                                  site=delegation.get_site())
         delegation_new.set_slice_object(slice_object=slice_obj)
         # TODO
         if not delegation.is_reclaimed():

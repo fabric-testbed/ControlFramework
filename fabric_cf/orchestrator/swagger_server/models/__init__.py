@@ -3,11 +3,17 @@
 # flake8: noqa
 from __future__ import absolute_import
 # import models into model package
+from fabric_cf.orchestrator.swagger_server.models.poa import Poa
+from fabric_cf.orchestrator.swagger_server.models.poa_data import PoaData
+from fabric_cf.orchestrator.swagger_server.models.poa_post import PoaPost
+from fabric_cf.orchestrator.swagger_server.models.poa_post_data import PoaPostData
+from fabric_cf.orchestrator.swagger_server.models.poa_post_data_vcpu_cpu_map import PoaPostDataVcpuCpuMap
 from fabric_cf.orchestrator.swagger_server.models.resource import Resource
 from fabric_cf.orchestrator.swagger_server.models.resources import Resources
 from fabric_cf.orchestrator.swagger_server.models.slice import Slice
 from fabric_cf.orchestrator.swagger_server.models.slice_details import SliceDetails
 from fabric_cf.orchestrator.swagger_server.models.slices import Slices
+from fabric_cf.orchestrator.swagger_server.models.slices_post import SlicesPost
 from fabric_cf.orchestrator.swagger_server.models.sliver import Sliver
 from fabric_cf.orchestrator.swagger_server.models.slivers import Slivers
 from fabric_cf.orchestrator.swagger_server.models.status200_ok_no_content import Status200OkNoContent

@@ -45,7 +45,7 @@ class Delegation(ABCDelegation):
     error_string_prefix = 'error for delegation: {} : {}'
     invalid_state_prefix = "Invalid state for {}. Did you already {} this Delegation?"
 
-    def __init__(self, dlg_graph_id: str, slice_id: ID, delegation_name: str = None):
+    def __init__(self, dlg_graph_id: str, slice_id: ID, delegation_name: str = None, site: str = None):
         self.dlg_graph_id = dlg_graph_id
         self.slice_id = slice_id
         self.state = DelegationState.Nascent
@@ -65,6 +65,7 @@ class Delegation(ABCDelegation):
         self.error_message = None
         self.owner = None
         self.delegation_name = delegation_name
+        self.site = site
         self.thread_lock = threading.Lock()
 
     def __getstate__(self):
@@ -99,6 +100,9 @@ class Delegation(ABCDelegation):
         if actor.get_policy() is not None:
             self.policy = actor.get_policy()
 
+    def get_site(self) -> str:
+        return self.site
+
     def set_graph(self, graph: ABCPropertyGraph):
         self.graph = graph
 
@@ -116,7 +120,6 @@ class Delegation(ABCDelegation):
             return self.slice_id
         elif self.slice_object is not None:
             return self.slice_object.get_slice_id()
-        return None
 
     def get_slice_object(self) -> ABCSlice:
         return self.slice_object
@@ -366,6 +369,9 @@ class Delegation(ABCDelegation):
         msg = "del: "
         if self.dlg_graph_id is not None:
             msg += "#{} ".format(self.dlg_graph_id)
+
+        if self.site is not None:
+            msg += "site: {} ".format(self.site)
 
         if self.slice_object is not None:
             msg += "slice: [{}] ".format(self.slice_object)

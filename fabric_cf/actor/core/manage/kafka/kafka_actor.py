@@ -33,6 +33,8 @@ from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.get_delegations_avro import GetDelegationsAvro
 from fabric_mb.message_bus.messages.get_sites_request_avro import GetSitesRequestAvro
 from fabric_mb.message_bus.messages.maintenance_request_avro import MaintenanceRequestAvro
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
+from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
 from fabric_mb.message_bus.messages.remove_delegation_avro import RemoveDelegationAvro
 from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
 from fabric_mb.message_bus.messages.get_reservations_state_request_avro import GetReservationsStateRequestAvro
@@ -135,7 +137,6 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
         if status.code == 0:
             return response.reservations
-        return None
 
     def get_sites(self, *, site: str) -> List[SiteAvro] or None:
         request = GetSitesRequestAvro()
@@ -155,7 +156,6 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
         if status.code == 0:
             return response.delegations
-        return None
 
     def remove_reservation(self, *, rid: ID) -> bool:
         request = RemoveReservationAvro()
@@ -205,8 +205,6 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
         if status.code == 0:
             return response.reservation_states
 
-        return None
-
     def clone(self):
         return KafkaActor(guid=self.management_id,
                           kafka_topic=self.kafka_topic,
@@ -230,3 +228,8 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
         status, response = self.send_request(request)
 
         return status.code == 0
+
+    def get_poas(self, *, states: List[int] = None, slice_id: ID = None, rid: ID = None,
+                 email: str = None, poa_id: str = None, project_id: str = None,
+                 limit: int = 200, offset: int = 0) -> List[PoaInfoAvro]:
+        raise NotImplemented

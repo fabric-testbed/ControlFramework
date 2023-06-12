@@ -36,7 +36,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
 from fabric_cf.actor.db import Base, Clients, ConfigMappings, Proxies, Units, Reservations, Slices, ManagerObjects, \
-    Miscellaneous, Actors, Delegations, Sites
+    Miscellaneous, Actors, Delegations, Sites, Poas
 
 
 @contextmanager
@@ -104,6 +104,8 @@ class PsqlDatabase:
             session.query(ManagerObjects).delete()
             session.query(Miscellaneous).delete()
             session.query(Actors).delete()
+            session.query(Sites).delete()
+            session.query(Poas).delete()
             session.commit()
         except Exception as e:
             session.rollback()
@@ -1151,6 +1153,7 @@ class PsqlDatabase:
         @param dlg_graph_id graph id
         @param dlg_state state
         @param properties properties
+        @param site site
         """
         session = self.get_session()
         try:
@@ -1323,6 +1326,135 @@ class PsqlDatabase:
             if d[k] is None:
                 d.pop(k)
         return d
+
+    def add_poa(self, *, poa_guid: str, properties, email: str, project_id: str, sliver_id: str, slice_id: str,
+                state: int):
+        """
+        Add a POA
+        @param poa_guid POA id
+        @param properties pickled instance
+        @param project_id User OIDC Sub
+        @param email User Email
+        @param sliver_id Sliver Id
+        @param slice_id slice id
+        @param state state
+        """
+        session = self.get_session()
+        try:
+            poa_obj = Poas(poa_guid=poa_guid, project_id=project_id, email=email, sliver_id=sliver_id,
+                           slice_id=slice_id, state=state,last_update_time=datetime.now(timezone.utc),
+                           properties=properties)
+            session.add(poa_obj)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+
+    def update_poa(self, *, poa_guid: str, properties, state: int, email: str = None, project_id: str = None,
+                   sliver_id: str = None):
+        """
+        Update a POA
+        @param poa_guid POA id
+        @param properties pickled instance
+        @param state state
+        @param project_id User OIDC Sub
+        @param email User Email
+        @param sliver_id Sliver Id
+        """
+        session = self.get_session()
+        try:
+            poa_obj = session.query(Poas).filter_by(poa_guid=poa_guid).one_or_none()
+            if poa_obj is not None:
+                poa_obj.properties = properties
+                if email is not None:
+                    poa_obj.email = email
+                if project_id is not None:
+                    poa_obj.project_id = project_id
+                if sliver_id is not None:
+                    poa_obj.sliver_id = sliver_id
+                poa_obj.last_update_time = datetime.now(timezone.utc)
+                poa_obj.state = state
+            else:
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Poa", poa_guid))
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+
+    def remove_poa(self, *, poa_guid: str):
+        """
+        Remove POA
+        @param poa_guid POA Guid
+        """
+        session = self.get_session()
+        try:
+            session.query(Poas).filter_by(poa_guid=poa_guid).delete()
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+
+    @staticmethod
+    def create_poa_filter(*, poa_guid: str = None, sliver_id: str = None, project_id: str = None,
+                          email: str = None, slice_id: str = None) -> dict:
+
+        filter_dict = {}
+        if poa_guid is not None:
+            filter_dict['poa_guid'] = poa_guid
+        if sliver_id is not None:
+            filter_dict['sliver_id'] = str(sliver_id)
+        if slice_id is not None:
+            filter_dict['slice_id'] = str(slice_id)
+        if project_id is not None:
+            filter_dict['project_id'] = project_id
+        if email is not None:
+            filter_dict['email'] = email
+        return filter_dict
+
+    def get_poas(self, *, poa_guid: str = None, project_id: str = None, email: str = None, sliver_id: str = None,
+                 slice_id: str, limit: int = None, offset: int = None, last_update_time: datetime = None,
+                 states: list[int] = None) -> List[dict]:
+        """
+        Get slices for an actor
+        @param poa_guid POA Guid
+        @param project_id project id
+        @param email email
+        @param limit limit
+        @param offset offset
+        @param sliver_id Sliver Id
+        @param slice_id Slice Id
+        @param last_update_time Last Update Time
+        @param states
+        @return list of POAs
+        """
+        result = []
+        session = self.get_session()
+        try:
+            filter_dict = self.create_poa_filter(poa_guid=poa_guid, project_id=project_id, email=email,
+                                                 sliver_id=sliver_id, slice_id=slice_id)
+
+            rows = session.query(Poas).filter_by(**filter_dict)
+
+            if last_update_time is not None:
+                rows = rows.filter(Poas.last_update_time < last_update_time)
+
+            if states is not None:
+                rows = rows.filter(Poas.state.in_(states))
+
+            rows = rows.order_by(desc(Poas.last_update_time))
+
+            if offset is not None and limit is not None:
+                rows = rows.offset(offset).limit(limit)
+
+            for row in rows.all():
+                result.append(self.generate_dict_from_row(row=row))
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
 
 
 def test():

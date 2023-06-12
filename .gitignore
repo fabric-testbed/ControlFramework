@@ -146,3 +146,7 @@ pdp/
 pg_data/
 schema/
 ssl/
+fabric_cf/actor/test/*.graphml
+secrets/kafkacat2-ca1-signed.pem
+secrets/kafkacat1-ca1-signed.pem
+secrets/...

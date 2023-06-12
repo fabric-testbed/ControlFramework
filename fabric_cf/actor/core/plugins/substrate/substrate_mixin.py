@@ -41,6 +41,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
     from fabric_cf.actor.core.core.unit import Unit
     from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class SubstrateMixin(BasePlugin, ABCSubstrate):
@@ -107,6 +108,16 @@ class SubstrateMixin(BasePlugin, ABCSubstrate):
             self.logger.error(traceback.format_exc())
             self.fail_and_update(unit=unit, message="modify error", e=e)
 
+    def poa(self, *, unit: Unit, poa: Poa):
+        try:
+            # prepare the POA
+            self.prepare_poa(unit=unit)
+            # perform the node configuration
+            self.do_poa(poa=poa, unit=unit)
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.fail_and_update(unit=unit, message="modify error", e=e)
+
     def prepare_transfer_in(self, *, reservation: ABCReservationMixin, unit: Unit):
         """
         Performs additional setup operations before configuring the unit. This is
@@ -138,6 +149,14 @@ class SubstrateMixin(BasePlugin, ABCSubstrate):
         @param unit unit to prepare
         @throws Exception in case of error
         """
+
+    def prepare_poa(self, *, unit: Unit):
+        """
+        Prepares the unit for POA.
+        @param unit unit to prepare
+        @throws Exception in case of error
+        """
+
     def do_transfer_in(self, *, reservation: ABCReservationMixin, unit: Unit):
         self.handler_processor.create(unit=unit)
 
@@ -146,6 +165,9 @@ class SubstrateMixin(BasePlugin, ABCSubstrate):
 
     def do_modify(self, *, reservation: ABCReservationMixin, unit: Unit):
         self.handler_processor.modify(unit=unit)
+
+    def do_poa(self, *, poa: Poa, unit: Unit):
+        self.handler_processor.poa(unit=unit, data=poa.to_dict())
 
     def fail_and_update(self, *, unit: Unit, message: str, e: Exception):
         self.logger.error(message)
@@ -172,6 +194,10 @@ class SubstrateMixin(BasePlugin, ABCSubstrate):
             unit.fail(message=message, exception=e)
         else:
             unit.fail_on_modify(message=message, exception=e)
+
+    def fail_poa_no_update(self, *, unit: Unit, message: str, poa_info: dict):
+        self.logger.error(message)
+        unit.fail_on_poa(message=message, poa_info=poa_info)
 
     def merge_unit_properties(self, *, unit: Unit, properties: dict):
         # TODO
@@ -307,6 +333,45 @@ class SubstrateMixin(BasePlugin, ABCSubstrate):
             self.logger.error(e)
         finally:
             self.logger.debug("process modify complete")
+
+    def process_poa_complete(self, *, unit: ConfigToken, properties: dict):
+        self.logger.debug("POA")
+        self.logger.debug(properties)
+
+        if self.actor.is_stopped():
+            raise PluginException(Constants.INVALID_ACTOR_STATE)
+
+        sequence = HandlerProcessor.get_action_sequence_number(properties=properties)
+        notice = None
+        if sequence != unit.get_sequence():
+            self.logger.warning("(poa complete) sequences mismatch: incoming ({}) local: ({}). "
+                                "Ignoring event.".format(sequence, unit.get_sequence()))
+            return
+        else:
+            self.logger.debug("(poa complete) incoming ({}) local: ({})".format(sequence, unit.get_sequence()))
+
+        result = HandlerProcessor.get_result_code(properties=properties)
+        msg = HandlerProcessor.get_exception_message(properties=properties)
+        if msg is None:
+            msg = HandlerProcessor.get_result_code_message(properties=properties)
+
+        poa_info = properties.get(Constants.PROPERTY_POA_INFO)
+
+        if result == 0:
+            self.logger.debug("poa code 0 (success)")
+            unit.complete_poa(poa_info=poa_info)
+
+        elif result == -1:
+            self.logger.debug("poa code -1 with message: {}".format(msg))
+            notice = "Exception during poa for unit: {} msg {}".format(unit.get_id(), msg)
+            self.fail_poa_no_update(unit=unit, message=notice, poa_info=poa_info)
+
+        else:
+            self.logger.debug("modify code {} with message: {}".format(result, msg))
+            notice = "Error code= {} during modify for unit: {} with message: {}".format(result, unit.get_id(), msg)
+            self.fail_poa_no_update(unit=unit, message=notice, poa_info=poa_info)
+
+        self.logger.debug("process poa complete")
 
     def get_substrate_database(self) -> ABCSubstrateDatabase:
         return self.db

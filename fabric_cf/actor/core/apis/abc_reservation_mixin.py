@@ -32,7 +32,6 @@ from typing import TYPE_CHECKING
 from fabric_cf.actor.core.apis.abc_reservation_resources import ABCReservationResources
 from fabric_cf.actor.core.apis.abc_reservation_status import ABCReservationStatus
 
-
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
     from fabric_cf.actor.core.apis.abc_slice import ABCSlice
@@ -45,6 +44,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.kernel.request_types import RequestTypes
     from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
     from fabric_cf.actor.core.util.update_data import UpdateData
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class ReservationCategory(Enum):
@@ -519,4 +519,27 @@ class ABCReservationMixin(ABCReservationResources, ABCReservationStatus):
     def unlock(self):
         """
         Unlock the reservation
+        """
+
+    @abstractmethod
+    def service_poa(self):
+        """
+        Finishes processing POA.
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def poa(self, *, poa: Poa):
+        """
+        Trigger POA the reservation.
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def poa_info(self, *, incoming: Poa):
+        """
+        Process POA response
+
+        @throws Exception in case of error
         """

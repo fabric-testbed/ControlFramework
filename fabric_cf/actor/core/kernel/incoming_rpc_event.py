@@ -98,6 +98,9 @@ class IncomingRPCEvent(ABCActorEvent):
             client.update_delegation(delegation=self.rpc.get(), update_data=self.rpc.get_update_data(),
                                      caller=self.rpc.get_caller())
             client.get_logger().debug("update delegation processed from <{}>".format(self.rpc.get_caller().get_name()))
+        elif self.rpc.get_request_type() == RPCRequestType.PoaInfo:
+            client.get_logger().debug("processing poa info from <{}>".format(self.rpc.get_caller().get_name()))
+            client.poa_info(poa=self.rpc.get(), caller=self.rpc.get_caller())
         else:
             processed = self.do_process_actor(actor=client)
         return processed
@@ -172,6 +175,10 @@ class IncomingRPCEvent(ABCActorEvent):
         elif self.rpc.get_request_type() == RPCRequestType.Close:
             authority.get_logger().debug("processing close from <{}>".format(self.rpc.get_caller().get_name()))
             authority.close(reservation=self.rpc.get())
+
+        elif self.rpc.get_request_type() == RPCRequestType.Poa:
+            authority.get_logger().debug("processing poa from <{}>".format(self.rpc.get_caller().get_name()))
+            authority.poa(poa=self.rpc.get())
 
         else:
             processed = self.do_process_server(server=authority)

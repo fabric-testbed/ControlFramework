@@ -40,8 +40,8 @@ from fabric_cf.actor.core.util.update_data import UpdateData
 
 
 class BrokerDelegation(Delegation):
-    def __init__(self, dlg_graph_id: str, slice_id: ID, broker: ABCBrokerProxy = None):
-        super().__init__(dlg_graph_id=dlg_graph_id, slice_id=slice_id)
+    def __init__(self, dlg_graph_id: str, slice_id: ID, broker: ABCBrokerProxy = None, site: str = None):
+        super().__init__(dlg_graph_id=dlg_graph_id, slice_id=slice_id, site=site)
         self.exported = False
         self.broker = broker
         self.authority = None
@@ -192,6 +192,7 @@ class BrokerDelegation(Delegation):
             self.authority = incoming.get_site_proxy()
 
         self.graph = incoming.get_graph()
+        self.site = incoming.get_site()
         self.policy.update_delegation_complete(delegation=self)
         if self.graph is not None:
             self.graph.delete_graph()

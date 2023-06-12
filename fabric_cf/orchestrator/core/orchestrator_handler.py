@@ -27,9 +27,10 @@ import time
 import traceback
 from datetime import datetime, timedelta, timezone
 from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
-from typing import List
+from typing import List, Dict, Tuple
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.networkx_property_graph_disjoint import NetworkXGraphImporterDisjoint
@@ -38,7 +39,8 @@ from fim.slivers.network_service import NetworkServiceSliver
 from fim.user import GraphFormat
 from fim.user.topology import ExperimentTopology
 
-from fabric_cf.actor.core.common.event_logger import EventLogger
+from fabric_cf.actor.core.common.event_logger import EventLogger, EventLoggerSingleton
+from fabric_cf.actor.core.kernel.poa import PoaStates
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.fim.fim_helper import FimHelper
@@ -214,7 +216,11 @@ class OrchestratorHandler:
         asm_graph = None
         topology = None
         try:
-            end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time)
+            from fabric_cf.actor.security.access_checker import AccessChecker
+            fabric_token = AccessChecker.validate_and_decode_token(token=token, logger=self.logger)
+            project, tags, project_name = fabric_token.get_first_project()
+            allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
+            end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time, allow_long_lived=allow_long_lived)
 
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
@@ -231,15 +237,16 @@ class OrchestratorHandler:
 
             # Authorize the slice
             create_ts = time.time()
-            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.create, resource=topology,
+            self.__authorize_request(id_token=token, action_id=ActionId.create, resource=topology,
                                                     lease_end_time=end_time)
             self.logger.info(f"PDP authorize: TIME= {time.time() - create_ts:.0f}")
 
             # Check if an Active slice exists already with the same name for the user
             create_ts = time.time()
-            project, tags, project_name = fabric_token.get_first_project()
-            existing_slices = controller.get_slices(slice_name=slice_name,
-                                                    email=fabric_token.get_email(), project=project)
+            if tags is not None and isinstance(tags, list):
+                tags = ','.join(tags)
+            existing_slices = controller.get_slices(slice_name=slice_name, email=fabric_token.get_email(),
+                                                    project=project)
             self.logger.info(f"GET slices: TIME= {time.time() - create_ts:.0f}")
 
             if existing_slices is not None and len(existing_slices) != 0:
@@ -260,7 +267,7 @@ class OrchestratorHandler:
             slice_obj.graph_id = asm_graph.get_graph_id()
             slice_obj.set_config_properties(value={Constants.USER_SSH_KEY: ssh_key,
                                                    Constants.PROJECT_ID: project,
-                                                   Constants.TAGS: ','.join(tags),
+                                                   Constants.TAGS: tags,
                                                    Constants.CLAIMS_EMAIL: fabric_token.get_email()})
             slice_obj.set_lease_end(lease_end=end_time)
             auth = AuthAvro()
@@ -306,8 +313,8 @@ class OrchestratorHandler:
             create_ts = time.time()
             self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
             self.logger.info(f"QU queue: TIME= {time.time() - create_ts:.0f}")
-            EventLogger.log_slice_event(logger=self.logger, slice_object=slice_obj, action=ActionId.create,
-                                        topology=topology)
+            EventLoggerSingleton.get().log_slice_event(slice_object=slice_obj, action=ActionId.create,
+                                                       topology=topology)
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
@@ -324,12 +331,13 @@ class OrchestratorHandler:
                 new_slice_object.unlock()
             self.logger.info(f"OH : TIME= {time.time() - start:.0f}")
 
-    def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None) -> List[dict]:
+    def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None, as_self: bool = True) -> List[dict]:
         """
         Get Slivers for a Slice
         :param token Fabric Identity Token
         :param slice_id Slice Id
         :param sliver_id Sliver Id
+        :param as_self flag; True - return calling user's slivers otherwise, return all slivers in the project
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
         """
@@ -342,8 +350,12 @@ class OrchestratorHandler:
 
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
-            reservations = controller.get_reservations(slice_id=slice_guid, rid=rid, email=fabric_token.get_email(),
-                                                       oidc_claim_sub=fabric_token.get_subject())
+            # Filter slices based on user's email only when querying as_self
+            email = fabric_token.get_email()
+            if not as_self:
+                email = None
+
+            reservations = controller.get_reservations(slice_id=slice_guid, rid=rid, email=email)
             if reservations is None:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
@@ -363,7 +375,8 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing get_slivers e: {e}")
             raise e
 
-    def get_slices(self, *, token: str, states: List[str], name: str, limit: int, offset: int) -> List[dict]:
+    def get_slices(self, *, token: str, states: List[str], name: str, limit: int, offset: int,
+                   as_self: bool = True) -> List[dict]:
         """
         Get User Slices
         :param token Fabric Identity Token
@@ -371,6 +384,7 @@ class OrchestratorHandler:
         :param name Slice name
         :param limit Number of slices to return
         :param offset Offset
+        :param as_self flag; True - return calling user's slices otherwise, return all slices in the project
         :raises Raises an exception in case of failure
         :returns List of Slices on success
         """
@@ -386,7 +400,14 @@ class OrchestratorHandler:
             project = None
             if len(projects) == 1:
                 project, tags, project_name = fabric_token.get_first_project()
-            slice_list = controller.get_slices(states=slice_states, email=fabric_token.get_email(), project=project,
+            else:
+                as_self = True
+
+            # Filter slices based on user's email only when querying as_self
+            email = fabric_token.get_email()
+            if not as_self:
+                email = None
+            slice_list = controller.get_slices(states=slice_states, email=email, project=project,
                                                slice_name=name, limit=limit, offset=offset)
             return ResponseBuilder.get_slice_summary(slice_list=slice_list)
         except Exception as e:
@@ -472,8 +493,8 @@ class OrchestratorHandler:
             # Helps improve the create response time
             self.controller_state.get_defer_thread().queue_slice(controller_slice=slice_object)
 
-            EventLogger.log_slice_event(logger=self.logger, slice_object=slice_obj, action=ActionId.modify,
-                                        topology=topology)
+            EventLoggerSingleton.get().log_slice_event(slice_object=slice_obj, action=ActionId.modify,
+                                                       topology=topology)
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
             if asm_graph is not None:
@@ -584,12 +605,13 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing modify_accept e: {e}")
             raise e
 
-    def get_slice_graph(self, *, token: str, slice_id: str, graph_format_str: str) -> dict:
+    def get_slice_graph(self, *, token: str, slice_id: str, graph_format_str: str, as_self: bool) -> dict:
         """
         Get User Slice
         :param token Fabric Identity Token
         :param slice_id Slice Id
         :param graph_format_str
+        :param as_self flag; True - return calling user's slices otherwise, return all slices in the project
         :raises Raises an exception in case of failure
         :returns Slice Graph on success
         """
@@ -599,9 +621,14 @@ class OrchestratorHandler:
 
             slice_guid = ID(uid=slice_id) if slice_id is not None else None
 
-            self.__authorize_request(id_token=token, action_id=ActionId.query)
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
-            slice_list = controller.get_slices(slice_id=slice_guid)
+            # Filter slices based on user's email only when querying as_self
+            email = fabric_token.get_email()
+            if not as_self:
+                email = None
+
+            slice_list = controller.get_slices(slice_id=slice_guid, email=email)
             if slice_list is None or len(slice_list) == 0:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
@@ -663,7 +690,12 @@ class OrchestratorHandler:
                 raise OrchestratorException(f"Unable to renew Slice# {slice_guid} that is not yet stable, "
                                             f"try again later")
 
-            new_end_time = self.__validate_lease_end_time(lease_end_time=new_lease_end_time)
+            from fabric_cf.actor.security.access_checker import AccessChecker
+            fabric_token = AccessChecker.validate_and_decode_token(token=token, logger=self.logger)
+            project, tags, project_name = fabric_token.get_first_project()
+            allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
+            new_end_time = self.__validate_lease_end_time(lease_end_time=new_lease_end_time,
+                                                          allow_long_lived=allow_long_lived)
 
             reservations = controller.get_reservations(slice_id=slice_id)
             if reservations is None or len(reservations) < 1:
@@ -703,20 +735,20 @@ class OrchestratorHandler:
             if len(failed_to_extend_rid_list) > 0:
                 raise OrchestratorException(f"Failed to extend reservation# {failed_to_extend_rid_list}")
 
-            EventLogger.log_slice_event(logger=self.logger, slice_object=slice_object, action=ActionId.renew)
+            EventLoggerSingleton.get().log_slice_event(slice_object=slice_object, action=ActionId.renew)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing renew e: {e}")
             raise e
 
-    def __validate_lease_end_time(self, lease_end_time: str) -> datetime:
+    def __validate_lease_end_time(self, lease_end_time: str, allow_long_lived: bool = False) -> datetime:
         """
         Validate Lease End Time
         :param lease_end_time: New End Time
+        :param allow_long_lived: Allow long lived tokens
         :return End Time
         :raises Exception if new end time is in past
         """
-        new_end_time = None
         if lease_end_time is None:
             new_end_time = datetime.now(timezone.utc) + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
             return new_end_time
@@ -731,11 +763,15 @@ class OrchestratorHandler:
             raise OrchestratorException(f"New term end time {new_end_time} is in the past! ",
                                         http_error_code=BAD_REQUEST)
 
-        if (new_end_time - now) > Constants.DEFAULT_MAX_DURATION:
+        if allow_long_lived:
+            default_long_lived_duration = Constants.LONG_LIVED_SLICE_TIME_WEEKS
+        else:
+            default_long_lived_duration = Constants.DEFAULT_MAX_DURATION
+        if (new_end_time - now) > default_long_lived_duration:
             self.logger.info(f"New term end time {new_end_time} exceeds system default "
-                             f"{Constants.DEFAULT_MAX_DURATION}, setting to system default: ")
+                             f"{default_long_lived_duration}, setting to system default: ")
 
-            new_end_time = now + Constants.DEFAULT_MAX_DURATION
+            new_end_time = now + default_long_lived_duration
 
         return new_end_time
 
@@ -774,3 +810,85 @@ class OrchestratorHandler:
                     if not status:
                         raise OrchestratorException(message=message,
                                                     http_error_code=Constants.INTERNAL_SERVER_ERROR_MAINT_MODE)
+
+    def poa(self, *, token: str, sliver_id: str, poa: PoaAvro) -> Tuple[str, str]:
+        try:
+            controller = self.controller_state.get_management_actor()
+            self.logger.debug(f"poa invoked for Controller: {controller}")
+
+            rid = ID(uid=sliver_id) if sliver_id is not None else None
+
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.poa)
+            email = fabric_token.get_email()
+            project, tags, project_name = fabric_token.get_first_project()
+
+            auth = AuthAvro()
+            auth.name = self.controller_state.get_management_actor().get_name()
+            auth.guid = self.controller_state.get_management_actor().get_guid()
+            auth.oidc_sub_claim = fabric_token.get_uuid()
+            auth.email = fabric_token.get_email()
+            poa.auth = auth
+            poa.project_id = project
+            poa.rid = sliver_id
+
+            reservations = controller.get_reservations(rid=rid, email=email)
+            if reservations is None or len(reservations) != 1:
+                if controller.get_last_error() is not None:
+                    self.logger.error(controller.get_last_error())
+                    if controller.get_last_error().status.code == ErrorCodes.ErrorNoSuchReservation:
+                        raise OrchestratorException(f"Reservation# {rid} not found",
+                                                    http_error_code=NOT_FOUND)
+
+                raise OrchestratorException(f"Reservation# {rid} not found",
+                                            http_error_code=NOT_FOUND)
+
+            res_state = ReservationStates(reservations[0].get_state())
+
+            if res_state != ReservationStates.Active:
+                raise OrchestratorException(f"Cannot trigger POA; Reservation# {rid} is not {ReservationStates.Active}")
+
+            if not controller.poa(poa=poa):
+                raise OrchestratorException(f"Failed to trigger POA: "
+                                            f"{controller.get_last_error().get_status().get_message()}")
+            self.logger.debug(f"POA {poa.operation}/{sliver_id} added successfully")
+            return poa.poa_id, reservations[0].get_slice_id()
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing poa e: {e}")
+            raise e
+
+    def get_poas(self, *, token: str, sliver_id: str = None, poa_id: str = None, states: List[str] = None,
+                 limit: int = 200, offset: int = 0):
+        try:
+            controller = self.controller_state.get_management_actor()
+            self.logger.debug(f"poa invoked for Controller: {controller}")
+
+            rid = ID(uid=sliver_id) if sliver_id is not None else None
+
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
+            email = fabric_token.get_email()
+            project, tags, project_name = fabric_token.get_first_project()
+
+            poa_states = PoaStates.translate_list(states=states)
+
+            auth = AuthAvro()
+            auth.name = self.controller_state.get_management_actor().get_name()
+            auth.guid = self.controller_state.get_management_actor().get_guid()
+            auth.oidc_sub_claim = fabric_token.get_uuid()
+            auth.email = fabric_token.get_email()
+
+            poa_list = controller.get_poas(rid=rid, poa_id=poa_id, email=email, project_id=project,
+                                           states=states, limit=limit, offset=offset)
+            if poa_list is None:
+                if controller.get_last_error() is not None:
+                    self.logger.error(controller.get_last_error())
+                    if controller.get_last_error().status.code == ErrorCodes.ErrorNoSuchPoa:
+                        raise OrchestratorException(f"Reservation# {rid} not found",
+                                                    http_error_code=NOT_FOUND)
+
+                raise OrchestratorException(f"{controller.get_last_error()}")
+            return ResponseBuilder.get_poa_summary(poa_list=poa_list)
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing poa e: {e}")
+            raise e

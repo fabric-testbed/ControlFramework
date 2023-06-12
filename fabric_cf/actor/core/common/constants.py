@@ -49,6 +49,7 @@ class ErrorCodes(Enum):
     ErrorNoSuchDelegation = 14
     ErrorInvalidToken = 15
     ErrorSliceExists = 16
+    ErrorNoSuchPoa = 17
 
     def interpret(self, exception=None):
         interpretations = {
@@ -67,7 +68,8 @@ class ErrorCodes(Enum):
             13: "Transport timeout",
             14: "No such delegation found",
             15: "Invalid Token",
-            16: "Slice exists"
+            16: "Slice exists",
+            17: "No such poa found"
           }
         if exception is None:
             return interpretations[self.value]
@@ -143,6 +145,7 @@ class Constants:
 
     CONFIG_LOGGING_SECTION = 'logging'
     PROPERTY_CONF_LOG_FILE = 'log-file'
+    PROPERTY_CONF_METRICS_LOG_FILE = 'metrics-log-file'
     PROPERTY_CONF_HANDLER_LOG_FILE = 'handler-log-file'
     PROPERTY_CONF_LOG_LEVEL = 'log-level'
     PROPERTY_CONF_LOG_RETAIN = 'log-retain'
@@ -265,12 +268,18 @@ class Constants:
     PROPERTY_TARGET_RESULT_CODE = "target.code"
     PROPERTY_TARGET_RESULT_CODE_MESSAGE = "target.code.message"
     PROPERTY_ACTION_SEQUENCE_NUMBER = "action.sequence"
+    PROPERTY_POA_INFO = "poa_info"
+    PROPERTY_INFO = "info"
+    PROPERTY_CODE = "code"
+    PROPERTY_MESSAGE = "message"
+    POA_ID = "poa_id"
 
     RESULT_CODE_EXCEPTION = -1
     RESULT_CODE_OK = 0
     TARGET_CREATE = "create"
     TARGET_DELETE = "delete"
     TARGET_MODIFY = "modify"
+    TARGET_POA = "poa"
     TARGET_CLEAN_RESTART = "clean_restart"
 
     RSV_SLC_ID = 'rsv_slc_id'
@@ -280,10 +289,11 @@ class Constants:
     ALGORITHM = 'algorithm'
 
     # Orchestrator Lease params
-    TWO_WEEKS = timedelta(days=30)
+    TWO_WEEKS = timedelta(days=15)
     DEFAULT_MAX_DURATION = TWO_WEEKS
     LEASE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S %z"
     DEFAULT_LEASE_IN_HOURS = 24
+    LONG_LIVED_SLICE_TIME_WEEKS = timedelta(weeks=26)
 
     ALL = "ALL"
     AL2S = "AL2S"
@@ -327,3 +337,5 @@ class Constants:
     SUPPORTED_SERVICES = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP, ServiceType.FABNetv6,
                           ServiceType.FABNetv4, ServiceType.PortMirror, ServiceType.FABNetv4Ext,
                           ServiceType.FABNetv6Ext, ServiceType.L3VPN]
+
+    SLICE_NO_LIMIT_LIFETIME = "Slice.NoLimitLifetime"

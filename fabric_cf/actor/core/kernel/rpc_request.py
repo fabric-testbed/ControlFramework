@@ -23,12 +23,14 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_proxy import ABCProxy
 from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
 from fabric_cf.actor.core.apis.abc_response_handler import ABCResponseHandler
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 
 
@@ -36,7 +38,7 @@ class RPCRequest:
     """
     Represents a RPC request being sent across Kafka
     """
-    def __init__(self, *, request: ABCRPCRequestState, actor: ABCActorMixin, proxy: ABCProxy,
+    def __init__(self, *, request: ABCRPCRequestState, actor: ABCActorMixin, proxy: ABCProxy, poa: Poa = None,
                  sequence: int = None, handler: ABCResponseHandler = None, reservation: ABCReservationMixin = None,
                  delegation: ABCDelegation = None):
         self.request = request
@@ -48,6 +50,7 @@ class RPCRequest:
         self.handler = handler
         self.retry_count = 0
         self.timer = None
+        self.poa = poa
 
     def get_actor(self) -> ABCActorMixin:
         """
@@ -69,6 +72,9 @@ class RPCRequest:
         @return reservation
         """
         return self.reservation
+
+    def get_poa(self) -> Poa:
+        return self.poa
 
     def get_handler(self) -> ABCResponseHandler:
         """
@@ -92,9 +98,13 @@ class RPCRequest:
             from fabric_cf.actor.core.container.globals import GlobalsSingleton
             GlobalsSingleton.get().timer_scheduler.cancel(self.timer)
 
-    def get(self) -> ABCReservationMixin or ABCDelegation:
+    def get(self) -> ABCReservationMixin or ABCDelegation or Poa:
         if self.reservation is not None:
             return self.reservation
 
         if self.delegation is not None:
             return self.delegation
+
+        if self.poa is not None:
+            return self.poa
+

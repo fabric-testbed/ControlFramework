@@ -23,10 +23,13 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import logging
 import threading
 import concurrent.futures
-import time
 import traceback
 
 from fabric_mb.message_bus.producer import AvroProducerApi
@@ -64,6 +67,9 @@ from fabric_cf.actor.core.util.rpc_exception import RPCException, RPCError
 from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.core.util.utils import sliver_to_str
 from fabric_cf.actor.security.auth_token import AuthToken
+
+if TYPE_CHECKING:
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class RPCManager:
@@ -172,15 +178,25 @@ class RPCManager:
 
     def extend_lease(self, *, proxy: ABCAuthorityProxy, reservation: ABCControllerReservation, caller: AuthToken):
         self.validate(reservation=reservation, check_requested=True)
-        self.do_extend_lease(actor=reservation.get_actor(), proxy=reservation.get_authority(),
-                             reservation=reservation, callback=reservation.get_client_callback_proxy(),
-                             caller=reservation.get_slice().get_owner())
+        self.do_extend_lease(actor=reservation.get_actor(), proxy=proxy, caller=caller,
+                             reservation=reservation, callback=reservation.get_client_callback_proxy())
 
     def modify_lease(self, *, proxy: ABCAuthorityProxy, reservation: ABCControllerReservation, caller: AuthToken):
         self.validate(reservation=reservation, check_requested=True)
-        self.do_modify_lease(actor=reservation.get_actor(), proxy=reservation.get_authority(),
-                             reservation=reservation, callback=reservation.get_client_callback_proxy(),
-                             caller=reservation.get_slice().get_owner())
+        self.do_modify_lease(actor=reservation.get_actor(), proxy=proxy, caller=caller,
+                             reservation=reservation, callback=reservation.get_client_callback_proxy())
+
+    def poa(self, *, proxy: ABCAuthorityProxy, callback: ABCControllerCallbackProxy, caller: AuthToken, poa: Poa):
+        self.do_poa(actor=poa.get_actor(), proxy=proxy,callback=callback, caller=caller, poa=poa)
+
+    def poa_info(self, *, reservation: ABCAuthorityReservation, poa: Poa):
+        callback = Proxy.get_callback(actor=reservation.get_actor(), protocol=reservation.get_callback().get_type())
+        if callback is None:
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("callback"))
+
+        # Send POA Result back to Orchestrator
+        self.do_poa_info(actor=reservation.get_actor(), proxy=reservation.get_callback(),
+                         poa=poa, callback=callback, caller=reservation.get_actor().get_identity())
 
     def close(self, *, reservation: ABCControllerReservation):
         self.validate(reservation=reservation)
@@ -379,6 +395,23 @@ class RPCManager:
         state.set_type(rtype=RPCRequestType.ModifyLease)
         rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
                          sequence=reservation.get_lease_sequence_out())
+        self.enqueue(rpc=rpc)
+
+    def do_poa(self, *, actor: ABCActorMixin, proxy: ABCAuthorityProxy, callback: ABCControllerCallbackProxy,
+               caller: AuthToken, poa: Poa):
+        state = proxy.prepare_poa(callback=callback, caller=caller, poa=poa)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.Poa)
+        rpc = RPCRequest(request=state, actor=actor, proxy=proxy, poa=poa,
+                         sequence=poa.get_poa_sequence_out())
+        self.enqueue(rpc=rpc)
+
+    def do_poa_info(self, *, actor: ABCActorMixin, proxy: ABCControllerCallbackProxy, poa: Poa,
+                    callback: ABCCallbackProxy, caller: AuthToken):
+        state = proxy.prepare_poa_result(poa=poa,callback=callback, caller=caller)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.PoaInfo)
+        rpc = RPCRequest(request=state, actor=actor, proxy=proxy, poa=poa, sequence=poa.get_poa_sequence_out())
         self.enqueue(rpc=rpc)
 
     def do_close(self, *, actor: ABCActorMixin, proxy: ABCAuthorityProxy, reservation: ABCControllerReservation,

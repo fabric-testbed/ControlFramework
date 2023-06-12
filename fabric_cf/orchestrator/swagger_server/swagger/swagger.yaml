@@ -180,7 +180,9 @@ paths:
       tags:
       - slices
       summary: Retrieve a listing of user slices
-      description: Retrieve a listing of user slices
+      description: Retrieve a listing of user slices. It returns list of all slices
+        belonging to all members in a project when 'as_self' is False otherwise returns
+        only the all user's slices in a project.
       operationId: slices_get
       parameters:
       - name: name
@@ -192,6 +194,15 @@ paths:
         schema:
           minLength: 3
           type: string
+      - name: as_self
+        in: query
+        description: GET object as Self
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: true
       - name: states
         in: query
         description: Search for Slices in the specified states
@@ -293,6 +304,15 @@ paths:
         explode: false
         schema:
           type: string
+      - name: as_self
+        in: query
+        description: GET object as Self
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: true
       - name: graph_format
         in: query
         description: graph format
@@ -381,14 +401,89 @@ paths:
           type: string
       - name: lease_end_time
         in: query
-        description: New Lease End Time for the Slice
+        description: Lease End Time for the Slice
         required: false
         style: form
         explode: true
         schema:
           type: string
       requestBody:
-        $ref: '#/components/requestBodies/payload_slices'
+        $ref: '#/components/requestBodies/Request'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/slivers'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_400_bad_request'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_401_unauthorized'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_403_forbidden'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_404_not_found'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_500_internal_server_error'
+      security:
+      - bearerAuth: []
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
+  /slices/creates:
+    post:
+      tags:
+      - slices
+      summary: Create slice
+      description: "Request to create slice as described in the request. Request would\
+        \ be a graph ML describing the requested resources. Resources may be requested\
+        \ to be created now or in future. On success, one or more slivers are allocated,\
+        \ containing resources satisfying the request, and assigned to the given slice.\
+        \ This API returns list and description of the resources reserved for the\
+        \ slice in the form of Graph ML. Orchestrator would also trigger provisioning\
+        \ of these resources asynchronously on the appropriate sites either now or\
+        \ in the future as requested. Experimenter can invoke get slice API to get\
+        \ the latest state of the requested resources. \n"
+      operationId: slices_creates_post
+      parameters:
+      - name: name
+        in: query
+        description: Slice Name
+        required: true
+        style: form
+        explode: true
+        schema:
+          minLength: 3
+          type: string
+      - name: lease_end_time
+        in: query
+        description: Lease End Time for the Slice
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        $ref: '#/components/requestBodies/payload_slices_create'
       responses:
         "200":
           description: OK
@@ -456,7 +551,7 @@ paths:
         schema:
           type: string
       requestBody:
-        $ref: '#/components/requestBodies/payload_slices'
+        $ref: '#/components/requestBodies/payload_slices_modify'
       responses:
         "200":
           description: OK
@@ -742,6 +837,15 @@ paths:
         explode: true
         schema:
           type: string
+      - name: as_self
+        in: query
+        description: GET object as Self
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: true
       responses:
         "200":
           description: OK
@@ -806,6 +910,15 @@ paths:
         explode: false
         schema:
           type: string
+      - name: as_self
+        in: query
+        description: GET object as Self
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: true
       responses:
         "200":
           description: OK
@@ -846,8 +959,250 @@ paths:
       security:
       - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
+  /poas/create/{sliver_id}:
+    post:
+      tags:
+      - poas
+      summary: Perform an operational action on a sliver.
+      description: "Request to perform an operation action on a sliver. Supported\
+        \ actions include - reboot a VM sliver, get cpu info, get numa info, pin vCPUs,\
+        \ pin memory to a numa node etc.  \n"
+      operationId: poas_create_sliver_id_post
+      parameters:
+      - name: sliver_id
+        in: path
+        description: Sliver identified by universally unique identifier
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        $ref: '#/components/requestBodies/payload_poa'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/poa'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_400_bad_request'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_401_unauthorized'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_403_forbidden'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_404_not_found'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_500_internal_server_error'
+      security:
+      - bearerAuth: []
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.poas_controller
+  /poas/:
+    get:
+      tags:
+      - poas
+      summary: Request get the status of the POAs.
+      description: "Request get the status of the POAs  \n"
+      operationId: poas_get
+      parameters:
+      - name: sliver_id
+        in: query
+        description: Search for POAs for a sliver
+        required: false
+        style: form
+        explode: true
+        schema:
+          minLength: 3
+          type: string
+      - name: states
+        in: query
+        description: Search for POAs in the specified states
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - Nascent
+            - SentToAuthority
+            - Performing
+            - AwaitingCompletion
+            - Success
+            - Failed
+      - name: limit
+        in: query
+        description: maximum number of results to return per page (1 or more)
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+          default: 5
+      - name: offset
+        in: query
+        description: number of items to skip before starting to collect the result
+          set
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 0
+          type: integer
+          format: int32
+          default: 0
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/poa'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_400_bad_request'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_401_unauthorized'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_403_forbidden'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_404_not_found'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_500_internal_server_error'
+      security:
+      - bearerAuth: []
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.poas_controller
+  /poas/{poa_id}:
+    get:
+      tags:
+      - poas
+      summary: Perform an operational action on a sliver.
+      description: "Request get the status of the POA identified by poa_id.  \n"
+      operationId: poas_poa_id_get
+      parameters:
+      - name: poa_id
+        in: path
+        description: Poa Id for the POA triggered
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/poa'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_400_bad_request'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_401_unauthorized'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_403_forbidden'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_404_not_found'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_500_internal_server_error'
+      security:
+      - bearerAuth: []
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.poas_controller
 components:
   schemas:
+    poa_post:
+      required:
+      - operation
+      type: object
+      properties:
+        operation:
+          type: string
+          enum:
+          - cpuinfo
+          - numainfo
+          - cpupin
+          - numatune
+          - reboot
+        data:
+          $ref: '#/components/schemas/poa_post_data'
+    slices_post:
+      required:
+      - graph_model
+      - ssh_keys
+      type: object
+      properties:
+        graph_model:
+          type: string
+        ssh_keys:
+          maxItems: 10
+          type: array
+          items:
+            type: string
     status_200_ok_single:
       type: object
       properties:
@@ -1153,12 +1508,78 @@ components:
       properties:
         model:
           type: string
+    poa:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/status_200_ok_single'
+      - type: object
+        properties:
+          data:
+            type: array
+            items:
+              $ref: '#/components/schemas/poa_data'
+    poa_data:
+      type: object
+      properties:
+        operation:
+          type: string
+        poa_id:
+          type: string
+        state:
+          type: string
+        sliver_id:
+          type: string
+        slice_id:
+          type: string
+        error:
+          type: string
+        info:
+          type: object
+    poa_post_data_vcpu_cpu_map:
+      type: object
+      properties:
+        vcpu:
+          type: string
+        cpu:
+          type: string
+    poa_post_data:
+      type: object
+      properties:
+        vcpu_cpu_map:
+          type: array
+          items:
+            $ref: '#/components/schemas/poa_post_data_vcpu_cpu_map'
+        node_set:
+          type: array
+          items:
+            type: string
   requestBodies:
-    payload_slices:
+    Request:
       content:
         text/plain:
           schema:
             type: string
+      required: true
+    payload_slices_modify:
+      description: Modify a Slice
+      content:
+        text/plain:
+          schema:
+            type: string
+      required: true
+    payload_slices_create:
+      description: Create new Slice
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/slices_post'
+      required: true
+    payload_poa:
+      description: Perform Operation Action
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/poa_post'
       required: true
   securitySchemes:
     bearerAuth:

@@ -25,13 +25,17 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Union
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryModelAvro
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
+from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
 from fabric_mb.message_bus.messages.resource_ticket_avro import ResourceTicketAvro
 from fabric_mb.message_bus.messages.resource_set_avro import ResourceSetAvro
+from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fabric_mb.message_bus.messages.result_poa_avro import ResultPoaAvro
 from fabric_mb.message_bus.messages.site_avro import SiteAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fabric_mb.message_bus.messages.term_avro import TermAvro
@@ -46,6 +50,7 @@ from fabric_cf.actor.core.core.ticket import Ticket
 from fabric_cf.actor.core.core.unit import Unit, UnitState
 from fabric_cf.actor.core.core.unit_set import UnitSet
 from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicket
+from fabric_cf.actor.core.kernel.poa import Poa, PoaFactory
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
@@ -304,6 +309,7 @@ class Translate:
         avro_delegation.delegation_id = delegation.get_delegation_id()
         avro_delegation.state = delegation.get_state().value
         avro_delegation.slice = Translate.translate_slice_to_avro(slice_obj=delegation.get_slice_object())
+        avro_delegation.site = delegation.get_site()
         if delegation.get_graph() is not None and not (delegation.is_reclaimed() or delegation.is_closed()):
             avro_delegation.graph = delegation.get_graph().serialize_graph()
         return avro_delegation
@@ -378,3 +384,78 @@ class Translate:
            obj = Translate.translate_unit_from_avro(unit_avro=u)
            unit_set.units[obj.get_id()] = obj
         return unit_set
+
+    @staticmethod
+    def translate_poa_avro_to_poa(*, poa_avro: PoaAvro) -> Union[Poa, None]:
+        if poa_avro is None:
+            return poa_avro
+        if poa_avro.poa_id is None and poa_avro.rid is None:
+            return None
+
+        poa_obj = PoaFactory.create(poa_id=poa_avro.poa_id, operation=poa_avro.get_operation(),
+                                    sliver_id=ID(uid=poa_avro.rid), vcpu_cpu_map=poa_avro.get_vcpu_cpu_map(),
+                                    node_set=poa_avro.get_node_set())
+        poa_obj.sequence_poa_in = poa_avro.sequence
+        poa_obj.slice_id = poa_avro.slice_id
+        # NOTE: Sliver, Slice and Project Info to be set by the caller
+        return poa_obj
+
+    @staticmethod
+    def translate_poa_to_poa_avro(*, poa: Poa) -> Union[PoaAvro, None]:
+        if poa is None:
+            return poa
+
+        auth_avro = Translate.translate_auth_to_avro(auth=poa.get_slice().get_owner())
+        poa_avro = PoaAvro(operation=poa.operation, rid=str(poa.sliver_id), poa_id=poa.poa_id,
+                           vcpu_cpu_map=poa.vcpu_cpu_map, node_set=poa.node_set, auth=auth_avro,
+                           project_id=poa.get_slice().get_project_id(), slice_id=str(poa.get_slice_id()))
+        poa_avro.sequence = poa.sequence_poa_out
+        return poa_avro
+
+    @staticmethod
+    def translate_poa_to_poa_info_avro(*, poa: Poa) -> Union[PoaInfoAvro, None]:
+        if poa is None:
+            return poa
+
+        auth_avro = Translate.translate_auth_to_avro(auth=poa.get_slice().get_owner())
+        poa_avro = PoaInfoAvro(operation=poa.operation, rid=str(poa.sliver_id), poa_id=str(poa.poa_id),
+                               auth=auth_avro, project_id=poa.get_slice().get_project_id(),
+                               slice_id=str(poa.get_slice().get_slice_id()), state=str(poa.get_state()),
+                               error=poa.get_message())
+
+        if poa.get_info() is not None:
+            poa_avro.info = poa.get_info().copy()
+        return poa_avro
+
+    @staticmethod
+    def translate_poa_to_result_poa_avro(*, poa: Poa) -> Union[ResultPoaAvro, None]:
+        if poa is None:
+            return poa
+
+        poa_info_avro = Translate.translate_poa_to_poa_info_avro(poa=poa)
+
+        poa_result_avro = ResultPoaAvro()
+        poa_result_avro.status = ResultAvro()
+        poa_result_avro.status.code = poa.get_error_code()
+        poa_result_avro.status.message = poa.get_message()
+        poa_result_avro.poas = [poa_info_avro]
+
+        return poa_result_avro
+
+    @staticmethod
+    def translate_result_poa_avro_to_poa(*, poa_result: ResultPoaAvro) -> Union[Poa, None]:
+        if poa_result is None:
+            return poa_result
+        if poa_result.poas is None or len(poa_result.poas) <= 0:
+            return None
+
+        poa_info = poa_result.poas[0]
+
+        poa_obj = PoaFactory.create(poa_id=poa_info.poa_id, operation=poa_info.get_operation(),
+                                    sliver_id=ID(uid=poa_info.rid))
+        poa_obj.slice_id = poa_info.get_slice_id()
+        poa_obj.error_code = poa_result.get_status().get_code()
+        poa_obj.message = poa_result.get_status().get_message()
+        poa_obj.info = poa_info.get_info()
+
+        return poa_obj

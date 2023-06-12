@@ -23,19 +23,37 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+from fabric_cf.actor.core.kernel.incoming_rpc import IncomingRPC
+from fabric_cf.actor.core.kernel.poa import Poa
+
+if TYPE_CHECKING:
+    from fabric_cf.actor.core.util.id import ID
+    from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+    from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
+    from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class Constants:
-    PROP_VALUE = 'value'
-    PROP_RESERVATIONS = "reservations"
-    PROP_SLICES = "slices"
-    PROP_SLICE_MODEL = "slice_model"
-    PROP_BQM_MODEL = "bqm"
+class IncomingPoaRPC(IncomingRPC):
+    """
+    Represents Incoming RPC message carrying a reservation
+    """
+    def __init__(self, *, message_id: ID, request_type: RPCRequestType, callback: ABCCallbackProxy = None,
+                 caller: AuthToken = None, poa: Poa = None):
+        super().__init__(message_id=message_id, request_type=request_type, callback=callback, caller=caller)
+        self.poa = poa
 
-    PROP_CAPACITIES = "capacities"
-    PROP_LABELS = "labels"
-    PROP_SLIVER_NAME = "name"
-    PROP_MANAGEMENT_IP = "management_ip"
-    PROP_CAPACITY_HINTS = "capacity_hints"
-    PROP_ALLOCATED_CAPACITIES = "allocated_capacities"
-    PROP_ALLOCATED_LABELS = "allocated_labels"
+    def get(self):
+        """
+        Get POA
+        @return POA
+        """
+        return self.poa
+
+    def __str__(self):
+        return f"{self.poa.poa_id}"
+
+    def get_update_data(self):
+        return None

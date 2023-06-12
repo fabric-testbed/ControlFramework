@@ -29,6 +29,8 @@ import traceback
 from typing import TYPE_CHECKING, List, Tuple, Dict
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
+from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
 from fabric_mb.message_bus.messages.site_avro import SiteAvro
 
 from fabric_cf.actor.core.common.exceptions import ManageException
@@ -97,12 +99,10 @@ class LocalActor(LocalProxy, ABCMgmtActor):
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
-        return None
-
     def get_sites(self, *, site: str) -> List[SiteAvro] or None:
         self.clear_last()
         try:
-            result = self.manager.get_sites(site=site)
+            result = self.manager.get_sites(site=site, caller=self.auth)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -156,8 +156,6 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
-
-        return None
 
     def update_slice(self, *, slice_obj: SliceAvro, modify_state: bool = False) -> bool:
         self.clear_last()
@@ -228,8 +226,6 @@ class LocalActor(LocalProxy, ABCMgmtActor):
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
-        return None
-
     def get_delegations(self, *, slice_id: ID = None, states: List[int] = None,
                         delegation_id: str = None) -> List[DelegationAvro]:
         self.clear_last()
@@ -242,8 +238,6 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
-
-        return None
 
     def close_delegation(self, *, did: str) -> bool:
         self.clear_last()
@@ -283,3 +277,19 @@ class LocalActor(LocalProxy, ABCMgmtActor):
     def is_sliver_provisioning_allowed(self, *, project: str, email: str, site: str,
                                        worker: str) -> Tuple[bool, str or None]:
         return self.manager.is_sliver_provisioning_allowed(project=project, email=email, site=site, worker=worker)
+
+    def get_poas(self, *, states: List[int] = None, slice_id: ID = None, rid: ID = None,
+                 email: str = None, poa_id: str = None, project_id: str = None,
+                 limit: int = 200, offset: int = 0) -> List[PoaInfoAvro]:
+        self.clear_last()
+        try:
+            result = self.manager.get_poas(caller=self.auth, states=states, slice_id=slice_id, rid=rid,
+                                           email=email, poa_id=poa_id, project_id=project_id,
+                                           limit=limit, offset=offset)
+            self.last_status = result.status
+
+            if result.status.get_code() == 0:
+                return result.poas
+
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())

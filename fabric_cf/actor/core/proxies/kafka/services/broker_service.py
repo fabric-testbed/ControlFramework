@@ -66,7 +66,8 @@ class BrokerService(ActorService):
     def pass_agent_delegation(self, *, delegation: DelegationAvro) -> ABCDelegation:
         slice_obj = Translate.translate_slice(slice_avro=delegation.slice)
 
-        result = DelegationFactory.create(did=delegation.get_delegation_id(), slice_id=slice_obj.get_slice_id())
+        result = DelegationFactory.create(did=delegation.get_delegation_id(), slice_id=slice_obj.get_slice_id(),
+                                          site=delegation.get_site())
         result.set_slice_object(slice_object=slice_obj)
         result.set_owner(owner=self.actor.get_identity())
         result.set_sequence_in(value=delegation.sequence)

@@ -120,7 +120,7 @@ class NetworkNodeInventory(InventoryForType):
                                   msg=f"{message}")
 
         # Assign the first PCI Id from the list of available PCI slots
-        requested_component.label_allocations = Labels(bdf=delegated_label.bdf[0])
+        requested_component.label_allocations = Labels(bdf=delegated_label.bdf[0], numa=delegated_label.numa[0])
 
         # Find the VLAN from the BQM Component
         if available_component.network_service_info is None or \

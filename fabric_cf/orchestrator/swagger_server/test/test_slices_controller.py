@@ -7,6 +7,7 @@ from six import BytesIO
 
 from fabric_cf.orchestrator.swagger_server.models.slice_details import SliceDetails  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.models.slices import Slices  # noqa: E501
+from fabric_cf.orchestrator.swagger_server.models.slices_post import SlicesPost  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.models.slivers import Slivers  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.models.status200_ok_no_content import Status200OkNoContent  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.models.status400_bad_request import Status400BadRequest  # noqa: E501
@@ -34,6 +35,23 @@ class TestSlicesController(BaseTestCase):
             method='POST',
             data=json.dumps(body),
             content_type='text/plain',
+            query_string=query_string)
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
+    def test_slices_creates_post(self):
+        """Test case for slices_creates_post
+
+        Create slice
+        """
+        body = SlicesPost()
+        query_string = [('name', 'name_example'),
+                        ('lease_end_time', 'lease_end_time_example')]
+        response = self.client.open(
+            '//slices/creates',
+            method='POST',
+            data=json.dumps(body),
+            content_type='application/json',
             query_string=query_string)
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
@@ -66,6 +84,7 @@ class TestSlicesController(BaseTestCase):
         Retrieve a listing of user slices
         """
         query_string = [('name', 'name_example'),
+                        ('as_self', true),
                         ('states', 'states_example'),
                         ('limit', 200),
                         ('offset', 1)]
@@ -119,7 +138,8 @@ class TestSlicesController(BaseTestCase):
 
         slice properties
         """
-        query_string = [('graph_format', 'GRAPHML')]
+        query_string = [('as_self', true),
+                        ('graph_format', 'GRAPHML')]
         response = self.client.open(
             '//slices/{slice_id}'.format(slice_id='slice_id_example'),
             method='GET',

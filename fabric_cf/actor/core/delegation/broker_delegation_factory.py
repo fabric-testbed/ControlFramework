@@ -35,13 +35,14 @@ class BrokerDelegationFactory:
     Factory class to create broker delegation instances
     """
     @staticmethod
-    def create(did: str, slice_id: ID, broker: ABCBrokerProxy) -> ABCDelegation:
+    def create(did: str, slice_id: ID, broker: ABCBrokerProxy, site: str = None) -> ABCDelegation:
         """
         Create a broker delegation
         @param did delegation id
         @param slice_id slice id
         @param broker broker
+        @param site site name
         @return delegation
         """
-        delegation = BrokerDelegation(dlg_graph_id=did, slice_id=slice_id, broker=broker)
+        delegation = BrokerDelegation(dlg_graph_id=did, slice_id=slice_id, broker=broker, site=site)
         return delegation

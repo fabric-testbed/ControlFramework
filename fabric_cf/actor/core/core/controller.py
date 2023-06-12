@@ -37,6 +37,7 @@ from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.exceptions import ControllerException
+from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.manage.controller_management_object import ControllerManagementObject
 from fabric_cf.actor.core.manage.kafka.services.kafka_controller_service import KafkaControllerService
 from fabric_cf.actor.core.proxies.kafka.services.controller_service import ControllerService
@@ -46,6 +47,7 @@ from fabric_cf.actor.core.registry.peer_registry import PeerRegistry
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
 from fabric_cf.actor.fim.asm_update_thread import AsmUpdateThread
+from fabric_cf.actor.core.util.id import ID
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.time.actor_clock import ActorClock
@@ -53,7 +55,6 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
     from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
     from fabric_cf.actor.core.apis.abc_slice import ABCSlice
-    from fabric_cf.actor.core.util.id import ID
 
 
 class Controller(ActorMixin, ABCController):
@@ -422,6 +423,32 @@ class Controller(ActorMixin, ABCController):
 
         self.extend_lease(rset=self.extending_lease)
         self.extending_lease.clear()
+
+    def poa(self, *, poa: Poa):
+        if poa.sliver_id is None or poa.operation is None:
+            self.logger.error(f"rid {poa.sliver_id} operation {poa.operation}")
+            raise ControllerException(f"Unknown reservation: {poa.sliver_id}")
+
+        reservation = None
+        try:
+            reservation = self.get_reservation(rid=poa.sliver_id)
+        except Exception as e:
+            self.logger.error(f"Could not find reservation #{poa.sliver_id} e: {e}")
+
+        if reservation is None:
+            raise ControllerException(f"Unknown reservation: {poa.sliver_id}")
+
+        if reservation.get_leased_resources() is None:
+            self.logger.warning(f"There are no approved resources for {poa.sliver_id}, do nothing!")
+            return
+
+        self.wrapper.poa(reservation=reservation, poa=poa, raise_exception=True)
+
+    def poa_info(self, *, poa: Poa, caller: AuthToken):
+        if not self.is_recovered() or self.is_stopped():
+            raise ControllerException("This actor cannot receive calls")
+
+        self.wrapper.poa_info(poa=poa, caller=caller)
 
     @staticmethod
     def get_management_object_class() -> str:

@@ -31,7 +31,8 @@ from logging.handlers import RotatingFileHandler
 
 class LogHelper:
     @staticmethod
-    def make_logger(*, log_dir: str, log_file: str, log_level, log_retain: int, log_size: int, logger: str):
+    def make_logger(*, log_dir: str, log_file: str, log_level, log_retain: int, log_size: int, logger: str,
+                    log_format: str = None):
         """
         Detects the path and level for the log file from the actor config and sets
         up a logger. Instead of detecting the path and/or level from the
@@ -44,6 +45,7 @@ class LogHelper:
        :param log_retain
        :param log_size
        :param logger
+       :param log_format
        :return: logging.Logger object
         """
         log_path = f"{log_dir}/{log_file}"
@@ -57,16 +59,20 @@ class LogHelper:
         # Set up the root logger
         log = logging.getLogger(logger)
         log.setLevel(log_level)
-        log_format = \
+        default_log_format = \
             '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s-%(thread_id)s]- %(levelname)s - %(message)s'
+        if log_format is not None:
+            default_log_format = log_format
 
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
         file_handler = RotatingFileHandler(log_path, backupCount=int(log_retain), maxBytes=int(log_size))
-
-        logging.basicConfig(handlers=[file_handler], format=log_format, force=True)
         file_handler.addFilter(LogHelper.thread_id_filter)
+        file_handler.setFormatter(logging.Formatter(default_log_format))
+        log.addHandler(file_handler)
 
+        #logging.basicConfig(handlers=[file_handler], format=log_format, force=True)
+        #file_handler.addFilter(LogHelper.thread_id_filter)
         return log
 
     @staticmethod

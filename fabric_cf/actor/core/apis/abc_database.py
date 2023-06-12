@@ -27,9 +27,10 @@ from __future__ import annotations
 
 from abc import abstractmethod, ABC
 from datetime import datetime
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Union
 
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.kernel.slice import SliceTypes
 
 if TYPE_CHECKING:
@@ -361,4 +362,52 @@ class ABCDatabase(ABC):
         """
         Get maintenance Properties
         @return properties
+        """
+
+    @abstractmethod
+    def add_poa(self, *, poa: Poa):
+        """
+        Adds a new record to the database representing this slice
+        object.
+
+        @param poa POA object
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def update_poa(self, *, poa: Poa):
+        """
+        Updates the corresponding database poa record.
+
+        @param poa poa info object
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def remove_poa(self, *, poa_id: str):
+        """
+        Removes the corresponding database slice record.
+
+        @param poa_id poa id
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def get_poas(self, *, poa_id: str = None, email: str = None, sliver_id: ID = None, slice_id: ID = None,
+                 project_id: str = None, limit: int = None, offset: int = None, last_update_time: datetime = None,
+                 states: list[int] = None) -> Union[List[Poa] or None]:
+        """
+        Get POAs
+        @param poa_id poa id
+        @param email email
+        @param sliver_id sliver id
+        @param slice_id slice id
+        @param project_id project id
+        @param limit limit
+        @param offset offset
+        @param states states
+        @param last_update_time last update time
         """

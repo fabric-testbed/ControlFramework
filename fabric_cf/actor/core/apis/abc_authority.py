@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 
 from fabric_cf.actor.core.apis.abc_server_actor import ABCServerActor
+from fabric_cf.actor.core.kernel.poa import Poa
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
@@ -104,6 +105,15 @@ class ABCAuthority(ABCServerActor):
         @param reservation reservation representing a request for a new lease
         @param callback callback
         @param caller caller
+        @raises Exception in case of error
+        """
+
+    @abstractmethod
+    def poa(self, *, poa: Poa):
+        """
+        Processes a redeem request for the reservation.
+
+        @param poa POA
         @raises Exception in case of error
         """
 

@@ -30,6 +30,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
+from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.reservation_predecessor_avro import ReservationPredecessorAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_broker_query_model_avro import ResultBrokerQueryModelAvro
@@ -588,5 +589,43 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        return result
+
+    def poa(self, *, poa: PoaAvro, caller: AuthToken) -> ResultAvro:
+        result = ResultAvro()
+
+        if poa.rid is None or poa.operation is None:
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            return result
+
+        self.logger.debug(f"reservation: {poa.rid} | operation = {poa.operation} | "
+                          f"vcpu_cpu_map = {poa.vcpu_cpu_map} | node_set = {poa.node_set}")
+        try:
+
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCClientActor):
+                    self.actor = actor
+
+                def run(self):
+                    result = ResultAvro()
+                    r = self.actor.get_reservation(rid=ID(uid=poa.rid))
+                    if r is None:
+                        result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+                        result.set_message(ErrorCodes.ErrorNoSuchReservation.interpret())
+                        return result
+
+                    poa_obj = Translate.translate_poa_avro_to_poa(poa_avro=poa)
+
+                    self.actor.poa(poa=poa_obj)
+
+                    return result
+            result = self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client))
+        except Exception as e:
+            self.logger.error("poa {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result = ManagementObject.set_exception_details(result=result, e=e)
 
         return result

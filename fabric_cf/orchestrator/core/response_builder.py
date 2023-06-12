@@ -26,6 +26,7 @@
 from typing import List
 
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
+from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.abc_property_graph import ABCPropertyGraph
@@ -40,6 +41,7 @@ class ResponseBuilder:
     PROP_SLICE_ID = "slice_id"
     PROP_NAME = "name"
     PROP_STATE = "state"
+    PROP_ERROR = "error"
     PROP_PROJECT_ID = "project_id"
     PROP_PROJECT_NAME = "project_name"
     PROP_MODEL = "model"
@@ -54,6 +56,9 @@ class ResponseBuilder:
     PROP_SLIVER = "sliver"
     PROP_SLIVER_TYPE = "sliver_type"
     PROP_NOTICE = "notice"
+
+    PROP_OPERATION = "operation"
+    PROP_POA_ID = "poa_id"
 
     @staticmethod
     def get_reservation_summary(*, res_list: List[ReservationMng]) -> List[dict]:
@@ -144,3 +149,25 @@ class ResponseBuilder:
         :return:
         """
         return {ResponseBuilder.PROP_MODEL: bqm}
+
+    @staticmethod
+    def get_poa_summary(*, poa_list: List[PoaInfoAvro]) -> List[dict]:
+        """
+        Get POA summary
+        :param poa_list:
+        :return:
+        """
+        poas = []
+
+        if poa_list is not None:
+            for poa in poa_list:
+                poa_dict = {ResponseBuilder.PROP_POA_ID: poa.get_poa_id(),
+                            ResponseBuilder.PROP_OPERATION: poa.operation,
+                            ResponseBuilder.PROP_SLIVER_ID: poa.rid,
+                            ResponseBuilder.PROP_SLICE_ID: poa.get_slice_id(),
+                            ResponseBuilder.PROP_STATE: poa.get_state(),
+                            ResponseBuilder.PROP_ERROR: poa.get_error()}
+                if poa.get_info() is not None:
+                    poa_dict[Constants.PROPERTY_INFO] = poa.get_info()
+                poas.append(poa_dict)
+        return poas
