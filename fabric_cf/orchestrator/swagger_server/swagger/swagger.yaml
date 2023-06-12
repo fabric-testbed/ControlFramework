@@ -391,7 +391,7 @@ paths:
         schema:
           minLength: 3
           type: string
-      - name: sshKey
+      - name: ssh_key
         in: query
         description: User SSH Key
         required: true
