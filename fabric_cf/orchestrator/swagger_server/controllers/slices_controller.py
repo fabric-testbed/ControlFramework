@@ -31,7 +31,7 @@ def slices_create_post(body, name, ssh_key, lease_end_time=None):  # noqa: E501
     :rtype: Slivers
     """
     post_body = SlicesPost()
-    post_body.graph_model = body
+    post_body.graph_model = body.decode("utf-8")
     post_body.ssh_keys = [ssh_key]
     return rc.slices_create_post(post_body, name, lease_end_time)
 
