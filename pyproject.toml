@@ -26,8 +26,8 @@ dependencies = [
     "connexion",
     "swagger-ui-bundle",
     "PyYAML",
-    "fabric_fss_utils==1.5.0rc1",
-    "fabric-message-bus==1.5.0b6",
+    "fabric_fss_utils==1.5.0",
+    "fabric-message-bus==1.5.0",
     "fabric-fim==1.5.0"]
 
 [project.optional-dependencies]
