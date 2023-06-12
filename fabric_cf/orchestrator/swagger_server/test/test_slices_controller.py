@@ -26,11 +26,29 @@ class TestSlicesController(BaseTestCase):
 
         Create slice
         """
+        body = 'body_example'
+        query_string = [('name', 'name_example'),
+                        ('ssh_key', 'ssh_key_example'),
+                        ('lease_end_time', 'lease_end_time_example')]
+        response = self.client.open(
+            '//slices/create',
+            method='POST',
+            data=json.dumps(body),
+            content_type='text/plain',
+            query_string=query_string)
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
+    def test_slices_creates_post(self):
+        """Test case for slices_creates_post
+
+        Create slice
+        """
         body = SlicesPost()
         query_string = [('name', 'name_example'),
                         ('lease_end_time', 'lease_end_time_example')]
         response = self.client.open(
-            '//slices/create',
+            '//slices/creates',
             method='POST',
             data=json.dumps(body),
             content_type='application/json',

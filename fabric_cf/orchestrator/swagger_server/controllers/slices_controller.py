@@ -9,15 +9,42 @@ from fabric_cf.orchestrator.swagger_server.models.status200_ok_no_content import
 from fabric_cf.orchestrator.swagger_server.response import slices_controller as rc
 
 
-def slices_create_post(body, name, lease_end_time=None):  # noqa: E501
+def slices_create_post(body, name, ssh_key, lease_end_time=None):  # noqa: E501
     """Create slice
 
     Request to create slice as described in the request. Request would be a graph ML describing the requested resources.
     Resources may be requested to be created now or in future. On success, one or more slivers are allocated, containing
     resources satisfying the request, and assigned to the given slice. This API returns list and description of the
     resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of these
-    resources asynchronously on the appropriate sites either now or in the future as requested. Experimenter can invoke
-    get slice API to get the latest state of the requested resources.   # noqa: E501
+    resources asynchronously on the appropriate sites either now or in the future as requested. Experimenter can
+    invoke get slice API to get the latest state of the requested resources.   # noqa: E501
+
+    :param body: 
+    :type body: dict | bytes
+    :param name: Slice Name
+    :type name: str
+    :param ssh_key: User SSH Key
+    :type ssh_key: str
+    :param lease_end_time: Lease End Time for the Slice
+    :type lease_end_time: str
+
+    :rtype: Slivers
+    """
+    post_body = SlicesPost()
+    post_body.graph_model = body
+    post_body.ssh_keys = [ssh_key]
+    return rc.slices_create_post(post_body, name, lease_end_time)
+
+
+def slices_creates_post(body, name, lease_end_time=None):  # noqa: E501
+    """Create slice
+
+    Request to create slice as described in the request. Request would be a graph ML describing the requested resources.
+    Resources may be requested to be created now or in future. On success, one or more slivers are allocated,
+    containing resources satisfying the request, and assigned to the given slice. This API returns list and
+    description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger
+    provisioning of these resources asynchronously on the appropriate sites either now or in the future as requested.
+    Experimenter can invoke get slice API to get the latest state of the requested resources.   # noqa: E501
 
     :param body: Create new Slice
     :type body: dict | bytes
