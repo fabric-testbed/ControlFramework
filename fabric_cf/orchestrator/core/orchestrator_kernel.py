@@ -27,8 +27,11 @@ import threading
 
 from fim.user import GraphFormat
 
+from fabric_cf.actor.core.apis.abc_actor_event import ABCActorEvent
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
+from fabric_cf.actor.core.apis.abc_tick import ABCTick
 from fabric_cf.actor.core.common.constants import Constants
+from fabric_cf.actor.core.core.event_processor import EventProcessor
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.orchestrator.core.bqm_wrapper import BqmWrapper
@@ -37,7 +40,19 @@ from fabric_cf.orchestrator.core.reservation_status_update_thread import Reserva
 from fabric_cf.orchestrator.core.slice_defer_thread import SliceDeferThread
 
 
-class OrchestratorKernel:
+class PollEvent(ABCActorEvent):
+    def __init__(self, *, model_types: list):
+        self.model_types = model_types
+
+    def process(self):
+        from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
+        oh = OrchestratorHandler()
+        for m in self.model_types:
+            oh.discover_broker_query_model(controller=oh.controller_state.controller,
+                                           graph_format=m, force_refresh=True)
+
+
+class OrchestratorKernel(ABCTick):
     """
     Class responsible for starting Orchestrator Threads; also holds Management Actor and Broker information
     """
@@ -50,6 +65,7 @@ class OrchestratorKernel:
         self.controller = None
         self.lock = threading.Lock()
         self.bqm_cache = {}
+        self.event_processor = None
         
     def get_saved_bqm(self, *, graph_format: GraphFormat) -> BqmWrapper:
         """
@@ -128,6 +144,8 @@ class OrchestratorKernel:
         """
         if self.defer_thread is not None:
             self.defer_thread.stop()
+        if self.event_processor is not None:
+            self.event_processor.stop()
         #if self.sut is not None:
         #    self.sut.stop()
 
@@ -136,12 +154,38 @@ class OrchestratorKernel:
         Start threads
         :return:
         """
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        GlobalsSingleton.get().get_container().register(tickable=self)
+
         self.get_logger().debug("Starting SliceDeferThread")
         self.defer_thread = SliceDeferThread(kernel=self)
         self.defer_thread.start()
+        self.event_processor = EventProcessor(name="PeriodicProcessor", logger=self.logger)
+        self.event_processor.start()
         #self.get_logger().debug("Starting ReservationStatusUpdateThread")
         #self.sut = ReservationStatusUpdateThread()
         #self.sut.start()
+
+    def external_tick(self, *, cycle: int):
+        """
+        External tick
+        @param cycle
+        """
+        try:
+            self.lock.acquire()
+            model_list = []
+            for graph_format, cached_bqm in self.bqm_cache.items():
+                if cached_bqm.can_refresh():
+                    model_list.append(graph_format)
+            if self.event_processor is not None and len(model_list) > 0:
+                self.event_processor.enqueue(incoming=PollEvent(model_types=model_list))
+        except Exception as e:
+            self.logger.error(f"Error occurred while doing periodic processing: {e}")
+        finally:
+            self.lock.release()
+
+    def get_name(self) -> str:
+        return self.__class__.__name__
 
 
 class OrchestratorKernelSingleton:

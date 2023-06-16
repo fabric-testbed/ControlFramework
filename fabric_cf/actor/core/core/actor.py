@@ -46,7 +46,6 @@ from fabric_cf.actor.core.container.message_service import MessageService
 from fabric_cf.actor.core.core.event_processor import TickEvent, EventType, EventProcessor
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.kernel_wrapper import KernelWrapper
-from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.slice import SliceTypes
@@ -787,7 +786,7 @@ class ActorMixin(ABCActorMixin):
         self.message_service.stop()
 
         for x in self.event_processors.values():
-            x.start()
+            x.stop()
 
         if self.plugin.get_handler_processor() is not None:
             self.plugin.get_handler_processor().shutdown()
