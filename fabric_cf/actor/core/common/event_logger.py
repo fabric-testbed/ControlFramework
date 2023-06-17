@@ -59,7 +59,7 @@ class EventLogger:
         Log Slice Event for metrics
         """
         try:
-            log_message = f"CFEL Slice event slc:{slice_object.get_slice_name()}:{slice_object.get_slice_id()} " \
+            log_message = f"CFEL Slice event slc:{slice_object.get_slice_id()} " \
                           f"{action} by prj:{slice_object.get_project_id()} " \
                           f"usr:{slice_object.get_owner().get_oidc_sub_claim()}:{slice_object.get_owner().get_email()}"
 
@@ -82,7 +82,7 @@ class EventLogger:
             lc = LogCollector()
             lc.collect_resource_attributes(source=sliver)
 
-            log_message = f"CFEL Sliver event slc:{slice_object.get_slice_name()}:{slice_object.get_slice_id()} " \
+            log_message = f"CFEL Sliver event slc:{slice_object.get_slice_id()} " \
                           f"slvr:{sliver.get_reservation_info().reservation_id} of " \
                           f"type {sliver.get_type()} {sliver.get_reservation_info().reservation_state} " \
                           f"by prj:{slice_object.get_project_id()} usr:{slice_object.get_owner().get_oidc_sub_claim()}" \

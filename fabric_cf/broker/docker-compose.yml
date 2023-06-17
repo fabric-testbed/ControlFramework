@@ -23,7 +23,7 @@ services:
       - NEO4J_server_http_listen__address=${NEO4J_server_http_advertised__address:-server:7474}
       - NEO4J_server_https_advertised__address=${NEO4J_server_https_advertised__address:-server:7473}
       - NEO4J_server_https_listen__address=${NEO4J_server_https_advertised__address:-server:7473}
-      - NEO4J_dbms_memory_pagecache_size=${NEO4J_dbms_memory_pagecache_size:-512M}
+      - NEO4J_server_memory_pagecache_size=${NEO4J_server_memory_pagecache_size:-512M}
   database:
     image: fabrictestbed/postgres:12.3
     container_name: broker-db
@@ -54,7 +54,7 @@ services:
     build:
       context: ../../../
       dockerfile: Dockerfile-broker
-    image: broker:1.5.0
+    image: broker:1.5.1
     container_name: broker
     restart: always
     networks:
