@@ -785,6 +785,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                      inv: NetworkServiceInventory, sliver: NetworkServiceSliver,
                                      owner_mpls: NetworkServiceSliver, owner_ns: NetworkServiceSliver,
                                      node_id_to_reservations: dict):
+        if not len(peered_interfaces):
+            return
         for pfs in peered_interfaces:
             name, site_node_type_name = pfs.get_node_map()
             site = site_node_type_name
