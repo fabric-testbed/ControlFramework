@@ -108,10 +108,8 @@ class OrchestratorHandler:
                 result = ID(uid=next(iter(brokers), None).get_guid())
                 self.controller_state.set_broker(broker=result)
                 return result
-        except Exception:
-            self.logger.error(traceback.format_exc())
-
-        return None
+        except Exception as e:
+            self.logger.error(f"Error occurred: {e}", stack_info=True)
 
     def discover_broker_query_model(self, *, controller: ABCMgmtControllerMixin, token: str = None,
                                     level: int = 10, graph_format: GraphFormat = GraphFormat.GRAPHML,
@@ -126,13 +124,12 @@ class OrchestratorHandler:
         :return str or None
         """
         broker_query_model = None
-        if not force_refresh:
-            saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format)
-            if saved_bqm is not None:
-                if not saved_bqm.can_refresh():
-                    broker_query_model = saved_bqm.get_bqm()
-                else:
-                    saved_bqm.start_refresh()
+        saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format)
+        if saved_bqm is not None:
+            if (force_refresh and saved_bqm.refresh_in_progress) or not saved_bqm.can_refresh():
+                broker_query_model = saved_bqm.get_bqm()
+            else:
+                saved_bqm.start_refresh()
 
         if broker_query_model is None:
             broker = self.get_broker(controller=controller)

@@ -39,7 +39,8 @@ from fabric_cf.actor.core.util.iterable_queue import IterableQueue
 class EventType(enum.Enum):
     TickEvent = enum.auto(),
     InterActorEvent = enum.auto(),
-    SyncEvent = enum.auto()
+    SyncEvent = enum.auto(),
+    PollEvent = enum.auto
 
     def __str__(self):
         return self.name
