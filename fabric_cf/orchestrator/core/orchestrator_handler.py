@@ -272,6 +272,7 @@ class OrchestratorHandler:
             auth.guid = self.controller_state.get_management_actor().get_guid()
             auth.oidc_sub_claim = fabric_token.get_uuid()
             auth.email = fabric_token.get_email()
+            auth.token = token
             slice_obj.set_owner(auth)
             slice_obj.set_project_id(project)
             slice_obj.set_project_name(project_name)
@@ -437,6 +438,7 @@ class OrchestratorHandler:
                                             http_error_code=NOT_FOUND)
 
             slice_obj = next(iter(slice_list))
+            slice_obj.owner.token = token
             if slice_obj.get_graph_id() is None:
                 raise OrchestratorException(f"Slice# {slice_obj} does not have graph id")
 
@@ -676,6 +678,7 @@ class OrchestratorHandler:
                                             http_error_code=NOT_FOUND)
 
             slice_object = next(iter(slice_list))
+            slice_object.owner.token = token
 
             slice_state = SliceState(slice_object.get_state())
             if SliceState.is_dead_or_closing(state=slice_state):

@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import hashlib
 import logging
 import traceback
 
@@ -54,14 +55,35 @@ class EventLogger:
                                             log_retain=log_retain, log_size=log_size, logger=logger,
                                             log_format=log_format)
 
+    @staticmethod
+    def __generate_sha256(*, token: str):
+        """
+        Generate SHA 256 for a token
+        @param token token string
+        """
+        # Create a new SHA256 hash object
+        sha256_hash = hashlib.sha256()
+
+        # Convert the string to bytes and update the hash object
+        sha256_hash.update(token.encode('utf-8'))
+
+        # Get the hexadecimal representation of the hash
+        sha256_hex = sha256_hash.hexdigest()
+
+        return sha256_hex
+
     def log_slice_event(self, *, slice_object: SliceAvro, action: ActionId, topology: ExperimentTopology = None):
         """
         Log Slice Event for metrics
         """
         try:
+            owner = slice_object.get_owner()
             log_message = f"CFEL Slice event slc:{slice_object.get_slice_id()} " \
                           f"{action} by prj:{slice_object.get_project_id()} " \
-                          f"usr:{slice_object.get_owner().get_oidc_sub_claim()}:{slice_object.get_owner().get_email()}"
+                          f"usr:{owner.get_oidc_sub_claim()}:{owner.get_email()}"
+            if owner.get_token() is not None:
+                token_hash = self.__generate_sha256(token=owner.get_token())
+                log_message += f":{token_hash}"
 
             if topology is not None:
                 lc = LogCollector()
@@ -82,11 +104,18 @@ class EventLogger:
             lc = LogCollector()
             lc.collect_resource_attributes(source=sliver)
 
+            owner = slice_object.get_owner()
             log_message = f"CFEL Sliver event slc:{slice_object.get_slice_id()} " \
                           f"slvr:{sliver.get_reservation_info().reservation_id} of " \
                           f"type {sliver.get_type()} {sliver.get_reservation_info().reservation_state} " \
-                          f"by prj:{slice_object.get_project_id()} usr:{slice_object.get_owner().get_oidc_sub_claim()}" \
-                          f":{slice_object.get_owner().get_email()} {str(lc)}"
+                          f"by prj:{slice_object.get_project_id()} usr:{owner.get_oidc_sub_claim()}" \
+                          f":{owner.get_email()}"
+
+            if owner.get_token() is not None:
+                token_hash = self.__generate_sha256(token=owner.get_token())
+                log_message += f":{token_hash}"
+
+            log_message += f" {str(lc)}"
 
             self.logger.info(log_message)
         except Exception as e:
