@@ -29,6 +29,7 @@ from fim.slivers.attached_components import AttachedComponentsInfo
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
+from fim.slivers.topology_diff import WhatsModifiedFlag
 from fim.user import Capacities
 
 from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
@@ -48,6 +49,18 @@ class NetworkServiceControl(ResourceControl):
     """
     Resource Control for Network Service
     """
+    @staticmethod
+    def __has_sliver_changed(current: NetworkServiceSliver, requested: NetworkServiceSliver):
+        diff = current.diff(other_sliver=requested)
+        if diff is None:
+            return False
+
+        if diff.modified is not None and diff.modified.services is not None:
+            for new_ns, flag in diff.modified.services:
+                if not (flag & WhatsModifiedFlag.LABELS or flag & WhatsModifiedFlag.CAPACITIES):
+                    return False
+        return True
+
     def assign(self, *, reservation: ABCAuthorityReservation, delegation_name: str,
                graph_node: BaseSliver, existing_reservations: List[ABCReservationMixin]) -> ResourceSet:
         """
@@ -85,8 +98,7 @@ class NetworkServiceControl(ResourceControl):
             gained = UnitSet(plugin=self.authority.get_plugin(), units={unit.reservation_id: unit})
         else:
             current_sliver = current.get_sliver()
-            diff = current_sliver.diff(other_sliver=requested)
-            if diff is not None:
+            if self.__has_sliver_changed(current=current_sliver, requested=requested):
                 unit = Unit(rid=reservation.get_reservation_id(), slice_id=reservation.get_slice_id(),
                             actor_id=self.authority.get_guid(), sliver=requested, rtype=resource_type,
                             properties=reservation.get_slice().get_config_properties())
