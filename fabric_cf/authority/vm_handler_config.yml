@@ -50,14 +50,14 @@ runtime:
     docker_ubuntu_20: ubuntu
     docker_ubuntu_22: ubuntu
 playbooks:
-  location: /etc/fabric/actor/playbooks
-  inventory_location: /etc/fabric/actor/playbooks/inventory
+  location: fabric_am/playbooks
+  inventory_location: fabric_am/playbooks/inventory
   admin_ssh_key: /root/.ssh/id_rsa_nova
   VM: head_vm_provisioning.yml
   GPU: worker_pci_provisioning.yml
   SmartNIC: worker_pci_provisioning.yml
   SharedNIC: worker_pci_provisioning.yml
-  FPGA: worker_pci_provisioning.yml
+  FPGA: fpga_provisioning.yml
   NVME: worker_pci_provisioning.yml
   Storage: head_volume_provisioning.yml
   SharedNIC-OpenStack-vNIC: head_port_provisioning.yml
