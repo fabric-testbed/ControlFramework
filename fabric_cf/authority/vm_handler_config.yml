@@ -50,8 +50,8 @@ runtime:
     docker_ubuntu_20: ubuntu
     docker_ubuntu_22: ubuntu
 playbooks:
-  location: fabric_am/playbooks
-  inventory_location: fabric_am/playbooks/inventory
+  location: /etc/fabric/actor/playbooks
+  inventory_location: /etc/fabric/actor/playbooks/inventory
   admin_ssh_key: /root/.ssh/id_rsa_nova
   VM: head_vm_provisioning.yml
   GPU: worker_pci_provisioning.yml
