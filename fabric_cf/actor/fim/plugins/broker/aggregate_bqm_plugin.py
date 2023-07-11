@@ -37,8 +37,8 @@ from fim.graph.resources.networkx_abqm import NetworkXAggregateBQM
 from fim.slivers.capacities_labels import Capacities, Flags
 from fim.slivers.delegations import DelegationFormat
 from fim.slivers.maintenance_mode import MaintenanceInfo, MaintenanceEntry, MaintenanceState
-from fim.slivers.network_node import CompositeNodeSliver, NodeType
-from fim.slivers.attached_components import ComponentSliver, ComponentType
+from fim.slivers.network_node import CompositeNodeSliver, NodeType, NodeSliver
+from fim.slivers.attached_components import ComponentSliver, ComponentType, AttachedComponentsInfo
 from fim.slivers.interface_info import InterfaceType
 from fim.slivers.network_service import ServiceType
 
@@ -71,6 +71,9 @@ class AggregatedBQMPlugin:
         site = self.actor.get_plugin().get_database().get_site(site_name=site_name)
         if site is not None:
             result = site.get_maintenance_info().copy()
+            if result.get(site_name) is None:
+                entry = MaintenanceEntry(state=MaintenanceState.Active)
+                result.add(site_name, entry)
         else:
             result = MaintenanceInfo()
             entry = MaintenanceEntry(state=MaintenanceState.Active)
@@ -133,7 +136,7 @@ class AggregatedBQMPlugin:
         :param kwargs:
         :return:
         """
-        if kwargs.get('query_level', None) is None or kwargs['query_level'] != 1:
+        if kwargs.get('query_level', None) is None or kwargs['query_level'] > 2:
             return cbm.clone_graph(new_graph_id=str(uuid.uuid4()))
 
         # do a one-pass aggregation of servers, their components and interfaces
@@ -174,6 +177,7 @@ class AggregatedBQMPlugin:
 
             loc = None
             ptp = False
+            workers = []
             for sliver in ls:
                 if sliver.get_type() != NodeType.Server:
                     # skipping NAS, Facility and dataplane switches
@@ -181,6 +185,14 @@ class AggregatedBQMPlugin:
                         # keep track of facilities for each site
                         facilities_by_site[s].append(sliver)
                     continue
+                # Build worker sliver to hold per worker information
+                worker_sliver = NodeSliver()
+                worker_sliver.capacities = Capacities()
+                worker_sliver.capacity_allocations = Capacities()
+                worker_sliver.resource_name = sliver.get_name()
+                worker_sliver.resource_type = NodeType.Server
+                worker_sliver.set_site(s)
+                worker_sliver.node_id = str(uuid.uuid4())
                 if self.DEBUG_FLAG:
                     # for debugging and running in a test environment
                     allocated_comp_caps = dict()
@@ -188,6 +200,7 @@ class AggregatedBQMPlugin:
                     # query database for everything taken on this node
                     allocated_caps, allocated_comp_caps = self.__occupied_node_capacity(node_id=sliver.node_id)
                     site_sliver.capacity_allocations = site_sliver.capacity_allocations + allocated_caps
+                    worker_sliver.capacity_allocations = allocated_caps
 
                 # get the location if available
                 if loc is None:
@@ -206,6 +219,29 @@ class AggregatedBQMPlugin:
                     if delegation.get_format() == DelegationFormat.SinglePool:
                         site_sliver.capacities = site_sliver.capacities + \
                             delegation.get_details()
+                        worker_sliver.capacities = delegation.get_details()
+
+                # collect available components in lists by type and model for the site (for later aggregation)
+                if sliver.attached_components_info is None:
+                    continue
+                worker_sliver.attached_components_info = AttachedComponentsInfo()
+                for comp in sliver.attached_components_info.list_devices():
+                    rt = comp.resource_type
+                    rm = comp.resource_model
+                    if site_comps_by_type[rt].get(rm) is None:
+                        site_comps_by_type[rt][rm] = list()
+                    site_comps_by_type[rt][rm].append(comp)
+                    name = f"{rt}-{rm}"
+                    # Add per worker component availability
+                    if worker_sliver.attached_components_info.devices.get(name) is None:
+                        worker_comp_sliver = ComponentSliver()
+                        worker_comp_sliver.resource_name = name
+                        worker_comp_sliver.capacities = Capacities()
+                        worker_comp_sliver.capacity_allocations = Capacities()
+                        worker_comp_sliver.node_id = str(uuid.uuid4())
+                        worker_sliver.attached_components_info.devices[name] = worker_comp_sliver
+
+                    worker_sliver.attached_components_info.devices[name].capacities += comp.capacities
 
                 # merge allocated component capacities
                 for kt, v in allocated_comp_caps.items():
@@ -214,16 +250,11 @@ class AggregatedBQMPlugin:
                             site_allocated_comps_caps_by_type[kt][km] = Capacities()
                         site_allocated_comps_caps_by_type[kt][km] = site_allocated_comps_caps_by_type[kt][km] + \
                                                                     vcap
+                        name = f"{kt}-{km}"
+                        if worker_sliver.attached_components_info.devices.get(name) is not None:
+                            worker_sliver.attached_components_info.devices[name].capacity_allocations += vcap
 
-                # collect available components in lists by type and model for the site (for later aggregation)
-                if sliver.attached_components_info is None:
-                    continue
-                for comp in sliver.attached_components_info.list_devices():
-                    rt = comp.resource_type
-                    rm = comp.resource_model
-                    if site_comps_by_type[rt].get(rm) is None:
-                        site_comps_by_type[rt][rm] = list()
-                    site_comps_by_type[rt][rm].append(comp)
+                workers.append(worker_sliver)
 
             # set location to whatever is available
             site_sliver.set_location(loc)
@@ -235,6 +266,24 @@ class AggregatedBQMPlugin:
             site_props = abqm.node_sliver_to_graph_properties_dict(site_sliver)
             abqm.add_node(node_id=site_sliver.node_id, label=ABCPropertyGraph.CLASS_CompositeNode,
                           props=site_props)
+
+            # Add per worker metrics for query level 2
+            if kwargs['query_level'] == 2:
+                for w in workers:
+                    # Add workers
+                    abqm.add_node(node_id=w.node_id, label=ABCPropertyGraph.CLASS_NetworkNode,
+                                  props=abqm.node_sliver_to_graph_properties_dict(w))
+                    # Connect workers to Site Node
+                    abqm.add_link(node_a=site_sliver.node_id, rel=ABCPropertyGraph.REL_HAS, node_b=w.node_id)
+                    if w.attached_components_info is None:
+                        continue
+                    # Add components
+                    for c in w.attached_components_info.list_devices():
+                        abqm.add_node(node_id=c.node_id, label=ABCPropertyGraph.CLASS_Component,
+                                      props=abqm.node_sliver_to_graph_properties_dict(c))
+                        # Connect components to the worker
+                        abqm.add_link(node_a=w.node_id, rel=ABCPropertyGraph.REL_HAS, node_b=c.node_id)
+
             # add a network service
             ns_id = str(uuid.uuid4())
             site_to_ns_node_id[s] = ns_id

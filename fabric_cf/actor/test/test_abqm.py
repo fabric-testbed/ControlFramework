@@ -86,6 +86,21 @@ class ABQM_Test(unittest.TestCase):
         with open('abqm.json', 'w') as f:
             f.write(abqm_json)
 
+        abqm_level2 = plugin.plug_produce_bqm(cbm=cbm, query_level=2)
+
+        abqm_level2.validate_graph()
+
+        abqm_level2_string = abqm_level2.serialize_graph()
+
+        print('Writing ABQM to abqm_level2.graphml')
+        with open('abqm_level2.graphml', 'w') as f:
+            f.write(abqm_level2_string)
+
+        abqm_level2_json = abqm.serialize_graph(format=GraphFormat.JSON_NODELINK)
+        print('Writing ABQM to abqm_level2.json')
+        with open('abqm_level2.json', 'w') as f:
+            f.write(abqm_level2_json)
+
         print('Writing CBM to cbm.graphml')
         cbm_string = cbm.serialize_graph()
         with open('cbm.graphml', 'w') as f:
@@ -126,5 +141,15 @@ class ABQM_Test(unittest.TestCase):
         print('Writing ABQM to abqm-from-cbm.graphml')
         with open('abqm-from-cbm.graphml', 'w') as f:
             f.write(abqm_string)
+
+        abqm2 = plugin.plug_produce_bqm(cbm=cbm, query_level=2)
+
+        abqm2.validate_graph()
+
+        abqm2_string = abqm2.serialize_graph()
+
+        print('Writing ABQM to abqm2-from-cbm.graphml')
+        with open('abqm2-from-cbm.graphml', 'w') as f:
+            f.write(abqm2_string)
 
         self.n4j_imp.delete_all_graphs()
