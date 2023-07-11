@@ -239,6 +239,8 @@ class AggregatedBQMPlugin:
                         worker_comp_sliver.capacities = Capacities()
                         worker_comp_sliver.capacity_allocations = Capacities()
                         worker_comp_sliver.node_id = str(uuid.uuid4())
+                        worker_comp_sliver.set_type(rt)
+                        worker_comp_sliver.set_model(rm)
                         worker_sliver.attached_components_info.devices[name] = worker_comp_sliver
 
                     worker_sliver.attached_components_info.devices[name].capacities += comp.capacities
@@ -463,4 +465,7 @@ class AggregatedBQMPlugin:
                 abqm.add_link(node_a=fac_link_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=fac_sp_id)
                 abqm.add_link(node_a=fac_sp_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=site_to_ns_node_id[s])
 
+        print(f"               cpu: {w.capacities.cpu}/{w.capacity_allocations.cpu if w.capacity_allocations is not None else 0}, "
+            f"core: {w.capacities.core}/{w.capacity_allocations.core if w.capacity_allocations is not None else 0}, "
+            f"ram: {w.capacities.ram}/{w.capacity_allocations.ram if w.capacity_allocations is not None else 0}")
         return abqm
