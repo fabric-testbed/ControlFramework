@@ -239,6 +239,8 @@ class AggregatedBQMPlugin:
                         worker_comp_sliver.capacities = Capacities()
                         worker_comp_sliver.capacity_allocations = Capacities()
                         worker_comp_sliver.node_id = str(uuid.uuid4())
+                        worker_comp_sliver.set_type(rt)
+                        worker_comp_sliver.set_model(rm)
                         worker_sliver.attached_components_info.devices[name] = worker_comp_sliver
 
                     worker_sliver.attached_components_info.devices[name].capacities += comp.capacities
