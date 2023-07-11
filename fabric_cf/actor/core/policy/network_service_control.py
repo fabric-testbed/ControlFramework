@@ -25,24 +25,18 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from typing import List
 
-from fim.slivers.attached_components import AttachedComponentsInfo
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
 from fim.slivers.topology_diff import WhatsModifiedFlag
-from fim.user import Capacities
 
 from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
-from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import AuthorityException
 from fabric_cf.actor.core.core.unit import Unit
 from fabric_cf.actor.core.core.unit_set import UnitSet
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.policy.resource_control import ResourceControl
-from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
-from fabric_cf.actor.fim.fim_helper import FimHelper
 
 
 class NetworkServiceControl(ResourceControl):
