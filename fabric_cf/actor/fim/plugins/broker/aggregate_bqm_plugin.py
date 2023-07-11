@@ -292,27 +292,29 @@ class AggregatedBQMPlugin:
             abqm.add_node(node_id=ns_id, label=ABCPropertyGraph.CLASS_NetworkService, props=ns_props)
             abqm.add_link(node_a=site_sliver.node_id, rel=ABCPropertyGraph.REL_HAS, node_b=ns_id)
 
-            # create a component sliver for every component type/model pairing
-            # and add a node for it linking back to site node
-            for ctype, cdict in site_comps_by_type.items():
-                for cmodel, comp_list in cdict.items():
-                    comp_sliver = ComponentSliver()
-                    # count what is available
-                    comp_sliver.capacities = Capacities()
-                    # count what is taken (ignore those type/model pairings that were unused)
-                    comp_sliver.capacity_allocations = site_allocated_comps_caps_by_type[ctype].get(cmodel) or \
-                                                       Capacities()
-                    comp_sliver.set_type(ctype)
-                    comp_sliver.set_model(cmodel)
-                    comp_sliver.set_name(str(ctype) + '-' + cmodel)
-                    for comp in comp_list:
-                        comp_sliver.capacities = comp_sliver.capacities + comp.capacities
-                    comp_node_id = str(uuid.uuid4())
-                    comp_props = abqm.component_sliver_to_graph_properties_dict(comp_sliver)
-                    abqm.add_node(node_id=comp_node_id, label=ABCPropertyGraph.CLASS_Component,
-                                  props=comp_props)
-                    abqm.add_link(node_a=site_sliver.node_id, rel=ABCPropertyGraph.REL_HAS,
-                                  node_b=comp_node_id)
+            # Site level component information is only passed for query_level=1
+            if kwargs['query_level'] == 1:
+                # create a component sliver for every component type/model pairing
+                # and add a node for it linking back to site node
+                for ctype, cdict in site_comps_by_type.items():
+                    for cmodel, comp_list in cdict.items():
+                        comp_sliver = ComponentSliver()
+                        # count what is available
+                        comp_sliver.capacities = Capacities()
+                        # count what is taken (ignore those type/model pairings that were unused)
+                        comp_sliver.capacity_allocations = site_allocated_comps_caps_by_type[ctype].get(cmodel) or \
+                                                           Capacities()
+                        comp_sliver.set_type(ctype)
+                        comp_sliver.set_model(cmodel)
+                        comp_sliver.set_name(str(ctype) + '-' + cmodel)
+                        for comp in comp_list:
+                            comp_sliver.capacities = comp_sliver.capacities + comp.capacities
+                        comp_node_id = str(uuid.uuid4())
+                        comp_props = abqm.component_sliver_to_graph_properties_dict(comp_sliver)
+                        abqm.add_node(node_id=comp_node_id, label=ABCPropertyGraph.CLASS_Component,
+                                      props=comp_props)
+                        abqm.add_link(node_a=site_sliver.node_id, rel=ABCPropertyGraph.REL_HAS,
+                                      node_b=comp_node_id)
 
         # get all intersite links - add them to the aggregated BQM graph
         intersite_links = cbm.get_intersite_links()
