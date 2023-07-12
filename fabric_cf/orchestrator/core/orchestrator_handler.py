@@ -143,7 +143,7 @@ class OrchestratorHandler:
                 raise OrchestratorException(http_error_code=NOT_FOUND, message="Resource(s) not found!")
             broker_query_model = model.get_model()
 
-            self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format)
+            self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format, level=level)
 
         return broker_query_model
 
