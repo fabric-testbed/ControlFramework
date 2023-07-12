@@ -176,9 +176,9 @@ class OrchestratorKernel(ABCTick):
         try:
             self.lock.acquire()
             model_level_list = []
-            for graph_format, cached_bqm in self.bqm_cache.items():
+            for cached_bqm in self.bqm_cache.values():
                 if cached_bqm.can_refresh():
-                    model_level_list.append((graph_format, cached_bqm.get_level()))
+                    model_level_list.append((cached_bqm.get_graph_format(), cached_bqm.get_level()))
             if self.event_processor is not None and len(model_level_list) > 0:
                 self.event_processor.enqueue(incoming=PollEvent(model_level_list=model_level_list))
         except Exception as e:
