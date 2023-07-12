@@ -38,6 +38,7 @@ class BqmWrapper:
         self.last_query_time = None
         self.refresh_interval_in_seconds = 60
         self.refresh_in_progress = False
+        self.level = 1
 
     def set_refresh_interval(self, *, refresh_interval: int):
         """
@@ -58,16 +59,18 @@ class BqmWrapper:
             return True
         return False
 
-    def save(self, *, bqm: str, graph_format: GraphFormat):
+    def save(self, *, bqm: str, graph_format: GraphFormat, level: int):
         """
         Save the BQM
         @param bqm: Broker Query Model
         @param graph_format: Broker Query Model Format
+        @param level: Level
         """
         self.graph_format = graph_format
         self.bqm = bqm
         self.last_query_time = datetime.now(timezone.utc)
         self.refresh_in_progress = False
+        self.level = level
 
     def start_refresh(self):
         self.refresh_in_progress = True
@@ -86,3 +89,8 @@ class BqmWrapper:
         """
         return self.graph_format
 
+    def get_level(self) -> int:
+        """
+        Return BQM level
+        """
+        return self.level
