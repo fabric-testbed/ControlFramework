@@ -598,6 +598,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         delegation_id = None
         node_id_list = self.__candidate_nodes(sliver=sliver)
 
+        if len(node_id_list) == 0 and sliver.site not in self.combined_broker_model.get_sites():
+            error_msg = f'Unknown site {sliver.site} requested for {reservation}'
+            self.logger.error(error_msg)
+            return delegation_id, sliver, error_msg
+
         node_id_list = self.__prune_nodes_in_maintenance(node_id_list=node_id_list,
                                                          site=sliver.site,
                                                          reservation=reservation)
