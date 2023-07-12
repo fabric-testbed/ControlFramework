@@ -124,9 +124,9 @@ class OrchestratorHandler:
         :return str or None
         """
         broker_query_model = None
-        saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format)
+        saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format, level=level)
         if saved_bqm is not None:
-            if (force_refresh and saved_bqm.refresh_in_progress) or not saved_bqm.can_refresh():
+            if not force_refresh and not saved_bqm.can_refresh() and not saved_bqm.refresh_in_progress:
                 broker_query_model = saved_bqm.get_bqm()
             else:
                 saved_bqm.start_refresh()
@@ -140,10 +140,11 @@ class OrchestratorHandler:
             model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
                                                       graph_format=graph_format)
             if model is None or model.get_model() is None or model.get_model() == '':
-                raise OrchestratorException(http_error_code=NOT_FOUND, message="Resource(s) not found!")
+                raise OrchestratorException(http_error_code=NOT_FOUND, message=f"Resource(s) not found for "
+                                                                               f"level: {level} format: {graph_format}!")
             broker_query_model = model.get_model()
 
-            self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format)
+            self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format, level=level)
 
         return broker_query_model
 
@@ -818,7 +819,7 @@ class OrchestratorHandler:
 
             rid = ID(uid=sliver_id) if sliver_id is not None else None
 
-            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.poa)
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.modify)
             email = fabric_token.get_email()
             project, tags, project_name = fabric_token.get_first_project()
 
