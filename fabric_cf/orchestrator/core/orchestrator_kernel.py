@@ -41,15 +41,15 @@ from fabric_cf.orchestrator.core.slice_defer_thread import SliceDeferThread
 
 
 class PollEvent(ABCActorEvent):
-    def __init__(self, *, model_types: list):
-        self.model_types = model_types
+    def __init__(self, *, model_level_list: list):
+        self.model_level_list = model_level_list
 
     def process(self):
         from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
         oh = OrchestratorHandler()
-        for m in self.model_types:
+        for graph_format, level in self.model_level_list:
             oh.discover_broker_query_model(controller=oh.controller_state.controller,
-                                           graph_format=m, force_refresh=True)
+                                           graph_format=graph_format, force_refresh=True, level=level)
 
 
 class OrchestratorKernel(ABCTick):
@@ -67,29 +67,31 @@ class OrchestratorKernel(ABCTick):
         self.bqm_cache = {}
         self.event_processor = None
         
-    def get_saved_bqm(self, *, graph_format: GraphFormat) -> BqmWrapper:
+    def get_saved_bqm(self, *, graph_format: GraphFormat, level: int) -> BqmWrapper:
         """
         Get Saved BQM from cache
         """
         try:
             self.lock.acquire()
-            saved_bqm = self.bqm_cache.get(graph_format, None)
+            key = f"{graph_format}-{level}"
+            saved_bqm = self.bqm_cache.get(key, None)
             return saved_bqm
         finally:
             self.lock.release()
 
-    def save_bqm(self, *, bqm: str, graph_format: GraphFormat):
+    def save_bqm(self, *, bqm: str, graph_format: GraphFormat, level: int):
         try:
             self.lock.acquire()
-            saved_bqm = self.bqm_cache.get(graph_format, None)
+            key = f"{graph_format}-{level}"
+            saved_bqm = self.bqm_cache.get(key, None)
             if saved_bqm is None:
                 from fabric_cf.actor.core.container.globals import GlobalsSingleton
                 refresh_interval = GlobalsSingleton.get().get_config().get_global_config().get_bqm_config().get(
                     Constants.REFRESH_INTERVAL, None)
                 saved_bqm = BqmWrapper()
                 saved_bqm.set_refresh_interval(refresh_interval=int(refresh_interval))
-            saved_bqm.save(bqm=bqm, graph_format=graph_format)
-            self.bqm_cache[graph_format] = saved_bqm
+            saved_bqm.save(bqm=bqm, graph_format=graph_format, level=level)
+            self.bqm_cache[key] = saved_bqm
         finally:
             self.lock.release()
 
@@ -173,12 +175,12 @@ class OrchestratorKernel(ABCTick):
         """
         try:
             self.lock.acquire()
-            model_list = []
+            model_level_list = []
             for graph_format, cached_bqm in self.bqm_cache.items():
                 if cached_bqm.can_refresh():
-                    model_list.append(graph_format)
-            if self.event_processor is not None and len(model_list) > 0:
-                self.event_processor.enqueue(incoming=PollEvent(model_types=model_list))
+                    model_level_list.append((graph_format, cached_bqm.get_level()))
+            if self.event_processor is not None and len(model_level_list) > 0:
+                self.event_processor.enqueue(incoming=PollEvent(model_level_list=model_level_list))
         except Exception as e:
             self.logger.error(f"Error occurred while doing periodic processing: {e}")
         finally:
