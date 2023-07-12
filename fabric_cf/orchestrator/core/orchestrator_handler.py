@@ -126,7 +126,7 @@ class OrchestratorHandler:
         broker_query_model = None
         saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format, level=level)
         if saved_bqm is not None:
-            if (force_refresh and saved_bqm.refresh_in_progress) or not saved_bqm.can_refresh():
+            if not force_refresh and not saved_bqm.can_refresh() and not saved_bqm.refresh_in_progress:
                 broker_query_model = saved_bqm.get_bqm()
             else:
                 saved_bqm.start_refresh()
