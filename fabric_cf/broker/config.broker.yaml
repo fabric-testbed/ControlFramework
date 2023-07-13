@@ -76,6 +76,7 @@ oauth:
   jwks-url: https://cm.fabric-testbed.net/credmgr/certs
   # Uses HH:MM:SS (less than 24 hours)
   key-refresh: 00:10:00
+  trl-refresh: 00:01:00
   verify-exp: True
 
 database:

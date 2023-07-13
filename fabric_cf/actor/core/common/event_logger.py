@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import hashlib
 import logging
 import traceback
 
@@ -35,6 +34,7 @@ from fim.user.topology import ExperimentTopology
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import InitializationException
 from fabric_cf.actor.core.util.log_helper import LogHelper
+from fabric_cf.actor.core.util.utils import generate_sha256
 from fabric_cf.actor.security.pdp_auth import ActionId
 
 
@@ -55,23 +55,6 @@ class EventLogger:
                                             log_retain=log_retain, log_size=log_size, logger=logger,
                                             log_format=log_format)
 
-    @staticmethod
-    def __generate_sha256(*, token: str):
-        """
-        Generate SHA 256 for a token
-        @param token token string
-        """
-        # Create a new SHA256 hash object
-        sha256_hash = hashlib.sha256()
-
-        # Convert the string to bytes and update the hash object
-        sha256_hash.update(token.encode('utf-8'))
-
-        # Get the hexadecimal representation of the hash
-        sha256_hex = sha256_hash.hexdigest()
-
-        return sha256_hex
-
     def log_slice_event(self, *, slice_object: SliceAvro, action: ActionId, topology: ExperimentTopology = None):
         """
         Log Slice Event for metrics
@@ -82,7 +65,7 @@ class EventLogger:
                           f"{action} by prj:{slice_object.get_project_id()} " \
                           f"usr:{owner.get_oidc_sub_claim()}:{owner.get_email()}"
             if owner.get_token() is not None:
-                token_hash = self.__generate_sha256(token=owner.get_token())
+                token_hash = generate_sha256(token=owner.get_token())
                 log_message += f":{token_hash}"
 
             if topology is not None:
