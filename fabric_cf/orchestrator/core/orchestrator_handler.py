@@ -395,7 +395,7 @@ class OrchestratorHandler:
 
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
-            projects = fabric_token.get_projects()
+            projects = fabric_token.projects
             project = None
             if len(projects) == 1:
                 project, tags, project_name = fabric_token.first_project
