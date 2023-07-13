@@ -14,11 +14,11 @@ class FabricToken:
     """
     def __init__(self, *, decoded_token: dict, token_hash: str):
         self.decoded_token = decoded_token
-        self.token_hash = token_hash
+        self.hash = token_hash
 
     @property
     def token_hash(self):
-        return self.token_hash
+        return self.hash
 
     @property
     def token(self):

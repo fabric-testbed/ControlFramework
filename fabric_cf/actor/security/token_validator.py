@@ -24,8 +24,10 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import datetime
+import json
 
 from fabric_cm.credmgr.credmgr_proxy import CredmgrProxy, Status
+from fabric_cm.credmgr.swagger_client.rest import ApiException
 from fss_utils.jwt_manager import ValidateCode
 from fss_utils.jwt_validate import JWTValidator
 
@@ -64,7 +66,13 @@ class TokenValidator:
 
         status, trl_or_exception = self.credmgr_proxy.token_revoke_list(token=token)
         if status != Status.OK:
-            raise Exception(f"Unable to fetch token revoke list: {trl_or_exception}")
+            details = None
+            if isinstance(trl_or_exception, ApiException) and trl_or_exception.body is not None:
+                details = json.loads(trl_or_exception.body.decode('utf-8'))
+                errors = details.get('errors')
+                if errors is not None:
+                    details = errors[0].details
+            raise Exception(f"Unable to fetch token revoke list: {trl_or_exception.status}:{trl_or_exception.reason}:{details}")
 
         self.trl_fetched = datetime.datetime.now()
         if trl_or_exception is not None:

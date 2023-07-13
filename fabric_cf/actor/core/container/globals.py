@@ -180,7 +180,7 @@ class Globals:
         oauth_config = self.config.get_oauth_config()
         CREDMGR_CERTS = oauth_config.get(Constants.PROPERTY_CONF_O_AUTH_JWKS_URL, None)
         CREDMGR_KEY_REFRESH = oauth_config.get(Constants.PROPERTY_CONF_O_AUTH_KEY_REFRESH, None)
-        CREDMGR_TRL_REFRESH = oauth_config.get(Constants.PROPERTY_CONF_O_AUTH_TRL_REFRESH, None)
+        CREDMGR_TRL_REFRESH = oauth_config.get(Constants.PROPERTY_CONF_O_AUTH_TRL_REFRESH, '00:01:00')
         self.log.info(f'Initializing JWT Validator to use {CREDMGR_CERTS} endpoint, '
                       f'refreshing keys every {CREDMGR_KEY_REFRESH} HH:MM:SS refreshing '
                       f'token revoke list every {CREDMGR_TRL_REFRESH} HH:MM:SS')
@@ -188,8 +188,9 @@ class Globals:
         self.jwt_validator = JWTValidator(url=CREDMGR_CERTS,
                                           refresh_period=timedelta(hours=t.hour, minutes=t.minute, seconds=t.second))
         from urllib.parse import urlparse
-        self.token_validator = TokenValidator(credmgr_host=urlparse(CREDMGR_CERTS).hostname,
-                                              refresh_period=CREDMGR_TRL_REFRESH,
+        t = datetime.strptime(CREDMGR_KEY_REFRESH, "%H:%M:%S")
+        self.token_validator = TokenValidator(credmgr_host=str(urlparse(CREDMGR_CERTS).hostname),
+                                              refresh_period=timedelta(hours=t.hour, minutes=t.minute, seconds=t.second),
                                               jwt_validator=self.jwt_validator)
 
     def load_config(self):
@@ -415,6 +416,7 @@ class Globals:
             finally:
                 self.lock.release()
         except Exception as e:
+            self.log.error(traceback.format_exc())
             self.fail(e=e)
 
     def stop(self):
