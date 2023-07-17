@@ -51,7 +51,7 @@ class TokenValidator:
         self.credmgr_host = credmgr_host
         assert refresh_period is None or isinstance(refresh_period, datetime.timedelta)
         self.cache_period = refresh_period
-        self.trl = None
+        self.trl = []
         self.trl_fetched = None
         self.credmgr_proxy = CredmgrProxy(credmgr_host=credmgr_host)
         self.jwt_validator = jwt_validator

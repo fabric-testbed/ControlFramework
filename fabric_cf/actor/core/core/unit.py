@@ -142,7 +142,8 @@ class Unit(ConfigToken):
         """
         try:
             self.lock.acquire()
-            self.poa_info = poa_info.copy()
+            if poa_info is not None:
+                self.poa_info = poa_info.copy()
             self.poa_info[Constants.PROPERTY_MESSAGE] = message
             self.transition(to_state=UnitState.ACTIVE)
         finally:
