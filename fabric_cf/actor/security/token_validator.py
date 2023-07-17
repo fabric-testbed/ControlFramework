@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import datetime
 import json
+import logging
 
 from fabric_cm.credmgr.credmgr_proxy import CredmgrProxy, Status
 from fabric_cm.credmgr.swagger_client.rest import ApiException
@@ -54,8 +55,9 @@ class TokenValidator:
         self.trl_fetched = None
         self.credmgr_proxy = CredmgrProxy(credmgr_host=credmgr_host)
         self.jwt_validator = jwt_validator
+        self.logger = logging.getLogger()
 
-    def __fetch_token_revoke_list(self, *, token):
+    def __fetch_token_revoke_list(self, *, project_id: str):
         """
         Fetch TRL from an endpoint and save it
         @param token token
@@ -64,21 +66,20 @@ class TokenValidator:
             if datetime.datetime.now() < self.trl_fetched + self.cache_period:
                 return
 
-        status, trl_or_exception = self.credmgr_proxy.token_revoke_list(token=token)
+        status, trl_or_exception = self.credmgr_proxy.token_revoke_list(project_id=project_id)
         if status != Status.OK:
+            self.logger.error(f"Exception: {trl_or_exception}")
             details = None
             if isinstance(trl_or_exception, ApiException) and trl_or_exception.body is not None:
                 details = json.loads(trl_or_exception.body.decode('utf-8'))
                 errors = details.get('errors')
                 if errors is not None:
-                    details = errors[0].details
+                    details = errors[0].get('details')
             raise Exception(f"Unable to fetch token revoke list: {trl_or_exception.status}:{trl_or_exception.reason}:{details}")
 
         self.trl_fetched = datetime.datetime.now()
         if trl_or_exception is not None:
             self.trl = trl_or_exception
-        else:
-            self.trl = []
 
     def validate_token(self, *, token, verify_exp=False) -> FabricToken:
         """
@@ -88,12 +89,19 @@ class TokenValidator:
         :param verify_exp:
         :return decoded token in a dictionary
         """
+        result = None
+        token_hash = generate_sha256(token=token)
         if self.jwt_validator is not None:
-            self.__fetch_token_revoke_list(token=token)
             code, token_or_exception = self.jwt_validator.validate_jwt(token=token, verify_exp=verify_exp)
             if code is not ValidateCode.VALID:
                 raise TokenException(f"Unable to validate provided token: {code}/{token_or_exception}")
+
+            result = FabricToken(decoded_token=token_or_exception, token_hash=token_hash)
+            project_id, tags, name = result.first_project
+            self.__fetch_token_revoke_list(project_id=project_id)
+            if token_hash in self.trl:
+                raise TokenException(f"Unauthorized: Token: {token_hash} is revoked!")
         else:
             raise TokenException("JWT Token validator not initialized, skipping validation")
 
-        return FabricToken(decoded_token=token_or_exception, token_hash=generate_sha256(token=token))
+        return result
