@@ -34,7 +34,6 @@ from fim.user.topology import ExperimentTopology
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import InitializationException
 from fabric_cf.actor.core.util.log_helper import LogHelper
-from fabric_cf.actor.core.util.utils import generate_sha256
 from fabric_cf.actor.security.pdp_auth import ActionId
 
 
