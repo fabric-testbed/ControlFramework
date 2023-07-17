@@ -260,6 +260,7 @@ class Constants:
     CLAIMS_PROJECTS = "projects"
     UUID = "uuid"
     TAGS = "tags"
+    TOKEN_HASH = "token_hash"
     PROJECT_ID = "project_id"
     USERS = "users"
     DEADLINE = "deadline"

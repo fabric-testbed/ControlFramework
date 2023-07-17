@@ -39,7 +39,7 @@ from fim.slivers.network_service import NetworkServiceSliver
 from fim.user import GraphFormat
 from fim.user.topology import ExperimentTopology
 
-from fabric_cf.actor.core.common.event_logger import EventLogger, EventLoggerSingleton
+from fabric_cf.actor.core.common.event_logger import EventLoggerSingleton
 from fabric_cf.actor.core.kernel.poa import PoaStates
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
@@ -266,7 +266,8 @@ class OrchestratorHandler:
             slice_obj.set_config_properties(value={Constants.USER_SSH_KEY: ssh_key,
                                                    Constants.PROJECT_ID: project,
                                                    Constants.TAGS: tags,
-                                                   Constants.CLAIMS_EMAIL: fabric_token.email})
+                                                   Constants.CLAIMS_EMAIL: fabric_token.email,
+                                                   Constants.TOKEN_HASH: fabric_token.token_hash})
             slice_obj.set_lease_end(lease_end=end_time)
             auth = AuthAvro()
             auth.name = self.controller_state.get_management_actor().get_name()
@@ -483,6 +484,7 @@ class OrchestratorHandler:
             config_props = slice_obj.get_config_properties()
             config_props[Constants.PROJECT_ID] = project
             config_props[Constants.TAGS] = ','.join(tags)
+            config_props[Constants.TOKEN_HASH] = fabric_token.token_hash
             slice_obj.set_config_properties(value=config_props)
 
             if not controller.update_slice(slice_obj=slice_obj, modify_state=True):

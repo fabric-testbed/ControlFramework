@@ -64,8 +64,8 @@ class EventLogger:
             log_message = f"CFEL Slice event slc:{slice_object.get_slice_id()} " \
                           f"{action} by prj:{slice_object.get_project_id()} " \
                           f"usr:{owner.get_oidc_sub_claim()}:{owner.get_email()}"
-            if owner.get_token() is not None:
-                token_hash = generate_sha256(token=owner.get_token())
+            if slice_object.get_config_properties() is not None:
+                token_hash = slice_object.get_config_properties().get(Constants.TOKEN_HASH, "token_hash_not_available")
                 log_message += f":{token_hash}"
 
             if topology is not None:
@@ -94,8 +94,8 @@ class EventLogger:
                           f"by prj:{slice_object.get_project_id()} usr:{owner.get_oidc_sub_claim()}" \
                           f":{owner.get_email()}"
 
-            if owner.get_token() is not None:
-                token_hash = self.__generate_sha256(token=owner.get_token())
+            if slice_object.get_config_properties() is not None:
+                token_hash = slice_object.get_config_properties().get(Constants.TOKEN_HASH, "token_hash_not_available")
                 log_message += f":{token_hash}"
 
             log_message += f" {str(lc)}"
