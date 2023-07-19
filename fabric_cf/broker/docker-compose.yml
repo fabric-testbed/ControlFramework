@@ -54,7 +54,7 @@ services:
     build:
       context: ../../../
       dockerfile: Dockerfile-broker
-    image: broker:1.5.2
+    image: broker:1.6.0
     container_name: broker
     restart: always
     networks:

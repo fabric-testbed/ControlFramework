@@ -85,7 +85,8 @@ class Poa:
     Represents POA issued to a sliver
     """
     def __init__(self, *, poa_id: str = uuid4().__str__(), operation: str, reservation: ABCReservationMixin = None,
-                 sliver_id: ID = None, vcpu_cpu_map: List[Dict[str, str]] = None, node_set: List[str] = None):
+                 sliver_id: ID = None, vcpu_cpu_map: List[Dict[str, str]] = None, node_set: List[str] = None,
+                 keys: List[str] = None):
         self.poa_id = poa_id
         self.operation = operation
         self.state = PoaStates.Nascent
@@ -93,6 +94,7 @@ class Poa:
         self.sliver_id = sliver_id
         self.vcpu_cpu_map = vcpu_cpu_map
         self.node_set = node_set
+        self.keys = keys
         # Sequence number for outgoing poa messages. Increases with every new message.
         self.sequence_poa_out = 0
         # Sequence number for incoming poa messages.
@@ -360,7 +362,7 @@ class Poa:
 class PoaFactory:
     @staticmethod
     def create(*, poa_id: str, operation: str, sliver_id: ID, vcpu_cpu_map: List[Dict[str, str]] = None,
-               node_set: List[str] = None) -> Poa:
+               node_set: List[str] = None, keys: List[str] = None) -> Poa:
         """
         Create POA
         :param poa_id:
@@ -368,8 +370,9 @@ class PoaFactory:
         :param sliver_id:
         :param vcpu_cpu_map:
         :param node_set:
+        :param keys:
         :return:
         """
         result = Poa(poa_id=poa_id, operation=operation, vcpu_cpu_map=vcpu_cpu_map, node_set=node_set,
-                     sliver_id=sliver_id)
+                     sliver_id=sliver_id, keys=keys)
         return result
