@@ -598,6 +598,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         delegation_id = None
         node_id_list = self.__candidate_nodes(sliver=sliver)
 
+        if len(node_id_list) == 0 and sliver.site not in self.combined_broker_model.get_sites():
+            error_msg = f'Unknown site {sliver.site} requested for {reservation}'
+            self.logger.error(error_msg)
+            return delegation_id, sliver, error_msg
+
         node_id_list = self.__prune_nodes_in_maintenance(node_id_list=node_id_list,
                                                          site=sliver.site,
                                                          reservation=reservation)
@@ -738,6 +743,18 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             net_adm_ids = site_adm_ids
             if bqm_component.get_type() != NodeType.Facility and not is_vnic:
                 net_adm_ids = [x for x in adm_ids if not x in site_adm_ids or site_adm_ids.remove(x)]
+                # For sites like EDC which share switch with other sites like NCSA,
+                # the net_adm_ids also includes delegation id from the other side,
+                # this results in this list having more than one entry and no way for
+                # the code to know which delegation is from Network AM
+                # Using a hack here to pick the delegation id from one of the
+                # layer 3 network services in the owner switch
+                if len(net_adm_ids) > 1:
+                    for x in owner_switch.network_service_info.network_services.values():
+                        if x.layer == 'L2':
+                            continue
+                        net_adm_ids = x.get_structural_info().adm_graph_ids
+                        break
             else:
                 if bqm_cp.labels is not None and bqm_cp.labels.ipv4_subnet is not None:
                     ifs_labels = Labels.update(ifs_labels, ipv4_subnet=bqm_cp.labels.ipv4_subnet)

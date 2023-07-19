@@ -73,6 +73,7 @@ oauth:
   jwks-url: https://alpha-2.fabric-testbed.net/credmgr/certs
   # Uses HH:MM:SS (less than 24 hours)
   key-refresh: 00:10:00
+  trl-refresh: 00:01:00
   verify-exp: False
 
 database:
@@ -163,3 +164,8 @@ peers:
       guid: al2s1-am-guid
       type: authority
       kafka-topic: al2s1-am-topic
+  - peer:
+      name: site2-am
+      guid: site2-am-guid
+      type: authority
+      kafka-topic: site2-am-topic
