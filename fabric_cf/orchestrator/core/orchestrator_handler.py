@@ -27,7 +27,7 @@ import time
 import traceback
 from datetime import datetime, timedelta, timezone
 from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.poa_avro import PoaAvro
@@ -39,7 +39,7 @@ from fim.slivers.network_service import NetworkServiceSliver
 from fim.user import GraphFormat
 from fim.user.topology import ExperimentTopology
 
-from fabric_cf.actor.core.common.event_logger import EventLogger, EventLoggerSingleton
+from fabric_cf.actor.core.common.event_logger import EventLoggerSingleton
 from fabric_cf.actor.core.kernel.poa import PoaStates
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
@@ -87,8 +87,8 @@ class OrchestratorHandler:
         fabric_token = AccessChecker.check_access(action_id=action_id, token=id_token, logger=self.logger,
                                                   resource=resource, lease_end_time=lease_end_time)
 
-        if fabric_token.get_subject() is None:
-            raise OrchestratorException(http_error_code=UNAUTHORIZED,message="Invalid token")
+        if fabric_token.subject is None:
+            raise OrchestratorException(http_error_code=UNAUTHORIZED, message="Invalid token")
         return fabric_token
 
     def get_broker(self, *, controller: ABCMgmtControllerMixin) -> ID:
@@ -215,8 +215,8 @@ class OrchestratorHandler:
         topology = None
         try:
             from fabric_cf.actor.security.access_checker import AccessChecker
-            fabric_token = AccessChecker.validate_and_decode_token(token=token, logger=self.logger)
-            project, tags, project_name = fabric_token.get_first_project()
+            fabric_token = AccessChecker.validate_and_decode_token(token=token)
+            project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
             end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time, allow_long_lived=allow_long_lived)
 
@@ -243,7 +243,7 @@ class OrchestratorHandler:
             create_ts = time.time()
             if tags is not None and isinstance(tags, list):
                 tags = ','.join(tags)
-            existing_slices = controller.get_slices(slice_name=slice_name, email=fabric_token.get_email(),
+            existing_slices = controller.get_slices(slice_name=slice_name, email=fabric_token.email,
                                                     project=project)
             self.logger.info(f"GET slices: TIME= {time.time() - create_ts:.0f}")
 
@@ -266,13 +266,15 @@ class OrchestratorHandler:
             slice_obj.set_config_properties(value={Constants.USER_SSH_KEY: ssh_key,
                                                    Constants.PROJECT_ID: project,
                                                    Constants.TAGS: tags,
-                                                   Constants.CLAIMS_EMAIL: fabric_token.get_email()})
+                                                   Constants.CLAIMS_EMAIL: fabric_token.email,
+                                                   Constants.TOKEN_HASH: fabric_token.token_hash})
             slice_obj.set_lease_end(lease_end=end_time)
             auth = AuthAvro()
             auth.name = self.controller_state.get_management_actor().get_name()
             auth.guid = self.controller_state.get_management_actor().get_guid()
-            auth.oidc_sub_claim = fabric_token.get_uuid()
-            auth.email = fabric_token.get_email()
+            auth.oidc_sub_claim = fabric_token.uuid
+            auth.email = fabric_token.email
+            auth.token = token
             slice_obj.set_owner(auth)
             slice_obj.set_project_id(project)
             slice_obj.set_project_name(project_name)
@@ -349,7 +351,7 @@ class OrchestratorHandler:
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
             # Filter slices based on user's email only when querying as_self
-            email = fabric_token.get_email()
+            email = fabric_token.email
             if not as_self:
                 email = None
 
@@ -394,15 +396,15 @@ class OrchestratorHandler:
 
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
-            projects = fabric_token.get_projects()
+            projects = fabric_token.projects
             project = None
             if len(projects) == 1:
-                project, tags, project_name = fabric_token.get_first_project()
+                project, tags, project_name = fabric_token.first_project
             else:
                 as_self = True
 
             # Filter slices based on user's email only when querying as_self
-            email = fabric_token.get_email()
+            email = fabric_token.email
             if not as_self:
                 email = None
             slice_list = controller.get_slices(states=slice_states, email=email, project=project,
@@ -438,6 +440,7 @@ class OrchestratorHandler:
                                             http_error_code=NOT_FOUND)
 
             slice_obj = next(iter(slice_list))
+            slice_obj.owner.token = token
             if slice_obj.get_graph_id() is None:
                 raise OrchestratorException(f"Slice# {slice_obj} does not have graph id")
 
@@ -457,7 +460,7 @@ class OrchestratorHandler:
             # Authorize the slice
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.modify, resource=topology)
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.create, resource=topology)
-            project, tags, project_name = fabric_token.get_first_project()
+            project, tags, project_name = fabric_token.first_project
             broker = self.get_broker(controller=controller)
             if broker is None:
                 raise OrchestratorException("Unable to determine broker proxy for this controller. "
@@ -481,6 +484,7 @@ class OrchestratorHandler:
             config_props = slice_obj.get_config_properties()
             config_props[Constants.PROJECT_ID] = project
             config_props[Constants.TAGS] = ','.join(tags)
+            config_props[Constants.TOKEN_HASH] = fabric_token.token_hash
             slice_obj.set_config_properties(value=config_props)
 
             if not controller.update_slice(slice_obj=slice_obj, modify_state=True):
@@ -519,16 +523,16 @@ class OrchestratorHandler:
 
             slice_guid = ID(uid=slice_id) if slice_id is not None else None
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.delete)
-            project, tags, project_name = fabric_token.get_first_project()
+            project, tags, project_name = fabric_token.first_project
 
-            self.logger.debug(f"Get Slices: {project} {fabric_token.get_email()} ")
+            self.logger.debug(f"Get Slices: {project} {fabric_token.email} ")
             states = None
             if slice_guid is None:
                 states = [SliceState.StableError.value,
                           SliceState.StableOK.value,
                           SliceState.ModifyOK.value,
                           SliceState.ModifyError.value]
-            slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email(),
+            slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.email,
                                                project=project, states=states)
 
             if slice_list is None or len(slice_list) == 0:
@@ -622,7 +626,7 @@ class OrchestratorHandler:
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
             # Filter slices based on user's email only when querying as_self
-            email = fabric_token.get_email()
+            email = fabric_token.email
             if not as_self:
                 email = None
 
@@ -677,6 +681,7 @@ class OrchestratorHandler:
                                             http_error_code=NOT_FOUND)
 
             slice_object = next(iter(slice_list))
+            slice_object.owner.token = token
 
             slice_state = SliceState(slice_object.get_state())
             if SliceState.is_dead_or_closing(state=slice_state):
@@ -689,8 +694,8 @@ class OrchestratorHandler:
                                             f"try again later")
 
             from fabric_cf.actor.security.access_checker import AccessChecker
-            fabric_token = AccessChecker.validate_and_decode_token(token=token, logger=self.logger)
-            project, tags, project_name = fabric_token.get_first_project()
+            fabric_token = AccessChecker.validate_and_decode_token(token=token)
+            project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
             new_end_time = self.__validate_lease_end_time(lease_end_time=new_lease_end_time,
                                                           allow_long_lived=allow_long_lived)
@@ -788,9 +793,9 @@ class OrchestratorHandler:
         controller = self.controller_state.get_management_actor()
         self.logger.debug(f"check_maintenance_mode invoked for Controller: {controller}")
 
-        project, tags, project_name = token.get_first_project()
+        project, tags, project_name = token.first_project
 
-        if not controller.is_slice_provisioning_allowed(project=project, email=token.get_email()):
+        if not controller.is_slice_provisioning_allowed(project=project, email=token.email):
             raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR,
                                         http_error_code=Constants.INTERNAL_SERVER_ERROR_MAINT_MODE)
 
@@ -803,7 +808,7 @@ class OrchestratorHandler:
                         worker = sliver.get_labels().instance_parent
                     status, message = controller.is_sliver_provisioning_allowed(project=project,
                                                                                 site=sliver.get_site(),
-                                                                                email=token.get_email(),
+                                                                                email=token.email,
                                                                                 worker=worker)
                     if not status:
                         raise OrchestratorException(message=message,
@@ -817,14 +822,14 @@ class OrchestratorHandler:
             rid = ID(uid=sliver_id) if sliver_id is not None else None
 
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.modify)
-            email = fabric_token.get_email()
-            project, tags, project_name = fabric_token.get_first_project()
+            email = fabric_token.email
+            project, tags, project_name = fabric_token.first_project
 
             auth = AuthAvro()
             auth.name = self.controller_state.get_management_actor().get_name()
             auth.guid = self.controller_state.get_management_actor().get_guid()
-            auth.oidc_sub_claim = fabric_token.get_uuid()
-            auth.email = fabric_token.get_email()
+            auth.oidc_sub_claim = fabric_token.uuid
+            auth.email = fabric_token.email
             poa.auth = auth
             poa.project_id = project
             poa.rid = sliver_id
@@ -864,19 +869,19 @@ class OrchestratorHandler:
             rid = ID(uid=sliver_id) if sliver_id is not None else None
 
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
-            email = fabric_token.get_email()
-            project, tags, project_name = fabric_token.get_first_project()
+            email = fabric_token.email
+            project, tags, project_name = fabric_token.first_project
 
             poa_states = PoaStates.translate_list(states=states)
 
             auth = AuthAvro()
             auth.name = self.controller_state.get_management_actor().get_name()
             auth.guid = self.controller_state.get_management_actor().get_guid()
-            auth.oidc_sub_claim = fabric_token.get_uuid()
-            auth.email = fabric_token.get_email()
+            auth.oidc_sub_claim = fabric_token.uuid
+            auth.email = fabric_token.email
 
             poa_list = controller.get_poas(rid=rid, poa_id=poa_id, email=email, project_id=project,
-                                           states=states, limit=limit, offset=offset)
+                                           states=poa_states, limit=limit, offset=offset)
             if poa_list is None:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())

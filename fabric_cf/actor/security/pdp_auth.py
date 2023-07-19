@@ -176,27 +176,3 @@ class PdpAuth:
             self.logger.error("PDP response: {}".format(response_json))
             msg = response_json["Response"][0]["AssociatedAdvice"][0]["AttributeAssignment"][0]["Value"]
             raise PdpAuthException(f"PDP Authorization check failed - {msg}")
-
-
-if __name__ == '__main__':
-    oauth_config = {
-        "jwks-url": "https://alpha-2.fabric-testbed.net/certs",
-        "key-refresh": "00:10:00",
-        "verify-exp": False
-    }
-    CREDMGR_CERTS = oauth_config.get(Constants.PROPERTY_CONF_O_AUTH_JWKS_URL, None)
-    CREDMGR_KEY_REFRESH = oauth_config.get(Constants.PROPERTY_CONF_O_AUTH_KEY_REFRESH, None)
-    t = datetime.strptime(CREDMGR_KEY_REFRESH, "%H:%M:%S")
-    jwt_validator = JWTValidator(url=CREDMGR_CERTS,
-                                 refresh_period=timedelta(hours=t.hour, minutes=t.minute, seconds=t.second))
-    logger = logging.getLogger(__name__)
-    token = FabricToken(oauth_config=oauth_config, jwt_validator=jwt_validator, logger=logger,
-                        token="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImI0MTUxNjcyMTExOTFlMmUwNWIyMmI1NGIxZDNiNzY2N2U3NjRhNzQ3NzIyMTg1ZTcyMmU1MmUxNDZmZTQzYWEifQ.eyJlbWFpbCI6Imt0aGFyZTEwQGVtYWlsLnVuYy5lZHUiLCJnaXZlbl9uYW1lIjoiS29tYWwiLCJmYW1pbHlfbmFtZSI6IlRoYXJlamEiLCJuYW1lIjoiS29tYWwgVGhhcmVqYSIsImlzcyI6Imh0dHBzOi8vY2lsb2dvbi5vcmciLCJzdWIiOiJodHRwOi8vY2lsb2dvbi5vcmcvc2VydmVyQS91c2Vycy8xMTkwNDEwMSIsImF1ZCI6ImNpbG9nb246L2NsaWVudF9pZC82MTdjZWNkZDc0ZTMyYmU0ZDgxOGNhMTE1MTUzMWRmZiIsImp0aSI6Imh0dHBzOi8vY2lsb2dvbi5vcmcvb2F1dGgyL2lkVG9rZW4vMjViM2ExMmM4YWIzODNhODcyMjNiOTA3YmRhNDA1MGMvMTY1MDM5NTI4ODA5OSIsImF1dGhfdGltZSI6MTY1MDM5NTI4NywiZXhwIjoxNjUwMzk4OTIxLCJpYXQiOjE2NTAzOTUzMjEsInByb2plY3RzIjp7IkNGIFRlc3QiOltdfSwicm9sZXMiOlsiMTBjMDA5NGEtYWJhZi00ZWY5LWE1MzItMmJlNTNlMmE4OTZiLXBjIiwiMTBjMDA5NGEtYWJhZi00ZWY5LWE1MzItMmJlNTNlMmE4OTZiLXBtIiwiMTBjMDA5NGEtYWJhZi00ZWY5LWE1MzItMmJlNTNlMmE4OTZiLXBvIiwiZmFicmljLWFjdGl2ZS11c2VycyIsInByb2plY3QtbGVhZHMiLCJwcm9qZWN0LWxlYWRzIl0sInNjb3BlIjoiYWxsIn0.v24LY2gfBjJPeWy-xXq0ViTguFRmZnv9NQUeqIEYvkWaL4V2qN9IKfatnDaoug7JBF8Xb2jQ0dQf_onnm2yYybWqXy-8ELZ8SZS8LBq3k0yyiE8vm6aAdmglMaLu6R3CIo3FncFBKNFeb_s0brEhngirsGA2lwNDf-Bi5ucHXFNSVDzmAcVopFSBcbwo78p3rRbzR5pjNpFrAT3CJRwRGv1-NvGUZvt10Z7s0KT2HEnNkanZWG02ck7H40HHr1O89svh8jl0ze4wgi9iYscYC0BZ74jBu9wntnty5hubowZ5sOuJZAFtYUB3Z3-W8sVeg_vHqMbPlpoIRYzwiby3SCGIJ7DgqNq8-18T6Z4ZxOAOB74PNJEArWq2Ti7nmL0zxI68wSGNqT0rLZo9p1UUYvf8qCsdYUKmVZD8xRea2FwyZEB8MyIQ5FRWOP2AKN3kCo1K89XpJY5iZrMxRtC7obc41wanZCiEhmEK1pLFDkIYrjNmpNQ0mQ9pMKIXCTKXRFgkMNN5vsz0uT797SNPKsFkKvBz7SBh2gAerpCDivCwoMpEPGTvJp_GqohyFjSkvjJ7n5vxWKiwqzU2wRG23tCi5xqqk30u4R6e7oU7IKBwrdpGHK23q-Laa1mvKL9CZ98Yngs3-S-rZVlTtT_y1UZHFWYOmPFzo0xlUTs5wak")
-    token.validate()
-
-    config = {'url': 'http://localhost:8080/services/pdp', 'enable': True}
-    pdp = PdpAuth(config=config, logger=logger)
-    projects = token.get_projects()
-    for p in projects:
-        pdp.check_access(email=token.get_email(), project=p.get(Constants.UUID), tags=p.get(Constants.TAGS),
-                         action_id=ActionId.query, resource=None, lease_end_time=None)
