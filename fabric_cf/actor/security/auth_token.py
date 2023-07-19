@@ -40,15 +40,6 @@ class AuthToken:
         self.email = email
         self.token = token
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        del state['token']
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.token = None
-
     def get_oidc_sub_claim(self) -> str:
         """
         Get OIDC Sub Claim

@@ -59,13 +59,9 @@ class EventLogger:
         Log Slice Event for metrics
         """
         try:
-            owner = slice_object.get_owner()
             log_message = f"CFEL Slice event slc:{slice_object.get_slice_id()} " \
                           f"{action} by prj:{slice_object.get_project_id()} " \
-                          f"usr:{owner.get_oidc_sub_claim()}:{owner.get_email()}"
-            if slice_object.get_config_properties() is not None:
-                token_hash = slice_object.get_config_properties().get(Constants.TOKEN_HASH, "token_hash_not_available")
-                log_message += f":{token_hash}"
+                          f"usr:{slice_object.get_owner().get_oidc_sub_claim()}:{slice_object.get_owner().get_email()}"
 
             if topology is not None:
                 lc = LogCollector()
@@ -86,18 +82,11 @@ class EventLogger:
             lc = LogCollector()
             lc.collect_resource_attributes(source=sliver)
 
-            owner = slice_object.get_owner()
             log_message = f"CFEL Sliver event slc:{slice_object.get_slice_id()} " \
                           f"slvr:{sliver.get_reservation_info().reservation_id} of " \
                           f"type {sliver.get_type()} {sliver.get_reservation_info().reservation_state} " \
-                          f"by prj:{slice_object.get_project_id()} usr:{owner.get_oidc_sub_claim()}" \
-                          f":{owner.get_email()}"
-
-            if slice_object.get_config_properties() is not None:
-                token_hash = slice_object.get_config_properties().get(Constants.TOKEN_HASH, "token_hash_not_available")
-                log_message += f":{token_hash}"
-
-            log_message += f" {str(lc)}"
+                          f"by prj:{slice_object.get_project_id()} usr:{slice_object.get_owner().get_oidc_sub_claim()}" \
+                          f":{slice_object.get_owner().get_email()} {str(lc)}"
 
             self.logger.info(log_message)
         except Exception as e:
