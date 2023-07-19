@@ -22,7 +22,6 @@
 # SOFTWARE.
 #
 # Author Komal Thareja (kthare10@renci.org)
-import hashlib
 from bisect import bisect_left
 
 from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
@@ -98,20 +97,3 @@ def translate_avro_message_type_pdp_action_id(*, message_name: str) -> ActionId:
         return ActionId.renew
     else:
         return ActionId.noop
-
-
-def generate_sha256(*, token: str):
-    """
-    Generate SHA 256 for a token
-    @param token token string
-    """
-    # Create a new SHA256 hash object
-    sha256_hash = hashlib.sha256()
-
-    # Convert the string to bytes and update the hash object
-    sha256_hash.update(token.encode('utf-8'))
-
-    # Get the hexadecimal representation of the hash
-    sha256_hex = sha256_hash.hexdigest()
-
-    return sha256_hex

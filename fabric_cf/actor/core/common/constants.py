@@ -164,7 +164,6 @@ class Constants:
     CONFIG_SECTION_O_AUTH = "oauth"
     PROPERTY_CONF_O_AUTH_JWKS_URL = "jwks-url"
     PROPERTY_CONF_O_AUTH_KEY_REFRESH = "key-refresh"
-    PROPERTY_CONF_O_AUTH_TRL_REFRESH = "trl-refresh"
     PROPERTY_CONF_O_AUTH_VERIFY_EXP = "verify-exp"
 
     CONFIG_SECTION_DATABASE = "database"
@@ -260,7 +259,6 @@ class Constants:
     CLAIMS_PROJECTS = "projects"
     UUID = "uuid"
     TAGS = "tags"
-    TOKEN_HASH = "token_hash"
     PROJECT_ID = "project_id"
     USERS = "users"
     DEADLINE = "deadline"

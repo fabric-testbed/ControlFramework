@@ -24,14 +24,15 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime
-from typing import List, Union
+from typing import List
 
 from fim.slivers.base_sliver import BaseSliver
 from fim.user.topology import ExperimentTopology
 
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.security.fabric_token import FabricToken
-from fabric_cf.actor.security.pdp_auth import ActionId, PdpAuth
+from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType, PdpAuth
 
 
 class AccessChecker:
@@ -39,19 +40,21 @@ class AccessChecker:
     Check access for Incoming operation against Policy Decision Point PDP
     """
     @staticmethod
-    def validate_and_decode_token(*, token: str) -> Union[FabricToken, None]:
+    def validate_and_decode_token(*, token: str, logger=None) -> FabricToken or None:
         if token is None:
             return token
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         oauth_config = GlobalsSingleton.get().get_config().get_global_config().get_oauth()
-        token_validator = GlobalsSingleton.get().get_token_validator()
-        verify_exp = oauth_config.get(Constants.PROPERTY_CONF_O_AUTH_VERIFY_EXP, True)
-        return token_validator.validate_token(token=token, verify_exp=verify_exp)
+        jwt_validator = GlobalsSingleton.get().get_jwt_validator()
+
+        fabric_token = FabricToken(oauth_config=oauth_config, jwt_validator=jwt_validator, logger=logger, token=token)
+        fabric_token.validate()
+        return fabric_token
 
     @staticmethod
     def check_access(*, action_id: ActionId, token: str,
                      resource: BaseSliver or ExperimentTopology = None,
-                     lease_end_time: datetime = None, logger=None) -> Union[FabricToken, None]:
+                     lease_end_time: datetime = None, logger=None) -> FabricToken or None:
         """
         Validates Fabric Token and Check access for Incoming operation against Policy Decision Point PDP
         :param action_id action id
@@ -65,18 +68,21 @@ class AccessChecker:
         if token is None:
             return token
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
         oauth_config = GlobalsSingleton.get().get_config().get_global_config().get_oauth()
-        token_validator = GlobalsSingleton.get().get_token_validator()
+        jwt_validator = GlobalsSingleton.get().get_jwt_validator()
 
-        verify_exp = oauth_config.get(Constants.PROPERTY_CONF_O_AUTH_VERIFY_EXP, True)
-        decoded_token = token_validator.validate_token(token=token, verify_exp=verify_exp)
+        fabric_token = FabricToken(oauth_config=oauth_config, jwt_validator=jwt_validator, logger=logger, token=token)
+        fabric_token.validate()
 
-        for p in decoded_token.projects:
-            AccessChecker.check_pdp_access(action_id=action_id, email=decoded_token.email,
+        projects = fabric_token.get_projects()
+
+        for p in projects:
+            AccessChecker.check_pdp_access(action_id=action_id, email=fabric_token.get_email(),
                                            project=p.get(Constants.UUID), tags=p.get(Constants.TAGS),
                                            resource=resource, lease_end_time=lease_end_time, logger=logger)
 
-        return decoded_token
+        return fabric_token
 
     @staticmethod
     def check_pdp_access(*, action_id: ActionId, email: str, project: str, tags: List[str],

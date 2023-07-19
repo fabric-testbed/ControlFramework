@@ -44,7 +44,6 @@ from fabric_cf.actor.core.common.exceptions import InitializationException
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.container.container import Container
 from fabric_cf.actor.core.util.log_helper import LogHelper
-from fabric_cf.actor.security.token_validator import TokenValidator
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_actor_container import ABCActorContainer
@@ -73,7 +72,6 @@ class Globals:
         self.timer_condition = threading.Condition()
         self.lock = threading.Lock()
         self.jwt_validator = None
-        self.token_validator = None
 
     def make_logger(self):
         """
@@ -170,28 +168,21 @@ class Globals:
                 admin_kafka_client = self.get_kafka_admin_client()
                 admin_kafka_client.list_topics()
                 self.log.info("Connection to Kafka broker established successfully")
-                self.load_validators()
+                self.load_jwt_validator()
                 self.log.info("Main initialization complete.")
                 self.initialized = True
         finally:
             self.lock.release()
 
-    def load_validators(self):
+    def load_jwt_validator(self):
         oauth_config = self.config.get_oauth_config()
         CREDMGR_CERTS = oauth_config.get(Constants.PROPERTY_CONF_O_AUTH_JWKS_URL, None)
         CREDMGR_KEY_REFRESH = oauth_config.get(Constants.PROPERTY_CONF_O_AUTH_KEY_REFRESH, None)
-        CREDMGR_TRL_REFRESH = oauth_config.get(Constants.PROPERTY_CONF_O_AUTH_TRL_REFRESH, '00:01:00')
         self.log.info(f'Initializing JWT Validator to use {CREDMGR_CERTS} endpoint, '
-                      f'refreshing keys every {CREDMGR_KEY_REFRESH} HH:MM:SS refreshing '
-                      f'token revoke list every {CREDMGR_TRL_REFRESH} HH:MM:SS')
+                      f'refreshing keys every {CREDMGR_KEY_REFRESH} HH:MM:SS')
         t = datetime.strptime(CREDMGR_KEY_REFRESH, "%H:%M:%S")
         self.jwt_validator = JWTValidator(url=CREDMGR_CERTS,
                                           refresh_period=timedelta(hours=t.hour, minutes=t.minute, seconds=t.second))
-        from urllib.parse import urlparse
-        t = datetime.strptime(CREDMGR_KEY_REFRESH, "%H:%M:%S")
-        self.token_validator = TokenValidator(credmgr_host=str(urlparse(CREDMGR_CERTS).hostname),
-                                              refresh_period=timedelta(hours=t.hour, minutes=t.minute, seconds=t.second),
-                                              jwt_validator=self.jwt_validator)
 
     def load_config(self):
         """
@@ -205,11 +196,8 @@ class Globals:
         except Exception as e:
             raise RuntimeError("Unable to parse configuration file {}".format(e))
 
-    def get_jwt_validator(self) -> JWTValidator:
+    def get_jwt_validator(self):
         return self.jwt_validator
-
-    def get_token_validator(self) -> TokenValidator:
-        return self.token_validator
 
     def get_container(self) -> ABCActorContainer:
         """
@@ -416,7 +404,6 @@ class Globals:
             finally:
                 self.lock.release()
         except Exception as e:
-            self.log.error(traceback.format_exc())
             self.fail(e=e)
 
     def stop(self):
