@@ -59,9 +59,13 @@ class EventLogger:
         Log Slice Event for metrics
         """
         try:
+            owner = slice_object.get_owner()
             log_message = f"CFEL Slice event slc:{slice_object.get_slice_id()} " \
                           f"{action} by prj:{slice_object.get_project_id()} " \
-                          f"usr:{slice_object.get_owner().get_oidc_sub_claim()}:{slice_object.get_owner().get_email()}"
+                          f"usr:{owner.get_oidc_sub_claim()}:{owner.get_email()}"
+            if slice_object.get_config_properties() is not None:
+                token_hash = slice_object.get_config_properties().get(Constants.TOKEN_HASH, "token_hash_not_available")
+                log_message += f":{token_hash}"
 
             if topology is not None:
                 lc = LogCollector()
@@ -74,14 +78,13 @@ class EventLogger:
             self.logger.error(f"Error occurred: {e}")
             self.logger.error(traceback.format_exc())
 
-    def log_sliver_event(self, *, slice_object: SliceAvro, sliver: BaseSliver, verb: str = None, keys: list = None):
+    def log_sliver_event(self, *, slice_object: SliceAvro, sliver: BaseSliver, verb: str = None):
         """
         Log Sliver events
         """
         try:
             lc = LogCollector()
             lc.collect_resource_attributes(source=sliver)
-
             if verb is None:
                 verb = sliver.get_reservation_info().reservation_state
 
@@ -92,11 +95,18 @@ class EventLogger:
                     #fp = get_ssh_key_footprint(public_key_content=key_pair.get('key'))
                     ssh_foot_print += key_pair.get('key')
 
+            owner = slice_object.get_owner()
             log_message = f"CFEL Sliver event slc:{slice_object.get_slice_id()} " \
                           f"slvr:{sliver.get_reservation_info().reservation_id} of " \
                           f"type {sliver.get_type()} {verb} " \
-                          f"by prj:{slice_object.get_project_id()} usr:{slice_object.get_owner().get_oidc_sub_claim()}" \
-                          f":{slice_object.get_owner().get_email()} {str(lc)}"
+                          f"by prj:{slice_object.get_project_id()} usr:{owner.get_oidc_sub_claim()}" \
+                          f":{owner.get_email()}"
+
+            if slice_object.get_config_properties() is not None:
+                token_hash = slice_object.get_config_properties().get(Constants.TOKEN_HASH, "token_hash_not_available")
+                log_message += f":{token_hash}"
+
+            log_message += f" {str(lc)}"
 
             self.logger.info(log_message)
         except Exception as e:
