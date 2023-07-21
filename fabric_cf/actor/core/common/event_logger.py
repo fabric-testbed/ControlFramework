@@ -79,7 +79,7 @@ class EventLogger:
             self.logger.error(f"Error occurred: {e}")
             self.logger.error(traceback.format_exc())
 
-    def log_sliver_event(self, *, slice_object: SliceAvro, sliver: BaseSliver, verb: str = None, keys: list):
+    def log_sliver_event(self, *, slice_object: SliceAvro, sliver: BaseSliver, verb: str = None, keys: list = None):
         """
         Log Sliver events
         """
