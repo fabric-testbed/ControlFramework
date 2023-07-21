@@ -23,10 +23,10 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import queue
-import threading
+from __future__ import annotations
 
-from fabric_mb.message_bus.messages.poa_avro import PoaAvro
+from typing import TYPE_CHECKING
+
 from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 
@@ -41,7 +41,6 @@ from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import AuthorityException
 from fabric_cf.actor.core.core.actor import ActorMixin
-from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.manage.authority_management_object import AuthorityManagementObject
@@ -53,6 +52,9 @@ from fabric_cf.actor.core.util.client import Client
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.security.auth_token import AuthToken
+
+if TYPE_CHECKING:
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class Authority(ActorMixin, ABCAuthority):
