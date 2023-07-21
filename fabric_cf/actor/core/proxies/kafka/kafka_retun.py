@@ -28,8 +28,6 @@ from typing import TYPE_CHECKING
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
-from fabric_mb.message_bus.messages.result_avro import ResultAvro
-from fabric_mb.message_bus.messages.result_poa_avro import ResultPoaAvro
 from fabric_mb.message_bus.messages.update_delegation_avro import UpdateDelegationAvro
 from fabric_mb.message_bus.messages.update_lease_avro import UpdateLeaseAvro
 from fabric_mb.message_bus.messages.update_ticket_avro import UpdateTicketAvro
