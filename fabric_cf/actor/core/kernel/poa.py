@@ -213,11 +213,6 @@ class Poa:
         if change:
             self.state = state
             self.set_dirty()
-            from fabric_cf.actor.core.common.event_logger import EventLoggerSingleton
-            from fabric_cf.actor.core.proxies.kafka.translate import Translate
-            EventLoggerSingleton.get().log_sliver_event(
-                slice_object=Translate.translate_slice_to_avro(slice_obj=self.reservation.get_slice()),
-                sliver=self.get_reservation().get_resources().get_sliver(), verb=f"poa-{self.operation}")
 
     def send_poa_to_authority(self):
         """
@@ -271,6 +266,12 @@ class Poa:
         # Transition to Success state
         if incoming.error_code == 0:
             self.transition(prefix="done", state=PoaStates.Success)
+            from fabric_cf.actor.core.common.event_logger import EventLoggerSingleton
+            from fabric_cf.actor.core.proxies.kafka.translate import Translate
+            EventLoggerSingleton.get().log_sliver_event(
+                slice_object=Translate.translate_slice_to_avro(slice_obj=self.reservation.get_slice()),
+                sliver=self.get_reservation().get_resources().get_sliver(), verb=f"poa-{self.operation}",
+                keys=self.keys)
 
             # Copy any information returned
             if incoming.get_info() is not None:

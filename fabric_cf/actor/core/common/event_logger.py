@@ -74,7 +74,7 @@ class EventLogger:
             self.logger.error(f"Error occurred: {e}")
             self.logger.error(traceback.format_exc())
 
-    def log_sliver_event(self, *, slice_object: SliceAvro, sliver: BaseSliver, verb: str = None):
+    def log_sliver_event(self, *, slice_object: SliceAvro, sliver: BaseSliver, verb: str = None, keys: list = None):
         """
         Log Sliver events
         """
@@ -84,6 +84,13 @@ class EventLogger:
 
             if verb is None:
                 verb = sliver.get_reservation_info().reservation_state
+
+            ssh_foot_print = None
+            if keys is not None:
+                ssh_foot_print = ""
+                for key_pair in keys:
+                    #fp = get_ssh_key_footprint(public_key_content=key_pair.get('key'))
+                    ssh_foot_print += key_pair.get('key')
 
             log_message = f"CFEL Sliver event slc:{slice_object.get_slice_id()} " \
                           f"slvr:{sliver.get_reservation_info().reservation_id} of " \
