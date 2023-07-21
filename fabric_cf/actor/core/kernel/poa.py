@@ -32,6 +32,8 @@ from typing import List, Dict
 from uuid import uuid4
 
 from fabric_cf.actor.core.common.constants import Constants
+from fabric_cf.actor.core.common.event_logger import EventLoggerSingleton
+from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.notice import Notice
 
@@ -214,6 +216,9 @@ class Poa:
         if change:
             self.state = state
             self.set_dirty()
+            EventLoggerSingleton.get().log_sliver_event(
+                slice_object=Translate.translate_slice_to_avro(slice_obj=self.reservation.get_slice()),
+                sliver=self.get_reservation().get_resources().get_sliver(), verb=f"poa-{self.operation}")
 
     def send_poa_to_authority(self):
         """

@@ -74,7 +74,7 @@ class EventLogger:
             self.logger.error(f"Error occurred: {e}")
             self.logger.error(traceback.format_exc())
 
-    def log_sliver_event(self, *, slice_object: SliceAvro, sliver: BaseSliver):
+    def log_sliver_event(self, *, slice_object: SliceAvro, sliver: BaseSliver, verb: str = None):
         """
         Log Sliver events
         """
@@ -82,9 +82,12 @@ class EventLogger:
             lc = LogCollector()
             lc.collect_resource_attributes(source=sliver)
 
+            if verb is None:
+                verb = sliver.get_reservation_info().reservation_state
+
             log_message = f"CFEL Sliver event slc:{slice_object.get_slice_id()} " \
                           f"slvr:{sliver.get_reservation_info().reservation_id} of " \
-                          f"type {sliver.get_type()} {sliver.get_reservation_info().reservation_state} " \
+                          f"type {sliver.get_type()} {verb} " \
                           f"by prj:{slice_object.get_project_id()} usr:{slice_object.get_owner().get_oidc_sub_claim()}" \
                           f":{slice_object.get_owner().get_email()} {str(lc)}"
 
