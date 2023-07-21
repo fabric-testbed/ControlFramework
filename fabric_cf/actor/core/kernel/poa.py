@@ -330,6 +330,9 @@ class Poa:
         if self.info is not None:
             result.info = self.info.copy()
 
+        if self.keys is not None:
+            result.keys = self.keys.copy()
+
         result.error_code = self.error_code
 
         if self.reservation is not None:
@@ -353,6 +356,8 @@ class Poa:
             result['vcpu_cpu_map'] = self.vcpu_cpu_map
         if self.node_set is not None:
             result['node_set'] = self.node_set
+        if self.keys is not None:
+            result['keys'] = self.keys
         return result
 
     def __str__(self):
@@ -362,7 +367,7 @@ class Poa:
 class PoaFactory:
     @staticmethod
     def create(*, poa_id: str, operation: str, sliver_id: ID, vcpu_cpu_map: List[Dict[str, str]] = None,
-               node_set: List[str] = None, keys: List[str] = None) -> Poa:
+               node_set: List[str] = None, keys: List[Dict[str, str]] = None) -> Poa:
         """
         Create POA
         :param poa_id:

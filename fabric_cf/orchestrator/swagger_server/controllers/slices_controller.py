@@ -19,7 +19,7 @@ def slices_create_post(body, name, ssh_key, lease_end_time=None):  # noqa: E501
     resources asynchronously on the appropriate sites either now or in the future as requested. Experimenter can
     invoke get slice API to get the latest state of the requested resources.   # noqa: E501
 
-    :param body: 
+    :param body:
     :type body: dict | bytes
     :param name: Slice Name
     :type name: str

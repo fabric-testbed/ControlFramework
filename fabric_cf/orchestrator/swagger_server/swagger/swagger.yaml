@@ -1538,11 +1538,24 @@ components:
         info:
           type: object
     poa_post_data_vcpu_cpu_map:
+      required:
+      - cpu
+      - vcpu
       type: object
       properties:
         vcpu:
           type: string
         cpu:
+          type: string
+    poa_post_data_keys:
+      required:
+      - comment
+      - key
+      type: object
+      properties:
+        key:
+          type: string
+        comment:
           type: string
     poa_post_data:
       type: object
@@ -1558,7 +1571,7 @@ components:
         keys:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/poa_post_data_keys'
   requestBodies:
     Request:
       content:

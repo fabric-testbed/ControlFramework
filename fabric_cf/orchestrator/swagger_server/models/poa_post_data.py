@@ -6,6 +6,7 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from fabric_cf.orchestrator.swagger_server.models.base_model_ import Model
+from fabric_cf.orchestrator.swagger_server.models.poa_post_data_keys import PoaPostDataKeys  # noqa: F401,E501
 from fabric_cf.orchestrator.swagger_server.models.poa_post_data_vcpu_cpu_map import PoaPostDataVcpuCpuMap  # noqa: F401,E501
 from fabric_cf.orchestrator.swagger_server import util
 
@@ -15,7 +16,7 @@ class PoaPostData(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, vcpu_cpu_map: List[PoaPostDataVcpuCpuMap]=None, node_set: List[str]=None, keys: List[str]=None):  # noqa: E501
+    def __init__(self, vcpu_cpu_map: List[PoaPostDataVcpuCpuMap]=None, node_set: List[str]=None, keys: List[PoaPostDataKeys]=None):  # noqa: E501
         """PoaPostData - a model defined in Swagger
 
         :param vcpu_cpu_map: The vcpu_cpu_map of this PoaPostData.  # noqa: E501
@@ -23,12 +24,12 @@ class PoaPostData(Model):
         :param node_set: The node_set of this PoaPostData.  # noqa: E501
         :type node_set: List[str]
         :param keys: The keys of this PoaPostData.  # noqa: E501
-        :type keys: List[str]
+        :type keys: List[PoaPostDataKeys]
         """
         self.swagger_types = {
             'vcpu_cpu_map': List[PoaPostDataVcpuCpuMap],
             'node_set': List[str],
-            'keys': List[str]
+            'keys': List[PoaPostDataKeys]
         }
 
         self.attribute_map = {
@@ -94,22 +95,22 @@ class PoaPostData(Model):
         self._node_set = node_set
 
     @property
-    def keys(self) -> List[str]:
+    def keys(self) -> List[PoaPostDataKeys]:
         """Gets the keys of this PoaPostData.
 
 
         :return: The keys of this PoaPostData.
-        :rtype: List[str]
+        :rtype: List[PoaPostDataKeys]
         """
         return self._keys
 
     @keys.setter
-    def keys(self, keys: List[str]):
+    def keys(self, keys: List[PoaPostDataKeys]):
         """Sets the keys of this PoaPostData.
 
 
         :param keys: The keys of this PoaPostData.
-        :type keys: List[str]
+        :type keys: List[PoaPostDataKeys]
         """
 
         self._keys = keys
