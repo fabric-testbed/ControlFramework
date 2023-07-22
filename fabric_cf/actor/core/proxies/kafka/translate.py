@@ -394,7 +394,7 @@ class Translate:
 
         poa_obj = PoaFactory.create(poa_id=poa_avro.poa_id, operation=poa_avro.get_operation(),
                                     sliver_id=ID(uid=poa_avro.rid), vcpu_cpu_map=poa_avro.get_vcpu_cpu_map(),
-                                    node_set=poa_avro.get_node_set())
+                                    node_set=poa_avro.get_node_set(), keys=poa_avro.get_keys())
         poa_obj.sequence_poa_in = poa_avro.sequence
         poa_obj.slice_id = poa_avro.slice_id
         # NOTE: Sliver, Slice and Project Info to be set by the caller
@@ -408,7 +408,8 @@ class Translate:
         auth_avro = Translate.translate_auth_to_avro(auth=poa.get_slice().get_owner())
         poa_avro = PoaAvro(operation=poa.operation, rid=str(poa.sliver_id), poa_id=poa.poa_id,
                            vcpu_cpu_map=poa.vcpu_cpu_map, node_set=poa.node_set, auth=auth_avro,
-                           project_id=poa.get_slice().get_project_id(), slice_id=str(poa.get_slice_id()))
+                           project_id=poa.get_slice().get_project_id(), slice_id=str(poa.get_slice_id()),
+                           keys=poa.keys)
         poa_avro.sequence = poa.sequence_poa_out
         return poa_avro
 

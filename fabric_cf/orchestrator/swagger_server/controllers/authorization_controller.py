@@ -8,5 +8,3 @@ from fabric_cf.orchestrator.swagger_server.response import authorization_control
 
 def check_bearerAuth(token):
     return rc.check_bearerAuth(token)
-
-

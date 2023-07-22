@@ -34,6 +34,7 @@ from fim.user.topology import ExperimentTopology
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import InitializationException
 from fabric_cf.actor.core.util.log_helper import LogHelper
+from fabric_cf.actor.core.util.utils import generate_sha256
 from fabric_cf.actor.security.pdp_auth import ActionId
 
 
@@ -78,24 +79,36 @@ class EventLogger:
             self.logger.error(f"Error occurred: {e}")
             self.logger.error(traceback.format_exc())
 
-    def log_sliver_event(self, *, slice_object: SliceAvro, sliver: BaseSliver):
+    def log_sliver_event(self, *, slice_object: SliceAvro, sliver: BaseSliver, verb: str = None, keys: list = None):
         """
         Log Sliver events
         """
         try:
             lc = LogCollector()
             lc.collect_resource_attributes(source=sliver)
+            if verb is None:
+                verb = sliver.get_reservation_info().reservation_state
+
+            ssh_foot_print = None
+            if keys is not None:
+                ssh_foot_print = ""
+                for key_pair in keys:
+                    fp = generate_sha256(token=key_pair.key)
+                    ssh_foot_print += f":{fp}"
 
             owner = slice_object.get_owner()
             log_message = f"CFEL Sliver event slc:{slice_object.get_slice_id()} " \
                           f"slvr:{sliver.get_reservation_info().reservation_id} of " \
-                          f"type {sliver.get_type()} {sliver.get_reservation_info().reservation_state} " \
+                          f"type {sliver.get_type()} {verb} " \
                           f"by prj:{slice_object.get_project_id()} usr:{owner.get_oidc_sub_claim()}" \
                           f":{owner.get_email()}"
 
             if slice_object.get_config_properties() is not None:
                 token_hash = slice_object.get_config_properties().get(Constants.TOKEN_HASH, "token_hash_not_available")
                 log_message += f":{token_hash}"
+
+            if ssh_foot_print is not None:
+                log_message += f" keys{ssh_foot_print}"
 
             log_message += f" {str(lc)}"
 

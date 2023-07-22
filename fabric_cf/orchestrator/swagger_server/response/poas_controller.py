@@ -34,6 +34,7 @@ def poas_create_sliver_id_post(body: PoaPost, sliver_id: str):  # noqa: E501
         if body.data is not None:
             poa_avro.node_set = body.data.node_set
             poa_avro.vcpu_cpu_map = body.data.vcpu_cpu_map
+            poa_avro.keys = body.data.keys
         poa_id, slice_id = handler.poa(sliver_id=sliver_id, token=token, poa=poa_avro)
         poa_data = PoaData(poa_id=poa_id, operation=body.operation,
                            sliver_id=sliver_id, slice_id=slice_id)

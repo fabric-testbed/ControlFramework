@@ -1426,7 +1426,7 @@
           "poas"
         ],
         "summary": "Perform an operational action on a sliver.",
-        "description": "Request to perform an operation action on a sliver. Supported actions include - reboot a VM sliver, get cpu info, get numa info, pin vCPUs, pin memory to a numa node etc.  \n",
+        "description": "Request to perform an operation action on a sliver. Supported actions include - reboot a VM sliver, get cpu info, get numa info, pin vCPUs, pin memory to a numa node etc, add/remove ssh keys.  \n",
         "parameters": [
           {
             "name": "sliver_id",
@@ -1758,7 +1758,9 @@
               "numainfo",
               "cpupin",
               "numatune",
-              "reboot"
+              "reboot",
+              "addkey",
+              "removekey"
             ]
           },
           "data": {
@@ -2287,12 +2289,31 @@
         }
       },
       "poa_post_data_vcpu_cpu_map": {
+        "required": [
+          "cpu",
+          "vcpu"
+        ],
         "type": "object",
         "properties": {
           "vcpu": {
             "type": "string"
           },
           "cpu": {
+            "type": "string"
+          }
+        }
+      },
+      "poa_post_data_keys": {
+        "required": [
+          "comment",
+          "key"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "comment": {
             "type": "string"
           }
         }
@@ -2310,6 +2331,12 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          },
+          "keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/poa_post_data_keys"
             }
           }
         }
