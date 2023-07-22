@@ -93,7 +93,7 @@ class EventLogger:
             if keys is not None:
                 ssh_foot_print = ""
                 for key_pair in keys:
-                    fp = generate_sha256(token=key_pair.get('key'))
+                    fp = generate_sha256(token=key_pair.key)
                     ssh_foot_print += f":{fp}"
 
             owner = slice_object.get_owner()
@@ -108,7 +108,7 @@ class EventLogger:
                 log_message += f":{token_hash}"
 
             if ssh_foot_print is not None:
-                log_message += f" keys:{ssh_foot_print}"
+                log_message += f" keys{ssh_foot_print}"
 
             log_message += f" {str(lc)}"
 
