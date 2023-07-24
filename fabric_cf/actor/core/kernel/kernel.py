@@ -587,8 +587,8 @@ class Kernel:
                     EventLoggerSingleton.get().log_slice_event(slice_object=slice_avro, action=ActionId.delete)
             self.plugin.get_database().update_slice(slice_object=slice_obj)
         except Exception as e:
-            self.logger.error(traceback.format_exc())
-            self.error(err=f"An error occurred during probe pending for slice_obj #{slice_obj.get_slice_id()}", e=e)
+            self.logger.error(f"An error occurred during probe pending for "
+                              f"slice_obj #{slice_obj.get_slice_id()} e: {e}", stack_info=True)
         finally:
             slice_obj.unlock_slice()
 
@@ -625,9 +625,8 @@ class Kernel:
             if diff > 0:
                 self.logger.info(f"RES SERVICE PROBE TIME: {diff} - {reservation.get_reservation_id()}")
         except Exception as e:
-            self.logger.error(traceback.format_exc())
-            self.error(err=f"An error occurred during probe pending for reservation #{reservation.get_reservation_id()}",
-                       e=e)
+            self.logger.error(f"An error occurred during probe pending for "
+                              f"reservation #{reservation.get_reservation_id()} e: {e}", stack_info=True)
         finally:
             reservation.unlock()
 
@@ -644,9 +643,8 @@ class Kernel:
             self.plugin.get_database().update_delegation(delegation=delegation)
             delegation.service_probe()
         except Exception as e:
-            self.logger.error(traceback.format_exc())
-            self.error(err=f"An error occurred during probe pending for delegation #{delegation.get_delegation_id()}",
-                       e=e)
+            self.logger.error(f"An error occurred during probe pending for "
+                              f"delegation #{delegation.get_delegation_id()} e:{e}", stack_info=True)
         finally:
             delegation.unlock()
 
