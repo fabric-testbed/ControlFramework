@@ -38,7 +38,6 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.core.ticket import Ticket
 from fabric_cf.actor.core.core.unit_set import UnitSet
-from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.proxies.kafka.kafka_broker_proxy import KafkaBrokerProxy
 from fabric_cf.actor.core.proxies.kafka.kafka_proxy import KafkaProxyRequestState
@@ -50,6 +49,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
     from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
     from fabric_cf.actor.core.proxies.kafka.kafka_retun import KafkaReturn
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class KafkaAuthorityProxy(KafkaBrokerProxy, ABCAuthorityProxy):

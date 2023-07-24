@@ -881,7 +881,7 @@ class OrchestratorHandler:
             auth.email = fabric_token.email
 
             poa_list = controller.get_poas(rid=rid, poa_id=poa_id, email=email, project_id=project,
-                                           states=poa_states, limit=limit, offset=offset)
+                                           states=states, limit=limit, offset=offset)
             if poa_list is None:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())

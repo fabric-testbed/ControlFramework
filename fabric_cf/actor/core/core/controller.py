@@ -37,7 +37,6 @@ from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.exceptions import ControllerException
-from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.manage.controller_management_object import ControllerManagementObject
 from fabric_cf.actor.core.manage.kafka.services.kafka_controller_service import KafkaControllerService
 from fabric_cf.actor.core.proxies.kafka.services.controller_service import ControllerService
@@ -55,6 +54,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
     from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
     from fabric_cf.actor.core.apis.abc_slice import ABCSlice
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class Controller(ActorMixin, ABCController):

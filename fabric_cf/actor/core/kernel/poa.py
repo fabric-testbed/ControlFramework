@@ -33,7 +33,6 @@ from uuid import uuid4
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.notice import Notice
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_slice import ABCSlice
@@ -85,7 +84,8 @@ class Poa:
     Represents POA issued to a sliver
     """
     def __init__(self, *, poa_id: str = uuid4().__str__(), operation: str, reservation: ABCReservationMixin = None,
-                 sliver_id: ID = None, vcpu_cpu_map: List[Dict[str, str]] = None, node_set: List[str] = None):
+                 sliver_id: ID = None, vcpu_cpu_map: List[Dict[str, str]] = None, node_set: List[str] = None,
+                 keys: List[str] = None):
         self.poa_id = poa_id
         self.operation = operation
         self.state = PoaStates.Nascent
@@ -93,6 +93,7 @@ class Poa:
         self.sliver_id = sliver_id
         self.vcpu_cpu_map = vcpu_cpu_map
         self.node_set = node_set
+        self.keys = keys
         # Sequence number for outgoing poa messages. Increases with every new message.
         self.sequence_poa_out = 0
         # Sequence number for incoming poa messages.
@@ -265,6 +266,12 @@ class Poa:
         # Transition to Success state
         if incoming.error_code == 0:
             self.transition(prefix="done", state=PoaStates.Success)
+            from fabric_cf.actor.core.common.event_logger import EventLoggerSingleton
+            from fabric_cf.actor.core.proxies.kafka.translate import Translate
+            EventLoggerSingleton.get().log_sliver_event(
+                slice_object=Translate.translate_slice_to_avro(slice_obj=self.reservation.get_slice()),
+                sliver=self.get_reservation().get_resources().get_sliver(), verb=f"poa-{self.operation}",
+                keys=self.keys)
 
             # Copy any information returned
             if incoming.get_info() is not None:
@@ -328,6 +335,9 @@ class Poa:
         if self.info is not None:
             result.info = self.info.copy()
 
+        if self.keys is not None:
+            result.keys = self.keys.copy()
+
         result.error_code = self.error_code
 
         if self.reservation is not None:
@@ -351,6 +361,8 @@ class Poa:
             result['vcpu_cpu_map'] = self.vcpu_cpu_map
         if self.node_set is not None:
             result['node_set'] = self.node_set
+        if self.keys is not None:
+            result['keys'] = self.keys
         return result
 
     def __str__(self):
@@ -360,7 +372,7 @@ class Poa:
 class PoaFactory:
     @staticmethod
     def create(*, poa_id: str, operation: str, sliver_id: ID, vcpu_cpu_map: List[Dict[str, str]] = None,
-               node_set: List[str] = None) -> Poa:
+               node_set: List[str] = None, keys: List[Dict[str, str]] = None) -> Poa:
         """
         Create POA
         :param poa_id:
@@ -368,8 +380,9 @@ class PoaFactory:
         :param sliver_id:
         :param vcpu_cpu_map:
         :param node_set:
+        :param keys:
         :return:
         """
         result = Poa(poa_id=poa_id, operation=operation, vcpu_cpu_map=vcpu_cpu_map, node_set=node_set,
-                     sliver_id=sliver_id)
+                     sliver_id=sliver_id, keys=keys)
         return result
