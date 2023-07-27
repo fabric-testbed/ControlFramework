@@ -399,7 +399,8 @@ class AggregatedBQMPlugin:
 
                 # filter down only the needed properties then recreate the structure of facility in ABQM
                 new_fac_props = {ABCPropertyGraph.PROP_NAME: fac_props[ABCPropertyGraph.PROP_NAME],
-                                 ABCPropertyGraph.PROP_TYPE: fac_props[ABCPropertyGraph.PROP_TYPE]
+                                 ABCPropertyGraph.PROP_TYPE: fac_props[ABCPropertyGraph.PROP_TYPE],
+                                 ABCPropertyGraph.PROP_SITE: s
                                  }
                 abqm.add_node(node_id=fac_sliver.node_id, label=ABCPropertyGraph.CLASS_NetworkNode,
                               props=new_fac_props)

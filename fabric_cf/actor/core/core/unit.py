@@ -134,15 +134,17 @@ class Unit(ConfigToken):
         finally:
             self.lock.release()
 
-    def fail_on_poa(self, *, message: str, poa_info:dict):
+    def fail_on_poa(self, *, message: str, poa_info: dict):
         """
         Fail on modify
         @param message message
+        @param poa_info
         @param exception exception
         """
         try:
             self.lock.acquire()
-            self.poa_info = poa_info.copy()
+            if poa_info is not None:
+                self.poa_info = poa_info.copy()
             self.poa_info[Constants.PROPERTY_MESSAGE] = message
             self.transition(to_state=UnitState.ACTIVE)
         finally:
