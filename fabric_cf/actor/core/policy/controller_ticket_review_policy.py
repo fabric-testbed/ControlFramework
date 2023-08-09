@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import traceback
 from enum import Enum
 
 from fabric_cf.actor.core.common.constants import Constants
@@ -99,88 +100,93 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
 
         # check the status of the Slice of each reservation
         for reservation in my_pending.reservations.values():
-            slice_obj = reservation.get_slice()
-            slice_id = slice_obj.get_slice_id()
+            try:
+                slice_obj = reservation.get_slice()
+                slice_id = slice_obj.get_slice_id()
 
-            # only want to do this for 'new' tickets
-            if reservation.is_failed() or reservation.is_ticketed() or reservation.is_ticketing():
-                # check if we've examined this slice already
-                if slice_id not in slice_status_map:
-                    # set the default status
-                    slice_status_map[slice_id] = TicketReviewSliceState.Redeemable
-                    # examine every reservation contained within the slice,
-                    # looking for either a Failed or Nascent reservation
-                    # we have to look at everything in a slice once, to determine all/any Sites with failures
-                    for slice_reservation in slice_obj.get_reservations_list():
+                # only want to do this for 'new' tickets
+                if reservation.is_failed() or reservation.is_ticketed() or reservation.is_ticketing():
+                    # check if we've examined this slice already
+                    if slice_id not in slice_status_map:
+                        # set the default status
+                        slice_status_map[slice_id] = TicketReviewSliceState.Redeemable
+                        # examine every reservation contained within the slice,
+                        # looking for either a Failed or Nascent reservation
+                        # we have to look at everything in a slice once, to determine all/any Sites with failures
+                        for slice_reservation in slice_obj.get_reservations_list():
 
-                        # If any Reservations that are being redeemed, that means the
-                        # slice has already cleared TicketReview.
-                        if slice_reservation.is_redeeming():
-                            if slice_status_map[slice_id] == TicketReviewSliceState.Nascent:
-                                # There shouldn't be any Nascent reservations, if a reservation is being Redeemed.
-                                self.logger.error(
-                                    "Nascent reservation found while Reservation {} in slice {} is redeeming"
-                                    .format(slice_reservation.get_reservation_id(), slice_obj.get_name()))
+                            # If any Reservations that are being redeemed, that means the
+                            # slice has already cleared TicketReview.
+                            if slice_reservation.is_redeeming():
+                                if slice_status_map[slice_id] == TicketReviewSliceState.Nascent:
+                                    # There shouldn't be any Nascent reservations, if a reservation is being Redeemed.
+                                    self.logger.error(
+                                        "Nascent reservation found while Reservation {} in slice {} is redeeming"
+                                        .format(slice_reservation.get_reservation_id(), slice_obj.get_name()))
 
-                            # We may have previously found a Failed Reservation,
-                            # but if a ticketed reservation is being redeemed,
-                            # the failure _should_ be from the AM, not Controller
-                            # so it should be ignored by TicketReview
-                            slice_status_map[slice_id] = TicketReviewSliceState.Redeemable
+                                # We may have previously found a Failed Reservation,
+                                # but if a ticketed reservation is being redeemed,
+                                # the failure _should_ be from the AM, not Controller
+                                # so it should be ignored by TicketReview
+                                slice_status_map[slice_id] = TicketReviewSliceState.Redeemable
 
-                            #  we don't need to look at any other reservations in this slice
-                            break
+                                #  we don't need to look at any other reservations in this slice
+                                break
 
-                        # if any tickets are Nascent,
-                        # as soon as we remove the Failed reservation,
-                        # those Nascent tickets might get redeemed.
-                        # we must wait to Close any failed reservations
-                        # until all Nascent tickets are either Ticketed or Failed
-                        if slice_reservation.is_nascent():
-                            self.logger.debug("Found Nascent Reservation {} in slice {} when check_pending for {}"
-                                              .format(slice_reservation.get_reservation_id(), slice_obj.get_name(),
-                                                      reservation.get_reservation_id()))
+                            # if any tickets are Nascent,
+                            # as soon as we remove the Failed reservation,
+                            # those Nascent tickets might get redeemed.
+                            # we must wait to Close any failed reservations
+                            # until all Nascent tickets are either Ticketed or Failed
+                            if slice_reservation.is_nascent():
+                                self.logger.debug("Found Nascent Reservation {} in slice {} when check_pending for {}"
+                                                  .format(slice_reservation.get_reservation_id(), slice_obj.get_name(),
+                                                          reservation.get_reservation_id()))
 
-                            slice_status_map[slice_id] = TicketReviewSliceState.Nascent
-                            # once we have found a Nascent reservation, that is what we treat the entire slice
-                            break
+                                slice_status_map[slice_id] = TicketReviewSliceState.Nascent
+                                # once we have found a Nascent reservation, that is what we treat the entire slice
+                                break
 
-                        # track Failed reservations, but need to keep looking for Nascent or Redeemable.
-                        if slice_reservation.is_failed():
-                            self.logger.debug("Found failed reservation {} in slice {} when check_pending for {}"
-                                              .format(slice_reservation.get_reservation_id(), slice_obj.get_name(),
-                                                      reservation.get_reservation_id()))
-                            slice_status_map[slice_id] = TicketReviewSliceState.Failing
+                            # track Failed reservations, but need to keep looking for Nascent or Redeemable.
+                            if slice_reservation.is_failed():
+                                self.logger.debug("Found failed reservation {} in slice {} when check_pending for {}"
+                                                  .format(slice_reservation.get_reservation_id(), slice_obj.get_name(),
+                                                          reservation.get_reservation_id()))
+                                slice_status_map[slice_id] = TicketReviewSliceState.Failing
 
-                # take action on the current reservation
-                if slice_status_map[slice_id] == TicketReviewSliceState.Failing:
-                    if reservation.get_resources() is not None and reservation.get_resources().get_type() is not None:
-                        msg = f"TicketReviewPolicy: Closing reservation {reservation.get_reservation_id()} due to " \
-                              f"failure in slice {slice_obj.get_name()}"
-                        self.logger.info(msg)
+                    # take action on the current reservation
+                    if slice_status_map[slice_id] == TicketReviewSliceState.Failing:
+                        if reservation.get_resources() is not None and reservation.get_resources().get_type() is not None:
+                            msg = f"TicketReviewPolicy: Closing reservation {reservation.get_reservation_id()} due to " \
+                                  f"failure in slice {slice_obj.get_name()}"
+                            self.logger.info(msg)
 
-                        if not reservation.is_failed():
-                            update_data = UpdateData()
-                            update_data.failed = True
-                            update_data.message = Constants.CLOSURE_BY_TICKET_REVIEW_POLICY
-                            reservation.mark_close_by_ticket_review(update_data=update_data)
-                        self.actor.close(reservation=reservation)
+                            if not reservation.is_failed():
+                                update_data = UpdateData()
+                                update_data.failed = True
+                                update_data.message = Constants.CLOSURE_BY_TICKET_REVIEW_POLICY
+                                reservation.mark_close_by_ticket_review(update_data=update_data)
+                            self.actor.close(reservation=reservation)
+                            self.calendar.remove_pending(reservation=reservation)
+                            self.pending_notify.remove(reservation=reservation)
+
+                    elif slice_status_map[slice_id] == TicketReviewSliceState.Nascent:
+                        self.logger.debug(
+                            "Moving reservation {} to pending redeem list due to nascent reservation in slice {}"
+                            .format(reservation.get_reservation_id(), slice_obj.get_name()))
+                        self.pending_redeem.add(reservation=reservation)
                         self.calendar.remove_pending(reservation=reservation)
-                        self.pending_notify.remove(reservation=reservation)
-
-                elif slice_status_map[slice_id] == TicketReviewSliceState.Nascent:
-                    self.logger.debug(
-                        "Moving reservation {} to pending redeem list due to nascent reservation in slice {}"
-                        .format(reservation.get_reservation_id(), slice_obj.get_name()))
-                    self.pending_redeem.add(reservation=reservation)
-                    self.calendar.remove_pending(reservation=reservation)
+                    else:
+                        # we don't need to look at any other reservations in this slice
+                        self.logger.debug("Removing from pendingRedeem: {}".format(reservation))
+                        self.pending_redeem.remove(reservation=reservation)
                 else:
-                    # we don't need to look at any other reservations in this slice
+                    # Remove active or close reservations
                     self.logger.debug("Removing from pendingRedeem: {}".format(reservation))
                     self.pending_redeem.remove(reservation=reservation)
-            else:
-                # Remove active or close reservations
-                self.logger.debug("Removing from pendingRedeem: {}".format(reservation))
-                self.pending_redeem.remove(reservation=reservation)
+            except Exception as e:
+                self.logger.error(traceback.format_exc())
+                self.logger.error(f"An error occurred during check pending for "
+                                  f"reservation #{reservation.get_reservation_id()} e: {e}", stack_info=True)
 
         super().check_pending()

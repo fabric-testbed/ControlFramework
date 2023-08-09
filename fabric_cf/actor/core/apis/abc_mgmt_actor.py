@@ -76,6 +76,14 @@ class ABCMgmtActor(ABCComponent):
         """
 
     @abstractmethod
+    def delete_slice(self, *, slice_id: ID) -> bool:
+        """
+        Deletes the specified slice - moves the slice into Closing state.
+        @param slice_id slice ID
+        @return true for success; false otherwise
+        """
+
+    @abstractmethod
     def update_slice(self, *, slice_obj: SliceAvro, modify_state: bool = False) -> bool:
         """
         Updates the specified slice.

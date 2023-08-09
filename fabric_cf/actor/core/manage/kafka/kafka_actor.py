@@ -126,6 +126,9 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
     def accept_update_slice(self, *, slice_id: ID) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
+    def delete_slice(self, *, slice_id: ID) -> bool:
+        raise ManageException(Constants.NOT_IMPLEMENTED)
+
     def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
                          type: str = None, site: str = None, node_id: str = None) -> List[ReservationMng]:

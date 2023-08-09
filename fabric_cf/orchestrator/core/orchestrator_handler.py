@@ -528,7 +528,8 @@ class OrchestratorHandler:
             self.logger.debug(f"Get Slices: {project} {fabric_token.email} ")
             states = None
             if slice_guid is None:
-                states = [SliceState.StableError.value,
+                states = [SliceState.Nascent.value,
+                          SliceState.StableError.value,
                           SliceState.StableOK.value,
                           SliceState.ModifyOK.value,
                           SliceState.ModifyError.value]

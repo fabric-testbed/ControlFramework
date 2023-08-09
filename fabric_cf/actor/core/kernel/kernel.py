@@ -896,6 +896,30 @@ class Kernel:
             finally:
                 real.unlock_slice()
 
+    def delete_slice(self, *, slice_id: ID):
+        """
+        Delete the specified slice with the kernel.
+        @param slice_id slice_id
+        @throws Exception in case of failure
+        """
+        if slice_id is None:
+            raise KernelException(Constants.INVALID_ARGUMENT)
+
+        real = self.get_slice(slice_id=slice_id)
+
+        if real is None:
+            self.logger.debug("Slice object not found in local data structure")
+        else:
+            try:
+                real.lock_slice()
+                if not real.is_dead_or_closing():
+                    # Transition slice to Closing state
+                    real.transition_slice(operation=SliceStateMachine.DELETE)
+                    real.set_dirty()
+                    self.plugin.get_database().update_slice(slice_object=real)
+            finally:
+                real.unlock_slice()
+
     def register_slice(self, *, slice_object: ABCSlice):
         """
         Registers the specified slice with the kernel.

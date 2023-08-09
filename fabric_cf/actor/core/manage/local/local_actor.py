@@ -157,6 +157,20 @@ class LocalActor(LocalProxy, ABCMgmtActor):
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
+    def delete_slice(self, *, slice_id: ID) -> bool:
+        self.clear_last()
+        try:
+            result = self.manager.delete_slice(slice_id=slice_id, caller=self.auth)
+            self.last_status = result
+
+            if self.last_status.get_code() == 0:
+                return True
+
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+        return False
+
     def update_slice(self, *, slice_obj: SliceAvro, modify_state: bool = False) -> bool:
         self.clear_last()
         try:

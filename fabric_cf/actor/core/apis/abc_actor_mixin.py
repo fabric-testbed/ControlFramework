@@ -442,6 +442,17 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         """
 
     @abstractmethod
+    def delete_slice(self, *, slice_id: ID):
+        """
+        Delete the slice registered with the actor. Moves the slice into Closing State
+
+        Args:
+            slice_id: slice id
+        Raises:
+            Exception in case of error
+        """
+
+    @abstractmethod
     def remove_slice(self, *, slice_object: ABCSlice):
         """
         Removes the specified slice. Purges slice-related state from the database.
