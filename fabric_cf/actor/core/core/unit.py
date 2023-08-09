@@ -134,10 +134,11 @@ class Unit(ConfigToken):
         finally:
             self.lock.release()
 
-    def fail_on_poa(self, *, message: str, poa_info:dict):
+    def fail_on_poa(self, *, message: str, poa_info: dict):
         """
         Fail on modify
         @param message message
+        @param poa_info
         @param exception exception
         """
         try:
