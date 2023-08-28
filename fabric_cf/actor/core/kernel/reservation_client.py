@@ -483,6 +483,9 @@ class ReservationClient(Reservation, ABCControllerReservation):
             if value1 == str(NodeType.Facility) or ifs.label_allocations is not None:
                 continue
 
+            if value1 is None:
+                self.fail(message=f"Node Map for the interface {ifs} not set {ifs.get_node_map()}")
+
             result = value1.split(",")
             if Constants.PEERED in value1:
                 if sliver.get_technology() == Constants.AL2S:
