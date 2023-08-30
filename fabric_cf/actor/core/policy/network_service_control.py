@@ -49,6 +49,10 @@ class NetworkServiceControl(ResourceControl):
         if diff is None:
             return False
 
+        if diff.added.interfaces is not None or diff.removed.interfaces is not None or \
+                diff.modified.interfaces is not None:
+            return True
+
         if diff.modified is not None and diff.modified.services is not None:
             for new_ns, flag in diff.modified.services:
                 if not (flag & WhatsModifiedFlag.LABELS or flag & WhatsModifiedFlag.CAPACITIES):
