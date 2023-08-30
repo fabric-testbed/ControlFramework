@@ -311,6 +311,7 @@ class Globals:
             conf[Constants.SASL_USERNAME] = sasl_username
             conf[Constants.SASL_PASSWORD] = sasl_password
         conf[Constants.GROUP_ID] = group_id
+        conf['session.timeout.ms'] = 60000
         conf[Constants.PROPERTY_CONF_KAFKA_FETCH_MAX_MESSAGE_SIZE] = self.config.get_kafka_max_message_size()
         return conf
 
