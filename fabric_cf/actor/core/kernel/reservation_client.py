@@ -1816,6 +1816,9 @@ class ReservationClient(Reservation, ABCControllerReservation):
             if authority_updates is not None and len(authority_updates) > 0:
                 error_message += f"{self.__remove_special_characters(message=authority_updates)}#"
 
+            if not self.failure and error_message is not None:
+                self.failure = True
+
             asm_thread = self.actor.get_asm_thread()
             if asm_thread is not None:
                 asm_thread.enqueue(graph_id=self.slice.get_graph_id(),

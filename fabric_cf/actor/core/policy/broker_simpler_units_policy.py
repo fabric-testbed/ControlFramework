@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 import enum
+import random
 import threading
 import traceback
 from datetime import datetime
@@ -76,6 +77,7 @@ class BrokerAllocationAlgorithm(Enum):
     FirstFit = enum.auto()
     BestFit = enum.auto()
     WorstFit = enum.auto()
+    Random = enum.auto()
 
     def __repr__(self):
         return self.name
@@ -535,6 +537,59 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return node_id_list
 
+    def __random_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: InventoryForType,
+                         reservation: ABCBrokerReservation) -> Tuple[str, BaseSliver, Any]:
+        """
+        Find random Available Node which can serve the reservation
+        @param node_id_list: Candidate Nodes
+        @param node_id_to_reservations:
+        @param inv: Inventory
+        @param reservation: Reservation
+        @return tuple containing delegation id, sliver, error message if any
+        """
+        delegation_id = None
+        sliver = None
+        error_msg = None
+        self.logger.debug(f"Possible candidates to serve {reservation} candidates# {node_id_list}")
+        requested_sliver = reservation.get_requested_resources().get_sliver()
+        attempts = len(node_id_list)
+        for i in range(attempts):
+            node_id = random.choice(node_id_list)
+            node_id_list.remove(node_id)
+            try:
+                self.logger.debug(f"Attempting to allocate {reservation} via graph_node# {node_id}")
+                graph_node = self.get_network_node_from_graph(node_id=node_id)
+
+                if requested_sliver.labels is not None and requested_sliver.labels.instance_parent is not None:
+                    self.logger.info(f"Sliver {requested_sliver} is requested on worker: "
+                                     f"{requested_sliver.labels.instance_parent}")
+                    if graph_node.get_name() != requested_sliver.labels.instance_parent:
+                        self.logger.info(f"Skipping candidate node: {graph_node}")
+                        continue
+
+                existing_reservations = self.get_existing_reservations(node_id=node_id,
+                                                                       node_id_to_reservations=node_id_to_reservations)
+
+                delegation_id, sliver = inv.allocate(rid=reservation.get_reservation_id(),
+                                                     requested_sliver=requested_sliver,
+                                                     graph_id=self.combined_broker_model_graph_id,
+                                                     graph_node=graph_node, existing_reservations=existing_reservations)
+
+                if delegation_id is not None and sliver is not None:
+                    break
+            except BrokerException as e:
+                if e.error_code == ExceptionErrorCode.INSUFFICIENT_RESOURCES:
+                    self.logger.error(f"Exception occurred: {e}")
+                    error_msg = e.msg
+                else:
+                    raise e
+
+        if delegation_id is None and requested_sliver.labels is not None and requested_sliver.labels.instance_parent is not None:
+            error_msg = f"Insufficient Resources: {requested_sliver.labels.instance_parent} " \
+                        f"cannot serve the requested sliver"
+
+        return delegation_id, sliver, error_msg
+
     def __find_first_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: InventoryForType,
                          reservation: ABCBrokerReservation) -> Tuple[str, BaseSliver, Any]:
         """
@@ -617,7 +672,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             return self.__find_first_fit(node_id_list=node_id_list,
                                          node_id_to_reservations=node_id_to_reservations,
                                          inv=inv, reservation=reservation)
-
+        elif self.get_algorithm_type().lower() == BrokerAllocationAlgorithm.Random.name.lower():
+            return self.__random_fit(node_id_list=node_id_list,
+                                         node_id_to_reservations=node_id_to_reservations,
+                                         inv=inv, reservation=reservation)
         else:
             raise BrokerException(error_code=ExceptionErrorCode.NOT_SUPPORTED,
                                   msg=f"Broker currently only supports First Fit")
@@ -1262,7 +1320,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 if ns_sliver.get_name() == name:
                     return ns_sliver
 
-            return None
+            raise BrokerException(msg=f"Facility Port: {name} for site: {site} could not be found in CBM!")
         finally:
             self.lock.release()
 

@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import enum
+import logging
 from enum import Enum
 from typing import Tuple, List
 
@@ -216,6 +217,27 @@ class SliceStateMachine:
 
         return False
 
+    def __build_bins(self, *, reservations: ReservationSet) -> Tuple[bool, StateBins]:
+        has_error = False
+        bins = StateBins()
+        for r in reservations.values():
+            from fabric_cf.actor.core.container.globals import GlobalsSingleton
+            logger = GlobalsSingleton.get().get_logger()
+            logger.info(f"KOMAL --- {r.has_failures()}")
+            bins.add(s=r.get_state())
+            if r.get_pending_state() in [ReservationPendingStates.ModifyingLease,
+                                         ReservationPendingStates.ExtendingTicket,
+                                         ReservationPendingStates.ExtendingLease,
+                                         ReservationPendingStates.Redeeming,
+                                         ReservationPendingStates.Ticketing,
+                                         ReservationPendingStates.Priming,
+                                         ReservationPendingStates.PrimingPoa,
+                                         ReservationPendingStates.WaitingPoaResponse]:
+                bins.add(s=r.get_pending_state())
+            if not has_error and r.has_failures():
+                has_error = True
+        return has_error, bins
+
     def transition_slice(self, *, operation: SliceOperation, reservations: ReservationSet) -> Tuple[bool, SliceState]:
         """
         Attempt to transition a slice to a new state
@@ -236,8 +258,11 @@ class SliceStateMachine:
             self.state = SliceState.Modifying
 
         elif operation.command == SliceCommand.ModifyAccept:
-            if self.state == SliceState.ModifyError:
+            has_error, bins = self.__build_bins(reservations=reservations)
+
+            if has_error or self.state == SliceState.ModifyError:
                 self.state = SliceState.StableError
+
             elif self.state == SliceState.ModifyOK:
                 self.state = SliceState.StableOK
 
@@ -246,25 +271,10 @@ class SliceStateMachine:
                 self.state = SliceState.Closing
 
         elif operation.command == SliceCommand.Reevaluate:
-            has_error = False
             if reservations is None or reservations.size() == 0:
                 return state_changed, self.state
 
-            bins = StateBins()
-            for r in reservations.values():
-                bins.add(s=r.get_state())
-                if r.get_pending_state() in [ReservationPendingStates.ModifyingLease,
-                                             ReservationPendingStates.ExtendingTicket,
-                                             ReservationPendingStates.ExtendingLease,
-                                             ReservationPendingStates.Redeeming,
-                                             ReservationPendingStates.Ticketing,
-                                             ReservationPendingStates.Priming,
-                                             ReservationPendingStates.PrimingPoa,
-                                             ReservationPendingStates.WaitingPoaResponse]:
-                    bins.add(s=r.get_pending_state())
-                if not has_error and r.get_error_message() is not None and len(r.get_error_message()) > 0:
-                    has_error = True
-
+            has_error, bins = self.__build_bins(reservations=reservations)
             if self.state == SliceState.Nascent or self.state == SliceState.Configuring:
                 if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed):
                     if not has_error:
@@ -283,7 +293,10 @@ class SliceStateMachine:
 
             elif self.state == SliceState.Modifying:
                 if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed):
-                    self.state = SliceState.ModifyOK
+                    if not has_error:
+                        self.state = SliceState.ModifyOK
+                    else:
+                        self.state = SliceState.ModifyError
 
                 if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
                                                   ReservationStates.Closed)) and \

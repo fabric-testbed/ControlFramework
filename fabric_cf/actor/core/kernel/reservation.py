@@ -146,6 +146,7 @@ class Reservation(ABCReservationMixin):
         self.last_transition_time = None
         self.last_pending_state = ReservationPendingStates.None_
         self.thread_lock = threading.Lock()
+        self.failure = False
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -201,6 +202,9 @@ class Reservation(ABCReservationMixin):
                 self.requested_resources.restore(plugin=actor.get_plugin(), reservation=self)
             if self.approved_resources is not None:
                 self.approved_resources.restore(plugin=actor.get_plugin(), reservation=self)
+
+    def has_failures(self):
+        return self.failure
 
     def can_redeem(self) ->bool:
         return True
