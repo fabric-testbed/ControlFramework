@@ -198,6 +198,7 @@ class SliceStateMachine:
 
     def __init__(self, *, slice_id: ID):
         self.slice_guid = slice_id
+        self.last_state = SliceState.Nascent
         self.state = SliceState.Nascent
 
     @staticmethod
@@ -283,7 +284,10 @@ class SliceStateMachine:
 
             elif self.state == SliceState.Modifying:
                 if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed):
-                    self.state = SliceState.ModifyOK
+                    if not has_error and self.last_state == SliceState.StableOK:
+                        self.state = SliceState.ModifyOK
+                    else:
+                        self.state = SliceState.ModifyError
 
                 if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
                                                   ReservationStates.Closed)) and \
@@ -310,6 +314,7 @@ class SliceStateMachine:
                 self.state = SliceState.Dead
         if prev_state != self.state:
             state_changed = True
+            self.last_state = self.state
 
         return state_changed, self.state
 

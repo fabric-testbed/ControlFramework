@@ -1262,7 +1262,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 if ns_sliver.get_name() == name:
                     return ns_sliver
 
-            return None
+            raise BrokerException(msg=f"Facility Port: {name} for site: {site} could not be found in CBM!")
         finally:
             self.lock.release()
 
