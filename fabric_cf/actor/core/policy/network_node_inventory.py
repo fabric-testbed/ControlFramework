@@ -349,7 +349,7 @@ class NetworkNodeInventory(InventoryForType):
         @return Return the updated candidate node
         """
         for reservation in existing_reservations:
-            if rid == reservation.get_reservation_id():
+            if rid == reservation.get_reservation_id() and not reservation.is_ticketed():
                 continue
             # For Active or Ticketed or Ticketing reservations; reduce the counts from available
             allocated_sliver = None

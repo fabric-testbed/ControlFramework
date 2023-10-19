@@ -560,14 +560,16 @@ class OrchestratorSliceWrapper:
 
         # Remove nodes
         for x in topology_diff.removed.nodes:
-            self.computed_remove_reservations.append(x.reservation_info.reservation_id)
+            if x.reservation_info is not None and x.reservation_info.reservation_id is not None:
+                self.computed_remove_reservations.append(x.reservation_info.reservation_id)
 
         # Remove services
         for x in topology_diff.removed.services:
             if x.get_sliver().get_type() in Constants.IGNORABLE_NS:
                 continue
             reservation_info = x.get_property('reservation_info')
-            self.computed_remove_reservations.append(reservation_info.reservation_id)
+            if reservation_info is not None and reservation_info.reservation_id is not None:
+                self.computed_remove_reservations.append(reservation_info.reservation_id)
 
         # Update Dependencies for Peered NS
         self.__update_peered_ns_dependencies(ns_peered_reservations=ns_peered_reservations, ns_mapping=ns_mapping)

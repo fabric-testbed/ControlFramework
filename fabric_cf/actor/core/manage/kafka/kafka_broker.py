@@ -136,7 +136,7 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
         request.auth = self.auth
         request.message_id = str(ID())
         request.callback_topic = self.callback_topic
-        request.rid = str(reservation)
+        request.reservation_id = str(reservation)
         request.end_time = ActorClock.to_milliseconds(when=new_end_time)
         request.sliver = sliver
 
