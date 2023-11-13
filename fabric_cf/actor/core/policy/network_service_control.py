@@ -49,15 +49,16 @@ class NetworkServiceControl(ResourceControl):
         if diff is None:
             return False
 
-        if diff.added.interfaces is not None or diff.removed.interfaces is not None or \
-                diff.modified.interfaces is not None:
+        if (diff.added.interfaces is not None and len(diff.added.interfaces)) or \
+                (diff.removed.interfaces is not None and len(diff.removed.interfaces)) or \
+                (diff.modified.interfaces is not None and len(diff.modified.interfaces)):
             return True
 
         if diff.modified is not None and diff.modified.services is not None:
             for new_ns, flag in diff.modified.services:
-                if not (flag & WhatsModifiedFlag.LABELS or flag & WhatsModifiedFlag.CAPACITIES):
-                    return False
-        return True
+                if flag & WhatsModifiedFlag.LABELS or flag & WhatsModifiedFlag.CAPACITIES:
+                    return True
+        return False
 
     def assign(self, *, reservation: ABCAuthorityReservation, delegation_name: str,
                graph_node: BaseSliver, existing_reservations: List[ABCReservationMixin]) -> ResourceSet:
