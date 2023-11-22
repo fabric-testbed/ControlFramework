@@ -122,6 +122,9 @@ class Maintenance:
             existing_site = database.get_site(site_name=s.get_name())
             # Site entry exists
             if existing_site is not None:
+                # Update the Properties {project id/user email information)
+                if properties is not None:
+                    existing_site.set_properties(properties=properties)
                 # Site level Maintenance Update
                 if s.get_maintenance_info().get(s.get_name()) is not None:
                     database.update_site(site=s)
