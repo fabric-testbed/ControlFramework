@@ -108,6 +108,16 @@ class MainClass:
             print(f"Exception occurred while fetching delegations: {e}")
             traceback.print_exc()
 
+    def get_sites(self):
+        try:
+            sites = self.db.get_sites()
+            if sites is not None:
+                for s in sites:
+                    print(s)
+        except Exception as e:
+            print(f"Exception occurred while fetching sites: {e}")
+            traceback.print_exc()
+
     def get_reservations(self, slice_id: str = None, res_id: str = None, email: str = None):
         try:
             res_list = self.db.get_reservations(slice_id=slice_id, rid=res_id, email=email)
@@ -150,6 +160,8 @@ class MainClass:
                 self.get_reservations(slice_id=args.slice_id, res_id=args.sliver_id, email=args.email)
         elif args.command == "delegations":
             self.get_delegations(dlg_id=args.delegation_id)
+        elif args.command == "sites":
+            self.get_sites()
         else:
             print(f"Unsupported command: {args.command}")
 
