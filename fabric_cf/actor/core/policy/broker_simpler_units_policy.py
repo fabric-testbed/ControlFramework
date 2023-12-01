@@ -40,7 +40,7 @@ from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Labels
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver, NodeType
-from fim.slivers.network_service import NetworkServiceSliver, ServiceType
+from fim.slivers.network_service import NetworkServiceSliver, ServiceType, NSLayer
 
 from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
@@ -751,7 +751,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 # layer 3 network services in the owner switch
                 if len(net_adm_ids) > 1:
                     for x in owner_switch.network_service_info.network_services.values():
-                        if x.layer == 'L2':
+                        if x.get_layer() == NSLayer.L2:
                             continue
                         net_adm_ids = x.get_structural_info().adm_graph_ids
                         break
@@ -1262,7 +1262,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 if ns_sliver.get_name() == name:
                     return ns_sliver
 
-            return None
+            raise BrokerException(msg=f"Facility Port: {name} for site: {site} could not be found in CBM!")
         finally:
             self.lock.release()
 

@@ -526,6 +526,7 @@ class FimHelper:
         @param device_name device name
         @return Interface sliver
         """
+        result = None
         for ns in component.network_service_info.network_services.values():
             # Filter on region
             if region is not None:
@@ -540,21 +541,14 @@ class FimHelper:
             if local_name is not None:
                 result = list(filter(lambda x: (local_name in x.labels.local_name), result))
 
-            return random.choice(result)
-            '''
-            # Return specific interface where local name matches
-            if local_name is not None:
-                return next(x for x in ns.interface_info.interfaces.values() if local_name in x.get_name())
-            else:
-                # Return an interface chosen randomly
-                if region is None:
-                    return random.choice(list(ns.interface_info.interfaces.values()))
-                # Return an interface chosen randomly for a specific region
-                else:
-                    result = list(filter(lambda x: (region in x.labels.region), ns.interface_info.interfaces.values()))
-                    return random.choice(result)
-            '''
-        return None
+            if result is not None:
+                break
+
+        if result is None or len(result) == 0:
+            raise Exception(f"No interface found to service region {region}, device: {device_name} "
+                            f"local_name: {local_name} in component: {component}")
+
+        return random.choice(result)
 
     @staticmethod
     def get_owners(*, bqm: ABCCBMPropertyGraph, node_id: str,

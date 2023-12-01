@@ -345,11 +345,12 @@ class NetworkNodeInventory(InventoryForType):
         Remove already assigned components to existing reservations from the candidate node
         @param rid reservation ID
         @param graph_node candidate node identified to satisfy the reservation
-        @param existing_reservations Existing Reservations
+        @param existing_reservations Existing Ticketed Reservations
         @return Return the updated candidate node
         """
         for reservation in existing_reservations:
-            if rid == reservation.get_reservation_id():
+            # Requested reservation should be skipped only when new i.e. not ticketed
+            if rid == reservation.get_reservation_id() and not reservation.is_ticketed():
                 continue
             # For Active or Ticketed or Ticketing reservations; reduce the counts from available
             allocated_sliver = None
@@ -358,6 +359,10 @@ class NetworkNodeInventory(InventoryForType):
 
             if (reservation.is_active() or reservation.is_ticketed()) and reservation.get_resources() is not None:
                 allocated_sliver = reservation.get_resources().get_sliver()
+
+            if reservation.is_extending_ticket() and reservation.get_requested_resources() is not None and \
+                    reservation.get_requested_resources().get_sliver() is not None:
+                allocated_sliver = reservation.get_requested_resources().get_sliver()
 
             if allocated_sliver is None or not isinstance(allocated_sliver, NodeSliver) or \
                     allocated_sliver.attached_components_info is None:
