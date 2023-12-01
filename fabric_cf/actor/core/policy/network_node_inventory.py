@@ -360,6 +360,10 @@ class NetworkNodeInventory(InventoryForType):
             if (reservation.is_active() or reservation.is_ticketed()) and reservation.get_resources() is not None:
                 allocated_sliver = reservation.get_resources().get_sliver()
 
+            if reservation.is_extending_ticket() and reservation.get_requested_resources() is not None and \
+                    reservation.get_requested_resources().get_sliver() is not None:
+                allocated_sliver = reservation.get_requested_resources().get_sliver()
+
             if allocated_sliver is None or not isinstance(allocated_sliver, NodeSliver) or \
                     allocated_sliver.attached_components_info is None:
                 continue
