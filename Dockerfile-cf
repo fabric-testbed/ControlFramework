@@ -20,10 +20,10 @@ RUN pip3 install .
 RUN mkdir -p "/etc/fabric/message_bus/schema"
 RUN mkdir -p "/etc/fabric/actor/config"
 RUN mkdir -p "/var/log/actor"
-RUN cp /usr/local/lib/python3.9/site-packages/fabric_mb/message_bus/schema/*.avsc /etc/fabric/message_bus/schema
+RUN cp /usr/local/lib/python3.11/site-packages/fabric_mb/message_bus/schema/*.avsc /etc/fabric/message_bus/schema
 
-RUN echo "0 2 * * * root /usr/local/bin/python3.9 /usr/src/app/audit.py -f /etc/fabric/actor/config/config.yaml -d 30 -c slices -o remove" >> /etc/crontab
-RUN echo "0/15 * * * * root /usr/local/bin/python3.9 /usr/src/app/audit.py -f /etc/fabric/actor/config/config.yaml -d 30 -c slivers -o close" >> /etc/crontab
+RUN echo "0 2 * * * root /usr/local/bin/python3.11 /usr/src/app/audit.py -f /etc/fabric/actor/config/config.yaml -d 30 -c slices -o remove" >> /etc/crontab
+RUN echo "0/15 * * * * root /usr/local/bin/python3.11 /usr/src/app/audit.py -f /etc/fabric/actor/config/config.yaml -d 30 -c slivers -o close" >> /etc/crontab
 RUN service cron reload
 RUN service cron restart
 
