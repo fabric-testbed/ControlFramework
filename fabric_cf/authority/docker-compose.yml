@@ -38,7 +38,7 @@ services:
        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-site-am}
        - PGDATA=${PGDATA:-/var/lib/postgresql/data}
   pdp:
-    image: fabrictestbed/authzforce-pdp:6.0.1
+    image: fabrictestbed/authzforce-pdp:6.1.0
     container_name: site1-am-pdp
     user: ${PDP_UID:-1000}:${PDP_GID:-1000}
     restart: always
