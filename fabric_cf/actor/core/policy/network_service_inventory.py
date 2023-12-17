@@ -442,6 +442,9 @@ class NetworkServiceInventory(InventoryForType):
             vlan_range = self.__extract_vlan_range(labels=bqm_interface.labels)
             available_vlans = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_interface,
                                                              existing_reservations=existing_reservations)
+            if not len(available_vlans):
+                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                              msg=f"No available vlans for interface: {bqm_interface.get_name()}")
             vlan = str(available_vlans[0])
             ifs_labels = Labels.update(ifs_labels, vlan=vlan)
 
