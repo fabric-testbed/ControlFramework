@@ -162,7 +162,8 @@ class NetworkServiceInventory(InventoryForType):
                                                             existing_reservations=existing_reservations)
 
                 if requested_vlan is None:
-                    requested_ifs.labels.vlan = str(random.choice(vlan_range))
+                    #requested_ifs.labels.vlan = str(random.choice(vlan_range))
+                    requested_ifs.labels.vlan = str(vlan_range[0])
                     return requested_ifs
 
                 if requested_vlan not in vlan_range:
@@ -186,14 +187,16 @@ class NetworkServiceInventory(InventoryForType):
                                                             existing_reservations=existing_reservations)
                 if bqm_ifs.get_type() != InterfaceType.FacilityPort:
                     # Allocate the first available VLAN
-                    requested_ifs.labels.vlan = str(random.choice(vlan_range))
+                    #requested_ifs.labels.vlan = str(random.choice(vlan_range))
+                    requested_ifs.labels.vlan = str(vlan_range[0])
                     requested_ifs.label_allocations = Labels(vlan=requested_ifs.labels.vlan)
                 else:
                     if requested_ifs.labels is None:
                         return requested_ifs
 
                     if requested_ifs.labels.vlan is None:
-                        requested_ifs.labels.vlan = str(random.choice(vlan_range))
+                        #requested_ifs.labels.vlan = str(random.choice(vlan_range))
+                        requested_ifs.labels.vlan = str(vlan_range[0])
 
                     if int(requested_ifs.labels.vlan) not in vlan_range:
                         raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
@@ -276,7 +279,8 @@ class NetworkServiceInventory(InventoryForType):
 
             if requested_ns.label_allocations is None:
                 requested_ns.label_allocations = Labels()
-            requested_ns.label_allocations.vlan = str(random.choice(vlans_range))
+            #requested_ns.label_allocations.vlan = str(random.choice(vlans_range))
+            requested_ns.label_allocations.vlan = str(vlans_range[0])
         except Exception as e:
             self.logger.error(f"Error in allocate_vNIC: {e}")
             self.logger.error(traceback.format_exc())
@@ -446,7 +450,8 @@ class NetworkServiceInventory(InventoryForType):
             vlan_range = self.__extract_vlan_range(labels=bqm_interface.labels)
             available_vlans = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_interface,
                                                              existing_reservations=existing_reservations)
-            vlan = str(random.choice(available_vlans))
+            #vlan = str(random.choice(available_vlans))
+            vlan = str(available_vlans[0])
             ifs_labels = Labels.update(ifs_labels, vlan=vlan)
 
         requested_ifs.labels = ifs_labels
