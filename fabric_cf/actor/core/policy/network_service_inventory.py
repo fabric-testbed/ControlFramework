@@ -104,6 +104,9 @@ class NetworkServiceInventory(InventoryForType):
                     if allocated_vlan in available_vlan_range:
                         available_vlan_range.remove(allocated_vlan)
 
+        if available_vlan_range is None or len(available_vlan_range) == 0:
+            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                  msg=f"No VLANs available!")
         return available_vlan_range
 
     def allocate_ifs(self, *, requested_ns: NetworkServiceSliver, requested_ifs: InterfaceSliver,
