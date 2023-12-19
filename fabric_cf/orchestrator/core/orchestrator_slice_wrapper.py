@@ -276,7 +276,8 @@ class OrchestratorSliceWrapper:
 
                         ifs.set_node_map(node_map=node_map)
                         peer_ifs_labels = ifs_mapping.get_peer_ifs().get_labels()
-                        ifs.set_peer_labels(lab=peer_ifs_labels)
+                        if peer_ifs_labels is not None:
+                            ifs.set_peer_labels(lab=peer_ifs_labels)
                         # Peer_ifs is AL2S in ASM
                         if peer_ifs_labels is not None and peer_ifs_labels.ipv4_subnet is not None:
                             interface = ipaddress.IPv4Interface(peer_ifs_labels.ipv4_subnet)
