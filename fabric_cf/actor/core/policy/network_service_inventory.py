@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import ipaddress
+import random
 import traceback
 from ipaddress import IPv6Network, IPv4Network
 from typing import List, Tuple
@@ -53,7 +54,8 @@ class NetworkServiceInventory(InventoryForType):
                 for v_r in labels.vlan_range:
                     vlans = v_r.split("-")
                     for x in list(range(int(vlans[0]), int(vlans[1]) + 1)):
-                        vlan_range.append(x)
+                        if x not in vlan_range:
+                            vlan_range.append(x)
             else:
                 vlans = labels.vlan_range.split("-")
                 vlan_range = list(range(int(vlans[0]), int(vlans[1]) + 1))
@@ -103,6 +105,9 @@ class NetworkServiceInventory(InventoryForType):
                     if allocated_vlan in available_vlan_range:
                         available_vlan_range.remove(allocated_vlan)
 
+        if available_vlan_range is None or len(available_vlan_range) == 0:
+            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                  msg=f"No VLANs available!")
         return available_vlan_range
 
     def allocate_ifs(self, *, requested_ns: NetworkServiceSliver, requested_ifs: InterfaceSliver,
@@ -158,6 +163,7 @@ class NetworkServiceInventory(InventoryForType):
                                                             existing_reservations=existing_reservations)
 
                 if requested_vlan is None:
+                    #requested_ifs.labels.vlan = str(random.choice(vlan_range))
                     requested_ifs.labels.vlan = str(vlan_range[0])
                     return requested_ifs
 
@@ -182,13 +188,15 @@ class NetworkServiceInventory(InventoryForType):
                                                             existing_reservations=existing_reservations)
                 if bqm_ifs.get_type() != InterfaceType.FacilityPort:
                     # Allocate the first available VLAN
+                    #requested_ifs.labels.vlan = str(random.choice(vlan_range))
                     requested_ifs.labels.vlan = str(vlan_range[0])
-                    requested_ifs.label_allocations = Labels(vlan=str(vlan_range[0]))
+                    requested_ifs.label_allocations = Labels(vlan=requested_ifs.labels.vlan)
                 else:
                     if requested_ifs.labels is None:
                         return requested_ifs
 
                     if requested_ifs.labels.vlan is None:
+                        #requested_ifs.labels.vlan = str(random.choice(vlan_range))
                         requested_ifs.labels.vlan = str(vlan_range[0])
 
                     if int(requested_ifs.labels.vlan) not in vlan_range:
@@ -272,6 +280,7 @@ class NetworkServiceInventory(InventoryForType):
 
             if requested_ns.label_allocations is None:
                 requested_ns.label_allocations = Labels()
+            #requested_ns.label_allocations.vlan = str(random.choice(vlans_range))
             requested_ns.label_allocations.vlan = str(vlans_range[0])
         except Exception as e:
             self.logger.error(f"Error in allocate_vNIC: {e}")
@@ -442,6 +451,7 @@ class NetworkServiceInventory(InventoryForType):
             vlan_range = self.__extract_vlan_range(labels=bqm_interface.labels)
             available_vlans = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_interface,
                                                              existing_reservations=existing_reservations)
+            #vlan = str(random.choice(available_vlans))
             vlan = str(available_vlans[0])
             ifs_labels = Labels.update(ifs_labels, vlan=vlan)
 
