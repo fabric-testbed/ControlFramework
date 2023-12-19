@@ -54,7 +54,8 @@ class NetworkServiceInventory(InventoryForType):
                 for v_r in labels.vlan_range:
                     vlans = v_r.split("-")
                     for x in list(range(int(vlans[0]), int(vlans[1]) + 1)):
-                        vlan_range.append(x)
+                        if x not in vlan_range:
+                            vlan_range.append(x)
             else:
                 vlans = labels.vlan_range.split("-")
                 vlan_range = list(range(int(vlans[0]), int(vlans[1]) + 1))
