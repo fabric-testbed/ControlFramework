@@ -701,4 +701,5 @@ class OrchestratorSliceWrapper:
                                     reservation_info=sliver.reservation_info,
                                     node_map=sliver.node_map,
                                     management_ip=sliver.management_ip,
-                                    capacity_hints=sliver.capacity_hints)
+                                    capacity_hints=sliver.capacity_hints,
+                                    capacities=sliver.capacities)
