@@ -148,11 +148,10 @@ class OrchestratorSliceWrapper:
             self.controller.add_reservation(reservation=r)
         self.logger.info(f"ADD TIME: {time.time() - start:.0f}")
 
-    def create(self, *, slice_graph: ABCASMPropertyGraph, topology: ExperimentTopology) -> List[LeaseReservationAvro]:
+    def create(self, *, slice_graph: ABCASMPropertyGraph) -> List[LeaseReservationAvro]:
         """
         Create a slice
         :param slice_graph: Slice Graph
-        :param topology: Experiment Topology
         :return: List of computed reservations
         """
         try:
@@ -177,7 +176,6 @@ class OrchestratorSliceWrapper:
                 self.computed_add_reservations.append(r)
                 self.computed_reservations.append(r)
 
-            self.__update_topology(topology=topology)
             return self.computed_reservations
         except OrchestratorException as e:
             self.logger.error("Exception occurred while generating reservations for slivers: {}".format(e))
@@ -456,7 +454,7 @@ class OrchestratorSliceWrapper:
             sliver_to_res_mapping[nn_id] = reservation.get_reservation_id()
         return reservations, sliver_to_res_mapping
 
-    def modify(self, *, new_slice_graph: ABCASMPropertyGraph, topology: ExperimentTopology) -> List[LeaseReservationAvro]:
+    def modify(self, *, new_slice_graph: ABCASMPropertyGraph) -> List[LeaseReservationAvro]:
         """
         Modify an existing slice
         :param new_slice_graph New Slice Graph
@@ -613,7 +611,6 @@ class OrchestratorSliceWrapper:
         for x in modified_reservations:
             self.computed_reservations.append(x)
 
-        self.__update_topology(topology=topology)
         return self.computed_reservations
 
     def __check_modify_on_fabnetv4ext(self, *, rid: str, req_sliver: NetworkServiceSliver) -> NetworkServiceSliver:
@@ -689,7 +686,7 @@ class OrchestratorSliceWrapper:
 
         return req_sliver
 
-    def __update_topology(self, *, topology: ExperimentTopology):
+    def update_topology(self, *, topology: ExperimentTopology):
         for x in self.computed_reservations:
             sliver = x.get_sliver()
             node_name = sliver.get_name()

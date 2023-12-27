@@ -297,7 +297,8 @@ class OrchestratorHandler:
             new_slice_object.lock()
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
-            computed_reservations = new_slice_object.create(slice_graph=asm_graph, topology=topology)
+            computed_reservations = new_slice_object.create(slice_graph=asm_graph)
+            new_slice_object.update_topology(topology=topology)
 
             # Check if Testbed in Maintenance or Site in Maintenance
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
@@ -470,7 +471,8 @@ class OrchestratorHandler:
                                                     slice_obj=slice_obj, logger=self.logger)
 
             # Compute the reservations
-            computed_reservations = slice_object.modify(new_slice_graph=asm_graph, topology=topology)
+            computed_reservations = slice_object.modify(new_slice_graph=asm_graph)
+            slice_object.update_topology(topology=topology)
 
             # Check if Test Bed or site is in maintenance
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
