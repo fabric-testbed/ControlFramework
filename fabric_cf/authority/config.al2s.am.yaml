@@ -75,6 +75,7 @@ oauth:
   jwks-url: https://cm.fabric-testbed.net/credmgr/certs
   # Uses HH:MM:SS (less than 24 hours)
   key-refresh: 00:10:00
+  trl-refresh: 00:10:00
   verify-exp: True
 
 database:
@@ -131,10 +132,10 @@ actor:
           label: AL2S AM
           description: AL2S AM
           handler:
-            module: fabric_am.handlers.oess_handler
-            class: OessHandler
+            module: fabric_am.handlers.al2s_handler
+            class: Al2sHandler
             properties:
-              config.properties.file: /etc/fabric/actor/config/oess_handler_config.yml
+              config.properties.file: /etc/fabric/actor/config/al2s_handler_config.yml
   controls:
       - control:
           type: L2PTP, L2Cloud, L3VPN, L3Cloud

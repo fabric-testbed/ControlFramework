@@ -657,6 +657,9 @@ class ActorMixin(ABCActorMixin):
     def modify_slice(self, *, slice_object: ABCSlice):
         self.wrapper.modify_slice(slice_object=slice_object)
 
+    def delete_slice(self, *, slice_id: ID):
+        self.wrapper.delete_slice(slice_id=slice_id)
+
     def register_delegation(self, *, delegation: ABCDelegation):
         self.wrapper.register_delegation(delegation=delegation)
 

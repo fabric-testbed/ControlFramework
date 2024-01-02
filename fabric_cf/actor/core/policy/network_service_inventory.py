@@ -451,6 +451,7 @@ class NetworkServiceInventory(InventoryForType):
             vlan_range = self.__extract_vlan_range(labels=bqm_interface.labels)
             available_vlans = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_interface,
                                                              existing_reservations=existing_reservations)
+
             #vlan = str(random.choice(available_vlans))
             vlan = str(available_vlans[0])
             ifs_labels = Labels.update(ifs_labels, vlan=vlan)

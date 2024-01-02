@@ -71,6 +71,11 @@ class LogHelper:
         file_handler.setFormatter(logging.Formatter(default_log_format))
         log.addHandler(file_handler)
 
+        console_log = logging.getLogger()
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.CRITICAL)
+        console_log.addHandler(console_handler)
+
         #logging.basicConfig(handlers=[file_handler], format=log_format, force=True)
         #file_handler.addFilter(LogHelper.thread_id_filter)
 

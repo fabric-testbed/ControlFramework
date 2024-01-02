@@ -8,7 +8,7 @@ from fabric_cf.orchestrator.swagger_server.response import poas_controller as rc
 def poas_create_sliver_id_post(body, sliver_id):  # noqa: E501
     """Perform an operational action on a sliver.
 
-    Request to perform an operation action on a sliver. Supported actions include - reboot a VM sliver, get cpu info, get numa info, pin vCPUs, pin memory to a numa node etc.    # noqa: E501
+    Request to perform an operation action on a sliver. Supported actions include - reboot a VM sliver, get cpu info, get numa info, pin vCPUs, pin memory to a numa node etc, add/remove ssh keys.    # noqa: E501
 
     :param body: Perform Operation Action
     :type body: dict | bytes

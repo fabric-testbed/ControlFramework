@@ -274,6 +274,39 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             result = ManagementObject.set_exception_details(result=result, e=e)
         return result
 
+    def delete_slice(self, *, slice_id: ID, caller: AuthToken) -> ResultAvro:
+        result = ResultAvro()
+        if slice_id is None or caller is None:
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            return result
+
+        try:
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
+                    self.actor = actor
+
+                def run(self):
+                    runner_result = ResultAvro()
+                    try:
+                        self.actor.delete_slice(slice_id=slice_id)
+                    except Exception as e:
+                        self.actor.get_logger().error("Failed to delete slice {}".format(e))
+                        runner_result.set_code(ErrorCodes.ErrorDatabaseError.value)
+                        runner_result.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
+                        runner_result = ManagementObject.set_exception_details(result=result, e=e)
+
+                    return runner_result
+
+            result = self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))
+        except Exception as e:
+            self.logger.error("delete_slice: {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result = ManagementObject.set_exception_details(result=result, e=e)
+
+        return result
+
     def update_slice(self, *, slice_mng: SliceAvro, caller: AuthToken, modify_state: bool = False) -> ResultAvro:
         result = ResultAvro()
         if slice_mng is None or slice_mng.get_slice_id() is None or caller is None:

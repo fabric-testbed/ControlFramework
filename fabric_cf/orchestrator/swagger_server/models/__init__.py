@@ -7,6 +7,7 @@ from fabric_cf.orchestrator.swagger_server.models.poa import Poa
 from fabric_cf.orchestrator.swagger_server.models.poa_data import PoaData
 from fabric_cf.orchestrator.swagger_server.models.poa_post import PoaPost
 from fabric_cf.orchestrator.swagger_server.models.poa_post_data import PoaPostData
+from fabric_cf.orchestrator.swagger_server.models.poa_post_data_keys import PoaPostDataKeys
 from fabric_cf.orchestrator.swagger_server.models.poa_post_data_vcpu_cpu_map import PoaPostDataVcpuCpuMap
 from fabric_cf.orchestrator.swagger_server.models.resource import Resource
 from fabric_cf.orchestrator.swagger_server.models.resources import Resources

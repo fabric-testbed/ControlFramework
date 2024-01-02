@@ -588,7 +588,8 @@ class Kernel:
             self.plugin.get_database().update_slice(slice_object=slice_obj)
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.error(err=f"An error occurred during probe pending for slice_obj #{slice_obj.get_slice_id()}", e=e)
+            self.logger.error(f"An error occurred during probe pending for "
+                              f"slice_obj #{slice_obj.get_slice_id()} e: {e}", stack_info=True)
         finally:
             slice_obj.unlock_slice()
 
@@ -626,8 +627,8 @@ class Kernel:
                 self.logger.info(f"RES SERVICE PROBE TIME: {diff} - {reservation.get_reservation_id()}")
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.error(err=f"An error occurred during probe pending for reservation #{reservation.get_reservation_id()}",
-                       e=e)
+            self.logger.error(f"An error occurred during probe pending for "
+                              f"reservation #{reservation.get_reservation_id()} e: {e}", stack_info=True)
         finally:
             reservation.unlock()
 
@@ -645,8 +646,8 @@ class Kernel:
             delegation.service_probe()
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.error(err=f"An error occurred during probe pending for delegation #{delegation.get_delegation_id()}",
-                       e=e)
+            self.logger.error(f"An error occurred during probe pending for "
+                              f"delegation #{delegation.get_delegation_id()} e:{e}", stack_info=True)
         finally:
             delegation.unlock()
 
@@ -890,6 +891,30 @@ class Kernel:
                     # Transition slice to Configuring state
                     real.transition_slice(operation=SliceStateMachine.MODIFY)
                     real.set_graph_id(graph_id=slice_object.get_graph_id())
+                    real.set_dirty()
+                    self.plugin.get_database().update_slice(slice_object=real)
+            finally:
+                real.unlock_slice()
+
+    def delete_slice(self, *, slice_id: ID):
+        """
+        Delete the specified slice with the kernel.
+        @param slice_id slice_id
+        @throws Exception in case of failure
+        """
+        if slice_id is None:
+            raise KernelException(Constants.INVALID_ARGUMENT)
+
+        real = self.get_slice(slice_id=slice_id)
+
+        if real is None:
+            self.logger.debug("Slice object not found in local data structure")
+        else:
+            try:
+                real.lock_slice()
+                if not real.is_dead_or_closing():
+                    # Transition slice to Closing state
+                    real.transition_slice(operation=SliceStateMachine.DELETE)
                     real.set_dirty()
                     self.plugin.get_database().update_slice(slice_object=real)
             finally:

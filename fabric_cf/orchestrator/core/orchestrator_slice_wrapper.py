@@ -455,6 +455,12 @@ class OrchestratorSliceWrapper:
         return reservations, sliver_to_res_mapping
 
     def modify(self, *, new_slice_graph: ABCASMPropertyGraph) -> List[LeaseReservationAvro]:
+        """
+        Modify an existing slice
+        :param new_slice_graph New Slice Graph
+        :param topology Experiment Topology
+        :return: List of computed reservations
+        """
         existing_topology = FimHelper.get_experiment_topology(graph_id=self.slice_obj.get_graph_id())
 
         new_topology = ExperimentTopology()
@@ -679,3 +685,18 @@ class OrchestratorSliceWrapper:
             req_sliver.reservation_info.error_message = "IP Addresses were updated due to conflicts"
 
         return req_sliver
+
+    def update_topology(self, *, topology: ExperimentTopology):
+        for x in self.computed_reservations:
+            sliver = x.get_sliver()
+            node_name = sliver.get_name()
+            if isinstance(sliver, NodeSliver) and node_name in topology.nodes:
+                node = topology.nodes[node_name]
+                node.set_properties(labels=sliver.labels,
+                                    label_allocations=sliver.label_allocations,
+                                    capacity_allocations=sliver.capacity_allocations,
+                                    reservation_info=sliver.reservation_info,
+                                    node_map=sliver.node_map,
+                                    management_ip=sliver.management_ip,
+                                    capacity_hints=sliver.capacity_hints,
+                                    capacities=sliver.capacities)

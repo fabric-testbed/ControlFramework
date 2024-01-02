@@ -55,7 +55,7 @@ services:
        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-orchestrator}
        - PGDATA=${PGDATA:-/var/lib/postgresql/data}
   pdp:
-    image: fabrictestbed/authzforce-pdp:6.0.1
+    image: fabrictestbed/authzforce-pdp:6.1.0
     container_name: orchestrator-pdp
     restart: always
     user: ${PDP_UID:-1000}:${PDP_GID:-1000}
@@ -68,7 +68,7 @@ services:
     build:
       context: ../../../
       dockerfile: Dockerfile-orchestrator
-    image: orchestrator:1.5.2
+    image: orchestrator:1.6.0
     container_name: orchestrator
     restart: always
     depends_on:

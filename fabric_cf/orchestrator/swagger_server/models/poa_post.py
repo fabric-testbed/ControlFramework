@@ -64,7 +64,7 @@ class PoaPost(Model):
         :param operation: The operation of this PoaPost.
         :type operation: str
         """
-        allowed_values = ["cpuinfo", "numainfo", "cpupin", "numatune", "reboot"]  # noqa: E501
+        allowed_values = ["cpuinfo", "numainfo", "cpupin", "numatune", "reboot", "addkey", "removekey"]  # noqa: E501
         if operation not in allowed_values:
             raise ValueError(
                 "Invalid value for `operation` ({0}), must be one of {1}"

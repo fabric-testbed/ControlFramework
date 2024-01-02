@@ -63,6 +63,8 @@ class PoaPostDataVcpuCpuMap(Model):
         :param vcpu: The vcpu of this PoaPostDataVcpuCpuMap.
         :type vcpu: str
         """
+        if vcpu is None:
+            raise ValueError("Invalid value for `vcpu`, must not be `None`")  # noqa: E501
 
         self._vcpu = vcpu
 
@@ -84,5 +86,7 @@ class PoaPostDataVcpuCpuMap(Model):
         :param cpu: The cpu of this PoaPostDataVcpuCpuMap.
         :type cpu: str
         """
+        if cpu is None:
+            raise ValueError("Invalid value for `cpu`, must not be `None`")  # noqa: E501
 
         self._cpu = cpu

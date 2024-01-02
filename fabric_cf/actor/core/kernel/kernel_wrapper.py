@@ -779,6 +779,17 @@ class KernelWrapper:
 
         self.kernel.modify_slice(slice_object=slice_object)
 
+    def delete_slice(self, *, slice_id: ID):
+        """
+        Delete the slice registered with the kernel
+        @param slice_id slice_id
+        @throws Exception in case of error
+        """
+        if slice_id is None:
+            raise KernelException("Invalid argument {}".format(slice_id))
+
+        self.kernel.delete_slice(slice_id=slice_id)
+
     def register_slice(self, *, slice_object: ABCSlice):
         """
         Registers the slice with the kernel: adds the slice object to the kernel

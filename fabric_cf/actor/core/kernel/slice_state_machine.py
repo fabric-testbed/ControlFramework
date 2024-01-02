@@ -284,9 +284,10 @@ class SliceStateMachine:
 
             elif self.state == SliceState.Modifying:
                 if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed):
-                    if not has_error and self.last_state == SliceState.StableOK:
-                        self.state = SliceState.ModifyOK
+                    if has_error:
+                        self.state = SliceState.ModifyError
                     else:
+                        self.state = SliceState.ModifyOK
                         self.state = SliceState.ModifyError
 
                 if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,

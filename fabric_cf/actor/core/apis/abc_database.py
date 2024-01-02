@@ -30,7 +30,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING, List, Union
 
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
-from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.kernel.slice import SliceTypes
 
 if TYPE_CHECKING:
@@ -40,6 +39,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
     from fabric_cf.actor.core.container.maintenance import Site
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class ABCDatabase(ABC):

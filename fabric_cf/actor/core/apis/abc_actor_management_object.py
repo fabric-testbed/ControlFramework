@@ -187,6 +187,14 @@ class ABCActorManagementObject(ABCManagementObject):
         @return result status with error information in case of failure
         """
 
+    def delete_slice(self, *, slice_id: ID, caller: AuthToken) -> ResultAvro:
+        """
+        Deletes the specified slice - moves the slice into Closing state.
+        @param slice_id slice ID
+        @param caller caller
+        @return result status with error information in case of failure
+        """
+
     def add_slice(self, *, slice_obj: SliceAvro, caller: AuthToken) -> ResultStringAvro:
         """
         Adds a new slice

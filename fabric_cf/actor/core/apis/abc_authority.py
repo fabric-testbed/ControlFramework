@@ -31,7 +31,6 @@ from typing import TYPE_CHECKING
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 
 from fabric_cf.actor.core.apis.abc_server_actor import ABCServerActor
-from fabric_cf.actor.core.kernel.poa import Poa
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
@@ -39,6 +38,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.security.auth_token import AuthToken
+    from fabric_cf.actor.core.kernel.poa import Poa
 
 
 class ABCAuthority(ABCServerActor):

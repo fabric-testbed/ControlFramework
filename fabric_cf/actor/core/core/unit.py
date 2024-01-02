@@ -550,6 +550,8 @@ class Unit(ConfigToken):
         """
         try:
             self.lock.acquire()
+            self.sliver.set_capacity_allocations(sliver.get_capacity_allocations())
+            self.sliver.set_capacity_hints(sliver.get_capacity_hints())
             self.sliver.set_label_allocations(sliver.get_label_allocations())
             if isinstance(self.sliver, NodeSliver) and isinstance(sliver, NodeSliver):
                 self.sliver.management_ip = sliver.management_ip

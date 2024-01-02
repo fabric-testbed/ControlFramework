@@ -1,3 +1,3 @@
 #!/bin/sh
 service cron start
-python3.9 -m $1
+python3.11 -m $1
