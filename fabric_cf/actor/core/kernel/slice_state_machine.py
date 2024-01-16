@@ -288,7 +288,6 @@ class SliceStateMachine:
                         self.state = SliceState.ModifyError
                     else:
                         self.state = SliceState.ModifyOK
-                        self.state = SliceState.ModifyError
 
                 if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
                                                   ReservationStates.Closed)) and \

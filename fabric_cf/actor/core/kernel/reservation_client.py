@@ -1125,8 +1125,9 @@ class ReservationClient(Reservation, ABCControllerReservation):
                     self.pending_state == ReservationPendingStates.Ticketing:
                 from fabric_cf.actor.core.container.globals import GlobalsSingleton
                 if self.exceeds_timeout(timeout=GlobalsSingleton.get().RPC_TIMEOUT):
+                    am_name = self.authority.get_name() if self.authority is not None else None
                     self.logger.info(f"Res# {self.get_reservation_id()} Redeem/Ticket timeout! "
-                                     f"No response received in 900 seconds!")
+                                     f"No response received in 900 seconds from {am_name}!")
 
                     self.transition(prefix="Redeem/Ticket timeout", state=ReservationStates.CloseWait,
                                     pending=ReservationPendingStates.None_)

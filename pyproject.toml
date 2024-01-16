@@ -28,8 +28,10 @@ dependencies = [
     "PyYAML",
     "fabric_fss_utils==1.5.0",
     "fabric-message-bus==1.6.0",
-    "fabric-fim==1.6.0",
-    "fabric-credmgr-client==1.6.0"]
+    "fabric-fim==1.6.1",
+    "fabric-credmgr-client==1.6.0",
+    "ansible"
+    ]
 
 [project.optional-dependencies]
 test = ["pytest",
