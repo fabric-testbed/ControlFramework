@@ -12,3 +12,13 @@ CREATE TABLE IF NOT EXISTS "Sites" (
   state INTEGER NOT NULL,
   properties BYTEA
 );
+
+CREATE TABLE IF NOT EXISTS Components (
+    reservation_id INTEGER,
+    component VARCHAR,
+    PRIMARY KEY (reservation_id, component),
+    FOREIGN KEY (reservation_id) REFERENCES Reservations(rsv_id)
+);
+
+# Add component column to Reservations table
+ALTER TABLE Reservations ADD COLUMN IF NOT EXISTS components TEXT;
