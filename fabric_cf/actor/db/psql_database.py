@@ -689,15 +689,29 @@ class PsqlDatabase:
                 if rsv_type is not None:
                     rsv_obj.rsv_type = rsv_type
 
-            # Update components records for the reservation
-            if components:
-                existing_components = session.query(Components).filter(Components.reservation_id == rsv_obj.rsv_id).all()
-                for c in existing_components:
-                    session.delete(c)
+                # Update components records for the reservation
+                if components:
+                    existing_components = session.query(Components).filter(Components.reservation_id == rsv_obj.rsv_id).all()
+                    existing_component_ids = {c.component for c in existing_components}
 
-                for c in components:
-                    new_mapping = Components(reservation=rsv_obj, component=c)
-                    session.add(new_mapping)
+                    # Identify new string values
+                    added_comps = set(components) - existing_component_ids
+
+                    # Identify outdated string values
+                    removed_comps = existing_components - set(components)
+
+                    # Remove outdated comps
+                    for c in removed_comps:
+                        comp_to_remove = next(
+                            (comp for comp in existing_components if comp.component == c),
+                            None)
+                        if comp_to_remove:
+                            session.delete(comp_to_remove)
+
+                    # Add new comps
+                    for c in added_comps:
+                        new_mapping = Components(reservation=rsv_obj, component=c)
+                        session.add(new_mapping)
 
             else:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", rsv_resid))
