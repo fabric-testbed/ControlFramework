@@ -27,6 +27,7 @@
 from sqlalchemy import JSON, ForeignKey, LargeBinary, TIMESTAMP, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, Integer, Sequence
+from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
@@ -123,6 +124,7 @@ class Reservations(Base):
     lease_start = Column(TIMESTAMP, nullable=True)
     lease_end = Column(TIMESTAMP, nullable=True)
     properties = Column(LargeBinary)
+    components = relationship('Components', back_populates='reservation')
 
     Index('idx_slc_guid_resid', rsv_slc_id, rsv_resid)
     Index('idx_slc_guid_resid_email', rsv_slc_id, rsv_resid, email)
@@ -213,3 +215,11 @@ class Poas(Base):
     Index('idx_poa_guid_sliver_id', poa_guid, sliver_id)
     Index('idx_poa_guid_email_sliver_id', poa_guid, email, sliver_id)
     Index('idx_poa_guid_email_project_id', poa_guid, email, project_id)
+
+
+class Components(Base):
+    __tablename__ = 'Components'
+    reservation_id = Column(Integer, ForeignKey('Reservations.rsv_id'), primary_key=True)
+    component = Column(String, primary_key=True, index=True)
+    reservation = relationship('Reservations', back_populates='components')
+

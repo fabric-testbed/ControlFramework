@@ -32,12 +32,17 @@ from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGrap
 
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
 
 
 class MainClass:
     """
     CLI interface to directly fetch information from postgres Database
     """
+    Globals.config_file = '/etc/fabric/actor/config/config.yaml'
+    GlobalsSingleton.get().load_config()
+    GlobalsSingleton.get().initialized = True
+
     def __init__(self, user: str, password: str, db: str, host: str = '127.0.0.1:5432'):
         self.logger = logging.getLogger("db-cli")
         file_handler = RotatingFileHandler('./db_cli.log', backupCount=5, maxBytes=50000)
@@ -124,6 +129,9 @@ class MainClass:
             if res_list is not None and len(res_list) > 0:
                 for r in res_list:
                     print(r)
+                    print(f"RES Sliver: {r.get_resources().get_sliver()}")
+                    print(f"REQ RES Sliver: {r.get_requested_resources()} {r.get_requested_resources().get_sliver()}")
+                    print(f"APPR RES Sliver: {r.get_approved_resources()} {r.get_approved_resources().get_sliver()}")
                     print()
             else:
                 print(f"No reservations found: {res_list}")

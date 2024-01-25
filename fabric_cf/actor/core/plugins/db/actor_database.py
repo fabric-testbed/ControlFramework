@@ -243,9 +243,19 @@ class ActorDatabase(ABCDatabase):
 
             site = None
             rsv_type = None
+            components = None
             if reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
-                site = reservation.get_resources().get_sliver().get_site()
-                rsv_type = reservation.get_resources().get_sliver().get_type().name
+                sliver = reservation.get_resources().get_sliver()
+                site = sliver.get_site()
+                rsv_type = sliver.get_type().name
+                from fim.slivers.network_service import NetworkServiceSliver
+                if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
+                    components = []
+                    for interface in sliver.interface_info.interfaces.values():
+                        graph_id_node_id_component_id, bqm_if_name = interface.get_node_map()
+                        if ":" in graph_id_node_id_component_id:
+                            results = graph_id_node_id_component_id.split(":")
+                            components.append(f"{results[1]}:{results[2]}")
 
             self.db.add_reservation(slc_guid=str(reservation.get_slice_id()),
                                     rsv_resid=str(reservation.get_reservation_id()),
@@ -255,7 +265,8 @@ class ActorDatabase(ABCDatabase):
                                     rsv_joining=reservation.get_join_state().value,
                                     properties=properties,
                                     rsv_graph_node_id=reservation.get_graph_node_id(),
-                                    oidc_claim_sub=oidc_claim_sub, email=email, site=site, rsv_type=rsv_type)
+                                    oidc_claim_sub=oidc_claim_sub, email=email, site=site, rsv_type=rsv_type,
+                                    components=components)
             self.logger.debug(
                 "Reservation {} added to slice {}".format(reservation.get_reservation_id(), reservation.get_slice()))
         finally:
@@ -274,9 +285,20 @@ class ActorDatabase(ABCDatabase):
 
             site = None
             rsv_type = None
+            components = None
             if reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
-                site = reservation.get_resources().get_sliver().get_site()
-                rsv_type = reservation.get_resources().get_sliver().get_type().name
+                sliver = reservation.get_resources().get_sliver()
+                site = sliver.get_site()
+                rsv_type = sliver.get_type().name
+                from fim.slivers.network_service import NetworkServiceSliver
+                if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
+                    components = []
+                    for interface in sliver.interface_info.interfaces.values():
+                        graph_id_node_id_component_id, bqm_if_name = interface.get_node_map()
+                        if ":" in graph_id_node_id_component_id:
+                            results = graph_id_node_id_component_id.split(":")
+                            components.append(f"{results[1]}:{results[2]}")
+
             begin = time.time()
             properties = pickle.dumps(reservation)
             diff = int(time.time() - begin)
@@ -291,7 +313,7 @@ class ActorDatabase(ABCDatabase):
                                        rsv_joining=reservation.get_join_state().value,
                                        properties=properties,
                                        rsv_graph_node_id=reservation.get_graph_node_id(),
-                                       site=site, rsv_type=rsv_type)
+                                       site=site, rsv_type=rsv_type, components=components)
             diff = int(time.time() - begin)
             if diff > 0:
                 self.logger.info(f"DB TIME: {diff}")

@@ -646,12 +646,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         # For each Interface Sliver;
         for ifs in sliver.interface_info.interfaces.values():
+            node_map_id = self.combined_broker_model_graph_id
 
             # Fetch Network Node Id and BQM Component Id
             node_id, bqm_component_id = ifs.get_node_map()
 
             # Skipping the already allocated interface on a modify
-            if node_id == self.combined_broker_model_graph_id:
+            #if node_id == self.combined_broker_model_graph_id:
+            if self.combined_broker_model_graph_id in node_id:
                 continue
 
             if node_id == str(NodeType.Facility):
@@ -661,7 +663,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 peered_ns_interfaces.append(ifs)
                 continue
             else:
+                # For VM interfaces
                 bqm_component = self.get_component_sliver(node_id=bqm_component_id)
+                node_map_id = f"{node_map_id}:{node_id}:{bqm_component_id}"
 
             if bqm_component is None:
                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES)
@@ -766,7 +770,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 raise BrokerException(msg=error_msg)
 
             # Update the Interface Sliver Node Map to map to (a)
-            ifs.set_node_map(node_map=(self.combined_broker_model_graph_id, bqm_cp.node_id))
+            ifs.set_node_map(node_map=(node_map_id, bqm_cp.node_id))
+            #ifs.set_node_map(node_map=(self.combined_broker_model_graph_id, bqm_cp.node_id))
 
             delegation_id = net_adm_ids[0]
 
