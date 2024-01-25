@@ -665,7 +665,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             else:
                 # For VM interfaces
                 bqm_component = self.get_component_sliver(node_id=bqm_component_id)
-                node_map_id = f"{node_map_id}:{node_id}:{bqm_component_id}"
+                node_map_id = f"{node_map_id}:{node_id}:{bqm_component_id}:{ifs.get_labels().bdf}"
 
             if bqm_component is None:
                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES)

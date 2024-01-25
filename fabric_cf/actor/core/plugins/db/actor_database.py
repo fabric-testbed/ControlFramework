@@ -255,7 +255,7 @@ class ActorDatabase(ABCDatabase):
                         graph_id_node_id_component_id, bqm_if_name = interface.get_node_map()
                         if ":" in graph_id_node_id_component_id:
                             results = graph_id_node_id_component_id.split(":")
-                            components.append(f"{results[1]}:{results[2]}")
+                            components.append(f"{results[1]}:{results[2]}:{results[3]}")
 
             self.db.add_reservation(slc_guid=str(reservation.get_slice_id()),
                                     rsv_resid=str(reservation.get_reservation_id()),
@@ -297,7 +297,7 @@ class ActorDatabase(ABCDatabase):
                         graph_id_node_id_component_id, bqm_if_name = interface.get_node_map()
                         if ":" in graph_id_node_id_component_id:
                             results = graph_id_node_id_component_id.split(":")
-                            components.append(f"{results[1]}:{results[2]}")
+                            components.append(f"{results[1]}:{results[2]}:{results[3]}")
 
             begin = time.time()
             properties = pickle.dumps(reservation)
