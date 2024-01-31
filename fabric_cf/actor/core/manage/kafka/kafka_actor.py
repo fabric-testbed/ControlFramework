@@ -78,7 +78,8 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
         return response.status.code == 0
 
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
-                   states: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
+                   states: List[int] = None, limit: int = None, offset: int = None,
+                   user_id: str = None) -> List[SliceAvro] or None:
         request = GetSlicesRequestAvro()
         request = self.fill_request_by_id_message(request=request, email=email, slice_id=slice_id,
                                                   slice_name=slice_name, states=states)

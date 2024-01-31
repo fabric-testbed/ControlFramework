@@ -46,7 +46,8 @@ if TYPE_CHECKING:
 class ABCMgmtActor(ABCComponent):
     @abstractmethod
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
-                   states: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
+                   states: List[int] = None, limit: int = None, offset: int = None,
+                   user_id: str = None) -> List[SliceAvro] or None:
         """
         Obtains all slices.
         @param slice_id slice id
@@ -56,6 +57,7 @@ class ABCMgmtActor(ABCComponent):
         @param states slice states
         @param limit limit
         @param offset offset
+        @param user_id user_id
         @return returns list of slices
         """
 

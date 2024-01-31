@@ -243,7 +243,7 @@ class OrchestratorHandler:
             create_ts = time.time()
             if tags is not None and isinstance(tags, list):
                 tags = ','.join(tags)
-            existing_slices = controller.get_slices(slice_name=slice_name, email=fabric_token.email,
+            existing_slices = controller.get_slices(slice_name=slice_name, user_id=fabric_token.uuid,
                                                     project=project)
             self.logger.info(f"GET slices: TIME= {time.time() - create_ts:.0f}")
 
@@ -351,12 +351,12 @@ class OrchestratorHandler:
 
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
-            # Filter slices based on user's email only when querying as_self
-            email = fabric_token.email
+            # Filter slices based on user's user_id only when querying as_self
+            user_id = fabric_token.uuid
             if not as_self:
-                email = None
+                user_id = None
 
-            reservations = controller.get_reservations(slice_id=slice_guid, rid=rid, email=email)
+            reservations = controller.get_reservations(slice_id=slice_guid, rid=rid, oidc_claim_sub=user_id)
             if reservations is None:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
@@ -404,11 +404,11 @@ class OrchestratorHandler:
             else:
                 as_self = True
 
-            # Filter slices based on user's email only when querying as_self
-            email = fabric_token.email
+            # Filter slices based on user's user_id only when querying as_self
+            user_id = fabric_token.uuid
             if not as_self:
-                email = None
-            slice_list = controller.get_slices(states=slice_states, email=email, project=project,
+                user_id = None
+            slice_list = controller.get_slices(states=slice_states, user_id=user_id, project=project,
                                                slice_name=name, limit=limit, offset=offset)
             return ResponseBuilder.get_slice_summary(slice_list=slice_list)
         except Exception as e:
@@ -527,7 +527,7 @@ class OrchestratorHandler:
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.delete)
             project, tags, project_name = fabric_token.first_project
 
-            self.logger.debug(f"Get Slices: {project} {fabric_token.email} ")
+            self.logger.debug(f"Get Slices: {project} {fabric_token.email} {fabric_token.uuid}")
             states = None
             if slice_guid is None:
                 states = [SliceState.Nascent.value,
@@ -535,7 +535,7 @@ class OrchestratorHandler:
                           SliceState.StableOK.value,
                           SliceState.ModifyOK.value,
                           SliceState.ModifyError.value]
-            slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.email,
+            slice_list = controller.get_slices(slice_id=slice_guid, user_id=fabric_token.uuid,
                                                project=project, states=states)
 
             if slice_list is None or len(slice_list) == 0:
@@ -628,12 +628,12 @@ class OrchestratorHandler:
 
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
-            # Filter slices based on user's email only when querying as_self
-            email = fabric_token.email
+            # Filter slices based on user's user_id only when querying as_self
+            user_id = fabric_token.uuid
             if not as_self:
-                email = None
+                user_id = None
 
-            slice_list = controller.get_slices(slice_id=slice_guid, email=email)
+            slice_list = controller.get_slices(slice_id=slice_guid, user_id=user_id)
             if slice_list is None or len(slice_list) == 0:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
@@ -825,7 +825,7 @@ class OrchestratorHandler:
             rid = ID(uid=sliver_id) if sliver_id is not None else None
 
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.modify)
-            email = fabric_token.email
+            user_id = fabric_token.uuid
             project, tags, project_name = fabric_token.first_project
 
             auth = AuthAvro()
@@ -837,7 +837,7 @@ class OrchestratorHandler:
             poa.project_id = project
             poa.rid = sliver_id
 
-            reservations = controller.get_reservations(rid=rid, email=email)
+            reservations = controller.get_reservations(rid=rid, oidc_claim_sub=user_id)
             if reservations is None or len(reservations) != 1:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
@@ -883,8 +883,8 @@ class OrchestratorHandler:
             auth.oidc_sub_claim = fabric_token.uuid
             auth.email = fabric_token.email
 
-            poa_list = controller.get_poas(rid=rid, poa_id=poa_id, email=email, project_id=project,
-                                           states=states, limit=limit, offset=offset)
+            poa_list = controller.get_poas(rid=rid, poa_id=poa_id, project_id=project,
+                                           states=poa_states, limit=limit, offset=offset)
             if poa_list is None:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
