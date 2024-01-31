@@ -356,7 +356,7 @@ class OrchestratorHandler:
             if not as_self:
                 user_id = None
 
-            reservations = controller.get_reservations(slice_id=slice_guid, rid=rid, user_id=user_id)
+            reservations = controller.get_reservations(slice_id=slice_guid, rid=rid, oidc_claim_sub=user_id)
             if reservations is None:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
@@ -837,7 +837,7 @@ class OrchestratorHandler:
             poa.project_id = project
             poa.rid = sliver_id
 
-            reservations = controller.get_reservations(rid=rid, user_id=user_id)
+            reservations = controller.get_reservations(rid=rid, oidc_claim_sub=user_id)
             if reservations is None or len(reservations) != 1:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
