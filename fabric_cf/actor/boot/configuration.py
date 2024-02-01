@@ -462,10 +462,10 @@ class Configuration:
         return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, None)
 
     def get_kafka_consumer_commit_batch_size(self) -> int:
-        return int(self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, 10))
+        return int(self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_BATCH_SIZE, 10))
 
     def get_kafka_consumer_poll_timeout(self) -> int:
-        return int(self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, 250))
+        return int(self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_POLL_TIMEOUT, 250))
 
     def get_kafka_consumer_enable_auto_commit(self) -> bool:
         return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_ENABLE_AUTO_COMMIT, True)
