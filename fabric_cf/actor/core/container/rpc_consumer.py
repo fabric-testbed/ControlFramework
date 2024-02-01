@@ -162,9 +162,9 @@ class RPCConsumer:
                     self.kafka_service.process(message=message)
                 diff = int(time.time() - begin)
                 if diff > 0:
-                    self.logger.info(f"Event {m.__class__.__name__} TIME: {diff}")
+                    self.logger.info(f"Event {message.__class__.__name__} TIME: {diff}")
             except Exception as e:
-                self.logger.error(f"Error while processing message {type(m)}, {e}")
+                self.logger.error(f"Error while processing message {type(message)}, {e}")
                 self.logger.error(traceback.format_exc())
 
     def __run(self):
