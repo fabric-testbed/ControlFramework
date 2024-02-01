@@ -350,7 +350,8 @@ class Globals:
 
         from fabric_mb.message_bus.producer import AvroProducerApi
         producer = AvroProducerApi(producer_conf=conf,
-                                   schema_registry_conf=self.get_kafka_config_schema_registry_client(),
+                                   key_schema_location=key_schema_file,
+                                   #schema_registry_conf=self.get_kafka_config_schema_registry_client(),
                                    value_schema_location=value_schema_file, logger=self.get_logger())
         return producer
 
