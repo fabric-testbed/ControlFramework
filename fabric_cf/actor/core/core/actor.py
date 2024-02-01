@@ -898,7 +898,9 @@ class ActorMixin(ABCActorMixin):
                                                                              class_name=class_name)()
             kafka_mgmt_service.set_logger(logger=self.logger)
 
-            self.rpc_consumer = RPCConsumer(kafka_service=kafka_service, kafka_mgmt_service=kafka_mgmt_service)
+            self.rpc_consumer = RPCConsumer(kafka_service=kafka_service,
+                                            kafka_mgmt_service=kafka_mgmt_service,
+                                            logger=self.logger)
 
             # Incoming Message Service
             from fabric_cf.actor.core.container.globals import GlobalsSingleton
