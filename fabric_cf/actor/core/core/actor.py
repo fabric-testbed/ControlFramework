@@ -43,6 +43,7 @@ from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.exceptions import ActorException
 from fabric_cf.actor.core.container.message_service import MessageService
+from fabric_cf.actor.core.container.rpc_consumer import RPCConsumer
 from fabric_cf.actor.core.core.event_processor import TickEvent, EventType, EventProcessor
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.kernel_wrapper import KernelWrapper
@@ -102,6 +103,7 @@ class ActorMixin(ABCActorMixin):
         self.closing = ReservationSet()
 
         self.message_service = None
+        self.rpc_consumer = None
         self.event_processors = {}
 
     def __getstate__(self):
@@ -116,6 +118,7 @@ class ActorMixin(ABCActorMixin):
         del state['initialized']
         del state['closing']
         del state['message_service']
+        del state['rpc_consumer']
         del state['event_processors']
         return state
 
@@ -131,6 +134,7 @@ class ActorMixin(ABCActorMixin):
         self.initialized = False
         self.closing = ReservationSet()
         self.message_service = None
+        self.rpc_consumer = None
         self.policy.set_actor(actor=self)
         self.event_processors = {}
 
@@ -777,6 +781,7 @@ class ActorMixin(ABCActorMixin):
         """
         for x in self.event_processors.values():
             x.start()
+        self.rpc_consumer.start()
         self.message_service.start()
         if self.plugin.get_handler_processor() is not None:
             self.plugin.get_handler_processor().start()
@@ -787,6 +792,7 @@ class ActorMixin(ABCActorMixin):
         """
         self.stopped = True
         self.message_service.stop()
+        self.rpc_consumer.stop()
 
         for x in self.event_processors.values():
             x.stop()
@@ -892,6 +898,8 @@ class ActorMixin(ABCActorMixin):
                                                                              class_name=class_name)()
             kafka_mgmt_service.set_logger(logger=self.logger)
 
+            self.rpc_consumer = RPCConsumer(kafka_service=kafka_service, kafka_mgmt_service=kafka_mgmt_service)
+
             # Incoming Message Service
             from fabric_cf.actor.core.container.globals import GlobalsSingleton
             config = GlobalsSingleton.get().get_config()
@@ -901,11 +909,11 @@ class ActorMixin(ABCActorMixin):
             else:
                 topics = [topic]
             consumer_conf = GlobalsSingleton.get().get_kafka_config_consumer()
-            self.message_service = MessageService(kafka_service=kafka_service, kafka_mgmt_service=kafka_mgmt_service,
-                                                  consumer_conf=consumer_conf,
-                                                  key_schema_location=GlobalsSingleton.get().get_config().get_kafka_key_schema_location(),
+            self.message_service = MessageService(consumer_conf=consumer_conf,
+                                                  schema_registry_conf=GlobalsSingleton.get().get_kafka_config_schema_registry_client(),
                                                   value_schema_location=GlobalsSingleton.get().get_config().get_kafka_value_schema_location(),
-                                                  topics=topics, logger=self.logger)
+                                                  topics=topics, logger=self.logger,
+                                                  consumer_thread=self.rpc_consumer)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error("Failed to setup message service e={}".format(e))

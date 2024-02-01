@@ -262,6 +262,14 @@ class Globals:
 
         return conf
 
+    def get_kafka_config_schema_registry_client(self) -> dict:
+        """
+        Get Producer Config
+        @return producer config
+        """
+        if self.config and self.config.get_runtime_config():
+            return {"url": self.config.get_kafka_schema_registry() }
+
     def get_kafka_config_producer(self) -> dict:
         """
         Get Producer Config
@@ -280,7 +288,7 @@ class Globals:
                 Constants.SSL_CERTIFICATE_LOCATION: self.config.get_kafka_ssl_cert_location(),
                 Constants.SSL_KEY_LOCATION: self.config.get_kafka_ssl_key_location(),
                 Constants.SSL_KEY_PASSWORD: self.config.get_kafka_ssl_key_password(),
-                Constants.SCHEMA_REGISTRY_URL: self.config.get_kafka_schema_registry(),
+                #Constants.SCHEMA_REGISTRY_URL: self.config.get_kafka_schema_registry(),
                 Constants.PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS: self.config.get_kafka_request_timeout_ms(),
                 Constants.PROPERTY_CONF_KAFKA_MAX_MESSAGE_SIZE: self.config.get_kafka_max_message_size()}
 
@@ -324,7 +332,8 @@ class Globals:
         value_schema_file = self.config.get_kafka_value_schema_location()
 
         from fabric_mb.message_bus.producer import AvroProducerApi
-        producer = AvroProducerApi(producer_conf=conf, key_schema_location=key_schema_file,
+        producer = AvroProducerApi(producer_conf=conf,
+                                   schema_registry_conf=self.get_kafka_config_schema_registry_client(),
                                    value_schema_location=value_schema_file, logger=self.get_logger())
         return producer
 
@@ -334,11 +343,10 @@ class Globals:
         @return producer
         """
         conf = self.get_kafka_config_producer()
-        key_schema_file = self.config.get_kafka_key_schema_location()
         value_schema_file = self.config.get_kafka_value_schema_location()
 
         from fabric_cf.actor.core.container.rpc_producer import RPCProducer
-        producer = RPCProducer(producer_conf=conf, key_schema_location=key_schema_file,
+        producer = RPCProducer(producer_conf=conf, schema_registry_conf=self.get_kafka_config_schema_registry_client(),
                                value_schema_location=value_schema_file, logger=self.get_logger(),
                                actor=actor, retries=self.config.get_rpc_retries())
         return producer

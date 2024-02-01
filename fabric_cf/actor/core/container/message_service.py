@@ -23,11 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from __future__ import annotations
-
 import logging
 import traceback
-from typing import TYPE_CHECKING, List
+from typing import List
 
 import threading
 
@@ -36,43 +34,16 @@ from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 
 from fabric_cf.actor.core.common.exceptions import KafkaServiceException
 
-if TYPE_CHECKING:
-    from fabric_cf.actor.core.proxies.kafka.services.actor_service import ActorService
-    from fabric_cf.actor.core.manage.kafka.services.kafka_actor_service import KafkaActorService
-
 
 class MessageService(AvroConsumerApi):
-    MANAGEMENT_MESSAGES = [AbcMessageAvro.claim_resources,
-                           AbcMessageAvro.reclaim_resources,
-                           AbcMessageAvro.get_slices_request,
-                           AbcMessageAvro.get_reservations_request,
-                           AbcMessageAvro.get_reservations_state_request,
-                           AbcMessageAvro.get_delegations,
-                           AbcMessageAvro.get_reservation_units_request,
-                           AbcMessageAvro.get_unit_request,
-                           AbcMessageAvro.get_broker_query_model_request,
-                           AbcMessageAvro.add_slice,
-                           AbcMessageAvro.update_slice,
-                           AbcMessageAvro.remove_slice,
-                           AbcMessageAvro.close_reservations,
-                           AbcMessageAvro.update_reservation,
-                           AbcMessageAvro.remove_reservation,
-                           AbcMessageAvro.extend_reservation,
-                           AbcMessageAvro.close_delegations,
-                           AbcMessageAvro.remove_delegation,
-                           AbcMessageAvro.maintenance_request,
-                           AbcMessageAvro.get_sites_request]
-
-    def __init__(self, *, kafka_service: ActorService, kafka_mgmt_service: KafkaActorService, consumer_conf: dict,
-                 key_schema_location, value_schema_location: str, topics: List[str], batch_size: int = 5,
-                 logger: logging.Logger = None, sync: bool = False):
-        super(MessageService, self).__init__(consumer_conf=consumer_conf, key_schema_location=key_schema_location,
+    def __init__(self, *, consumer_conf: dict, schema_registry_conf: dict, value_schema_location: str,
+                 topics: List[str], consumer_thread, batch_size: int = 5, logger: logging.Logger = None, sync: bool = False):
+        super(MessageService, self).__init__(consumer_conf=consumer_conf, schema_registry_conf=schema_registry_conf,
                                              value_schema_location=value_schema_location, topics=topics,
                                              batch_size=batch_size, logger=logger, sync=sync)
+        self.consumer_thread = consumer_thread
         self.thread_lock = threading.Lock()
         self.thread = None
-        self.kafka_service = kafka_service
-        self.kafka_mgmt_service = kafka_mgmt_service
 
     def start(self):
         try:
@@ -80,9 +51,8 @@ class MessageService(AvroConsumerApi):
             if self.thread is not None:
                 raise KafkaServiceException("This Message Service has already been started")
 
-            self.thread = threading.Thread(target=self.consume)
-            self.thread.setName("MessageService")
-            self.thread.setDaemon(True)
+            self.thread = threading.Thread(target=self.consume, name=self.__class__.__name__,
+                                           daemon=True)
             self.thread.start()
             self.logger.debug("Message service has been started")
         finally:
@@ -108,10 +78,7 @@ class MessageService(AvroConsumerApi):
 
     def handle_message(self, message: AbcMessageAvro):
         try:
-            if message.get_message_name() in self.MANAGEMENT_MESSAGES:
-                self.kafka_mgmt_service.process(message=message)
-            else:
-                self.kafka_service.process(message=message)
+            self.consumer_thread.enqueue(message)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(e)
