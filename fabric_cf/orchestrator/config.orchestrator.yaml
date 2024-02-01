@@ -52,7 +52,7 @@ runtime:
   rpc.retries: 5
   commit.batch.size: 10
   enable.auto.commit: False
-  consumer.poll.timeout: 0.25
+  consumer.poll.timeout: 250
 
 logging:
   ## The directory in which actor should create log files.
