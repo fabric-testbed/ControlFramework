@@ -288,7 +288,7 @@ class Globals:
                 Constants.SSL_CERTIFICATE_LOCATION: self.config.get_kafka_ssl_cert_location(),
                 Constants.SSL_KEY_LOCATION: self.config.get_kafka_ssl_key_location(),
                 Constants.SSL_KEY_PASSWORD: self.config.get_kafka_ssl_key_password(),
-                #Constants.SCHEMA_REGISTRY_URL: self.config.get_kafka_schema_registry(),
+                Constants.SCHEMA_REGISTRY_URL: self.config.get_kafka_schema_registry(),
                 Constants.PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS: self.config.get_kafka_request_timeout_ms(),
                 Constants.PROPERTY_CONF_KAFKA_MAX_MESSAGE_SIZE: self.config.get_kafka_max_message_size()}
 
