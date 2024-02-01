@@ -916,8 +916,11 @@ class ActorMixin(ABCActorMixin):
             consumer_conf = GlobalsSingleton.get().get_kafka_config_consumer()
             if self.message_service is None:
                 self.message_service = []
+            cnt = 0
             for x in topics:
-                consumer_conf[Constants.GROUP_ID] += x
+                if cnt:
+                    consumer_conf[Constants.GROUP_ID] += x
+                cnt += 1
                 msg_svc = MessageService(consumer_conf=consumer_conf,
                                          key_schema_location=GlobalsSingleton.get().get_kafka_key_schema_location(),
                                          #schema_registry_conf=GlobalsSingleton.get().get_kafka_config_schema_registry_client(),
