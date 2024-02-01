@@ -53,10 +53,14 @@ class RPCProducer(AvroProducerApi):
     AVRO_RPC_TYPE_MAP = {AbcMessageAvro.close: RPCRequestType.Close,
                          AbcMessageAvro.update_lease: RPCRequestType.UpdateLease,
                          AbcMessageAvro.update_ticket: RPCRequestType.UpdateTicket}
-
-    def __init__(self, *, producer_conf: dict, schema_registry_conf, value_schema_location: str, actor: ABCActorMixin,
-                 logger: logging.Logger = None, retries: int = 5):
-        super(RPCProducer, self).__init__(producer_conf=producer_conf, schema_registry_conf=schema_registry_conf,
+    # Uncomment for 1.7
+    #def __init__(self, *, producer_conf: dict, schema_registry_conf, value_schema_location: str, actor: ABCActorMixin,
+    #             logger: logging.Logger = None, retries: int = 5):
+        #super(RPCProducer, self).__init__(producer_conf=producer_conf, schema_registry_conf=schema_registry_conf,
+        #                                  value_schema_location=value_schema_location, logger=logger, retries=retries)
+    def __init__(self, *, producer_conf: dict, key_schema_location: str, value_schema_location: str,
+                 actor: ABCActorMixin, logger: logging.Logger = None, retries: int = 5):
+        super(RPCProducer, self).__init__(producer_conf=producer_conf, key_schema_location=key_schema_location,
                                           value_schema_location=value_schema_location, logger=logger, retries=retries)
         self.actor = actor
         self.thread_lock = threading.Lock()

@@ -299,6 +299,22 @@ class Globals:
 
         return conf
 
+    def get_kafka_consumer_poll_timeout(self):
+        if self.get_config():
+            return self.get_config().get_kafka_consumer_poll_timeout()
+
+    def get_kafka_consumer_commit_batch_size(self):
+        if self.get_config():
+            return self.get_config().get_kafka_consumer_commit_batch_size()
+
+    def get_kafka_key_schema_location(self):
+        if self.get_config():
+            return self.get_config().get_kafka_key_schema_location()
+
+    def get_kafka_value_schema_location(self):
+        if self.get_config():
+            return self.get_config().get_kafka_value_schema_location()
+
     def get_kafka_config_consumer(self) -> dict:
         """
         Get Consumer config
@@ -311,6 +327,7 @@ class Globals:
         group_id = self.config.get_kafka_cons_group_id()
 
         conf['auto.offset.reset'] = 'earliest'
+        conf[Constants.PROPERTY_CONF_KAFKA_ENABLE_AUTO_COMMIT] = self.get_config().get_kafka_consumer_enable_auto_commit()
 
         sasl_username = self.config.get_kafka_cons_user_name()
         sasl_password = self.config.get_kafka_cons_user_pwd()
@@ -343,12 +360,17 @@ class Globals:
         @return producer
         """
         conf = self.get_kafka_config_producer()
+        key_schema_file = self.config.get_kafka_key_schema_location()
         value_schema_file = self.config.get_kafka_value_schema_location()
 
         from fabric_cf.actor.core.container.rpc_producer import RPCProducer
-        producer = RPCProducer(producer_conf=conf, schema_registry_conf=self.get_kafka_config_schema_registry_client(),
+        producer = RPCProducer(producer_conf=conf, key_schema_location=key_schema_file,
                                value_schema_location=value_schema_file, logger=self.get_logger(),
                                actor=actor, retries=self.config.get_rpc_retries())
+        # Uncomment for 1.7
+        #producer = RPCProducer(producer_conf=conf, schema_registry_conf=self.get_kafka_config_schema_registry_client(),
+        #                       value_schema_location=value_schema_file, logger=self.get_logger(),
+        #                       actor=actor, retries=self.config.get_rpc_retries())
         return producer
 
     def get_simple_kafka_producer(self):

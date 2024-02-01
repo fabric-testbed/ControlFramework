@@ -917,10 +917,13 @@ class ActorMixin(ABCActorMixin):
             for x in topics:
                 consumer_conf[Constants.GROUP_ID] += x
                 msg_svc = MessageService(consumer_conf=consumer_conf,
-                                         schema_registry_conf=GlobalsSingleton.get().get_kafka_config_schema_registry_client(),
-                                         value_schema_location=GlobalsSingleton.get().get_config().get_kafka_value_schema_location(),
+                                         key_schema_location=GlobalsSingleton.get().get_kafka_key_schema_location(),
+                                         #schema_registry_conf=GlobalsSingleton.get().get_kafka_config_schema_registry_client(),
+                                         value_schema_location=GlobalsSingleton.get().get_kafka_value_schema_location(),
                                          topics=[x], logger=self.logger,
-                                         consumer_thread=self.rpc_consumer)
+                                         consumer_thread=self.rpc_consumer,
+                                         batch_size=GlobalsSingleton.get().get_kafka_consumer_commit_batch_size(),
+                                         poll_timeout=GlobalsSingleton.get().get_kafka_consumer_poll_timeout())
                 self.message_service.append(msg_svc)
         except Exception as e:
             self.logger.error(traceback.format_exc())

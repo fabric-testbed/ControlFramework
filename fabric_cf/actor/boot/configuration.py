@@ -461,6 +461,15 @@ class Configuration:
     def get_kafka_key_schema_location(self) -> str or None:
         return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, None)
 
+    def get_kafka_consumer_commit_batch_size(self) -> int:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, 10)
+
+    def get_kafka_consumer_poll_timeout(self) -> float:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, 0.25)
+
+    def get_kafka_consumer_enable_auto_commit(self) -> bool:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_ENABLE_AUTO_COMMIT, True)
+
     def get_kafka_value_schema_location(self) -> str or None:
         return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_VALUE_SCHEMA, None)
 
