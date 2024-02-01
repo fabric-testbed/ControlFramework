@@ -27,6 +27,7 @@ import time
 import traceback
 from typing import List, Dict
 
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
 
@@ -102,7 +103,7 @@ class ActorMixin(ABCActorMixin):
         # Reservations to close once recovery is complete.
         self.closing = ReservationSet()
 
-        self.message_service = None
+        self.message_service = []
         self.rpc_consumer = None
         self.event_processors = {}
 
@@ -133,7 +134,7 @@ class ActorMixin(ABCActorMixin):
         self.stopped = False
         self.initialized = False
         self.closing = ReservationSet()
-        self.message_service = None
+        self.message_service = []
         self.rpc_consumer = None
         self.policy.set_actor(actor=self)
         self.event_processors = {}
@@ -782,7 +783,8 @@ class ActorMixin(ABCActorMixin):
         for x in self.event_processors.values():
             x.start()
         self.rpc_consumer.start()
-        self.message_service.start()
+        for x in self.message_service:
+            x.start()
         if self.plugin.get_handler_processor() is not None:
             self.plugin.get_handler_processor().start()
 
@@ -791,7 +793,8 @@ class ActorMixin(ABCActorMixin):
         Stop an actor
         """
         self.stopped = True
-        self.message_service.stop()
+        for x in self.message_service:
+            x.stop()
         self.rpc_consumer.stop()
 
         for x in self.event_processors.values():
@@ -911,11 +914,14 @@ class ActorMixin(ABCActorMixin):
             else:
                 topics = [topic]
             consumer_conf = GlobalsSingleton.get().get_kafka_config_consumer()
-            self.message_service = MessageService(consumer_conf=consumer_conf,
-                                                  schema_registry_conf=GlobalsSingleton.get().get_kafka_config_schema_registry_client(),
-                                                  value_schema_location=GlobalsSingleton.get().get_config().get_kafka_value_schema_location(),
-                                                  topics=topics, logger=self.logger,
-                                                  consumer_thread=self.rpc_consumer)
+            for x in topics:
+                consumer_conf[Constants.GROUP_ID] += x
+                msg_svc = MessageService(consumer_conf=consumer_conf,
+                                         schema_registry_conf=GlobalsSingleton.get().get_kafka_config_schema_registry_client(),
+                                         value_schema_location=GlobalsSingleton.get().get_config().get_kafka_value_schema_location(),
+                                         topics=[x], logger=self.logger,
+                                         consumer_thread=self.rpc_consumer)
+                self.message_service.append(msg_svc)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error("Failed to setup message service e={}".format(e))
