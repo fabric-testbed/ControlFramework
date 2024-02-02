@@ -118,6 +118,9 @@ class AggregatedBQMPlugin:
 
                     if allocated_sliver.attached_components_info is not None:
                         for allocated_component in allocated_sliver.attached_components_info.devices.values():
+                            # Ignore components without any allocations
+                            if not allocated_component.capacity_allocations:
+                                continue
                             rt = allocated_component.resource_type
                             rm = allocated_component.resource_model
                             if occupied_component_capacities[rt].get(rm) is None:
