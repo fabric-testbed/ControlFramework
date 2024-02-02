@@ -328,7 +328,7 @@ class Globals:
         Get Consumer config
         @return consumer config
         """
-        if self.config is None or self.config.get_runtime_config() is None:
+        if self.config and self.config.get_runtime_config():
             conf = self.get_kafka_config_producer()
 
             group_id = self.get_config().get_kafka_cons_group_id()
