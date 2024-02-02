@@ -607,7 +607,7 @@ class PsqlDatabase:
                         rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
                         lease_end: datetime = None, rsv_graph_node_id: str = None, oidc_claim_sub: str = None,
                         email: str = None, project_id: str = None, site: str = None, rsv_type: str = None,
-                        components: List[Tuple[str, str]] = None):
+                        components: List[Tuple[str, str, str]] = None):
         """
         Add a reservation
         @param slc_guid slice guid
@@ -638,12 +638,12 @@ class PsqlDatabase:
             if rsv_graph_node_id is not None:
                 rsv_obj.rsv_graph_node_id = rsv_graph_node_id
 
-                # Create Component Mapping for the Network Service reservation
-                if components:
-                    for cid, bdf in components:
-                        mapping = Components(node_id=rsv_graph_node_id, reservation=rsv_obj,
-                                             component=cid, bdf=bdf)
-                        session.add(mapping)
+            # Create Component Mapping for the Network Service reservation
+            if components:
+                for node_id, cid, bdf in components:
+                    mapping = Components(node_id=node_id, reservation=rsv_obj,
+                                         component=cid, bdf=bdf)
+                    session.add(mapping)
 
             session.add(rsv_obj)
             session.commit()
@@ -655,7 +655,7 @@ class PsqlDatabase:
     def update_reservation(self, *, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
                            rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
                            lease_end: datetime = None, rsv_graph_node_id: str = None, site: str = None,
-                           rsv_type: str = None, components: List[Tuple[str, str]] = None):
+                           rsv_type: str = None, components: List[Tuple[str, str, str]] = None):
         """
         Update a reservation
         @param slc_guid slice guid
@@ -691,7 +691,7 @@ class PsqlDatabase:
                     rsv_obj.rsv_type = rsv_type
 
                 # Update components records for the reservation
-                if rsv_graph_node_id is not None and components:
+                if components and len(components):
                     existing_components = session.query(Components).filter(Components.reservation_id == rsv_obj.rsv_id).all()
                     existing_component_ids = {(c.component, c.bdf) for c in existing_components}
 
@@ -702,7 +702,7 @@ class PsqlDatabase:
                     removed_comps = existing_component_ids - set(components)
 
                     # Remove outdated comps
-                    for cid, bdf in removed_comps:
+                    for node_id, cid, bdf in removed_comps:
                         comp_to_remove = next(
                             (comp for comp in existing_components if comp.component == cid),
                             None)
@@ -710,8 +710,8 @@ class PsqlDatabase:
                             session.delete(comp_to_remove)
 
                     # Add new comps
-                    for cid, bdf in added_comps:
-                        new_mapping = Components(node_id=rsv_graph_node_id, reservation=rsv_obj,
+                    for node_id, cid, bdf in added_comps:
+                        new_mapping = Components(node_id=node_id, reservation=rsv_obj,
                                                  component=cid, bdf=bdf)
                         session.add(new_mapping)
 
