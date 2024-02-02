@@ -307,6 +307,14 @@ class Globals:
         if self.get_config():
             return self.get_config().get_kafka_consumer_commit_batch_size()
 
+    def get_kafka_consumer_auto_commit_interval(self):
+        if self.get_config():
+            return self.get_config().get_kafka_consumer_auto_commit_interval()
+
+    def get_kafka_consumer_enable_auto_commit(self):
+        if self.get_config():
+            return self.get_config().get_kafka_consumer_enable_auto_commit()
+
     def get_kafka_key_schema_location(self):
         if self.get_config():
             return self.get_config().get_kafka_key_schema_location()
@@ -321,23 +329,26 @@ class Globals:
         @return consumer config
         """
         if self.config is None or self.config.get_runtime_config() is None:
-            return None
-        conf = self.get_kafka_config_producer()
+            conf = self.get_kafka_config_producer()
 
-        group_id = self.config.get_kafka_cons_group_id()
+            group_id = self.get_config().get_kafka_cons_group_id()
 
-        conf['auto.offset.reset'] = 'earliest'
-        conf[Constants.PROPERTY_CONF_KAFKA_ENABLE_AUTO_COMMIT] = self.get_config().get_kafka_consumer_enable_auto_commit()
+            conf['auto.offset.reset'] = 'earliest'
+            enable_auto_commit = self.get_kafka_consumer_enable_auto_commit()
+            if enable_auto_commit:
+                conf[Constants.PROPERTY_CONF_KAFKA_AUTO_COMMIT_INTERVAL] = self.get_kafka_consumer_auto_commit_interval()
+            else:
+                conf[Constants.PROPERTY_CONF_KAFKA_ENABLE_AUTO_COMMIT] = enable_auto_commit
 
-        sasl_username = self.config.get_kafka_cons_user_name()
-        sasl_password = self.config.get_kafka_cons_user_pwd()
+            sasl_username = self.get_config().get_kafka_cons_user_name()
+            sasl_password = self.get_config().get_kafka_cons_user_pwd()
 
-        if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
-            conf[Constants.SASL_USERNAME] = sasl_username
-            conf[Constants.SASL_PASSWORD] = sasl_password
-        conf[Constants.GROUP_ID] = group_id
-        conf[Constants.PROPERTY_CONF_KAFKA_FETCH_MAX_MESSAGE_SIZE] = self.config.get_kafka_max_message_size()
-        return conf
+            if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
+                conf[Constants.SASL_USERNAME] = sasl_username
+                conf[Constants.SASL_PASSWORD] = sasl_password
+            conf[Constants.GROUP_ID] = group_id
+            conf[Constants.PROPERTY_CONF_KAFKA_FETCH_MAX_MESSAGE_SIZE] = self.get_config().get_kafka_max_message_size()
+            return conf
 
     def get_kafka_producer(self):
         """
