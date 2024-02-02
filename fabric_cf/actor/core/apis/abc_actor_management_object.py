@@ -256,7 +256,7 @@ class ABCActorManagementObject(ABCManagementObject):
 
     def get_slices(self, *, slice_id: ID, caller: AuthToken, slice_name: str = None, email: str = None,
                    states: List[int] = None, project: str = None, limit: int = None,
-                   offset: int = None) -> ResultSliceAvro:
+                   offset: int = None, user_id: str = None) -> ResultSliceAvro:
         """
         Obtains all slices.
         @param slice_id slice id
@@ -267,6 +267,7 @@ class ABCActorManagementObject(ABCManagementObject):
         @param limit limit
         @param offset offset
         @param caller caller
+        @param user_id user_id
         @return returns list of slices
         """
 

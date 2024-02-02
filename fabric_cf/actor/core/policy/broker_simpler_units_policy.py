@@ -535,7 +535,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return node_id_list
 
-    def __find_first_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: InventoryForType,
+    def __find_first_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: NetworkNodeInventory,
                          reservation: ABCBrokerReservation) -> Tuple[str, BaseSliver, Any]:
         """
         Find First Available Node which can serve the reservation
@@ -550,6 +550,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         error_msg = None
         self.logger.debug(f"Possible candidates to serve {reservation} candidates# {node_id_list}")
         requested_sliver = reservation.get_requested_resources().get_sliver()
+        is_create = requested_sliver.get_node_map() is None
         for node_id in node_id_list:
             try:
                 self.logger.debug(f"Attempting to allocate {reservation} via graph_node# {node_id}")
@@ -568,7 +569,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 delegation_id, sliver = inv.allocate(rid=reservation.get_reservation_id(),
                                                      requested_sliver=requested_sliver,
                                                      graph_id=self.combined_broker_model_graph_id,
-                                                     graph_node=graph_node, existing_reservations=existing_reservations)
+                                                     graph_node=graph_node,
+                                                     existing_reservations=existing_reservations,
+                                                     is_create=is_create)
 
                 if delegation_id is not None and sliver is not None:
                     break

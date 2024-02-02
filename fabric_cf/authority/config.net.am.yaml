@@ -46,6 +46,9 @@ runtime:
   kafka.request.timeout.ms: 120000
   rpc.request.timeout.seconds: 900
   rpc.retries: 5
+  commit.batch.size: 1
+  enable.auto.commit: False
+  consumer.poll.timeout: 250
 
 logging:
   ## The directory in which actor should create log files.
