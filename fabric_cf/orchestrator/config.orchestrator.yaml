@@ -50,7 +50,7 @@ runtime:
   maint.project.id: 990d8a8b-7e50-4d13-a3be-0f133ffa8653
   message.max.bytes: 1048588
   rpc.retries: 5
-  commit.batch.size: 10
+  commit.batch.size: 1
   enable.auto.commit: False
   consumer.poll.timeout: 250
 

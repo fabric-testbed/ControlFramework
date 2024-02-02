@@ -46,7 +46,7 @@ runtime:
   kafka.request.timeout.ms: 120000
   rpc.request.timeout.seconds: 900
   rpc.retries: 5
-  commit.batch.size: 10
+  commit.batch.size: 1
   enable.auto.commit: False
   consumer.poll.timeout: 250
 
