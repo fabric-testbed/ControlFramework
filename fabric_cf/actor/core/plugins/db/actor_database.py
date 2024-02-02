@@ -28,7 +28,7 @@ import threading
 import time
 import traceback
 from datetime import datetime
-from typing import List, Union
+from typing import List, Union, Tuple, Dict
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
 from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
@@ -450,6 +450,17 @@ class ActorDatabase(ABCDatabase):
             if self.lock.locked():
                 self.lock.release()
         return result
+
+    def get_components(self, *, node_id: str, states: list[int] = None, component: str = None,
+                       bdf: str = None, rsv_type: list[str] = None) -> Dict[str, List[str]]:
+        try:
+            return self.db.get_components(node_id=node_id, states=states, component=component, bdf=bdf,
+                                          rsv_type=rsv_type)
+        except Exception as e:
+            self.logger.error(e)
+        finally:
+            if self.lock.locked():
+                self.lock.release()
 
     def get_reservations(self, *, slice_id: ID = None, graph_node_id: str = None, project_id: str = None,
                          email: str = None, oidc_sub: str = None, rid: ID = None,

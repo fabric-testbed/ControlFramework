@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from abc import abstractmethod, ABC
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING, List, Union, Tuple, Dict
 
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.kernel.slice import SliceTypes
@@ -166,6 +166,17 @@ class ABCDatabase(ABC):
         Retrieves the reservations.
 
         @return list of reservations
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def get_components(self, *, node_id: str, states: list[int] = None, component: str = None,
+                       bdf: str = None, rsv_type: list[str] = None) -> Dict[str, List[str]]:
+        """
+        Retrieves the components.
+
+        @return list of components
 
         @throws Exception in case of error
         """

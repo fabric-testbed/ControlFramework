@@ -30,7 +30,7 @@ import threading
 import traceback
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Tuple, List, Any
+from typing import TYPE_CHECKING, Tuple, List, Any, Dict
 
 from fim.graph.abc_property_graph import ABCPropertyGraphConstants, GraphFormat, ABCPropertyGraph
 from fim.graph.resources.abc_adm import ABCADMPropertyGraph
@@ -566,11 +566,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 existing_reservations = self.get_existing_reservations(node_id=node_id,
                                                                        node_id_to_reservations=node_id_to_reservations)
 
+                existing_components = self.get_existing_components(node_id=node_id)
+
                 delegation_id, sliver = inv.allocate(rid=reservation.get_reservation_id(),
                                                      requested_sliver=requested_sliver,
                                                      graph_id=self.combined_broker_model_graph_id,
                                                      graph_node=graph_node,
                                                      existing_reservations=existing_reservations,
+                                                     existing_components=existing_components,
                                                      is_create=is_create)
 
                 if delegation_id is not None and sliver is not None:
@@ -1357,10 +1360,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return existing_reservations
 
-    def get_existing_components_network_services(self, component_id: str) -> List[ABCReservationMixin]:
+    def get_existing_components(self, node_id: str) -> Dict[str, List[str]]:
         """
-        Get existing reservations which are served by CBM node identified by node_id
-        :param component_id:
+        Get existing components attached to Active/Ticketed Network Service Slivers
+        :param node_id:
         :return: list of components
         """
         states = [ReservationStates.Active.value,
@@ -1373,10 +1376,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             res_type.append(str(x))
 
         # Only get Active or Ticketing reservations
-        existing_reservations = self.actor.get_plugin().get_database().get_components(states=states,
-                                                                                      res_type=res_type)
-
-        return existing_reservations
+        return self.actor.get_plugin().get_database().get_components(node_id=node_id, rsv_type=res_type, states=states)
 
     def set_logger(self, logger):
         """

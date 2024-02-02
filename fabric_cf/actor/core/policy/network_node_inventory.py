@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 
 from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver, ComponentType
 from fim.slivers.base_sliver import BaseSliver
@@ -341,13 +341,6 @@ class NetworkNodeInventory(InventoryForType):
         if exclude:
             graph_node.attached_components_info.remove_device(name=available_component.get_name())
 
-    def __exclude_components_for_existing_network_services(self, *, graph_node: NodeSliver) -> NodeSliver:
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        database = GlobalsSingleton.get().get_container().get_actor().get_database()
-        from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
-        database = ActorDatabase()
-
-
     def __exclude_components_for_existing_reservations(self, *, rid: ID, graph_node: NodeSliver,
                                                        existing_reservations: List[ABCReservationMixin]) -> NodeSliver:
         """
@@ -397,6 +390,7 @@ class NetworkNodeInventory(InventoryForType):
 
     def __check_components(self, *, rid: ID, requested_components: AttachedComponentsInfo, graph_id: str,
                            graph_node: NodeSliver, existing_reservations: List[ABCReservationMixin],
+                           existing_components: Dict[str, List[str]],
                            is_create: bool = False) -> AttachedComponentsInfo:
         """
         Check if the requested capacities can be satisfied with the available capacities
@@ -411,6 +405,28 @@ class NetworkNodeInventory(InventoryForType):
         """
         self.__exclude_components_for_existing_reservations(rid=rid, graph_node=graph_node,
                                                             existing_reservations=existing_reservations)
+
+        if existing_components and len(existing_components):
+            comps_to_remove = []
+            for av in graph_node.attached_components_info.devices.values():
+                # Skip if not in allocated comps attached to Network Services
+                if av.get_name() not in existing_components.keys():
+                    continue
+                exclude = True
+                if av.get_type() == ComponentType.SharedNIC:
+                    bdfs = existing_components.get(av.get_name())
+                    allocated_component = ComponentSliver()
+                    allocated_component.set_type(ComponentType.SharedNIC)
+                    allocated_component.set_name(resource_name=av.get_name())
+                    allocated_component.set_capacity_allocations(cap=Capacities(unit=len(bdfs)))
+                    allocated_component.set_labels(Labels(bdf=bdfs))
+                    available_component, exclude = self.__exclude_allocated_pci_device_from_shared_nic(
+                        shared_nic=av, allocated_nic=allocated_component)
+                if exclude:
+                    comps_to_remove.append(av)
+
+            for c in comps_to_remove:
+                graph_node.attached_components_info.remove_device(name=c.get_name())
 
         self.logger.debug(f"requested_components: {requested_components.devices.values()} for reservation# {rid}")
         for name, requested_component in requested_components.devices.items():
@@ -458,13 +474,15 @@ class NetworkNodeInventory(InventoryForType):
         return requested_components
 
     def allocate(self, *, rid: ID, requested_sliver: BaseSliver, graph_id: str, graph_node: BaseSliver,
-                 existing_reservations: List[ABCReservationMixin], is_create: bool = False) -> Tuple[str, BaseSliver]:
+                 existing_reservations: List[ABCReservationMixin], existing_components: Dict[str, List[str]],
+                 is_create: bool = False) -> Tuple[str, BaseSliver]:
         """
         Allocate an extending or ticketing reservation
         :param rid: reservation id of the reservation to be allocated
         :param requested_sliver: requested sliver
         :param graph_id: BQM graph id
         :param graph_node: BQM graph node identified to serve the reservation
+        :param existing_components: Existing Components
         :param existing_reservations: Existing Reservations served by the same BQM node
         :param is_create: Indicates if this is create or modify
         :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
@@ -483,6 +501,7 @@ class NetworkNodeInventory(InventoryForType):
                                   msg=f"resource type: {graph_node.get_type()}")
 
         delegation_id = None
+        requested_capacities = None
         # For create, we need to allocate the VM
         if is_create:
             # Always use requested capacities to be mapped from flavor i.e. capacity hints
@@ -508,6 +527,7 @@ class NetworkNodeInventory(InventoryForType):
                 graph_id=graph_id,
                 graph_node=graph_node,
                 existing_reservations=existing_reservations,
+                existing_components=existing_components,
                 is_create=is_create)
 
         # Do this only for create

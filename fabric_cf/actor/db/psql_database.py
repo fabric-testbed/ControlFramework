@@ -638,11 +638,12 @@ class PsqlDatabase:
             if rsv_graph_node_id is not None:
                 rsv_obj.rsv_graph_node_id = rsv_graph_node_id
 
-            # Create StringMapping records for the reservation
-            if components:
-                for cid, bdf in components:
-                    mapping = Components(reservation=rsv_obj, component=cid, bdf=bdf)
-                    session.add(mapping)
+                # Create Component Mapping for the Network Service reservation
+                if components:
+                    for cid, bdf in components:
+                        mapping = Components(node_id=rsv_graph_node_id, reservation=rsv_obj,
+                                             component=cid, bdf=bdf)
+                        session.add(mapping)
 
             session.add(rsv_obj)
             session.commit()
@@ -690,7 +691,7 @@ class PsqlDatabase:
                     rsv_obj.rsv_type = rsv_type
 
                 # Update components records for the reservation
-                if components:
+                if rsv_graph_node_id is not None and components:
                     existing_components = session.query(Components).filter(Components.reservation_id == rsv_obj.rsv_id).all()
                     existing_component_ids = {(c.component, c.bdf) for c in existing_components}
 
@@ -710,7 +711,8 @@ class PsqlDatabase:
 
                     # Add new comps
                     for cid, bdf in added_comps:
-                        new_mapping = Components(reservation=rsv_obj, component=cid)
+                        new_mapping = Components(node_id=rsv_graph_node_id, reservation=rsv_obj,
+                                                 component=cid, bdf=bdf)
                         session.add(new_mapping)
 
             else:
@@ -806,13 +808,12 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_components(self, email: str = None, slice_id: str = None, category: list[int] = None,
-                       rsv_type: list[str] = None, states: list[int] = None, component: str = None,
-                       bdf: str = None):
-        result = []
+    def get_components(self, node_id: str, states: list[int] = None, component: str = None,
+                       bdf: str = None, rsv_type: list[str] = None):
+        result = {}
         session = self.get_session()
         try:
-            filter_dict = self.create_reservation_filter(slice_id=slice_id, email=email)
+            filter_dict = self.create_reservation_filter(graph_node_id=node_id)
             rows = session.query(Reservations).filter_by(**filter_dict)
 
             if rsv_type is not None:
@@ -820,9 +821,6 @@ class PsqlDatabase:
 
             if states is not None:
                 rows = rows.filter(Reservations.rsv_state.in_(states))
-
-            if category is not None:
-                rows = rows.filter(Reservations.rsv_category.in_(category))
 
             # Extract reservation IDs from the result
             reservation_ids = [res.rsv_id for res in rows]
@@ -842,7 +840,10 @@ class PsqlDatabase:
                 rows = session.query(Components).filter(Components.reservation_id.in_(reservation_ids))
 
             for row in rows.all():
-                result.append((row.component, row.bdf))
+                if row.component not in result:
+                    result[row.component] = row.bdf
+                else:
+                    result[row.component].append(row.bdf)
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
