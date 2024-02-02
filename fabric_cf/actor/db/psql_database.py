@@ -702,7 +702,7 @@ class PsqlDatabase:
                     removed_comps = existing_component_ids - set(components)
 
                     # Remove outdated comps
-                    for node_id, cid, bdf in removed_comps:
+                    for cid, bdf in removed_comps:
                         comp_to_remove = next(
                             (comp for comp in existing_components if comp.component == cid),
                             None)
