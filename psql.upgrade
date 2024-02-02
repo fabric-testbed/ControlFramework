@@ -20,5 +20,4 @@ CREATE TABLE IF NOT EXISTS "Components" (
     FOREIGN KEY (reservation_id) REFERENCES "Reservations"(rsv_id)
 );
 
-# Add component column to Reservations table
 ALTER TABLE "Reservations" ADD COLUMN IF NOT EXISTS components VARCHAR;
