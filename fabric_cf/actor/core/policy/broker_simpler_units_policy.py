@@ -1354,6 +1354,27 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return existing_reservations
 
+    def get_existing_components_network_services(self, component_id: str) -> List[ABCReservationMixin]:
+        """
+        Get existing reservations which are served by CBM node identified by node_id
+        :param component_id:
+        :return: list of components
+        """
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value,
+                  ReservationStates.Nascent.value]
+
+        res_type = []
+        for x in ServiceType:
+            res_type.append(str(x))
+
+        # Only get Active or Ticketing reservations
+        existing_reservations = self.actor.get_plugin().get_database().get_components(states=states,
+                                                                                      res_type=res_type)
+
+        return existing_reservations
+
     def set_logger(self, logger):
         """
         Set logger

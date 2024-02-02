@@ -254,8 +254,9 @@ class ActorDatabase(ABCDatabase):
                     for interface in sliver.interface_info.interfaces.values():
                         graph_id_node_id_component_id, bqm_if_name = interface.get_node_map()
                         if ":" in graph_id_node_id_component_id:
-                            result = graph_id_node_id_component_id.split(":", 1)[-1]
-                            components.append(result)
+                            comp_id_bdf = graph_id_node_id_component_id.split(":", 1)[-1]
+                            comp_id, bdf = comp_id_bdf.split(":", 1)
+                            components.append((comp_id, bdf))
 
             self.db.add_reservation(slc_guid=str(reservation.get_slice_id()),
                                     rsv_resid=str(reservation.get_reservation_id()),
@@ -296,8 +297,9 @@ class ActorDatabase(ABCDatabase):
                     for interface in sliver.interface_info.interfaces.values():
                         graph_id_node_id_component_id, bqm_if_name = interface.get_node_map()
                         if ":" in graph_id_node_id_component_id:
-                            result = graph_id_node_id_component_id.split(":", 1)[-1]
-                            components.append(result)
+                            comp_id_bdf = graph_id_node_id_component_id.split(":", 1)[-1]
+                            comp_id, bdf = comp_id_bdf.split(":", 1)
+                            components.append((comp_id, bdf))
 
             begin = time.time()
             properties = pickle.dumps(reservation)

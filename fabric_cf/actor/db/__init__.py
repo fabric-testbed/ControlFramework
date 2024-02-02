@@ -221,5 +221,6 @@ class Components(Base):
     __tablename__ = 'Components'
     reservation_id = Column(Integer, ForeignKey('Reservations.rsv_id'), primary_key=True)
     component = Column(String, primary_key=True, index=True)
+    bdf = Column(String, primary_key=True, index=True)
     reservation = relationship('Reservations', back_populates='components')
 

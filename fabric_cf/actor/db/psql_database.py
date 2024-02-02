@@ -28,7 +28,7 @@ import pickle
 import threading
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Tuple
 
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -607,7 +607,7 @@ class PsqlDatabase:
                         rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
                         lease_end: datetime = None, rsv_graph_node_id: str = None, oidc_claim_sub: str = None,
                         email: str = None, project_id: str = None, site: str = None, rsv_type: str = None,
-                        components: List[str] = None):
+                        components: List[Tuple[str, str]] = None):
         """
         Add a reservation
         @param slc_guid slice guid
@@ -640,8 +640,8 @@ class PsqlDatabase:
 
             # Create StringMapping records for the reservation
             if components:
-                for c in components:
-                    mapping = Components(reservation=rsv_obj, component=c)
+                for cid, bdf in components:
+                    mapping = Components(reservation=rsv_obj, component=cid, bdf=bdf)
                     session.add(mapping)
 
             session.add(rsv_obj)
@@ -654,7 +654,7 @@ class PsqlDatabase:
     def update_reservation(self, *, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
                            rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
                            lease_end: datetime = None, rsv_graph_node_id: str = None, site: str = None,
-                           rsv_type: str = None, components: List[str] = None):
+                           rsv_type: str = None, components: List[Tuple[str, str]] = None):
         """
         Update a reservation
         @param slc_guid slice guid
@@ -692,25 +692,25 @@ class PsqlDatabase:
                 # Update components records for the reservation
                 if components:
                     existing_components = session.query(Components).filter(Components.reservation_id == rsv_obj.rsv_id).all()
-                    existing_component_ids = {c.component for c in existing_components}
+                    existing_component_ids = {(c.component, c.bdf) for c in existing_components}
 
                     # Identify new string values
                     added_comps = set(components) - existing_component_ids
 
                     # Identify outdated string values
-                    removed_comps = existing_components - set(components)
+                    removed_comps = existing_component_ids - set(components)
 
                     # Remove outdated comps
-                    for c in removed_comps:
+                    for cid, bdf in removed_comps:
                         comp_to_remove = next(
-                            (comp for comp in existing_components if comp.component == c),
+                            (comp for comp in existing_components if comp.component == cid),
                             None)
                         if comp_to_remove:
                             session.delete(comp_to_remove)
 
                     # Add new comps
-                    for c in added_comps:
-                        new_mapping = Components(reservation=rsv_obj, component=c)
+                    for cid, bdf in added_comps:
+                        new_mapping = Components(reservation=rsv_obj, component=cid)
                         session.add(new_mapping)
 
             else:
@@ -807,7 +807,8 @@ class PsqlDatabase:
         return result
 
     def get_components(self, email: str = None, slice_id: str = None, category: list[int] = None,
-                       rsv_type: list[str] = None, states: list[int] = None, component: str = None):
+                       rsv_type: list[str] = None, states: list[int] = None, component: str = None,
+                       bdf: str = None):
         result = []
         session = self.get_session()
         try:
@@ -826,12 +827,22 @@ class PsqlDatabase:
             # Extract reservation IDs from the result
             reservation_ids = [res.rsv_id for res in rows]
 
-            # Query StringMapping records for reservations in the specified state and owner with the target string
-            rows = session.query(Components).filter(Components.reservation_id.in_(reservation_ids),
-                                                    Components.string_value == component)
+            # Query Component records for reservations in the specified state and owner with the target string
+            if component is not None and bdf is not None:
+                rows = session.query(Components).filter(Components.reservation_id.in_(reservation_ids),
+                                                        Components.component == component,
+                                                        Components.bdf == bdf)
+            elif component is not None:
+                rows = session.query(Components).filter(Components.reservation_id.in_(reservation_ids),
+                                                        Components.component == component)
+            elif bdf is not None:
+                rows = session.query(Components).filter(Components.reservation_id.in_(reservation_ids),
+                                                        Components.bdf == bdf)
+            else:
+                rows = session.query(Components).filter(Components.reservation_id.in_(reservation_ids))
 
             for row in rows.all():
-                result.append(row.component)
+                result.append((row.component, row.bdf))
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e

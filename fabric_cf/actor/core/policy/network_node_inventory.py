@@ -339,6 +339,13 @@ class NetworkNodeInventory(InventoryForType):
         if exclude:
             graph_node.attached_components_info.remove_device(name=available_component.get_name())
 
+    def __exclude_components_for_existing_network_services(self, *, graph_node: NodeSliver) -> NodeSliver:
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        database = GlobalsSingleton.get().get_container().get_actor().get_database()
+        from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
+        database = ActorDatabase()
+
+
     def __exclude_components_for_existing_reservations(self, *, rid: ID, graph_node: NodeSliver,
                                                        existing_reservations: List[ABCReservationMixin]) -> NodeSliver:
         """
