@@ -407,7 +407,7 @@ class NetworkNodeInventory(InventoryForType):
 
         self.logger.debug(f"requested_components: {requested_components.devices.values()} for reservation# {rid}")
         for name, requested_component in requested_components.devices.items():
-            if not is_create:
+            if not is_create and requested_component.get_node_map() is not None:
                 self.logger.debug(f"==========Ignoring Allocated component: {requested_component} for modify")
                 # TODO exclude already allocated component to the same reservation
                 continue
@@ -476,6 +476,7 @@ class NetworkNodeInventory(InventoryForType):
                                   msg=f"resource type: {graph_node.get_type()}")
 
         delegation_id = None
+        requested_capacities = None
         # For create, we need to allocate the VM
         if is_create:
             # Always use requested capacities to be mapped from flavor i.e. capacity hints
