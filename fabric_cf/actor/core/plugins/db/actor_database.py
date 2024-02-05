@@ -258,7 +258,8 @@ class ActorDatabase(ABCDatabase):
                             node_id = split_string[1] if len(split_string) > 1 else None
                             comp_id = split_string[2] if len(split_string) > 2 else None
                             bdf = ":".join(split_string[3:]) if len(split_string) > 3 else None
-                            components.append((node_id, comp_id, bdf))
+                            if node_id and comp_id and bdf:
+                                components.append((node_id, comp_id, bdf))
 
             self.db.add_reservation(slc_guid=str(reservation.get_slice_id()),
                                     rsv_resid=str(reservation.get_reservation_id()),
