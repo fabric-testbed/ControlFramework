@@ -39,7 +39,7 @@ class KafkaService:
     def set_logger(self, *, logger):
         self.logger = logger
         if self.producer is not None:
-            self.producer.set_logger(logger=logger)
+            self.producer.logger=logger
 
     def update_status(self, *, incoming: ResultAvro, outgoing: ResultAvro):
         outgoing.set_code(incoming.get_code())

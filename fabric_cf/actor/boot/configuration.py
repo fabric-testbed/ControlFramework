@@ -453,13 +453,23 @@ class Configuration:
         if self.global_config is not None:
             return self.global_config.get_neo4j_config()
 
-        return None
-
     def get_rpc_retries(self) -> int:
         return self.global_config.runtime.get(Constants.PROPERTY_CONF_RPC_RETRIES, 5)
 
     def get_kafka_key_schema_location(self) -> str or None:
         return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, None)
+
+    def get_kafka_consumer_auto_commit_interval(self) -> int:
+        return int(self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_AUTO_COMMIT_INTERVAL), 5)
+
+    def get_kafka_consumer_commit_batch_size(self) -> int:
+        return int(self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_BATCH_SIZE, 1))
+
+    def get_kafka_consumer_poll_timeout(self) -> int:
+        return int(self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_POLL_TIMEOUT, 250))
+
+    def get_kafka_consumer_enable_auto_commit(self) -> bool:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_ENABLE_AUTO_COMMIT, True)
 
     def get_kafka_value_schema_location(self) -> str or None:
         return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_VALUE_SCHEMA, None)

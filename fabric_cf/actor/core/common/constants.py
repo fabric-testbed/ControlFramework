@@ -87,6 +87,11 @@ class Constants:
 
     PROPERTY_PICKLE_PROPERTIES = "properties"
 
+    PROPERTY_CONF_KAFKA_POLL_TIMEOUT = "consumer.poll.timeout"
+    PROPERTY_CONF_KAFKA_BATCH_SIZE = "commit.batch.size"
+    PROPERTY_CONF_KAFKA_AUTO_COMMIT_INTERVAL = "auto.commit.interval.ms"
+    PROPERTY_CONF_KAFKA_ENABLE_AUTO_COMMIT = "enable.auto.commit"
+
     CONFIG_SECTION_RUNTIME = "runtime"
     PROPERTY_CONF_KAFKA_SERVER = "kafka-server"
     PROPERTY_CONF_KAFKA_SCHEMA_REGISTRY = "kafka-schema-registry-url"
