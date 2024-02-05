@@ -932,7 +932,13 @@ class Kernel:
             self.slices.add(slice_object=slice_object)
 
             try:
-                self.plugin.get_database().add_slice(slice_object=slice_object)
+                # Only add slice if it doesn't exist
+                # Slice may exist in cases where it only one sliver which was removed by a modify
+                exists = self.plugin.get_database().get_slices(slice_id=slice_object.get_slice_id())
+                if not len(exists):
+                    self.plugin.get_database().add_slice(slice_object=slice_object)
+                else:
+                    self.plugin.get_database().update_slice(slice_object=slice_object)
             except Exception as e:
                 self.slices.remove(slice_id=slice_object.get_slice_id())
                 self.logger.error(traceback.format_exc())
@@ -1521,6 +1527,8 @@ class Kernel:
         if delegation is not None:
             local = self.soft_validate_delegation(delegation=delegation)
             if local is None:
+                if delegation.get_graph() is not None:
+                    delegation.get_graph().delete_graph()
                 self.error(err="delegation not found", e=DelegationNotFoundException(did=did))
             return local
 

@@ -48,6 +48,9 @@ runtime:
   rpc.request.timeout.seconds: 900
   message.max.bytes: 1048588
   rpc.retries: 5
+  commit.batch.size: 1
+  enable.auto.commit: False
+  consumer.poll.timeout: 250
 
 logging:
   ## The directory in which actor should create log files.
@@ -123,7 +126,7 @@ actor:
   guid: net1-am-guid
   description: Net AM
   kafka-topic: net1-am-topic
-  substrate.file: ../../../neo4j/Network-ad.graphml
+  substrate.file: ../../../neo4j/Network-dev.graphml
   policy:
       module: fabric_cf.actor.core.policy.authority_calendar_policy
       class: AuthorityCalendarPolicy

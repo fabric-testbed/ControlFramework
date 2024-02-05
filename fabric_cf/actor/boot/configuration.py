@@ -460,7 +460,7 @@ class Configuration:
         return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, None)
 
     def get_kafka_consumer_auto_commit_interval(self) -> int:
-        return int(self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_AUTO_COMMIT_INTERVAL), 5)
+        return int(self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_AUTO_COMMIT_INTERVAL, 5))
 
     def get_kafka_consumer_commit_batch_size(self) -> int:
         return int(self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_BATCH_SIZE, 1))
