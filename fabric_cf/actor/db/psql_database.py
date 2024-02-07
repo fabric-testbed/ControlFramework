@@ -692,19 +692,20 @@ class PsqlDatabase:
 
                 # Update components records for the reservation
                 if components and len(components):
-                    existing_components = session.query(Components).filter(Components.reservation_id == rsv_obj.rsv_id).all()
-                    existing_component_ids = {(c.component, c.bdf) for c in existing_components}
+                    existing = session.query(Components).filter(Components.reservation_id == rsv_obj.rsv_id).all()
+                    existing_components = {(c.node_id, c.component, c.bdf) for c in existing}
 
                     # Identify new string values
-                    added_comps = set(components) - existing_component_ids
+                    added_comps = set(components) - existing_components
 
                     # Identify outdated string values
-                    removed_comps = existing_component_ids - set(components)
+                    removed_comps = existing_components - set(components)
 
                     # Remove outdated comps
-                    for cid, bdf in removed_comps:
+                    for node_id, cid, bdf in removed_comps:
                         comp_to_remove = next(
-                            (comp for comp in existing_components if comp.component == cid),
+                            (comp for comp in existing if comp.component == cid and
+                             comp.node_id == node_id and comp.bdf == bdf),
                             None)
                         if comp_to_remove:
                             session.delete(comp_to_remove)

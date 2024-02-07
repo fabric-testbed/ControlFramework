@@ -406,6 +406,8 @@ class NetworkNodeInventory(InventoryForType):
         self.__exclude_components_for_existing_reservations(rid=rid, graph_node=graph_node,
                                                             existing_reservations=existing_reservations)
 
+        self.logger.debug(f"Excluding components connected to Network Services: {existing_components}")
+
         if existing_components and len(existing_components):
             comps_to_remove = []
             for av in graph_node.attached_components_info.devices.values():
@@ -420,8 +422,9 @@ class NetworkNodeInventory(InventoryForType):
                     allocated_component.set_name(resource_name=av.get_name())
                     allocated_component.set_capacity_allocations(cap=Capacities(unit=len(bdfs)))
                     allocated_component.set_labels(Labels(bdf=bdfs))
-                    available_component, exclude = self.__exclude_allocated_pci_device_from_shared_nic(
-                        shared_nic=av, allocated_nic=allocated_component)
+                    self.logger.debug(f"Excluding Shared NICs connected to Network Services: {allocated_component}")
+                    av, exclude = self.__exclude_allocated_pci_device_from_shared_nic(shared_nic=av,
+                                                                                      allocated_nic=allocated_component)
                 if exclude:
                     comps_to_remove.append(av)
 
