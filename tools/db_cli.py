@@ -28,6 +28,9 @@ import logging
 import traceback
 from logging.handlers import RotatingFileHandler
 
+from fim.user import ServiceType
+
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
 
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
@@ -123,6 +126,25 @@ class MainClass:
             print(f"Exception occurred while fetching sites: {e}")
             traceback.print_exc()
 
+    def get_components(self, node_id: str):
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value,
+                  ReservationStates.Nascent.value]
+
+        res_type = []
+        for x in ServiceType:
+            res_type.append(str(x))
+
+        try:
+            components = self.db.get_components(node_id=node_id, states=states, rsv_type=res_type)
+            if components is not None:
+                for c in components:
+                    print(c)
+        except Exception as e:
+            print(f"Exception occurred while fetching sites: {e}")
+            traceback.print_exc()
+
     def get_reservations(self, slice_id: str = None, res_id: str = None, email: str = None):
         try:
             res_list = self.db.get_reservations(slice_id=slice_id, rid=res_id, email=email)
@@ -170,6 +192,8 @@ class MainClass:
             self.get_delegations(dlg_id=args.delegation_id)
         elif args.command == "sites":
             self.get_sites()
+        elif args.command == "components":
+            self.get_components(node_id=args.node_id)
         else:
             print(f"Unsupported command: {args.command}")
 
@@ -187,6 +211,7 @@ if __name__ == '__main__':
     parser.add_argument("-e", dest='email', required=False, type=str)
     parser.add_argument("-n", dest='slice_name', required=False, type=str)
     parser.add_argument("-o", dest='operation', required=False, type=str)
+    parser.add_argument("-nid", dest='node_id', required=False, type=str)
     args = parser.parse_args()
 
     mc = MainClass(user=args.user, password=args.password, db=args.database)

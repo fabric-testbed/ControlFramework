@@ -28,10 +28,10 @@ import pickle
 import threading
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 from sqlalchemy import create_engine, desc
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm import scoped_session, sessionmaker, joinedload
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
@@ -809,42 +809,35 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_components(self, node_id: str, states: list[int] = None, component: str = None,
-                       bdf: str = None, rsv_type: list[str] = None):
+    def get_components(self, *, node_id: str, states: list[int], rsv_type: list[str], component: str = None,
+                       bdf: str = None) -> Dict[str, List[str]]:
         result = {}
         session = self.get_session()
         try:
-            filter_dict = self.create_reservation_filter(graph_node_id=node_id)
-            rows = session.query(Reservations).filter_by(**filter_dict)
-
-            if rsv_type is not None:
-                rows = rows.filter(Reservations.rsv_type.in_(rsv_type))
-
-            if states is not None:
-                rows = rows.filter(Reservations.rsv_state.in_(states))
-
-            # Extract reservation IDs from the result
-            reservation_ids = [res.rsv_id for res in rows]
+            # Query to retrieve Components based on specific Reservation types and states
+            rows = (
+                session.query(Components)
+                    .join(Reservations, Components.reservation_id == Reservations.rsv_id)
+                    .filter(Reservations.rsv_type.in_(rsv_type))
+                    .filter(Reservations.rsv_state.in_(states))
+                    .filter(Components.node_id == node_id)
+                    .options(joinedload(Components.reservation))
+                    # Use joinedload to efficiently load the associated Reservation
+            )
 
             # Query Component records for reservations in the specified state and owner with the target string
             if component is not None and bdf is not None:
-                rows = session.query(Components).filter(Components.reservation_id.in_(reservation_ids),
-                                                        Components.component == component,
-                                                        Components.bdf == bdf)
+                rows = rows.filter(Components.component == component,
+                                               Components.bdf == bdf)
             elif component is not None:
-                rows = session.query(Components).filter(Components.reservation_id.in_(reservation_ids),
-                                                        Components.component == component)
+                rows = rows.filter(Components.component == component)
             elif bdf is not None:
-                rows = session.query(Components).filter(Components.reservation_id.in_(reservation_ids),
-                                                        Components.bdf == bdf)
-            else:
-                rows = session.query(Components).filter(Components.reservation_id.in_(reservation_ids))
+                rows = rows.filter(Components.bdf == bdf)
 
             for row in rows.all():
                 if row.component not in result:
-                    result[row.component] = row.bdf
-                else:
-                    result[row.component].append(row.bdf)
+                    result[row.component] = []
+                result[row.component].append(row.bdf)
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e

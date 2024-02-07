@@ -457,8 +457,8 @@ class ActorDatabase(ABCDatabase):
                 self.lock.release()
         return result
 
-    def get_components(self, *, node_id: str, states: list[int] = None, component: str = None,
-                       bdf: str = None, rsv_type: list[str] = None) -> Dict[str, List[str]]:
+    def get_components(self, *, node_id: str, states: list[int], rsv_type: list[str], component: str = None,
+                       bdf: str = None) -> Dict[str, List[str]]:
         try:
             return self.db.get_components(node_id=node_id, states=states, component=component, bdf=bdf,
                                           rsv_type=rsv_type)
