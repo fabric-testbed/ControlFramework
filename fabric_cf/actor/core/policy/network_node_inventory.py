@@ -412,11 +412,11 @@ class NetworkNodeInventory(InventoryForType):
             comps_to_remove = []
             for av in graph_node.attached_components_info.devices.values():
                 # Skip if not in allocated comps attached to Network Services
-                if av.get_name() not in existing_components.keys():
+                if av.node_id not in existing_components.keys():
                     continue
                 exclude = True
                 if av.get_type() == ComponentType.SharedNIC:
-                    bdfs = existing_components.get(av.get_name())
+                    bdfs = existing_components.get(av.node_id)
                     allocated_component = ComponentSliver()
                     allocated_component.set_type(ComponentType.SharedNIC)
                     allocated_component.set_name(resource_name=av.get_name())
