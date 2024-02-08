@@ -314,7 +314,6 @@ class NetworkNodeInventory(InventoryForType):
         for e in excluded_labels:
             if e in delegated_label.bdf:
                 self.logger.debug(f"Excluding PCI device {e}")
-                print(f"KOMAL -- Excluding PCI device {e}")
                 delegated_label.bdf.remove(e)
                 exists = True
 
@@ -337,7 +336,6 @@ class NetworkNodeInventory(InventoryForType):
         """
         exclude = True
         if allocated_component.get_type() == ComponentType.SharedNIC:
-            print(f"KOMAL - old - {allocated_component}")
             available_component, exclude = self.__exclude_allocated_pci_device_from_shared_nic(
                 shared_nic=available_component, allocated_nic=allocated_component)
         if exclude:
@@ -425,7 +423,6 @@ class NetworkNodeInventory(InventoryForType):
                     allocated_component.set_capacity_allocations(cap=Capacities(unit=len(bdfs)))
                     allocated_component.set_labels(Labels(bdf=bdfs))
                     self.logger.debug(f"Excluding Shared NICs connected to Network Services: {allocated_component}")
-                    print(f"KOMAL - new- Excluding Shared NICs connected to Network Services: {allocated_component}")
                     av, exclude = self.__exclude_allocated_pci_device_from_shared_nic(shared_nic=av,
                                                                                       allocated_nic=allocated_component)
                 if exclude:
