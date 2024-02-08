@@ -221,7 +221,7 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
 
         self.set_dirty()
 
-    def reserve(self, *, policy: ABCPolicy):
+    def reserve(self, *, policy: ABCPolicy) -> bool:
         # These handlers may need to be slightly more sophisticated, since a
         # client may bid multiple times on a ticket as part of an auction
         # protocol: so we may receive a reserve or extend when there is already
@@ -232,12 +232,13 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
                 self.pending_state != ReservationPendingStates.Ticketing:
             # We do not want to fail the reservation simply log a warning and exit from reserve
             self.logger.warning("Duplicate ticket request")
-            return
+            return False
 
         self.policy = policy
         self.approved = False
         self.bid_pending = True
         self.map_and_update(ticketed=False)
+        return True
 
     def service_reserve(self):
         # resources is null initially. It becomes non-null once the

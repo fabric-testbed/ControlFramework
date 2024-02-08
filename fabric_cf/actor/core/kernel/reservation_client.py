@@ -1194,7 +1194,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
     def set_policy(self, *, policy: ABCClientPolicy):
         self.policy = policy
 
-    def reserve(self, *, policy: ABCPolicy):
+    def reserve(self, *, policy: ABCPolicy) -> bool:
         assert self.slice is not None
 
         self.nothing_pending()
@@ -1236,6 +1236,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 self.state == ReservationStates.Failed:
             self.error(err="initiating reserve on defunct reservation")
 
+        return True
     def setup(self):
         super().setup()
         if self.leased_resources is not None:

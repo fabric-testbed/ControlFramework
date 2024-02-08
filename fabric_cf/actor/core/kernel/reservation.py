@@ -498,8 +498,8 @@ class Reservation(ABCReservationMixin):
         if self.state == ReservationStates.Closed or self.state == ReservationStates.Failed:
             self.error(err="invalid Reservation")
 
-    def reserve(self, *, policy: ABCPolicy):
-        return
+    def reserve(self, *, policy: ABCPolicy) -> bool:
+        return True
 
     def setup(self):
         """

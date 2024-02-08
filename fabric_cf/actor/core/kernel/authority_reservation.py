@@ -139,17 +139,20 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
 
         self.state = ReservationStates.Ticketed
 
-    def reserve(self, *, policy: ABCPolicy):
+    def reserve(self, *, policy: ABCPolicy) -> bool:
         self.nothing_pending()
         self.incoming_request()
         if self.is_active():
-            self.error(err="reservation already holds a lease")
+            #self.error(err="reservation already holds a lease")
+            self.logger.warning(f"Reservation: {self.get_reservation_id()} already holds a lease")
+            return False
 
         self.policy = policy
         self.approved = False
         self.bid_pending = True
         self.pending_recover = False
         self.map_and_update(extend=False)
+        return True
 
     def service_reserve(self):
         try:

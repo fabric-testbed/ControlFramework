@@ -359,7 +359,7 @@ class ABCReservationMixin(ABCReservationResources, ABCReservationStatus):
         """
 
     @abstractmethod
-    def reserve(self, *, policy: ABCPolicy):
+    def reserve(self, *, policy: ABCPolicy) -> bool:
         """
         Reserve resources: ticket() initiate or request, or redeem()
         request. New reservation.

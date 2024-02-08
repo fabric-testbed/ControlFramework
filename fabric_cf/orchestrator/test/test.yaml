@@ -41,7 +41,7 @@ runtime:
   orchestrator.rest.port: 8700
   prometheus.port: 11002
   kafka.request.timeout.ms: 120000
-  rpc.request.timeout.seconds: 1200
+  rpc.request.timeout.seconds: 12000
   maint.project.id: 10c0094a-abaf-4ef9-a532-2be53e2a896b
   message.max.bytes: 1048588
   rpc.retries: 5

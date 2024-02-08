@@ -85,9 +85,9 @@ class Kernel:
         """
         try:
             reservation.lock()
-            reservation.reserve(policy=self.policy)
+            ignore = reservation.reserve(policy=self.policy)
             self.plugin.get_database().update_reservation(reservation=reservation)
-            if not reservation.is_failed():
+            if not reservation.is_failed() and not ignore:
                 reservation.service_reserve()
         except Exception as e:
             self.logger.error(traceback.format_exc())
