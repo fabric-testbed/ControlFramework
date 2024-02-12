@@ -548,9 +548,9 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
         self.logger.info(f"Update Lease from authority in state: {self.get_state()} "
                          f"Incoming: {incoming_state}|{incoming.get_notices()}  update_data: {update_data}!")
         if incoming_state and incoming_state == str(ReservationStates.CloseFail):
-            self.update_data.absorb(update_data)
+            self.update_data.absorb(other=update_data)
             self.logger.info("Closing a reservation which failed to delete at the authority")
-            self.actor.close(reservation=self)
+            self.close()
 
     def handle_failed_rpc(self, *, failed: FailedRPC):
         if failed.get_request_type() == RPCRequestType.UpdateTicket and \
