@@ -237,7 +237,7 @@ class Reservation(ABCReservationMixin):
         Clears all event notices associated with the reservation.
         """
 
-    def close(self):
+    def close(self, failed: bool = False):
         """
         Close a reservation
         """

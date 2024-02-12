@@ -277,7 +277,7 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
                                 pending=ReservationPendingStates.None_)
                 self.generate_update()
 
-    def close(self):
+    def close(self, failed: bool = False):
         send_notification = False
         if self.state == ReservationStates.Nascent or self.pending_state != ReservationPendingStates.None_:
             self.logger.warning("Closing a reservation in progress")
@@ -297,7 +297,11 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
                 self.logger.debug("closing reservation #{} while in Priming".format(self.rid))
                 self.closed_in_priming = True
 
-            self.transition(prefix="closed", state=ReservationStates.Closed, pending=ReservationPendingStates.None_)
+            if not failed:
+                self.transition(prefix="closed", state=ReservationStates.Closed, pending=ReservationPendingStates.None_)
+            else:
+                self.transition(prefix="closed-failed", state=ReservationStates.CloseFail,
+                                pending=ReservationPendingStates.None_)
             self.policy.closed(reservation=self)
 
         if send_notification:
@@ -537,7 +541,15 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
     def update_lease(self, *, incoming: ABCReservationMixin, update_data):
         self.logger.info(f"Received Update Lease: {incoming} at Broker")
         # TODO add any processing if needed
-        self.logger.info(f"Do Nothing!")
+        if incoming.get_resources() and incoming.get_resources().get_sliver() and incoming.get_resources().get_sliver().get_reservation_info():
+            incoming_state = incoming.get_resources().get_sliver().get_reservation_info().reservation_state
+        else:
+            incoming_state = None
+        self.logger.info(f"Update Lease from authority in state: {self.get_state()} "
+                         f"Incoming: {incoming_state}|{incoming.get_notices()}  update_data: {update_data}!")
+        if incoming_state and incoming_state == str(ReservationStates.CloseFail):
+            self.logger.info("Closing a reservation which failed to delete at the authority")
+            self.close(failed=True)
 
     def handle_failed_rpc(self, *, failed: FailedRPC):
         if failed.get_request_type() == RPCRequestType.UpdateTicket and \

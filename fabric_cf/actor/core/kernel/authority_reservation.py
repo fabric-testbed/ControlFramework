@@ -213,7 +213,7 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
             self.logger.error("authority failed servicing modifylease e: {}".format(e))
             self.fail_notify(message=str(e))
 
-    def close(self):
+    def close(self, failed: bool = False):
         self.logger.debug("Processing  close for #{}".format(self.rid))
         self.transition(prefix="external close", state=self.state, pending=ReservationPendingStates.Closing)
 
@@ -421,8 +421,12 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
 
         elif self.pending_state == ReservationPendingStates.Closing:
             if self.resources is None or self.resources.is_closed():
-                self.transition(prefix="close complete", state=ReservationStates.Closed,
-                                pending=ReservationPendingStates.None_)
+                if self.update_data.failed:
+                    self.transition(prefix="close complete failed", state=ReservationStates.CloseFail,
+                                    pending=ReservationPendingStates.None_)
+                else:
+                    self.transition(prefix="close complete", state=ReservationStates.Closed,
+                                    pending=ReservationPendingStates.None_)
                 self.pending_recover = False
                 self.generate_update()
 
@@ -518,7 +522,10 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
                 released = self.resources.collect_released()
                 if released is not None:
                     if not released.get_notices().is_empty():
-                        self.update_data.post(event=released.get_notices().get_notice())
+                        notice = released.get_notices().get_notice()
+                        self.update_data.post(event=notice)
+                        if "Exception" in notice:
+                            self.update_data.error(message=notice)
                     self.policy.release(resources=released)
         except Exception as e:
             self.logger.error("exception in authority reap e: {}".format(e))

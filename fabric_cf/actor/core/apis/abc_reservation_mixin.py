@@ -282,7 +282,7 @@ class ABCReservationMixin(ABCReservationResources, ABCReservationStatus):
         """
 
     @abstractmethod
-    def close(self):
+    def close(self, failed: bool = False):
         """
         Closes the reservation. Locked with the kernel lock.
         """

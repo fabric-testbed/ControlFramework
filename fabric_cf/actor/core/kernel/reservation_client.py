@@ -636,7 +636,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 self.logger.info("Reservation #{} has not requested any resource yet. Nothing to relinquish.".
                                  format(self.rid))
 
-    def close(self):
+    def close(self, failed: bool = False):
         if self.state == ReservationStates.Nascent or self.state == ReservationStates.Failed:
             self.logger.debug(f"Reservation in state: {self.state}, transition to {ReservationStates.Closed}")
             self.transition(prefix="close", state=ReservationStates.Closed, pending=self.pending_state)
