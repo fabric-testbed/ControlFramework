@@ -837,7 +837,8 @@ class PsqlDatabase:
             for row in rows.all():
                 if row.component not in result:
                     result[row.component] = []
-                result[row.component].append(row.bdf)
+                if row.bdf not in result[row.component]:
+                    result[row.component].append(row.bdf)
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
