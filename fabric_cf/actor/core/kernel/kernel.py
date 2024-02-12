@@ -995,7 +995,8 @@ class Kernel:
         if real is not None:
             try:
                 real.lock()
-                if real.is_closed() or real.is_failed() or real.get_state() == ReservationStates.CloseWait:
+                if real.is_closed() or real.is_failed() or \
+                        real.get_state() in [ReservationStates.CloseWait, ReservationStates.CloseFail]:
                     self.unregister_reservation(rid=rid)
                 else:
                     raise KernelException("Only reservations in failed, closed, or closewait state can be removed.")
