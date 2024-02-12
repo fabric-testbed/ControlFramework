@@ -1337,7 +1337,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         states = [ReservationStates.Active.value,
                   ReservationStates.ActiveTicketed.value,
                   ReservationStates.Ticketed.value,
-                  ReservationStates.Nascent.value]
+                  ReservationStates.Nascent.value,
+                  ReservationStates.CloseFail.value]
 
         # Only get Active or Ticketing reservations
         existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
