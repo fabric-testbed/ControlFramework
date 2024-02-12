@@ -213,7 +213,7 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
             self.logger.error("authority failed servicing modifylease e: {}".format(e))
             self.fail_notify(message=str(e))
 
-    def close(self, failed: bool = False):
+    def close(self, force: bool = False):
         self.logger.debug("Processing  close for #{}".format(self.rid))
         self.transition(prefix="external close", state=self.state, pending=ReservationPendingStates.Closing)
 
