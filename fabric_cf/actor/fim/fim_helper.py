@@ -608,5 +608,6 @@ class FimHelper:
         slice_topology = FimHelper.get_experiment_topology(graph_id=graph_id)
         slice_topology.prune(reservation_state=ReservationStates.Failed.name)
         slice_topology.prune(reservation_state=ReservationStates.Closed.name)
+        slice_topology.prune(reservation_state=ReservationStates.CloseFail.name)
 
         return slice_topology

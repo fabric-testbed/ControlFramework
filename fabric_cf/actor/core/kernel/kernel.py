@@ -1319,7 +1319,8 @@ class Kernel:
         @param slice_object local slice object
         @throws Exception
         """
-        if reservation.is_closed() or reservation.is_failed() or reservation.get_state() == ReservationStates.CloseWait:
+        if reservation.is_closed() or reservation.is_failed() or \
+                reservation.get_state() in [ReservationStates.CloseWait, ReservationStates.CloseFail]:
             try:
                 slice_object.lock_slice()
                 slice_object.unregister(reservation=reservation)

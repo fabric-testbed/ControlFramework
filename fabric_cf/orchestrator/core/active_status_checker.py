@@ -55,6 +55,8 @@ class ActiveStatusChecker(StatusChecker):
                     return Status.OK, reservation
             elif res_state == ReservationStates.Closed:
                 return Status.NOT_OK, reservation
+            elif res_state == ReservationStates.CloseFail:
+                return Status.NOT_OK, reservation
             elif res_state == ReservationStates.Failed:
                 return Status.NOT_OK, reservation
         except Exception as e:

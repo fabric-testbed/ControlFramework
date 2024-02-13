@@ -711,12 +711,13 @@ class OrchestratorHandler:
 
             self.logger.debug(f"There are {len(reservations)} reservations in the slice# {slice_id}")
 
-            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.renew, lease_end_time=new_end_time)
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.renew,
+                                                    lease_end_time=new_end_time)
             self.check_maintenance_mode(token=fabric_token, reservations=reservations)
             for r in reservations:
                 res_state = ReservationStates(r.get_state())
-                if res_state == ReservationStates.Closed or res_state == ReservationStates.Failed or \
-                        res_state == ReservationStates.CloseWait:
+                if res_state in [ReservationStates.Closed, ReservationStates.Failed, ReservationStates.CloseWait,
+                                 ReservationStates.CloseFail]:
                     continue
 
                 current_end_time = ActorClock.from_milliseconds(milli_seconds=r.get_end())

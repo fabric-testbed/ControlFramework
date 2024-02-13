@@ -156,8 +156,7 @@ class ControllerCalendarPolicy(Policy, ABCControllerPolicy):
                             # add to the pending notify list so that we can raise the event
                             # when transfer in operations complete.
                             self.pending_notify.add(reservation=reservation)
-                elif reservation.get_state() == ReservationStates.CloseWait or \
-                        reservation.get_state() == ReservationStates.Failed:
+                elif reservation.get_state() in [ReservationStates.CloseWait, ReservationStates.Failed]:
                     self.pending_notify.remove(reservation=reservation)
                 else:
                     self.logger.warning("Invalid state on reservation. We may be still recovering: {}".format(

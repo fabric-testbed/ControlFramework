@@ -637,7 +637,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
                                  format(self.rid))
 
     def close(self, force: bool = False):
-        if self.state == ReservationStates.Nascent or self.state == ReservationStates.Failed:
+        if self.state in [ReservationStates.Nascent, ReservationStates.Failed]:
             self.logger.debug(f"Reservation in state: {self.state}, transition to {ReservationStates.Closed}")
             self.transition(prefix="close", state=ReservationStates.Closed, pending=self.pending_state)
             if self.authority is not None:
@@ -659,7 +659,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
             else:
                 self.logger.info("Received close for a redeeming reservation. Deferring close until redeem completes.")
                 self.closed_during_redeem = True
-        elif self.state == ReservationStates.Active or self.state == ReservationStates.ActiveTicketed:
+        elif self.state in [ReservationStates.Active, ReservationStates.ActiveTicketed]:
             if self.pending_state == ReservationPendingStates.Redeeming:
                 self.logger.info("Received close for a redeeming reservation. Deferring close until redeem completes.")
                 self.closed_during_redeem = True
@@ -943,7 +943,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         Called from a probe to monitor asynchronous processing related to the joinstate for controller.
         @raises Exception passed through from prepareJoin or prepareRedeem
         """
-        if self.state == ReservationStates.Closed or self.state == ReservationStates.Failed:
+        if self.state in [ReservationStates.Closed, ReservationStates.Failed]:
             self.transition_with_join(prefix="clearing join state for terminal reservation", state=self.state,
                                       pending=self.pending_state,
                                       join_state=JoinState.NoJoin)
@@ -1121,8 +1121,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
             # To avoid the slice from being stuck in Configuring state
             # Close the reservation - send Close to AM and relinquish to Broker
             # Timeout is configurable
-            if self.pending_state == ReservationPendingStates.Redeeming or \
-                    self.pending_state == ReservationPendingStates.Ticketing:
+            if self.pending_state in [ReservationPendingStates.Redeeming, ReservationPendingStates.Ticketing]:
                 from fabric_cf.actor.core.container.globals import GlobalsSingleton
                 if self.exceeds_timeout(timeout=GlobalsSingleton.get().RPC_TIMEOUT):
                     am_name = self.authority.get_name() if self.authority is not None else None
@@ -1154,20 +1153,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
         if self.leased_resources is None:
             return
-
-        # Handling for close completion. Note that this reservation could
-        # "stick" once we enter the CloseWait state, if we never hear back from
-        # the authority. There is no harm to purging a CloseWait reservation,
-        # but we just leave them for now.
-        #close_by_deps = self.__are_dependencies_closed()
-        #if (self.leased_resources is not None and self.pending_state == ReservationPendingStates.Closing and
-        #    self.leased_resources.is_closed()) or close_by_deps:
-
-        #    if not close_by_deps:
-        #        self.logger.debug("LEASED RESOURCES are closed")
-        #        msg = "local close complete"
-        #    else:
-        #        msg = "close by dependencies"
 
         if self.pending_state == ReservationPendingStates.Closing:
             msg = "local close complete"
@@ -1232,11 +1217,12 @@ class ReservationClient(Reservation, ABCControllerReservation):
             self.transition_with_join(prefix="extend lease blocked", state=self.state,
                                       pending=self.pending_state, join_state=JoinState.BlockedExtendLease)
 
-        elif self.state == ReservationStates.Closed or self.state == ReservationStates.CloseWait or \
-                self.state == ReservationStates.Failed:
+        elif self.state in [ReservationStates.Closed, ReservationStates.CloseWait, ReservationStates.Failed,
+                            ReservationStates.CloseFail]:
             self.error(err="initiating reserve on defunct reservation")
 
         return True
+
     def setup(self):
         super().setup()
         if self.leased_resources is not None:
@@ -1446,6 +1432,9 @@ class ReservationClient(Reservation, ABCControllerReservation):
         elif self.state == ReservationStates.Closed:
             self.logger.error("Lease update on closed reservation")
 
+        elif self.state == ReservationStates.CloseFail:
+            self.logger.error("Lease update on closed reservation")
+
         elif self.state == ReservationStates.Failed:
             self.logger.error("Lease update on failed reservation")
 
@@ -1476,7 +1465,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 self.approved = False
                 self.pending_recover = False
 
-        elif self.state == ReservationStates.Closed or self.state == ReservationStates.CloseWait:
+        elif self.state in [ReservationStates.Closed, ReservationStates.CloseWait, ReservationStates.CloseFail]:
             self.logger.warning("Ticket update after close")
 
         elif self.state == ReservationStates.Failed:
