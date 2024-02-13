@@ -554,7 +554,7 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         """
 
     @abstractmethod
-    def close_by_rid(self, *, rid: ID):
+    def close_by_rid(self, *, rid: ID, force: bool = False):
         """
         Closes the reservation. Note: the reservation must have already been registered with the actor.
         This method may involve either a client or a server side action or both. When called on a broker,
@@ -562,6 +562,7 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
 
         Args:
             rid: reservation id
+            force: force close
         Raises:
             Exception in case of error
         """

@@ -218,6 +218,8 @@ class BrokerDelegation(Delegation):
                 self.delegation_update_satisfies(incoming=incoming, update_data=update_data)
                 self.absorb_delegation_update(incoming=incoming, update_data=update_data)
             except Exception as e:
+                if incoming.get_graph() is not None:
+                    incoming.get_graph().delete_graph()
                 success = False
                 update_data.error(message=str(e))
                 self.logger.error(traceback.format_exc())

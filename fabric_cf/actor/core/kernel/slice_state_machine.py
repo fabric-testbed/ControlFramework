@@ -267,50 +267,54 @@ class SliceStateMachine:
                     has_error = True
 
             if self.state == SliceState.Nascent or self.state == SliceState.Configuring:
-                if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed):
+                if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed,
+                                                 ReservationStates.CloseFail):
                     if not has_error:
                         self.state = SliceState.StableOK
                     else:
                         self.state = SliceState.StableError
 
                 if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
-                                                  ReservationStates.Closed)) and \
+                                                  ReservationStates.Closed, ReservationStates.CloseFail)) and \
                         bins.has_state(s=ReservationStates.Failed):
                     self.state = SliceState.StableError
 
                 if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
-                                                 ReservationStates.Failed):
+                                                 ReservationStates.Failed, ReservationStates.CloseFail):
                     self.state = SliceState.Closing
 
             elif self.state == SliceState.Modifying:
-                if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed):
+                if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed,
+                                                 ReservationStates.CloseFail):
                     if has_error:
                         self.state = SliceState.ModifyError
                     else:
                         self.state = SliceState.ModifyOK
 
                 if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
-                                                  ReservationStates.Closed)) and \
+                                                  ReservationStates.Closed, ReservationStates.CloseFail)) and \
                         bins.has_state(s=ReservationStates.Failed):
                     self.state = SliceState.ModifyError
 
                 if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
-                                                 ReservationStates.Failed):
+                                                 ReservationStates.Failed, ReservationStates.CloseFail):
                     self.state = SliceState.Closing
 
             elif self.state == SliceState.StableError or self.state == SliceState.StableOK or \
                     self.state == SliceState.ModifyError or self.state == SliceState.ModifyOK:
                 if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
-                                                 ReservationStates.Failed):
+                                                 ReservationStates.Failed, ReservationStates.CloseFail):
                     self.state = SliceState.Dead
 
                 if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
-                                                 ReservationPendingStates.Closing, ReservationStates.Failed):
+                                                 ReservationPendingStates.Closing, ReservationStates.Failed,
+                                                 ReservationStates.CloseFail):
                     self.state = SliceState.Closing
 
             elif self.state == SliceState.Closing and not bins.has_state_other_than(ReservationStates.CloseWait,
                                                                                     ReservationStates.Closed,
-                                                                                    ReservationStates.Failed):
+                                                                                    ReservationStates.Failed,
+                                                                                    ReservationStates.CloseFail):
                 self.state = SliceState.Dead
         if prev_state != self.state:
             state_changed = True

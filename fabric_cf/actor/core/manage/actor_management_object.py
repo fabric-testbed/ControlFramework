@@ -501,7 +501,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     self.actor = actor
 
                 def run(self):
-                    self.actor.close_by_rid(rid=rid)
+                    self.actor.close_by_rid(rid=rid, force=True)
                     return True
 
             self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))

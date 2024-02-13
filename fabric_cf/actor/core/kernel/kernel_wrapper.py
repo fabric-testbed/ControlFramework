@@ -152,13 +152,14 @@ class KernelWrapper:
         target = self.kernel.validate_delegation(did=did)
         self.kernel.fail_delegation(delegation=target, message=message)
 
-    def close(self, *, rid: ID):
+    def close(self, *, rid: ID, force: bool = False):
         """
         Closes the reservation, potentially initiating a close request to another
         actor. If the reservation has concrete resources bound to it, this method
         may return before all close operations have completed. Check the
         reservation state to determine when close completes.
         @param rid identifier of reservation to close
+        @param force forced close
         @throws Exception in case of error
         """
         if rid is None:
@@ -166,7 +167,7 @@ class KernelWrapper:
         target = self.kernel.validate(rid=rid)
         # NOTE: this call does not require access control check, since
         # it is executed in the context of the actor represented by KernelWrapper.
-        self.kernel.close(reservation=target)
+        self.kernel.close(reservation=target, force=force)
 
     def close_delegation(self, *, did: str):
         """

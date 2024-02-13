@@ -237,7 +237,7 @@ class Reservation(ABCReservationMixin):
         Clears all event notices associated with the reservation.
         """
 
-    def close(self):
+    def close(self, force: bool = False):
         """
         Close a reservation
         """
@@ -416,7 +416,7 @@ class Reservation(ABCReservationMixin):
         return self.bid_pending
 
     def is_closed(self) -> bool:
-        return self.state == ReservationStates.Closed
+        return self.state == ReservationStates.Closed or self.state == ReservationStates.CloseFail
 
     def is_closing(self) -> bool:
         return self.state == ReservationStates.CloseWait or self.pending_state == ReservationPendingStates.Closing
@@ -495,11 +495,11 @@ class Reservation(ABCReservationMixin):
 
         @throws Exception thrown if the state is closed or failed
         """
-        if self.state == ReservationStates.Closed or self.state == ReservationStates.Failed:
+        if self.state in [ReservationStates.Closed, ReservationStates.Failed, ReservationStates.CloseFail]:
             self.error(err="invalid Reservation")
 
-    def reserve(self, *, policy: ABCPolicy):
-        return
+    def reserve(self, *, policy: ABCPolicy) -> bool:
+        return True
 
     def setup(self):
         """

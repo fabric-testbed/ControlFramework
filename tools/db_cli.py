@@ -28,16 +28,24 @@ import logging
 import traceback
 from logging.handlers import RotatingFileHandler
 
+from fim.user import ServiceType
+
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
 
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
 
 
 class MainClass:
     """
     CLI interface to directly fetch information from postgres Database
     """
+    Globals.config_file = '/etc/fabric/actor/config/config.yaml'
+    GlobalsSingleton.get().load_config()
+    GlobalsSingleton.get().initialized = True
+
     def __init__(self, user: str, password: str, db: str, host: str = '127.0.0.1:5432'):
         self.logger = logging.getLogger("db-cli")
         file_handler = RotatingFileHandler('./db_cli.log', backupCount=5, maxBytes=50000)
@@ -118,12 +126,34 @@ class MainClass:
             print(f"Exception occurred while fetching sites: {e}")
             traceback.print_exc()
 
+    def get_components(self, node_id: str):
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value,
+                  ReservationStates.Nascent.value]
+
+        res_type = []
+        for x in ServiceType:
+            res_type.append(str(x))
+
+        try:
+            components = self.db.get_components(node_id=node_id, states=states, rsv_type=res_type)
+            if components is not None:
+                for c in components:
+                    print(c)
+        except Exception as e:
+            print(f"Exception occurred while fetching sites: {e}")
+            traceback.print_exc()
+
     def get_reservations(self, slice_id: str = None, res_id: str = None, email: str = None):
         try:
             res_list = self.db.get_reservations(slice_id=slice_id, rid=res_id, email=email)
             if res_list is not None and len(res_list) > 0:
                 for r in res_list:
                     print(r)
+                    print(f"RES Sliver: {r.get_resources().get_sliver()}")
+                    print(f"REQ RES Sliver: {r.get_requested_resources()} {r.get_requested_resources().get_sliver()}")
+                    print(f"APPR RES Sliver: {r.get_approved_resources()} {r.get_approved_resources().get_sliver()}")
                     print()
             else:
                 print(f"No reservations found: {res_list}")
@@ -162,6 +192,8 @@ class MainClass:
             self.get_delegations(dlg_id=args.delegation_id)
         elif args.command == "sites":
             self.get_sites()
+        elif args.command == "components":
+            self.get_components(node_id=args.node_id)
         else:
             print(f"Unsupported command: {args.command}")
 
@@ -179,6 +211,7 @@ if __name__ == '__main__':
     parser.add_argument("-e", dest='email', required=False, type=str)
     parser.add_argument("-n", dest='slice_name', required=False, type=str)
     parser.add_argument("-o", dest='operation', required=False, type=str)
+    parser.add_argument("-nid", dest='node_id', required=False, type=str)
     args = parser.parse_args()
 
     mc = MainClass(user=args.user, password=args.password, db=args.database)

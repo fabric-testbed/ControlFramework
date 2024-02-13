@@ -28,7 +28,7 @@ import threading
 import time
 import traceback
 from datetime import datetime
-from typing import List, Union
+from typing import List, Union, Tuple, Dict
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
 from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
@@ -243,9 +243,23 @@ class ActorDatabase(ABCDatabase):
 
             site = None
             rsv_type = None
+            components = None
             if reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
-                site = reservation.get_resources().get_sliver().get_site()
-                rsv_type = reservation.get_resources().get_sliver().get_type().name
+                sliver = reservation.get_resources().get_sliver()
+                site = sliver.get_site()
+                rsv_type = sliver.get_type().name
+                from fim.slivers.network_service import NetworkServiceSliver
+                if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
+                    components = []
+                    for interface in sliver.interface_info.interfaces.values():
+                        graph_id_node_id_component_id, bqm_if_name = interface.get_node_map()
+                        if ":" in graph_id_node_id_component_id:
+                            split_string = graph_id_node_id_component_id.split(":")
+                            node_id = split_string[1] if len(split_string) > 1 else None
+                            comp_id = split_string[2] if len(split_string) > 2 else None
+                            bdf = ":".join(split_string[3:]) if len(split_string) > 3 else None
+                            if node_id and comp_id and bdf:
+                                components.append((node_id, comp_id, bdf))
 
             self.db.add_reservation(slc_guid=str(reservation.get_slice_id()),
                                     rsv_resid=str(reservation.get_reservation_id()),
@@ -255,7 +269,8 @@ class ActorDatabase(ABCDatabase):
                                     rsv_joining=reservation.get_join_state().value,
                                     properties=properties,
                                     rsv_graph_node_id=reservation.get_graph_node_id(),
-                                    oidc_claim_sub=oidc_claim_sub, email=email, site=site, rsv_type=rsv_type)
+                                    oidc_claim_sub=oidc_claim_sub, email=email, site=site, rsv_type=rsv_type,
+                                    components=components)
             self.logger.debug(
                 "Reservation {} added to slice {}".format(reservation.get_reservation_id(), reservation.get_slice()))
         finally:
@@ -274,9 +289,24 @@ class ActorDatabase(ABCDatabase):
 
             site = None
             rsv_type = None
+            components = None
             if reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
-                site = reservation.get_resources().get_sliver().get_site()
-                rsv_type = reservation.get_resources().get_sliver().get_type().name
+                sliver = reservation.get_resources().get_sliver()
+                site = sliver.get_site()
+                rsv_type = sliver.get_type().name
+                from fim.slivers.network_service import NetworkServiceSliver
+                if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
+                    components = []
+                    for interface in sliver.interface_info.interfaces.values():
+                        graph_id_node_id_component_id, bqm_if_name = interface.get_node_map()
+                        if ":" in graph_id_node_id_component_id:
+                            split_string = graph_id_node_id_component_id.split(":")
+                            node_id = split_string[1] if len(split_string) > 1 else None
+                            comp_id = split_string[2] if len(split_string) > 2 else None
+                            bdf = ":".join(split_string[3:]) if len(split_string) > 3 else None
+                            if node_id and comp_id and bdf:
+                                components.append((node_id, comp_id, bdf))
+
             begin = time.time()
             properties = pickle.dumps(reservation)
             diff = int(time.time() - begin)
@@ -291,7 +321,7 @@ class ActorDatabase(ABCDatabase):
                                        rsv_joining=reservation.get_join_state().value,
                                        properties=properties,
                                        rsv_graph_node_id=reservation.get_graph_node_id(),
-                                       site=site, rsv_type=rsv_type)
+                                       site=site, rsv_type=rsv_type, components=components)
             diff = int(time.time() - begin)
             if diff > 0:
                 self.logger.info(f"DB TIME: {diff}")
@@ -426,6 +456,17 @@ class ActorDatabase(ABCDatabase):
             if self.lock.locked():
                 self.lock.release()
         return result
+
+    def get_components(self, *, node_id: str, states: list[int], rsv_type: list[str], component: str = None,
+                       bdf: str = None) -> Dict[str, List[str]]:
+        try:
+            return self.db.get_components(node_id=node_id, states=states, component=component, bdf=bdf,
+                                          rsv_type=rsv_type)
+        except Exception as e:
+            self.logger.error(e)
+        finally:
+            if self.lock.locked():
+                self.lock.release()
 
     def get_reservations(self, *, slice_id: ID = None, graph_node_id: str = None, project_id: str = None,
                          email: str = None, oidc_sub: str = None, rid: ID = None,

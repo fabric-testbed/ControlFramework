@@ -1,7 +1,7 @@
 FROM python:3.11.0
 MAINTAINER Komal Thareja<komal.thareja@gmail.com>
 
-ARG HANDLERS_VER=1.6.1
+ARG HANDLERS_VER=1.6.2
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
@@ -25,7 +25,6 @@ RUN mkdir -p "/etc/fabric/actor/config"
 RUN mkdir -p "/var/log/actor"
 RUN cp /usr/local/lib/python3.11/site-packages/fabric_mb/message_bus/schema/*.avsc /etc/fabric/message_bus/schema
 RUN pip3 install fabric-am-handlers==${HANDLERS_VER}
-RUN pip3 install fabric-message-bus==1.6.1
 RUN sh /usr/src/app/install.sh
 
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]

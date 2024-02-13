@@ -282,7 +282,7 @@ class ABCReservationMixin(ABCReservationResources, ABCReservationStatus):
         """
 
     @abstractmethod
-    def close(self):
+    def close(self, force: bool = False):
         """
         Closes the reservation. Locked with the kernel lock.
         """
@@ -359,7 +359,7 @@ class ABCReservationMixin(ABCReservationResources, ABCReservationStatus):
         """
 
     @abstractmethod
-    def reserve(self, *, policy: ABCPolicy):
+    def reserve(self, *, policy: ABCPolicy) -> bool:
         """
         Reserve resources: ticket() initiate or request, or redeem()
         request. New reservation.

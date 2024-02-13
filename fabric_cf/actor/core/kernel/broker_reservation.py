@@ -221,7 +221,7 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
 
         self.set_dirty()
 
-    def reserve(self, *, policy: ABCPolicy):
+    def reserve(self, *, policy: ABCPolicy) -> bool:
         # These handlers may need to be slightly more sophisticated, since a
         # client may bid multiple times on a ticket as part of an auction
         # protocol: so we may receive a reserve or extend when there is already
@@ -232,12 +232,13 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
                 self.pending_state != ReservationPendingStates.Ticketing:
             # We do not want to fail the reservation simply log a warning and exit from reserve
             self.logger.warning("Duplicate ticket request")
-            return
+            return False
 
         self.policy = policy
         self.approved = False
         self.bid_pending = True
         self.map_and_update(ticketed=False)
+        return True
 
     def service_reserve(self):
         # resources is null initially. It becomes non-null once the
@@ -276,13 +277,13 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
                                 pending=ReservationPendingStates.None_)
                 self.generate_update()
 
-    def close(self):
+    def close(self, force: bool = False):
         send_notification = False
         if self.state == ReservationStates.Nascent or self.pending_state != ReservationPendingStates.None_:
             self.logger.warning("Closing a reservation in progress")
             send_notification = True
 
-        if self.state != ReservationStates.Closed:
+        if self.state not in [ReservationStates.Closed, ReservationStates.CloseFail] or force:
             if self.pending_state == ReservationPendingStates.Priming or \
                     (self.pending_state == ReservationPendingStates.Ticketing and not self.bid_pending):
                 # Close in Priming is a special case: when processing the close
@@ -296,7 +297,11 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
                 self.logger.debug("closing reservation #{} while in Priming".format(self.rid))
                 self.closed_in_priming = True
 
-            self.transition(prefix="closed", state=ReservationStates.Closed, pending=ReservationPendingStates.None_)
+            if not self.update_data.is_failed():
+                self.transition(prefix="closed", state=ReservationStates.Closed, pending=ReservationPendingStates.None_)
+            else:
+                self.transition(prefix="closed-failed", state=ReservationStates.CloseFail,
+                                pending=ReservationPendingStates.None_)
             self.policy.closed(reservation=self)
 
         if send_notification:
@@ -536,7 +541,16 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
     def update_lease(self, *, incoming: ABCReservationMixin, update_data):
         self.logger.info(f"Received Update Lease: {incoming} at Broker")
         # TODO add any processing if needed
-        self.logger.info(f"Do Nothing!")
+        if incoming.get_resources() and incoming.get_resources().get_sliver() and incoming.get_resources().get_sliver().get_reservation_info():
+            incoming_state = incoming.get_resources().get_sliver().get_reservation_info().reservation_state
+        else:
+            incoming_state = None
+        self.logger.info(f"Update Lease from authority in state: {self.get_state()} "
+                         f"Incoming: {incoming_state}|{incoming.get_notices()}  update_data: {update_data}!")
+        if incoming_state and incoming_state == str(ReservationStates.CloseFail):
+            self.update_data.absorb(other=update_data)
+            self.logger.info("Closing a reservation which failed to delete at the authority")
+            self.close()
 
     def handle_failed_rpc(self, *, failed: FailedRPC):
         if failed.get_request_type() == RPCRequestType.UpdateTicket and \

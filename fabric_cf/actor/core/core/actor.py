@@ -154,8 +154,8 @@ class ActorMixin(ABCActorMixin):
     def close_delegation(self, *, did: str):
         self.wrapper.close_delegation(did=did)
 
-    def close_by_rid(self, *, rid: ID):
-        self.wrapper.close(rid=rid)
+    def close_by_rid(self, *, rid: ID, force: bool = False):
+        self.wrapper.close(rid=rid, force=force)
 
     def close(self, *, reservation: ABCReservationMixin):
         if reservation is not None:

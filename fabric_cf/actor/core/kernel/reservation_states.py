@@ -38,6 +38,7 @@ class ReservationStates(Enum):
     CloseWait = 7
     Failed = 8
     Unknown = 9
+    CloseFail = 10
 
     def __repr__(self):
         return self.name
@@ -60,6 +61,8 @@ class ReservationStates(Enum):
         elif state_name.lower() == ReservationStates.CloseWait.name.lower():
             return ReservationStates.CloseWait
         elif state_name.lower() == ReservationStates.Failed.name.lower():
+            return ReservationStates.Failed
+        elif state_name.lower() == ReservationStates.CloseFail.name.lower():
             return ReservationStates.Failed
         else:
             return ReservationStates.Unknown

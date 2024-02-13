@@ -30,7 +30,7 @@ import threading
 import traceback
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Tuple, List, Any
+from typing import TYPE_CHECKING, Tuple, List, Any, Dict
 
 from fim.graph.abc_property_graph import ABCPropertyGraphConstants, GraphFormat, ABCPropertyGraph
 from fim.graph.resources.abc_adm import ABCADMPropertyGraph
@@ -566,11 +566,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 existing_reservations = self.get_existing_reservations(node_id=node_id,
                                                                        node_id_to_reservations=node_id_to_reservations)
 
+                existing_components = self.get_existing_components(node_id=node_id)
+
                 delegation_id, sliver = inv.allocate(rid=reservation.get_reservation_id(),
                                                      requested_sliver=requested_sliver,
                                                      graph_id=self.combined_broker_model_graph_id,
                                                      graph_node=graph_node,
                                                      existing_reservations=existing_reservations,
+                                                     existing_components=existing_components,
                                                      is_create=is_create)
 
                 if delegation_id is not None and sliver is not None:
@@ -649,12 +652,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         # For each Interface Sliver;
         for ifs in sliver.interface_info.interfaces.values():
+            node_map_id = self.combined_broker_model_graph_id
 
             # Fetch Network Node Id and BQM Component Id
             node_id, bqm_component_id = ifs.get_node_map()
 
             # Skipping the already allocated interface on a modify
-            if node_id == self.combined_broker_model_graph_id:
+            #if node_id == self.combined_broker_model_graph_id:
+            if self.combined_broker_model_graph_id in node_id:
                 continue
 
             if node_id == str(NodeType.Facility):
@@ -664,7 +669,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 peered_ns_interfaces.append(ifs)
                 continue
             else:
+                # For VM interfaces
                 bqm_component = self.get_component_sliver(node_id=bqm_component_id)
+                node_map_id = f"{node_map_id}:{node_id}:{bqm_component_id}:{ifs.get_labels().bdf}"
 
             if bqm_component is None:
                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES)
@@ -769,7 +776,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 raise BrokerException(msg=error_msg)
 
             # Update the Interface Sliver Node Map to map to (a)
-            ifs.set_node_map(node_map=(self.combined_broker_model_graph_id, bqm_cp.node_id))
+            ifs.set_node_map(node_map=(node_map_id, bqm_cp.node_id))
+            #ifs.set_node_map(node_map=(self.combined_broker_model_graph_id, bqm_cp.node_id))
 
             delegation_id = net_adm_ids[0]
 
@@ -1351,6 +1359,25 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             existing_reservations.append(r)
 
         return existing_reservations
+
+    def get_existing_components(self, node_id: str) -> Dict[str, List[str]]:
+        """
+        Get existing components attached to Active/Ticketed Network Service Slivers
+        :param node_id:
+        :return: list of components
+        """
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value,
+                  ReservationStates.Nascent.value,
+                  ReservationStates.CloseFail.value]
+
+        res_type = []
+        for x in ServiceType:
+            res_type.append(str(x))
+
+        # Only get Active or Ticketing reservations
+        return self.actor.get_plugin().get_database().get_components(node_id=node_id, rsv_type=res_type, states=states)
 
     def set_logger(self, logger):
         """

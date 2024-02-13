@@ -28,15 +28,15 @@ import pickle
 import threading
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Tuple, Dict
 
 from sqlalchemy import create_engine, desc
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm import scoped_session, sessionmaker, joinedload
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
 from fabric_cf.actor.db import Base, Clients, ConfigMappings, Proxies, Units, Reservations, Slices, ManagerObjects, \
-    Miscellaneous, Actors, Delegations, Sites, Poas
+    Miscellaneous, Actors, Delegations, Sites, Poas, Components
 
 
 @contextmanager
@@ -606,7 +606,8 @@ class PsqlDatabase:
     def add_reservation(self, *, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
                         rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
                         lease_end: datetime = None, rsv_graph_node_id: str = None, oidc_claim_sub: str = None,
-                        email: str = None, project_id: str = None, site: str = None, rsv_type: str = None):
+                        email: str = None, project_id: str = None, site: str = None, rsv_type: str = None,
+                        components: List[Tuple[str, str, str]] = None):
         """
         Add a reservation
         @param slc_guid slice guid
@@ -624,6 +625,7 @@ class PsqlDatabase:
         @param project_id Project id
         @param site site
         @param rsv_type reservation type
+        @param components list of components
         """
         session = self.get_session()
         try:
@@ -635,7 +637,14 @@ class PsqlDatabase:
                                    project_id=project_id, site=site, rsv_type=rsv_type)
             if rsv_graph_node_id is not None:
                 rsv_obj.rsv_graph_node_id = rsv_graph_node_id
-            
+
+            # Create Component Mapping for the Network Service reservation
+            if components:
+                for node_id, cid, bdf in components:
+                    mapping = Components(node_id=node_id, reservation=rsv_obj,
+                                         component=cid, bdf=bdf)
+                    session.add(mapping)
+
             session.add(rsv_obj)
             session.commit()
         except Exception as e:
@@ -646,7 +655,7 @@ class PsqlDatabase:
     def update_reservation(self, *, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
                            rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
                            lease_end: datetime = None, rsv_graph_node_id: str = None, site: str = None,
-                           rsv_type: str = None):
+                           rsv_type: str = None, components: List[Tuple[str, str, str]] = None):
         """
         Update a reservation
         @param slc_guid slice guid
@@ -661,6 +670,7 @@ class PsqlDatabase:
         @param rsv_graph_node_id graph id
         @param site site
         @param rsv_type reservation type
+        @param components list of components
         """
         session = self.get_session()
         try:
@@ -679,6 +689,33 @@ class PsqlDatabase:
                     rsv_obj.rsv_graph_node_id = rsv_graph_node_id
                 if rsv_type is not None:
                     rsv_obj.rsv_type = rsv_type
+
+                # Update components records for the reservation
+                if components and len(components):
+                    existing = session.query(Components).filter(Components.reservation_id == rsv_obj.rsv_id).all()
+                    existing_components = {(c.node_id, c.component, c.bdf) for c in existing}
+
+                    # Identify new string values
+                    added_comps = set(components) - existing_components
+
+                    # Identify outdated string values
+                    removed_comps = existing_components - set(components)
+
+                    # Remove outdated comps
+                    for node_id, cid, bdf in removed_comps:
+                        comp_to_remove = next(
+                            (comp for comp in existing if comp.component == cid and
+                             comp.node_id == node_id and comp.bdf == bdf),
+                            None)
+                        if comp_to_remove:
+                            session.delete(comp_to_remove)
+
+                    # Add new comps
+                    for node_id, cid, bdf in added_comps:
+                        new_mapping = Components(node_id=node_id, reservation=rsv_obj,
+                                                 component=cid, bdf=bdf)
+                        session.add(new_mapping)
+
             else:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", rsv_resid))
             session.commit()
@@ -694,7 +731,16 @@ class PsqlDatabase:
         """
         session = self.get_session()
         try:
-            session.query(Reservations).filter_by(rsv_resid=rsv_resid).delete()
+            #session.query(Reservations).filter_by(rsv_resid=rsv_resid).delete()
+            reservation = session.query(Reservations).filter_by(rsv_resid=rsv_resid).one_or_none()
+
+            if reservation:
+                # Delete associated Components records
+                mappings = session.query(Components).filter(Components.reservation_id == reservation.rsv_id).all()
+                for mapping in mappings:
+                    session.delete(mapping)
+
+            session.delete(reservation)
             session.commit()
         except Exception as e:
             session.rollback()
@@ -759,6 +805,41 @@ class PsqlDatabase:
 
             for row in rows.all():
                 result.append(self.generate_dict_from_row(row=row))
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
+    def get_components(self, *, node_id: str, states: list[int], rsv_type: list[str], component: str = None,
+                       bdf: str = None) -> Dict[str, List[str]]:
+        result = {}
+        session = self.get_session()
+        try:
+            # Query to retrieve Components based on specific Reservation types and states
+            rows = (
+                session.query(Components)
+                    .join(Reservations, Components.reservation_id == Reservations.rsv_id)
+                    .filter(Reservations.rsv_type.in_(rsv_type))
+                    .filter(Reservations.rsv_state.in_(states))
+                    .filter(Components.node_id == node_id)
+                    .options(joinedload(Components.reservation))
+                    # Use joinedload to efficiently load the associated Reservation
+            )
+
+            # Query Component records for reservations in the specified state and owner with the target string
+            if component is not None and bdf is not None:
+                rows = rows.filter(Components.component == component,
+                                               Components.bdf == bdf)
+            elif component is not None:
+                rows = rows.filter(Components.component == component)
+            elif bdf is not None:
+                rows = rows.filter(Components.bdf == bdf)
+
+            for row in rows.all():
+                if row.component not in result:
+                    result[row.component] = []
+                if row.bdf not in result[row.component]:
+                    result[row.component].append(row.bdf)
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
