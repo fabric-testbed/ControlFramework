@@ -740,6 +740,7 @@ class PsqlDatabase:
                 for mapping in mappings:
                     session.delete(mapping)
 
+            session.delete(reservation)
             session.commit()
         except Exception as e:
             session.rollback()
