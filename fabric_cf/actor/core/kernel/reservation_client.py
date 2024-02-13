@@ -943,7 +943,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         Called from a probe to monitor asynchronous processing related to the joinstate for controller.
         @raises Exception passed through from prepareJoin or prepareRedeem
         """
-        if self.state in [ReservationStates.Closed, ReservationStates.Failed]:
+        if self.state in [ReservationStates.Closed, ReservationStates.Failed, ReservationStates.CloseFail]:
             self.transition_with_join(prefix="clearing join state for terminal reservation", state=self.state,
                                       pending=self.pending_state,
                                       join_state=JoinState.NoJoin)
