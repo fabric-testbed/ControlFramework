@@ -732,7 +732,7 @@ class PsqlDatabase:
         session = self.get_session()
         try:
             #session.query(Reservations).filter_by(rsv_resid=rsv_resid).delete()
-            reservation = session.query(Reservations).get(rsv_resid=rsv_resid)
+            reservation = session.query(Reservations).filter_by(rsv_resid=rsv_resid).one_or_none()
 
             if reservation:
                 # Delete associated Components records
