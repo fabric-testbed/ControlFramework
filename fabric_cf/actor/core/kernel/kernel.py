@@ -201,7 +201,7 @@ class Kernel:
         finally:
             delegation.unlock()
 
-    def close(self, *, reservation: ABCReservationMixin):
+    def close(self, *, reservation: ABCReservationMixin, force: bool = False):
         """
         Handles a close operation for the reservation.
         Client: perform local close operations and issue close request to
@@ -209,13 +209,14 @@ class Kernel:
         Broker: perform local close operations
         Authority: process a close request
         @param reservation reservation for which to perform close
+        @param force force close
         @throws Exception
         """
         try:
             reservation.lock()
             if not reservation.is_closed() and not reservation.is_closing():
                 self.policy.close(reservation=reservation)
-                reservation.close()
+                reservation.close(force=force)
                 self.plugin.get_database().update_reservation(reservation=reservation)
                 reservation.service_close()
         except Exception as e:
