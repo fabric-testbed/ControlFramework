@@ -153,7 +153,7 @@ class NetworkServiceInventory(InventoryForType):
 
                 if vlan_range is not None and requested_vlan not in vlan_range:
                     raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
-                                          msg=f"Vlan for L2 service {requested_vlan} is outside the available vlans "
+                                          msg=f"Vlan for L2 service {requested_vlan} is outside the available range "
                                               f"{vlan_range}")
 
             # Validate the VLANs

@@ -64,6 +64,7 @@ class OrchestratorHandler:
         self.logger = self.globals.get_logger()
         self.jwks_url = self.globals.get_config().get_oauth_config().get(Constants.PROPERTY_CONF_O_AUTH_JWKS_URL, None)
         self.pdp_config = self.globals.get_config().get_global_config().get_pdp_config()
+        self.infrastructure_project_id = self.globals.get_config().get_runtime_config().get(Constants.INFRASTRUCTURE_PROJECT_ID, None)
 
     def get_logger(self):
         """
@@ -218,7 +219,8 @@ class OrchestratorHandler:
             fabric_token = AccessChecker.validate_and_decode_token(token=token)
             project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
-            end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time, allow_long_lived=allow_long_lived)
+            end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time, allow_long_lived=allow_long_lived,
+                                                      project_id=project)
 
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
@@ -701,7 +703,8 @@ class OrchestratorHandler:
             project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
             new_end_time = self.__validate_lease_end_time(lease_end_time=new_lease_end_time,
-                                                          allow_long_lived=allow_long_lived)
+                                                          allow_long_lived=allow_long_lived,
+                                                          project_id=project)
 
             reservations = controller.get_reservations(slice_id=slice_id)
             if reservations is None or len(reservations) < 1:
@@ -748,11 +751,13 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing renew e: {e}")
             raise e
 
-    def __validate_lease_end_time(self, lease_end_time: str, allow_long_lived: bool = False) -> datetime:
+    def __validate_lease_end_time(self, lease_end_time: str, allow_long_lived: bool = False,
+                                  project_id: str = None) -> datetime:
         """
         Validate Lease End Time
         :param lease_end_time: New End Time
         :param allow_long_lived: Allow long lived tokens
+        :param project_id: Project Id
         :return End Time
         :raises Exception if new end time is in past
         """
@@ -774,7 +779,7 @@ class OrchestratorHandler:
             default_long_lived_duration = Constants.LONG_LIVED_SLICE_TIME_WEEKS
         else:
             default_long_lived_duration = Constants.DEFAULT_MAX_DURATION
-        if (new_end_time - now) > default_long_lived_duration:
+        if project_id not in self.infrastructure_project_id and (new_end_time - now) > default_long_lived_duration:
             self.logger.info(f"New term end time {new_end_time} exceeds system default "
                              f"{default_long_lived_duration}, setting to system default: ")
 

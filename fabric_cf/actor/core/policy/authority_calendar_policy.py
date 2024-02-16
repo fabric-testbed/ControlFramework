@@ -596,6 +596,9 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             if self.aggregate_resource_model is None:
                 return None
             return self.aggregate_resource_model.build_deep_ns_sliver(node_id=node_id)
+        except Exception as e:
+            self.logger.error(f"Unable to get network service: {e}")
+            self.logger.error(traceback.format_exc())
         finally:
             self.lock.release()
 
