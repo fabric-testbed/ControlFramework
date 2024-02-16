@@ -197,6 +197,7 @@ class Constants:
     CONFIGURATION_FILE = "/etc/fabric/actor/config/config.yaml"
     STATE_FILE_LOCATION = '/tmp/fabric_actor.tmp'
     MAINT_PROJECT_ID = 'maint.project.id'
+    INFRASTRUCTURE_PROJECT_ID = "infrastructure.project.id"
 
     ELASTIC_TIME = "request.elasticTime"
     ELASTIC_SIZE = "request.elasticSize"

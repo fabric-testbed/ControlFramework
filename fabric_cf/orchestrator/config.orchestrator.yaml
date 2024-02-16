@@ -48,6 +48,7 @@ runtime:
   kafka.request.timeout.ms: 120000
   rpc.request.timeout.seconds: 1200
   maint.project.id: 990d8a8b-7e50-4d13-a3be-0f133ffa8653
+  infrastructure.project.id: 4604cab7-41ff-4c1a-a935-0ca6f20cceeb
   message.max.bytes: 1048588
   rpc.retries: 5
   commit.batch.size: 1
