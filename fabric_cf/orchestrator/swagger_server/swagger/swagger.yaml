@@ -194,6 +194,23 @@ paths:
         schema:
           minLength: 3
           type: string
+      - name: search
+        in: query
+        description: search term applied
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: exact_match
+        in: query
+        description: Exact Match for Search term
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
       - name: as_self
         in: query
         description: GET object as Self
@@ -1433,6 +1450,10 @@ components:
           type: string
         slice_id:
           type: string
+        owner_user_id:
+          type: string
+        owner_email:
+          type: string
     slivers:
       type: object
       allOf:
@@ -1471,6 +1492,10 @@ components:
         slice_id:
           type: string
         sliver_id:
+          type: string
+        owner_user_id:
+          type: string
+        owner_email:
           type: string
     version:
       type: object

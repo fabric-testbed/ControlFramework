@@ -47,7 +47,7 @@ class ABCMgmtActor(ABCComponent):
     @abstractmethod
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
                    states: List[int] = None, limit: int = None, offset: int = None,
-                   user_id: str = None) -> List[SliceAvro] or None:
+                   user_id: str = None, search: str = None, exact_match: bool = False) -> List[SliceAvro] or None:
         """
         Obtains all slices.
         @param slice_id slice id
@@ -58,6 +58,8 @@ class ABCMgmtActor(ABCComponent):
         @param limit limit
         @param offset offset
         @param user_id user_id
+        @param search: search term applied
+        @param exact_match: Exact Match for Search term
         @return returns list of slices
         """
 

@@ -86,7 +86,7 @@ def slices_delete_slice_id_delete(slice_id):  # noqa: E501
     return rc.slices_delete_slice_id_delete(slice_id)
 
 
-def slices_get(name=None, as_self=None, states=None, limit=None, offset=None):  # noqa: E501
+def slices_get(name=None, search=None, exact_match=None, as_self=None, states=None, limit=None, offset=None):  # noqa: E501
     """Retrieve a listing of user slices
 
     Retrieve a listing of user slices. It returns list of all slices belonging to all members in a project when
@@ -94,6 +94,10 @@ def slices_get(name=None, as_self=None, states=None, limit=None, offset=None):  
 
     :param name: Search for Slices with the name
     :type name: str
+    :param search: search term applied
+    :type search: str
+    :param exact_match: Exact Match for Search term
+    :type exact_match: bool
     :param as_self: GET object as Self
     :type as_self: bool
     :param states: Search for Slices in the specified states
@@ -105,7 +109,7 @@ def slices_get(name=None, as_self=None, states=None, limit=None, offset=None):  
 
     :rtype: Slices
     """
-    return rc.slices_get(name, states, limit, offset, as_self=as_self)
+    return rc.slices_get(name, states, limit, offset, as_self=as_self, search=search, exact_match=exact_match)
 
 
 def slices_modify_slice_id_accept_post(slice_id):  # noqa: E501

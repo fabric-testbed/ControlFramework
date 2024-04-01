@@ -379,7 +379,7 @@ class OrchestratorHandler:
             raise e
 
     def get_slices(self, *, token: str, states: List[str], name: str, limit: int, offset: int,
-                   as_self: bool = True) -> List[dict]:
+                   as_self: bool = True, search: str = None, exact_match: bool = False) -> List[dict]:
         """
         Get User Slices
         :param token Fabric Identity Token
@@ -388,6 +388,8 @@ class OrchestratorHandler:
         :param limit Number of slices to return
         :param offset Offset
         :param as_self flag; True - return calling user's slices otherwise, return all slices in the project
+        :param search: search term applied
+        :param exact_match: Exact Match for Search term
         :raises Raises an exception in case of failure
         :returns List of Slices on success
         """

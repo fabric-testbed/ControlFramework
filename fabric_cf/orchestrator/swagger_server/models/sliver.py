@@ -14,7 +14,7 @@ class Sliver(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, notice: str=None, sliver_type: str=None, sliver: object=None, lease_start_time: str=None, lease_end_time: str=None, state: str=None, pending_state: str=None, join_state: str=None, graph_node_id: str=None, slice_id: str=None, sliver_id: str=None):  # noqa: E501
+    def __init__(self, notice: str=None, sliver_type: str=None, sliver: object=None, lease_start_time: str=None, lease_end_time: str=None, state: str=None, pending_state: str=None, join_state: str=None, graph_node_id: str=None, slice_id: str=None, sliver_id: str=None, owner_user_id: str=None, owner_email: str=None):  # noqa: E501
         """Sliver - a model defined in Swagger
 
         :param notice: The notice of this Sliver.  # noqa: E501
@@ -39,6 +39,10 @@ class Sliver(Model):
         :type slice_id: str
         :param sliver_id: The sliver_id of this Sliver.  # noqa: E501
         :type sliver_id: str
+        :param owner_user_id: The owner_user_id of this Sliver.  # noqa: E501
+        :type owner_user_id: str
+        :param owner_email: The owner_email of this Sliver.  # noqa: E501
+        :type owner_email: str
         """
         self.swagger_types = {
             'notice': str,
@@ -51,7 +55,9 @@ class Sliver(Model):
             'join_state': str,
             'graph_node_id': str,
             'slice_id': str,
-            'sliver_id': str
+            'sliver_id': str,
+            'owner_user_id': str,
+            'owner_email': str
         }
 
         self.attribute_map = {
@@ -65,7 +71,9 @@ class Sliver(Model):
             'join_state': 'join_state',
             'graph_node_id': 'graph_node_id',
             'slice_id': 'slice_id',
-            'sliver_id': 'sliver_id'
+            'sliver_id': 'sliver_id',
+            'owner_user_id': 'owner_user_id',
+            'owner_email': 'owner_email'
         }
         self._notice = notice
         self._sliver_type = sliver_type
@@ -78,6 +86,8 @@ class Sliver(Model):
         self._graph_node_id = graph_node_id
         self._slice_id = slice_id
         self._sliver_id = sliver_id
+        self._owner_user_id = owner_user_id
+        self._owner_email = owner_email
 
     @classmethod
     def from_dict(cls, dikt) -> 'Sliver':
@@ -326,3 +336,45 @@ class Sliver(Model):
             raise ValueError("Invalid value for `sliver_id`, must not be `None`")  # noqa: E501
 
         self._sliver_id = sliver_id
+
+    @property
+    def owner_user_id(self) -> str:
+        """Gets the owner_user_id of this Sliver.
+
+
+        :return: The owner_user_id of this Sliver.
+        :rtype: str
+        """
+        return self._owner_user_id
+
+    @owner_user_id.setter
+    def owner_user_id(self, owner_user_id: str):
+        """Sets the owner_user_id of this Sliver.
+
+
+        :param owner_user_id: The owner_user_id of this Sliver.
+        :type owner_user_id: str
+        """
+
+        self._owner_user_id = owner_user_id
+
+    @property
+    def owner_email(self) -> str:
+        """Gets the owner_email of this Sliver.
+
+
+        :return: The owner_email of this Sliver.
+        :rtype: str
+        """
+        return self._owner_email
+
+    @owner_email.setter
+    def owner_email(self, owner_email: str):
+        """Sets the owner_email of this Sliver.
+
+
+        :param owner_email: The owner_email of this Sliver.
+        :type owner_email: str
+        """
+
+        self._owner_email = owner_email
