@@ -486,20 +486,25 @@ class OrchestratorHandler:
 
             FimHelper.delete_graph(graph_id=slice_obj.get_graph_id())
 
-            slice_obj.graph_id = asm_graph.get_graph_id()
-            config_props = slice_obj.get_config_properties()
-            config_props[Constants.PROJECT_ID] = project
-            config_props[Constants.TAGS] = ','.join(tags)
-            config_props[Constants.TOKEN_HASH] = fabric_token.token_hash
-            slice_obj.set_config_properties(value=config_props)
+            # Slice has sliver modifications - add/remove/update for slivers requiring AM updates
+            if slice_object.has_sliver_updates_at_authority():
+                slice_obj.graph_id = asm_graph.get_graph_id()
+                config_props = slice_obj.get_config_properties()
+                config_props[Constants.PROJECT_ID] = project
+                config_props[Constants.TAGS] = ','.join(tags)
+                config_props[Constants.TOKEN_HASH] = fabric_token.token_hash
+                slice_obj.set_config_properties(value=config_props)
 
-            if not controller.update_slice(slice_obj=slice_obj, modify_state=True):
-                self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")
+                if not controller.update_slice(slice_obj=slice_obj, modify_state=True):
+                    self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")
 
-            # Enqueue the slice on the demand thread
-            # Demand thread is responsible for demanding the reservations
-            # Helps improve the create response time
-            self.controller_state.get_defer_thread().queue_slice(controller_slice=slice_object)
+                # Enqueue the slice on the demand thread
+                # Demand thread is responsible for demanding the reservations
+                # Helps improve the create response time
+                self.controller_state.get_defer_thread().queue_slice(controller_slice=slice_object)
+            # Sliver has meta data update
+            else:
+                self.logger.debug("Slice only has UserData updates")
 
             EventLoggerSingleton.get().log_slice_event(slice_object=slice_obj, action=ActionId.modify,
                                                        topology=topology)
@@ -596,16 +601,22 @@ class OrchestratorHandler:
 
             slice_obj = next(iter(slice_list))
             slice_state = SliceState(slice_obj.get_state())
-            if not SliceState.is_modified(state=slice_state):
-                self.logger.info(f"Unable to accept modify Slice# {slice_guid} that was not modified")
-                raise OrchestratorException(f"Unable to accept modify Slice# {slice_guid} that was not modified")
+            # Do not throw error if modify accept is received for a stable slice
+            # Just return the success with slice topology
+            #if not SliceState.is_modified(state=slice_state):
+            #    self.logger.info(f"Unable to accept modify Slice# {slice_guid} that was not modified")
+            #    raise OrchestratorException(f"Unable to accept modify Slice# {slice_guid} that was not modified")
 
             if slice_obj.get_graph_id() is None:
                 raise OrchestratorException(f"Slice# {slice_obj} does not have graph id")
 
-            slice_topology = FimHelper.prune_graph(graph_id=slice_obj.get_graph_id())
+            if not SliceState.is_modified(state=slice_state):
+                slice_topology = FimHelper.get_graph(graph_id=slice_obj.get_graph_id())
+            # Prune the slice topology only if slice was modified
+            else:
+                slice_topology = FimHelper.prune_graph(graph_id=slice_obj.get_graph_id())
 
-            controller.accept_update_slice(slice_id=ID(uid=slice_id))
+                controller.accept_update_slice(slice_id=ID(uid=slice_id))
 
             slice_model_str = slice_topology.serialize()
             return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_model=slice_model_str)[0]
