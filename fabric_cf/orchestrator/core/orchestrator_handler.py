@@ -487,17 +487,19 @@ class OrchestratorHandler:
             FimHelper.delete_graph(graph_id=slice_obj.get_graph_id())
 
             # Slice has sliver modifications - add/remove/update for slivers requiring AM updates
-            if slice_object.has_sliver_updates_at_authority():
-                slice_obj.graph_id = asm_graph.get_graph_id()
-                config_props = slice_obj.get_config_properties()
-                config_props[Constants.PROJECT_ID] = project
-                config_props[Constants.TAGS] = ','.join(tags)
-                config_props[Constants.TOKEN_HASH] = fabric_token.token_hash
-                slice_obj.set_config_properties(value=config_props)
+            modify_state = slice_object.has_sliver_updates_at_authority()
 
-                if not controller.update_slice(slice_obj=slice_obj, modify_state=True):
-                    self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")
+            slice_obj.graph_id = asm_graph.get_graph_id()
+            config_props = slice_obj.get_config_properties()
+            config_props[Constants.PROJECT_ID] = project
+            config_props[Constants.TAGS] = ','.join(tags)
+            config_props[Constants.TOKEN_HASH] = fabric_token.token_hash
+            slice_obj.set_config_properties(value=config_props)
 
+            if not controller.update_slice(slice_obj=slice_obj, modify_state=modify_state):
+                self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")
+
+            if modify_state:
                 # Enqueue the slice on the demand thread
                 # Demand thread is responsible for demanding the reservations
                 # Helps improve the create response time
