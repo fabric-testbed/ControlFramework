@@ -19,8 +19,9 @@ class TestVersionController(BaseTestCase):
         Version
         """
         response = self.client.open(
-            '//version',
+            '/version',
             method='GET')
+        print(response.data)
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 

@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 
 from sqlalchemy import JSON, ForeignKey, LargeBinary, TIMESTAMP, Index
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, String, Integer, Sequence
 from sqlalchemy.orm import relationship
 

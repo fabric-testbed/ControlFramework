@@ -138,7 +138,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
     def get_slices(self, *, slice_id: ID, caller: AuthToken, slice_name: str = None, email: str = None,
                    states: List[int] = None, project: str = None, limit: int = None,
-                   offset: int = None, user_id: str = None) -> ResultSliceAvro:
+                   offset: int = None, user_id: str = None, search: str = None,
+                   exact_match: bool = False) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
 
@@ -152,7 +153,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 try:
                     slice_list = self.db.get_slices(slice_id=slice_id, slice_name=slice_name, email=email,
                                                     states=states, project_id=project, limit=limit, offset=offset,
-                                                    oidc_sub=user_id)
+                                                    oidc_sub=user_id, search=search, exact_match=exact_match)
                 except Exception as e:
                     self.logger.error("getSlices:db access {}".format(e))
                     result.status.set_code(ErrorCodes.ErrorDatabaseError.value)

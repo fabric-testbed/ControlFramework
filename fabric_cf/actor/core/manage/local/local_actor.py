@@ -57,7 +57,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
                    states: List[int] = None, limit: int = None, offset: int = None,
-                   user_id: str = None) -> List[SliceAvro] or None:
+                   user_id: str = None, search: str = None, exact_match: bool = False) -> List[SliceAvro] or None:
         self.clear_last()
         try:
             result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, states=states,
