@@ -1,4 +1,7 @@
 # Design
+## Sequence Diagram 
+The following diagram depicts the flow of messages for a single slice create.
+[Sequence Flow](../images/seq-diag.png)
 ## Create Slice
 This section captures the complete flow of a simple Create Slice Request provisioning a single VM with couple of PCI 
 devices.
