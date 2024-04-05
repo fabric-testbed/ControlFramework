@@ -23,7 +23,7 @@
 #
 #
 # Author: Ilya Baldin (ibaldin@renci.org)
-
+from datetime import datetime
 from typing import Tuple, List, Dict
 from collections import defaultdict
 
@@ -81,8 +81,8 @@ class AggregatedBQMPlugin:
         result.finalize()
         return result
 
-    def __occupied_node_capacity(self, *, node_id: str) -> Tuple[Capacities,
-                                                                 Dict[ComponentType, Dict[str, Capacities]]]:
+    def __occupied_node_capacity(self, *, node_id: str, start: datetime,
+                                 end: datetime) -> Tuple[Capacities, Dict[ComponentType, Dict[str, Capacities]]]:
         """
         Figure out the total capacity occupied in the network node and return a tuple of
         capacities occupied in this node and a dict of component capacities that are occupied
@@ -96,7 +96,9 @@ class AggregatedBQMPlugin:
 
         # get existing reservations for this node
         existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
-                                                                                        states=states)
+                                                                                        states=states,
+                                                                                        start=start,
+                                                                                        end=end)
 
         # node capacities
         occupied_capacities = Capacities()
@@ -141,6 +143,9 @@ class AggregatedBQMPlugin:
         """
         if kwargs.get('query_level', None) is None or kwargs['query_level'] > 2:
             return cbm.clone_graph(new_graph_id=str(uuid.uuid4()))
+
+        start = kwargs.get('start', None)
+        end = kwargs.get('end', None)
 
         # do a one-pass aggregation of servers, their components and interfaces
         # and some flags (e.g. PTP availability)
@@ -201,7 +206,8 @@ class AggregatedBQMPlugin:
                     allocated_comp_caps = dict()
                 else:
                     # query database for everything taken on this node
-                    allocated_caps, allocated_comp_caps = self.__occupied_node_capacity(node_id=sliver.node_id)
+                    allocated_caps, allocated_comp_caps = self.__occupied_node_capacity(node_id=sliver.node_id,
+                                                                                        start=start, end=end)
                     site_sliver.capacity_allocations = site_sliver.capacity_allocations + allocated_caps
                     worker_sliver.capacity_allocations = allocated_caps
 

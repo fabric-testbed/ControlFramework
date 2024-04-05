@@ -114,7 +114,7 @@ class OrchestratorHandler:
 
     def discover_broker_query_model(self, *, controller: ABCMgmtControllerMixin, token: str = None,
                                     level: int = 10, graph_format: GraphFormat = GraphFormat.GRAPHML,
-                                    force_refresh: bool = False) -> str or None:
+                                    force_refresh: bool = False, start: datetime = None, end: datetime) -> str or None:
         """
         Discover all the available resources by querying Broker
         :param controller Management Controller Object
@@ -122,15 +122,19 @@ class OrchestratorHandler:
         :param level: level of details
         :param graph_format: Graph format
         :param force_refresh: Force fetching a fresh model from Broker
+        :param start: start time
+        :param end: end time
         :return str or None
         """
         broker_query_model = None
-        saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format, level=level)
-        if saved_bqm is not None:
-            if not force_refresh and not saved_bqm.can_refresh() and not saved_bqm.refresh_in_progress:
-                broker_query_model = saved_bqm.get_bqm()
-            else:
-                saved_bqm.start_refresh()
+        # Always get Fresh copy for advanced resource requests
+        if not start and not end:
+            saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format, level=level)
+            if saved_bqm is not None:
+                if not force_refresh and not saved_bqm.can_refresh() and not saved_bqm.refresh_in_progress:
+                    broker_query_model = saved_bqm.get_bqm()
+                else:
+                    saved_bqm.start_refresh()
 
         if broker_query_model is None:
             broker = self.get_broker(controller=controller)
@@ -139,22 +143,27 @@ class OrchestratorHandler:
                                             "Please check Orchestrator container configuration and logs.")
 
             model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
-                                                      graph_format=graph_format)
+                                                      graph_format=graph_format, start=start, end=end)
             if model is None or model.get_model() is None or model.get_model() == '':
                 raise OrchestratorException(http_error_code=NOT_FOUND, message=f"Resource(s) not found for "
                                                                                f"level: {level} format: {graph_format}!")
             broker_query_model = model.get_model()
 
-            self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format, level=level)
+            # Do not update cache for advance requests
+            if not start and not end:
+                self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format, level=level)
 
         return broker_query_model
 
-    def list_resources(self, *, token: str, level: int, force_refresh: bool = False) -> dict:
+    def list_resources(self, *, token: str, level: int, force_refresh: bool = False, start: datetime = None,
+                       end: datetime) -> dict:
         """
         List Resources
         :param token Fabric Identity Token
         :param level: level of details (default set to 1)
         :param force_refresh: force fetching bqm from broker and override the cached model
+        :param start: start time
+        :param end: end time
         :raises Raises an exception in case of failure
         :returns Broker Query Model on success
         """
@@ -165,7 +174,8 @@ class OrchestratorHandler:
             self.__authorize_request(id_token=token, action_id=ActionId.query)
             
             broker_query_model = self.discover_broker_query_model(controller=controller, token=token, level=level,
-                                                                  force_refresh=force_refresh)
+                                                                  force_refresh=force_refresh, start=start,
+                                                                  end=end)
 
             return ResponseBuilder.get_broker_query_model_summary(bqm=broker_query_model)
 
@@ -219,8 +229,8 @@ class OrchestratorHandler:
             fabric_token = AccessChecker.validate_and_decode_token(token=token)
             project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
-            end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time, allow_long_lived=allow_long_lived,
-                                                      project_id=project)
+            end_time = self.__compute_lease_end_time(lease_end_time=lease_end_time, allow_long_lived=allow_long_lived,
+                                                     project_id=project)
 
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
@@ -238,7 +248,7 @@ class OrchestratorHandler:
             # Authorize the slice
             create_ts = time.time()
             self.__authorize_request(id_token=token, action_id=ActionId.create, resource=topology,
-                                                    lease_end_time=end_time)
+                                     lease_end_time=end_time)
             self.logger.info(f"PDP authorize: TIME= {time.time() - create_ts:.0f}")
 
             # Check if an Active slice exists already with the same name for the user
@@ -717,9 +727,9 @@ class OrchestratorHandler:
             fabric_token = AccessChecker.validate_and_decode_token(token=token)
             project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
-            new_end_time = self.__validate_lease_end_time(lease_end_time=new_lease_end_time,
-                                                          allow_long_lived=allow_long_lived,
-                                                          project_id=project)
+            new_end_time = self.__compute_lease_end_time(lease_end_time=new_lease_end_time,
+                                                         allow_long_lived=allow_long_lived,
+                                                         project_id=project)
 
             reservations = controller.get_reservations(slice_id=slice_id)
             if reservations is None or len(reservations) < 1:
@@ -766,8 +776,31 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing renew e: {e}")
             raise e
 
-    def __validate_lease_end_time(self, lease_end_time: str, allow_long_lived: bool = False,
-                                  project_id: str = None) -> datetime:
+    @staticmethod
+    def validate_lease_time(lease_time: str) -> datetime:
+        """
+        Validate Lease Time
+        :param lease_time: Lease Time
+        :return Lease Time
+        :raises Exception if new lease time is in past
+        """
+        if not lease_time:
+            return lease_time
+        try:
+            new_end_time = datetime.strptime(lease_time, Constants.LEASE_TIME_FORMAT)
+        except Exception as e:
+            raise OrchestratorException(f"Lease End Time is not in format {Constants.LEASE_TIME_FORMAT}",
+                                        http_error_code=BAD_REQUEST)
+
+        now = datetime.now(timezone.utc)
+        if new_end_time <= now:
+            raise OrchestratorException(f"New term end time {new_end_time} is in the past! ",
+                                        http_error_code=BAD_REQUEST)
+
+        return new_end_time
+
+    def __compute_lease_end_time(self, lease_end_time: str, allow_long_lived: bool = False,
+                                 project_id: str = None) -> datetime:
         """
         Validate Lease End Time
         :param lease_end_time: New End Time
@@ -779,16 +812,9 @@ class OrchestratorHandler:
         if lease_end_time is None:
             new_end_time = datetime.now(timezone.utc) + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
             return new_end_time
-        try:
-            new_end_time = datetime.strptime(lease_end_time, Constants.LEASE_TIME_FORMAT)
-        except Exception as e:
-            raise OrchestratorException(f"Lease End Time is not in format {Constants.LEASE_TIME_FORMAT}",
-                                        http_error_code=BAD_REQUEST)
 
+        new_end_time = self.validate_lease_time(lease_time=lease_end_time)
         now = datetime.now(timezone.utc)
-        if new_end_time <= now:
-            raise OrchestratorException(f"New term end time {new_end_time} is in the past! ",
-                                        http_error_code=BAD_REQUEST)
 
         if allow_long_lived:
             default_long_lived_duration = Constants.LONG_LIVED_SLICE_TIME_WEEKS

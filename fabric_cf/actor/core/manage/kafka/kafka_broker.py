@@ -79,8 +79,6 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
         if status.code == 0:
             return response.result
 
-        return None
-
     def demand_reservation(self, *, reservation: ReservationMng) -> bool:
         request = DemandReservationAvro()
         request.guid = str(self.management_id)
@@ -110,10 +108,9 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
 
         if status.code == 0:
             return response.proxies
-        return None
 
-    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int,
-                               graph_format: GraphFormat) -> BrokerQueryModelAvro:
+    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int, graph_format: GraphFormat,
+                               start: datetime = None, end: datetime = None) -> BrokerQueryModelAvro:
         request = GetBrokerQueryModelRequestAvro()
         request.id_token = id_token
         request.guid = str(self.management_id)
@@ -121,13 +118,14 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
         request.message_id = str(ID())
         request.callback_topic = self.callback_topic
         request.broker_id = str(broker)
-        request.level = level
-        request.graph_format = graph_format.value
+        request.set_level(value=level)
+        request.set_graph_format(graph_format=graph_format.value)
+        request.set_start(start=start)
+        request.set_end(end=end)
         status, response = self.send_request(request)
 
         if status.code == 0:
             return response.model
-        return None
 
     def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver,
                            dependencies: List[ReservationPredecessorAvro] = None) -> bool:
@@ -159,8 +157,6 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
         if status.code == 0 and response.delegations is not None and len(response.delegations) > 0:
             return next(iter(response.delegations))
 
-        return None
-
     def reclaim_delegations(self, *, broker: ID, did: ID) -> DelegationAvro:
         request = ReclaimResourcesAvro()
         request.guid = str(self.management_id)
@@ -174,8 +170,6 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
 
         if status.code == 0 and response.delegations is not None and len(response.delegations) > 0:
             return next(iter(response.delegations))
-
-        return None
 
     def clone(self):
         return KafkaBroker(guid=self.management_id,

@@ -93,8 +93,8 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
-    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int,
-                               graph_format: GraphFormat) -> BrokerQueryModelAvro:
+    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int, graph_format: GraphFormat,
+                               start: datetime = None, end: datetime = None) -> BrokerQueryModelAvro:
         self.clear_last()
         try:
             result = self.manager.get_broker_query_model(broker=broker, caller=self.auth, id_token=id_token,

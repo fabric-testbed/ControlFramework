@@ -31,4 +31,4 @@ def resources_get(level, force_refresh, start_date=None, end_date=None):  # noqa
 
     :rtype: Resources
     """
-    return rc.resources_get(level, force_refresh)
+    return rc.resources_get(level=level, force_refresh=force_refresh, start_date=start_date, end_date=end_date)

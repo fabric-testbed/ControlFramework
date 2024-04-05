@@ -94,8 +94,8 @@ class LocalBroker(LocalServerActor, ABCMgmtBrokerMixin):
 
         return None
 
-    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int,
-                               graph_format: GraphFormat) -> BrokerQueryModelAvro:
+    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int, graph_format: GraphFormat,
+                               start: datetime = None, end: datetime = None) -> BrokerQueryModelAvro:
         self.clear_last()
         try:
             result = self.manager.get_broker_query_model(broker=broker, caller=self.auth, level=level,
