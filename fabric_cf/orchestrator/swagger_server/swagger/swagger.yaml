@@ -283,6 +283,23 @@ paths:
           type: integer
           format: int32
           default: 0
+      - name: search
+        in: query
+        description: search term applied
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: exact_match
+        in: query
+        description: Exact Match for Search term
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
       responses:
         "200":
           description: OK

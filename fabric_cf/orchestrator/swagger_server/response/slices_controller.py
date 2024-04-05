@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from typing import List
 
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
@@ -158,21 +159,27 @@ def slices_delete_slice_id_delete(slice_id) -> Status200OkNoContent:  # noqa: E5
         return cors_error_response(error=e)
 
 
-def slices_get(name=None, states=None, limit=None, offset=None, as_self=True) -> Slices:  # noqa: E501
+def slices_get(name: str = None, search: str = None, exact_match: bool = False,
+               as_self: bool = True, states: List[str] = None, limit: int = 5, offset: int = 0):  # noqa: E501
     """Retrieve a listing of user slices
 
-    Retrieve a listing of user slices # noqa: E501
+    Retrieve a listing of user slices. It returns list of all slices belonging to all members in a project when
+    &#x27;as_self&#x27; is False otherwise returns only the all user&#x27;s slices in a project. # noqa: E501
 
     :param name: Search for Slices with the name
     :type name: str
+    :param search: search term applied
+    :type search: str
+    :param exact_match: Exact Match for Search term
+    :type exact_match: str
+    :param as_self: GET object as Self
+    :type as_self: bool
     :param states: Search for Slices in the specified states
     :type states: List[str]
     :param limit: maximum number of results to return per page (1 or more)
     :type limit: int
     :param offset: number of items to skip before starting to collect the result set
     :type offset: int
-    :param as_self: GET object as Self
-    :type as_self: bool
 
     :rtype: Slices
     """
@@ -182,7 +189,7 @@ def slices_get(name=None, states=None, limit=None, offset=None, as_self=True) ->
     try:
         token = get_token()
         slices_dict = handler.get_slices(token=token, states=states, name=name, limit=limit, offset=offset,
-                                         as_self=as_self)
+                                         as_self=as_self, search=search, exact_match=exact_match)
         response = Slices()
         response.data = []
         response.type = 'slices'

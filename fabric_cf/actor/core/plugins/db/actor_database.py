@@ -201,7 +201,8 @@ class ActorDatabase(ABCDatabase):
 
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, project_id: str = None, email: str = None,
                    states: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
-                   limit: int = None, offset: int = None, lease_end: datetime = None) -> List[ABCSlice] or None:
+                   limit: int = None, offset: int = None, lease_end: datetime = None,
+                   search: str = None, exact_match: bool = False) -> List[ABCSlice] or None:
         result = []
         try:
             try:
@@ -212,7 +213,7 @@ class ActorDatabase(ABCDatabase):
                 sid = str(slice_id) if slice_id is not None else None
                 slices = self.db.get_slices(slice_id=sid, slice_name=slice_name, project_id=project_id, email=email,
                                             states=states, oidc_sub=oidc_sub, slc_type=slice_type, limit=limit,
-                                            offset=offset, lease_end=lease_end)
+                                            offset=offset, lease_end=lease_end, search=search, exact_match=exact_match)
             finally:
                 if self.lock.locked():
                     self.lock.release()

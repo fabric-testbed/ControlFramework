@@ -30,7 +30,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import List, Tuple, Dict
 
-from sqlalchemy import create_engine, desc
+from sqlalchemy import create_engine, desc, func
 from sqlalchemy.orm import scoped_session, sessionmaker, joinedload
 
 from fabric_cf.actor.core.common.constants import Constants
@@ -99,6 +99,7 @@ class PsqlDatabase:
             session.query(Proxies).delete()
             session.query(Units).delete()
             session.query(Delegations).delete()
+            session.query(Components).delete()
             session.query(Reservations).delete()
             session.query(Slices).delete()
             session.query(ManagerObjects).delete()
@@ -540,7 +541,8 @@ class PsqlDatabase:
 
     def get_slices(self, *, slice_id: str = None, slice_name: str = None, project_id: str = None, email: str = None,
                    states: list[int] = None, oidc_sub: str = None, slc_type: list[int] = None, limit: int = None,
-                   offset: int = None, lease_end: datetime = None) -> List[dict]:
+                   offset: int = None, lease_end: datetime = None, search: str = None,
+                   exact_match: bool = False) -> List[dict]:
         """
         Get slices for an actor
         @param slice_id actor id
@@ -553,6 +555,8 @@ class PsqlDatabase:
         @param limit limit
         @param offset offset
         @param lease_end lease_end
+        @param search: search term applied
+        @param exact_match: Exact Match for Search term
         @return list of slices
         """
         result = []
@@ -562,6 +566,16 @@ class PsqlDatabase:
                                                     email=email, oidc_sub=oidc_sub)
 
             rows = session.query(Slices).filter_by(**filter_dict)
+
+            if search:
+                if exact_match:
+                    search_term = func.lower(search)
+                    rows = rows.filter(((func.lower(Slices.email) == search_term) |
+                                        (func.lower(Slices.oidc_claim_sub) == search_term)))
+                else:
+                    rows = rows.filter(
+                        ((Slices.email.ilike("%" + search + "%")) |
+                         (Slices.oidc_claim_sub.ilike("%" + search + "%"))))
 
             if lease_end is not None:
                 rows = rows.filter(Slices.lease_end < lease_end)

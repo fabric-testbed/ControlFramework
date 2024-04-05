@@ -256,7 +256,8 @@ class ABCActorManagementObject(ABCManagementObject):
 
     def get_slices(self, *, slice_id: ID, caller: AuthToken, slice_name: str = None, email: str = None,
                    states: List[int] = None, project: str = None, limit: int = None,
-                   offset: int = None, user_id: str = None) -> ResultSliceAvro:
+                   offset: int = None, user_id: str = None, search: str = None,
+                   exact_match: bool = False) -> ResultSliceAvro:
         """
         Obtains all slices.
         @param slice_id slice id
@@ -268,6 +269,8 @@ class ABCActorManagementObject(ABCManagementObject):
         @param offset offset
         @param caller caller
         @param user_id user_id
+        @param search: search term applied
+        @param exact_match: Exact Match for Search term
         @return returns list of slices
         """
 
