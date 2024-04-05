@@ -106,6 +106,30 @@
               "type": "boolean",
               "default": false
             }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "description": "starting date to check availability from",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "2023-01-01 16:20:15 +00:00"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "description": "end date to check availability until",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "2023-01-01 16:20:15 +00:00"
+            }
           }
         ],
         "responses": {
@@ -285,6 +309,29 @@
             "schema": {
               "minLength": 3,
               "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "search term applied",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "exact_match",
+            "in": "query",
+            "description": "Exact Match for Search term",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           },
           {
@@ -685,7 +732,8 @@
             "style": "form",
             "explode": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "example": "2023-01-01 16:20:15 +00:00"
             }
           }
         ],
@@ -2113,6 +2161,12 @@
           },
           "slice_id": {
             "type": "string"
+          },
+          "owner_user_id": {
+            "type": "string"
+          },
+          "owner_email": {
+            "type": "string"
           }
         }
       },
@@ -2174,6 +2228,12 @@
             "type": "string"
           },
           "sliver_id": {
+            "type": "string"
+          },
+          "owner_user_id": {
+            "type": "string"
+          },
+          "owner_email": {
             "type": "string"
           }
         }

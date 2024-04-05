@@ -84,6 +84,8 @@ class TestSlicesController(BaseTestCase):
         Retrieve a listing of user slices
         """
         query_string = [('name', 'name_example'),
+                        ('search', 'search_example'),
+                        ('exact_match', false),
                         ('as_self', true),
                         ('states', 'states_example'),
                         ('limit', 200),
