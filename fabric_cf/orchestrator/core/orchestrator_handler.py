@@ -170,7 +170,8 @@ class OrchestratorHandler:
                                                 "Please check Orchestrator container configuration and logs.")
 
                 model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
-                                                          graph_format=graph_format, start=start, end=end)
+                                                          graph_format=graph_format, start=start, end=end,
+                                                          includes=includes, excludes=excludes)
                 if model is None or model.get_model() is None or model.get_model() == '':
                     raise OrchestratorException(http_error_code=NOT_FOUND, message=f"Resource(s) not found for "
                                                                                    f"level: {level} format: {graph_format}!")

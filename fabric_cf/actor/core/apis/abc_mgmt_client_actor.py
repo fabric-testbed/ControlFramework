@@ -117,6 +117,7 @@ class ABCMgmtClientActor(ABCComponent):
         @param broker broker
         @return true for sucess; false otherwise
         """
+
     def get_broker_query_model(self, *, broker: ID, id_token: str, level: int, graph_format: GraphFormat,
                                start: datetime = None, end: datetime = None,
                                includes: str = None, excludes: str = None) -> BrokerQueryModelAvro:
