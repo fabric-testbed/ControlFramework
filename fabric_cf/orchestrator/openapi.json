@@ -130,6 +130,30 @@
               "type": "string",
               "example": "2023-01-01 16:20:15 +00:00"
             }
+          },
+          {
+            "name": "includes",
+            "in": "query",
+            "description": "comma separated lists of sites to include",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "RENC,UKY"
+            }
+          },
+          {
+            "name": "excludes",
+            "in": "query",
+            "description": "comma separated lists of sites to exclude",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "SRI,LBNL"
+            }
           }
         ],
         "responses": {
@@ -2405,7 +2429,7 @@
     "requestBodies": {
       "Request": {
         "content": {
-          "text/plain": {
+          "application/json": {
             "schema": {
               "type": "string"
             }

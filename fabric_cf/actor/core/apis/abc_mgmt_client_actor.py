@@ -129,6 +129,23 @@ class ABCMgmtClientActor(ABCComponent):
         @return BQM
         """
 
+    def build_broker_query_model(self, level_0_broker_query_model: str, level: int,
+                                 graph_format: GraphFormat = GraphFormat.GRAPHML,
+                                 start: datetime = None, end: datetime = None,
+                                 includes: str = None, excludes: str = None) -> str:
+        """
+        Build the BQM Model using current usage
+        @param level_0_broker_query_model Capacity Model
+        @param level: level of details
+        @param graph_format: Graph Format
+        @param start: start time
+        @param end: end time
+        @param includes: comma separated lists of sites to include
+        @param excludes: comma separated lists of sites to exclude
+        @return BQM
+        """
+        raise Exception("Not Implemented")
+
     @abstractmethod
     def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver,
                            dependencies: List[ReservationPredecessorAvro] = None) -> bool:

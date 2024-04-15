@@ -25,9 +25,11 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import traceback
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List, Dict, Tuple
 
+from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -40,6 +42,8 @@ from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+from fim.user import GraphFormat
+from fim.user.topology import AdvertizedTopology
 
 from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
@@ -860,3 +864,16 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
+
+    def build_broker_query_model(self, level_0_broker_query_model: str, level: int,
+                                 graph_format: GraphFormat = GraphFormat.GRAPHML,
+                                 start: datetime = None, end: datetime = None, includes: str = None,
+                                 excludes: str = None) -> str:
+        try:
+            db = self.actor.get_plugin().get_database()
+            return FimHelper.build_broker_query_model(db=db, level_0_broker_query_model=level_0_broker_query_model,
+                                                      level=level, graph_format=graph_format, start=start,
+                                                      end=end, includes=includes, excludes=excludes)
+        except Exception as e:
+            self.logger.error(f"Exception occurred build_broker_query_model e: {e}")
+            self.logger.error(traceback.format_exc())

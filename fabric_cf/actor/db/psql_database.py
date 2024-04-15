@@ -820,8 +820,11 @@ class PsqlDatabase:
             if category is not None:
                 rows = rows.filter(Reservations.rsv_category.in_(category))
 
+            if start is not None:
+                rows = rows.filter(start <= Reservations.lease_end)
+
             if end is not None:
-                rows = rows.filter(start <= Reservations.lease_end <= end)
+                rows = rows.filter(Reservations.lease_end <= end)
 
             for row in rows.all():
                 result.append(self.generate_dict_from_row(row=row))

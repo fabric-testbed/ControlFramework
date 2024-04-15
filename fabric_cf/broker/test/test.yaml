@@ -121,7 +121,7 @@ neo4j:
 bqm:
   kafka-topic: broker-resource-usage
     # in seconds (default set to 2 hours)
-  publish-interval: 7200
+  publish-interval:
   kafka-sasl-producer-username:
   kafka-sasl-producer-password:
 

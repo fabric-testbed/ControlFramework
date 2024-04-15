@@ -15,7 +15,7 @@ def portalresources_get(graph_format):  # noqa: E501
     return rc.portalresources_get(graph_format)
 
 
-def resources_get(level, force_refresh, start_date=None, end_date=None):  # noqa: E501
+def resources_get(level, force_refresh, start_date=None, end_date=None, includes=None, excludes=None):  # noqa: E501
     """Retrieve a listing and description of available resources. By default, a cached available resource information is returned. User can force to request the current available resources.
 
     Retrieve a listing and description of available resources. By default, a cached available resource information is returned. User can force to request the current available resources. # noqa: E501
@@ -28,7 +28,12 @@ def resources_get(level, force_refresh, start_date=None, end_date=None):  # noqa
     :type start_date: str
     :param end_date: end date to check availability until
     :type end_date: str
+    :param includes: comma separated lists of sites to include
+    :type includes: str
+    :param excludes: comma separated lists of sites to exclude
+    :type excludes: str
 
     :rtype: Resources
     """
-    return rc.resources_get(level=level, force_refresh=force_refresh, start_date=start_date, end_date=end_date)
+    return rc.resources_get(level=level, force_refresh=force_refresh, start_date=start_date,
+                            end_date=end_date, includes=includes, excludes=excludes)

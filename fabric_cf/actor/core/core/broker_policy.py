@@ -142,9 +142,9 @@ class BrokerPolicy(Policy, ABCBrokerPolicyMixin):
                       Constants.QUERY_DETAIL_LEVEL: str(level),
                       Constants.BROKER_QUERY_MODEL_FORMAT: str(bqm_format.value)}
         if start:
-            properties[Constants.START] = start
+            properties[Constants.START] = start.strftime(Constants.LEASE_TIME_FORMAT)
         if end:
-            properties[Constants.END] = end
+            properties[Constants.END] = end.strftime(Constants.LEASE_TIME_FORMAT)
         return properties
 
     @staticmethod

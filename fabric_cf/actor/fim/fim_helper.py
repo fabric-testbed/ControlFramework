@@ -26,6 +26,7 @@
 import logging
 import random
 import traceback
+from datetime import datetime
 from typing import Tuple, List, Union
 
 from fim.graph.abc_property_graph import ABCPropertyGraph, ABCGraphImporter
@@ -45,8 +46,10 @@ from fim.slivers.delegations import Delegations
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver, ServiceType
-from fim.user import ExperimentTopology, Labels, NodeType, Component, ReservationInfo
+from fim.user import ExperimentTopology, NodeType, Component, ReservationInfo, Node, GraphFormat
+from fim.user.composite_node import CompositeNode
 from fim.user.interface import Interface
+from fim.user.topology import AdvertizedTopology
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
@@ -611,3 +614,68 @@ class FimHelper:
         slice_topology.prune(reservation_state=ReservationStates.CloseFail.name)
 
         return slice_topology
+
+    @staticmethod
+    def get_workers(site: CompositeNode) -> dict:
+        node_id_list = site.topo.graph_model.get_first_neighbor(
+            node_id=site.node_id,
+            rel=ABCPropertyGraph.REL_HAS,
+            node_label=ABCPropertyGraph.CLASS_NetworkNode,
+        )
+        workers = dict()
+        for nid in node_id_list:
+            _, node_props = site.topo.graph_model.get_node_properties(node_id=nid)
+            n = Node(
+                name=node_props[ABCPropertyGraph.PROP_NAME],
+                node_id=nid,
+                topo=site.topo,
+            )
+            if n.type != NodeType.Facility:
+                workers[n.name] = n
+        return workers
+
+    @staticmethod
+    def build_broker_query_model(db, level_0_broker_query_model: str, level: int,
+                                 graph_format: GraphFormat = GraphFormat.GRAPHML,
+                                 start: datetime = None, end: datetime = None,
+                                 includes: str = None, excludes: str = None) -> str:
+        sites_to_include = [s.strip().upper() for s in includes.split(",")] if includes else None
+        sites_to_exclude = [s.strip().upper() for s in excludes.split(",")] if excludes else None
+
+        if level_0_broker_query_model and len(level_0_broker_query_model) > 0:
+            from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
+            substrate = AdvertizedTopology()
+            substrate.load(graph_string=level_0_broker_query_model)
+            sites_to_remove = []
+
+            for site_name, site in substrate.sites.items():
+                if sites_to_include and site_name not in sites_to_include:
+                    sites_to_remove.append(site_name)
+                    continue
+
+                if sites_to_exclude and site_name in sites_to_exclude:
+                    sites_to_remove.append(site_name)
+                    continue
+
+                workers = FimHelper.get_workers(site)
+                for w in workers.values():
+                    allocated_caps, allocated_comp_caps = AggregatedBQMPlugin.occupied_node_capacity(
+                        db=db,
+                        node_id=w.node_id,
+                        start=start,
+                        end=end
+                    )
+                    w.set_property("capacity_allocations", allocated_caps)
+                    # Merge allocated component capacities
+                    for comp_type_comp_model, c in w.components.items():
+                        cap_allocations = c.capacity_allocations or Capacities()
+                        ctype_caps = allocated_comp_caps.get(c.type)
+                        if ctype_caps:
+                            cm_caps = ctype_caps.get(c.model)
+                            if cm_caps:
+                                cap_allocations += cm_caps
+                        c.set_property("capacity_allocations", cap_allocations)
+
+            for s in sites_to_remove:
+                substrate.remove_node(s)
+            return substrate.serialize(fmt=graph_format)

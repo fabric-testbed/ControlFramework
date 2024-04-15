@@ -1062,7 +1062,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             bqm_format = GraphFormat.GRAPHML
 
         start = p.get(Constants.START, None)
+        if start:
+            start = datetime.strptime(start, Constants.LEASE_TIME_FORMAT)
         end = p.get(Constants.END, None)
+        if end:
+            end = datetime.strptime(end, Constants.LEASE_TIME_FORMAT)
 
         try:
             if self.query_cbm is not None:

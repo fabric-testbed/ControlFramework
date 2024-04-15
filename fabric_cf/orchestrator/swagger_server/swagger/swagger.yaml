@@ -94,6 +94,24 @@ paths:
         schema:
           type: string
           example: 2023-01-01 16:20:15 +00:00
+      - name: includes
+        in: query
+        description: comma separated lists of sites to include
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "RENC,UKY"
+      - name: excludes
+        in: query
+        description: comma separated lists of sites to exclude
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "SRI,LBNL"
       responses:
         "200":
           description: OK
@@ -283,23 +301,6 @@ paths:
           type: integer
           format: int32
           default: 0
-      - name: search
-        in: query
-        description: search term applied
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: string
-      - name: exact_match
-        in: query
-        description: Exact Match for Search term
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: boolean
-          default: false
       responses:
         "200":
           description: OK
@@ -1636,7 +1637,7 @@ components:
   requestBodies:
     Request:
       content:
-        text/plain:
+        application/json:
           schema:
             type: string
       required: true

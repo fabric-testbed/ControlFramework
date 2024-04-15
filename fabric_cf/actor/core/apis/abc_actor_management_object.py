@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from datetime import datetime
 from typing import TYPE_CHECKING, Tuple, Dict, List
 
 from fabric_mb.message_bus.messages.poa_avro import PoaAvro
@@ -38,6 +39,7 @@ from fabric_mb.message_bus.messages.result_sites_avro import ResultSitesAvro
 from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+from fim.user import GraphFormat
 
 from fabric_cf.actor.core.apis.abc_management_object import ABCManagementObject
 from fabric_cf.actor.core.container.maintenance import Site
@@ -280,4 +282,20 @@ class ABCActorManagementObject(ABCManagementObject):
         @param slice_id slice id
         @param caller caller
         @return true for success; false otherwise
+        """
+
+    def build_broker_query_model(self, level_0_broker_query_model: str, level: int,
+                                 graph_format: GraphFormat = GraphFormat.GRAPHML,
+                                 start: datetime = None, end: datetime = None, includes: str = None,
+                                 excludes: str = None) -> str:
+        """
+        Build the BQM Model using current usage
+        @param level_0_broker_query_model Capacity Model
+        @param level: level of details
+        @param graph_format: Graph Format
+        @param start: start time
+        @param end: end time
+        @param includes: comma separated lists of sites to include
+        @param excludes: comma separated lists of sites to exclude
+        @return BQM
         """

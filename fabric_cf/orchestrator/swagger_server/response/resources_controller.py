@@ -65,7 +65,7 @@ def portalresources_get(graph_format) -> Resources:  # noqa: E501
 
 
 def resources_get(level: int = 1, force_refresh: bool = False, start_date: str = None,
-                  end_date: str = None) -> Resources:  # noqa: E501
+                  end_date: str = None, includes: str = None, excludes: str = None) -> Resources:  # noqa: E501
     """Retrieve a listing and description of available resources
 
     Retrieve a listing and description of available resources # noqa: E501
@@ -78,6 +78,10 @@ def resources_get(level: int = 1, force_refresh: bool = False, start_date: str =
     :type start_date: str
     :param end_date: end date to check availability until
     :type end_date: str
+    :param includes: comma separated lists of sites to include
+    :type includes: str
+    :param excludes: comma separated lists of sites to exclude
+    :type excludes: str
 
     :rtype: Resources
     """
@@ -88,10 +92,10 @@ def resources_get(level: int = 1, force_refresh: bool = False, start_date: str =
         token = get_token()
         start = handler.validate_lease_time(lease_time=start_date)
         end = handler.validate_lease_time(lease_time=end_date)
-        bqm_dict = handler.list_resources(token=token, level=level, force_refresh=force_refresh,
-                                          start=start, end=end)
+        model = handler.list_resources(token=token, level=level, force_refresh=force_refresh,
+                                       start=start, end=end, includes=includes, excludes=excludes)
         response = Resources()
-        response.data = [Resource().from_dict(bqm_dict)]
+        response.data = [Resource(model)]
         response.size = 1
         response.type = "resources"
         success_counter.labels(GET_METHOD, RESOURCES_PATH).inc()

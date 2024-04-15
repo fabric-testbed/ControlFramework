@@ -24,7 +24,7 @@ class TestResourcesController(BaseTestCase):
         """
         query_string = [('graph_format', 'GRAPHML')]
         response = self.client.open(
-            '/portalresources',
+            '//portalresources',
             method='GET',
             query_string=query_string)
         self.assert200(response,
@@ -38,9 +38,10 @@ class TestResourcesController(BaseTestCase):
         query_string = [('level', 1),
                         ('force_refresh', false),
                         ('start_date', 'start_date_example'),
-                        ('end_date', 'end_date_example')]
+                        ('end_date', 'end_date_example'),
+                        ('sites', 'sites_example')]
         response = self.client.open(
-            '/resources',
+            '//resources',
             method='GET',
             query_string=query_string)
         self.assert200(response,

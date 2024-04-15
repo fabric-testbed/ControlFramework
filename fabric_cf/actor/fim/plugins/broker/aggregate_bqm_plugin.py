@@ -23,8 +23,10 @@
 #
 #
 # Author: Ilya Baldin (ibaldin@renci.org)
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Tuple, List, Dict
+from typing import Tuple, Dict, TYPE_CHECKING
 from collections import defaultdict
 
 import uuid
@@ -44,6 +46,8 @@ from fim.slivers.network_service import ServiceType
 
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 
+if TYPE_CHECKING:
+    from fabric_cf.actor.core.apis.abc_database import ABCDatabase
 
 class AggregatedBQMPlugin:
     """
@@ -81,8 +85,9 @@ class AggregatedBQMPlugin:
         result.finalize()
         return result
 
-    def __occupied_node_capacity(self, *, node_id: str, start: datetime,
-                                 end: datetime) -> Tuple[Capacities, Dict[ComponentType, Dict[str, Capacities]]]:
+    @staticmethod
+    def occupied_node_capacity(*, db: ABCDatabase, node_id: str, start: datetime,
+                               end: datetime) -> Tuple[Capacities, Dict[ComponentType, Dict[str, Capacities]]]:
         """
         Figure out the total capacity occupied in the network node and return a tuple of
         capacities occupied in this node and a dict of component capacities that are occupied
@@ -95,11 +100,7 @@ class AggregatedBQMPlugin:
                   ReservationStates.Nascent.value]
 
         # get existing reservations for this node
-        existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
-                                                                                        states=states,
-                                                                                        start=start,
-                                                                                        end=end)
-
+        existing_reservations = db.get_reservations(graph_node_id=node_id, states=states, start=start, end=end)
         # node capacities
         occupied_capacities = Capacities()
         occupied_component_capacities = defaultdict(dict)
@@ -201,13 +202,15 @@ class AggregatedBQMPlugin:
                 worker_sliver.resource_type = NodeType.Server
                 worker_sliver.set_site(s)
                 worker_sliver.node_id = str(uuid.uuid4())
-                if self.DEBUG_FLAG:
+                if self.DEBUG_FLAG or kwargs['query_level'] == 0:
                     # for debugging and running in a test environment
+                    # also for level 0; only return capacity information
                     allocated_comp_caps = dict()
                 else:
+                    db = self.actor.get_plugin().get_database()
                     # query database for everything taken on this node
-                    allocated_caps, allocated_comp_caps = self.__occupied_node_capacity(node_id=sliver.node_id,
-                                                                                        start=start, end=end)
+                    allocated_caps, allocated_comp_caps = self.occupied_node_capacity(db=db, node_id=sliver.node_id,
+                                                                                      start=start, end=end)
                     site_sliver.capacity_allocations = site_sliver.capacity_allocations + allocated_caps
                     worker_sliver.capacity_allocations = allocated_caps
 
@@ -279,7 +282,7 @@ class AggregatedBQMPlugin:
                           props=site_props)
 
             # Add per worker metrics for query level 2
-            if kwargs['query_level'] == 2:
+            if kwargs['query_level'] == 2 or kwargs['query_level'] == 0:
                 for w in workers:
                     # Add workers
                     abqm.add_node(node_id=w.node_id, label=ABCPropertyGraph.CLASS_NetworkNode,

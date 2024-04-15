@@ -100,7 +100,7 @@ class LocalBroker(LocalServerActor, ABCMgmtBrokerMixin):
         try:
             result = self.manager.get_broker_query_model(broker=broker, caller=self.auth, level=level,
                                                          id_token=id_token, ignore_broker_check=True,
-                                                         graph_format=graph_format)
+                                                         graph_format=graph_format, start=start, end=end)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
