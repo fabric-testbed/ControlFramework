@@ -110,7 +110,8 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
             return response.proxies
 
     def get_broker_query_model(self, *, broker: ID, id_token: str, level: int, graph_format: GraphFormat,
-                               start: datetime = None, end: datetime = None) -> BrokerQueryModelAvro:
+                               start: datetime = None, end: datetime = None,
+                               includes: str = None, excludes: str = None) -> BrokerQueryModelAvro:
         request = GetBrokerQueryModelRequestAvro()
         request.id_token = id_token
         request.guid = str(self.management_id)

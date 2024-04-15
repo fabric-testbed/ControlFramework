@@ -129,22 +129,30 @@ class BrokerPolicy(Policy, ABCBrokerPolicyMixin):
 
     @staticmethod
     def get_broker_query_model_query(*, level: int, bqm_format: GraphFormat = GraphFormat.GRAPHML,
-                                     start: datetime = None, end: datetime = None) -> dict:
+                                     start: datetime = None, end: datetime = None,
+                                     includes: str = None, excludes: str = None) -> dict:
         """
         Return dictionary representing query
         :param level: Graph Level
         :param bqm_format: Graph Format
         :param start: start time
         :param end: end time
+        :param includes: comma separated lists of sites to include
+        :param excludes: comma separated lists of sites to exclude
+
         :return dictionary representing the query
         """
         properties = {Constants.QUERY_ACTION: Constants.QUERY_ACTION_DISCOVER_BQM,
                       Constants.QUERY_DETAIL_LEVEL: str(level),
-                      Constants.BROKER_QUERY_MODEL_FORMAT: str(bqm_format.value)}
+                      Constants.BROKER_QUERY_MODEL_FORMAT: str(bqm_format.value),}
         if start:
             properties[Constants.START] = start.strftime(Constants.LEASE_TIME_FORMAT)
         if end:
             properties[Constants.END] = end.strftime(Constants.LEASE_TIME_FORMAT)
+        if includes:
+            properties[Constants.INCLUDES] = includes
+        if includes:
+            properties[Constants.EXCLUDES] = excludes
         return properties
 
     @staticmethod

@@ -71,17 +71,6 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
 
         if status.code == 0:
             return response.proxies
-        return None
-
-    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int, graph_format: GraphFormat,
-                               start: datetime = None, end: datetime = None) -> BrokerQueryModelAvro:
-        raise ManageException(Constants.NOT_IMPLEMENTED)
-
-    def claim_delegations(self, *, broker: ID, did: ID) -> DelegationAvro:
-        raise ManageException(Constants.NOT_IMPLEMENTED)
-
-    def reclaim_delegations(self, *, broker: ID, did: ID) -> DelegationAvro:
-        raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def get_reservation_units(self, *, rid: ID, id_token: str = None) -> List[UnitAvro]:
         request = GetReservationUnitsRequestAvro()
@@ -90,23 +79,6 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
 
         if status.code == 0:
             return response.units
-        return None
-
-    def add_reservation(self, *, reservation: TicketReservationAvro) -> ID:
-        raise ManageException(Constants.NOT_IMPLEMENTED)
-
-    def add_reservations(self, *, reservations: List[ReservationMng]) ->list:
-        raise ManageException(Constants.NOT_IMPLEMENTED)
-
-    def demand_reservation(self, *, reservation: ReservationMng) -> bool:
-        raise ManageException(Constants.NOT_IMPLEMENTED)
-
-    def demand_reservation_rid(self, *, rid: ID) -> bool:
-        raise ManageException(Constants.NOT_IMPLEMENTED)
-
-    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver,
-                           dependencies: List[ReservationPredecessorAvro] = None) -> bool:
-        raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def modify_reservation(self, *, rid: ID, modify_properties: dict) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)

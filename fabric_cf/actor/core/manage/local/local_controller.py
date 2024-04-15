@@ -94,12 +94,13 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
     def get_broker_query_model(self, *, broker: ID, id_token: str, level: int, graph_format: GraphFormat,
-                               start: datetime = None, end: datetime = None) -> BrokerQueryModelAvro:
+                               start: datetime = None, end: datetime = None,
+                               includes: str = None, excludes: str = None) -> BrokerQueryModelAvro:
         self.clear_last()
         try:
             result = self.manager.get_broker_query_model(broker=broker, caller=self.auth, id_token=id_token,
                                                          level=level, graph_format=graph_format,
-                                                         start=start, end=end)
+                                                         start=start, end=end, excludes=excludes, includes=includes)
             self.last_status = result.status
 
             if result.status.get_code() == 0:

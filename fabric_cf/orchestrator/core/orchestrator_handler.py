@@ -67,6 +67,8 @@ class OrchestratorHandler:
         self.jwks_url = self.globals.get_config().get_oauth_config().get(Constants.PROPERTY_CONF_O_AUTH_JWKS_URL, None)
         self.pdp_config = self.globals.get_config().get_global_config().get_pdp_config()
         self.infrastructure_project_id = self.globals.get_config().get_runtime_config().get(Constants.INFRASTRUCTURE_PROJECT_ID, None)
+        self.local_bqm = self.globals.get_config().get_global_config().get_bqm_config().get(
+                    Constants.LOCAL_BQM, False)
 
     def get_logger(self):
         """
@@ -153,14 +155,13 @@ class OrchestratorHandler:
                     saved_bqm.start_refresh()
 
         if broker_query_model is None:
-            '''
-            saved_bqm = self.controller_state.get_saved_bqm(graph_format=GraphFormat.GRAPHML, level=0)
-            if saved_bqm and saved_bqm.get_bqm() and len(saved_bqm.get_bqm()):
-                broker_query_model = controller.build_broker_query_model(level_0_broker_query_model=saved_bqm.get_bqm(),
-                                                                         level=level, graph_format=graph_format,
-                                                                         start=start, end=end, includes=includes,
-                                                                         excludes=excludes)
-            '''
+            if self.local_bqm:
+                saved_bqm = self.controller_state.get_saved_bqm(graph_format=GraphFormat.GRAPHML, level=0)
+                if saved_bqm and saved_bqm.get_bqm() and len(saved_bqm.get_bqm()):
+                    broker_query_model = controller.build_broker_query_model(level_0_broker_query_model=saved_bqm.get_bqm(),
+                                                                             level=level, graph_format=graph_format,
+                                                                             start=start, end=end, includes=includes,
+                                                                             excludes=excludes)
             # Request the model from Broker as a fallback
             if not broker_query_model:
                 broker = self.get_broker(controller=controller)

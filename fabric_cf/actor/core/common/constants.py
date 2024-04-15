@@ -123,6 +123,7 @@ class Constants:
     PUBLISH_INTERVAL = "publish-interval"
     REFRESH_INTERVAL = "refresh-interval"
     DELEGATION = "delegation"
+    LOCAL_BQM = "local"
 
     PROPERTY_CLASS_NAME = "ObjectClassName"
     PROPERTY_MODULE_NAME = "ModuleName"
@@ -213,6 +214,8 @@ class Constants:
     START = "start"
     END = "end"
     POOL_TYPE = "neo4j"
+    INCLUDES = "includes"
+    EXCLUDES = "excludes"
 
     UNIT_MODIFY_PROP_MESSAGE_SUFFIX = ".message"
     UNIT_MODIFY_PROP_CODE_SUFFIX = ".code"
