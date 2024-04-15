@@ -153,14 +153,14 @@ class OrchestratorHandler:
                     saved_bqm.start_refresh()
 
         if broker_query_model is None:
-            if level != 2:
-                saved_bqm = self.controller_state.get_saved_bqm(graph_format=GraphFormat.GRAPHML, level=0)
-                if saved_bqm and saved_bqm.get_bqm() and len(saved_bqm.get_bqm()):
-                    broker_query_model = controller.build_broker_query_model(level_0_broker_query_model=saved_bqm.get_bqm(),
-                                                                             level=level, graph_format=graph_format,
-                                                                             start=start, end=end, includes=includes,
-                                                                             excludes=excludes)
-
+            '''
+            saved_bqm = self.controller_state.get_saved_bqm(graph_format=GraphFormat.GRAPHML, level=0)
+            if saved_bqm and saved_bqm.get_bqm() and len(saved_bqm.get_bqm()):
+                broker_query_model = controller.build_broker_query_model(level_0_broker_query_model=saved_bqm.get_bqm(),
+                                                                         level=level, graph_format=graph_format,
+                                                                         start=start, end=end, includes=includes,
+                                                                         excludes=excludes)
+            '''
             # Request the model from Broker as a fallback
             if not broker_query_model:
                 broker = self.get_broker(controller=controller)

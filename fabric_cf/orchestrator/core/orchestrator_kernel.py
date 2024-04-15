@@ -92,6 +92,7 @@ class OrchestratorKernel(ABCTick):
                 saved_bqm.set_refresh_interval(refresh_interval=int(refresh_interval))
             saved_bqm.save(bqm=bqm, graph_format=graph_format, level=level)
             self.bqm_cache[key] = saved_bqm
+
         finally:
             self.lock.release()
 

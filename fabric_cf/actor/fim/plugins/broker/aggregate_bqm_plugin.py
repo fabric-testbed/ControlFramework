@@ -49,6 +49,7 @@ from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_database import ABCDatabase
 
+
 class AggregatedBQMPlugin:
     """
     Implement a plugin for simple aggregation of CBM into BQM, transforming site
@@ -145,6 +146,12 @@ class AggregatedBQMPlugin:
         if kwargs.get('query_level', None) is None or kwargs['query_level'] > 2:
             return cbm.clone_graph(new_graph_id=str(uuid.uuid4()))
 
+        includes = kwargs.get('includes', None)
+        excludes = kwargs.get('excludes', None)
+
+        sites_to_include = [s.strip().upper() for s in includes.split(",")] if includes else []
+        sites_to_exclude = [s.strip().upper() for s in excludes.split(",")] if excludes else []
+
         start = kwargs.get('start', None)
         end = kwargs.get('end', None)
 
@@ -159,14 +166,23 @@ class AggregatedBQMPlugin:
             slivers_by_site[node_sliver.site].append(node_sliver)
 
         # create a new blank Aggregated BQM NetworkX graph
-        abqm = NetworkXAggregateBQM(graph_id=str(uuid.uuid4()),
-                                    importer=NetworkXGraphImporter(logger=self.logger),
-                                    logger=self.logger)
+        if kwargs['query_level'] == 0:
+            abqm = NetworkXAggregateBQM(graph_id=cbm.graph_id,
+                                        importer=NetworkXGraphImporter(logger=self.logger),
+                                        logger=self.logger)
+        else:
+            abqm = NetworkXAggregateBQM(graph_id=str(uuid.uuid4()),
+                                        importer=NetworkXGraphImporter(logger=self.logger),
+                                        logger=self.logger)
 
         site_to_composite_node_id = dict()
         site_to_ns_node_id = dict()
         facilities_by_site = defaultdict(list)
         for s, ls in slivers_by_site.items():
+            if s not in sites_to_include:
+                continue
+            if s in sites_to_exclude:
+                continue
             # add up capacities and delegated capacities, skip labels for now
             # count up components and figure out links between site
 
@@ -206,6 +222,7 @@ class AggregatedBQMPlugin:
                     # for debugging and running in a test environment
                     # also for level 0; only return capacity information
                     allocated_comp_caps = dict()
+                    worker_sliver.node_id = sliver.node_id
                 else:
                     db = self.actor.get_plugin().get_database()
                     # query database for everything taken on this node
@@ -232,8 +249,12 @@ class AggregatedBQMPlugin:
                         site_sliver.capacities = site_sliver.capacities + \
                             delegation.get_details()
                         worker_sliver.capacities = delegation.get_details()
+                # This for the case when BQM is generated from Orchestrator
+                else:
+                    site_sliver.capacities += sliver.get_capacities()
+                    worker_sliver.capacities = sliver.get_capacities()
 
-                # collect available components in lists by type and model for the site (for later aggregation)
+                    # collect available components in lists by type and model for the site (for later aggregation)
                 if sliver.attached_components_info is None:
                     continue
                 worker_sliver.attached_components_info = AttachedComponentsInfo()

@@ -115,7 +115,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
         try:
             return self.manager.build_broker_query_model(level_0_broker_query_model=level_0_broker_query_model,
                                                          level=level, graph_format=graph_format, start=start,
-                                                         end=end, includes=include, excludes=excludes)
+                                                         end=end, includes=includes, excludes=excludes)
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 

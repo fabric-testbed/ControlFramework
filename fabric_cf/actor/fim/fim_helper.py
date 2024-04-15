@@ -26,6 +26,8 @@
 import logging
 import random
 import traceback
+import uuid
+from collections import defaultdict
 from datetime import datetime
 from typing import Tuple, List, Union
 
@@ -36,15 +38,17 @@ from fim.graph.resources.abc_arm import ABCARMPropertyGraph
 from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph, Neo4jCBMFactory
+from fim.graph.resources.networkx_abqm import NetworkXAggregateBQM
 from fim.graph.slices.abc_asm import ABCASMPropertyGraph
 from fim.graph.slices.neo4j_asm import Neo4jASMFactory
 from fim.graph.slices.networkx_asm import NetworkxASM, NetworkXASMFactory
+from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.attached_components import ComponentSliver
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities
 from fim.slivers.delegations import Delegations
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
-from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_node import NodeSliver, CompositeNodeSliver
 from fim.slivers.network_service import NetworkServiceSliver, ServiceType
 from fim.user import ExperimentTopology, NodeType, Component, ReservationInfo, Node, GraphFormat
 from fim.user.composite_node import CompositeNode
@@ -639,43 +643,12 @@ class FimHelper:
                                  graph_format: GraphFormat = GraphFormat.GRAPHML,
                                  start: datetime = None, end: datetime = None,
                                  includes: str = None, excludes: str = None) -> str:
-        sites_to_include = [s.strip().upper() for s in includes.split(",")] if includes else None
-        sites_to_exclude = [s.strip().upper() for s in excludes.split(",")] if excludes else None
-
         if level_0_broker_query_model and len(level_0_broker_query_model) > 0:
-            from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
-            substrate = AdvertizedTopology()
-            substrate.load(graph_string=level_0_broker_query_model)
-            sites_to_remove = []
+            cbm = FimHelper.get_neo4j_cbm_graph_from_string_direct(graph_str=level_0_broker_query_model)
+            substrate = cbm.get_bqm(query_level=level, start=start, end=end, includes=includes,
+                                    excludes=excludes)
 
-            for site_name, site in substrate.sites.items():
-                if sites_to_include and site_name not in sites_to_include:
-                    sites_to_remove.append(site_name)
-                    continue
-
-                if sites_to_exclude and site_name in sites_to_exclude:
-                    sites_to_remove.append(site_name)
-                    continue
-
-                workers = FimHelper.get_workers(site)
-                for w in workers.values():
-                    allocated_caps, allocated_comp_caps = AggregatedBQMPlugin.occupied_node_capacity(
-                        db=db,
-                        node_id=w.node_id,
-                        start=start,
-                        end=end
-                    )
-                    w.set_property("capacity_allocations", allocated_caps)
-                    # Merge allocated component capacities
-                    for comp_type_comp_model, c in w.components.items():
-                        cap_allocations = c.capacity_allocations or Capacities()
-                        ctype_caps = allocated_comp_caps.get(c.type)
-                        if ctype_caps:
-                            cm_caps = ctype_caps.get(c.model)
-                            if cm_caps:
-                                cap_allocations += cm_caps
-                        c.set_property("capacity_allocations", cap_allocations)
-
-            for s in sites_to_remove:
-                substrate.remove_node(s)
-            return substrate.serialize(fmt=graph_format)
+            result = substrate.serialize_graph(format=graph_format)
+            substrate.delete_graph()
+            cbm.delete_graph()
+            return result
