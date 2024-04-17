@@ -1061,9 +1061,20 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         else:
             bqm_format = GraphFormat.GRAPHML
 
+        start = p.get(Constants.START, None)
+        if start:
+            start = datetime.strptime(start, Constants.LEASE_TIME_FORMAT)
+        end = p.get(Constants.END, None)
+        if end:
+            end = datetime.strptime(end, Constants.LEASE_TIME_FORMAT)
+
+        excludes = p.get(Constants.EXCLUDES, None)
+        includes = p.get(Constants.INCLUDES, None)
+
         try:
             if self.query_cbm is not None:
-                graph = self.query_cbm.get_bqm(query_level=query_level)
+                graph = self.query_cbm.get_bqm(query_level=query_level, start=start, end=end, includes=includes,
+                                               excludes=excludes)
                 graph_string = None
                 if graph is not None:
                     graph_string = graph.serialize_graph(format=bqm_format)

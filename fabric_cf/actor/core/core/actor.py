@@ -28,9 +28,6 @@ import traceback
 from typing import List, Dict
 
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_mb.message_bus.messages.poa_avro import PoaAvro
-from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
-
 from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy

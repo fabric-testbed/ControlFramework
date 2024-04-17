@@ -85,12 +85,13 @@ class TestSlicesController(BaseTestCase):
         Retrieve a listing of user slices
         """
         query_string = [('name', 'name_example'),
+                        ('search', 'search_example'),
+                        ('exact_match', false),
+                        ('as_self', true),
+                        ('states', 'states_example'),
                         ('as_self', True),
-                        #('states', 'states_example'),
                         ('limit', 200),
-                        ('offset', 1),
-                        # ('search', 'search_example'),
-                        # ('exact_match', False),
+                        ('offset', 1)
                         ]
         response = self.client.open(
             '/slices',

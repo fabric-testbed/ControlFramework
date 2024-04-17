@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime, timezone
 
+from fabric_cf.actor.fim.fim_helper import FimHelper
 from fim.user import GraphFormat
 
 
@@ -39,6 +40,7 @@ class BqmWrapper:
         self.refresh_interval_in_seconds = 60
         self.refresh_in_progress = False
         self.level = 1
+        self.graph_id = None
 
     def set_refresh_interval(self, *, refresh_interval: int):
         """

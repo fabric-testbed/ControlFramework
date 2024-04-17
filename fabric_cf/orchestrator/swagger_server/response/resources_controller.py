@@ -33,13 +33,26 @@ from fabric_cf.orchestrator.swagger_server.response.constants import GET_METHOD,
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
-def portalresources_get(graph_format) -> Resources:  # noqa: E501
+def portalresources_get(graph_format: str, level: int = 1, force_refresh: bool = False, start_date: str = None,
+                        end_date: str = None, includes: str = None, excludes: str = None) -> Resources:  # noqa: E501
     """Retrieve a listing and description of available resources for portal
 
     Retrieve a listing and description of available resources for portal # noqa: E501
 
     :param graph_format: graph format
     :type graph_format: str
+    :param level: Level of details
+    :type level: int
+    :param force_refresh: Force to retrieve current available resource information.
+    :type force_refresh: bool
+    :param start_date: starting date to check availability from
+    :type start_date: str
+    :param end_date: end date to check availability until
+    :type end_date: str
+    :param includes: comma separated lists of sites to include
+    :type includes: str
+    :param excludes: comma separated lists of sites to exclude
+    :type excludes: str
 
     :rtype: Resources
     """
@@ -47,9 +60,12 @@ def portalresources_get(graph_format) -> Resources:  # noqa: E501
     logger = handler.get_logger()
     received_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
     try:
-        bqm_dict = handler.portal_list_resources(graph_format_str=graph_format)
+        start = handler.validate_lease_time(lease_time=start_date)
+        end = handler.validate_lease_time(lease_time=end_date)
+        model = handler.list_resources(graph_format_str=graph_format, level=level, force_refresh=force_refresh,
+                                       start=start, end=end, includes=includes, excludes=excludes)
         response = Resources()
-        response.data = [Resource().from_dict(bqm_dict)]
+        response.data = [Resource(model)]
         response.size = 1
         response.type = "resources"
         success_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
@@ -64,7 +80,8 @@ def portalresources_get(graph_format) -> Resources:  # noqa: E501
         return cors_error_response(error=e)
 
 
-def resources_get(level, force_refresh) -> Resources:  # noqa: E501
+def resources_get(level: int = 1, force_refresh: bool = False, start_date: str = None,
+                  end_date: str = None, includes: str = None, excludes: str = None) -> Resources:  # noqa: E501
     """Retrieve a listing and description of available resources
 
     Retrieve a listing and description of available resources # noqa: E501
@@ -73,6 +90,14 @@ def resources_get(level, force_refresh) -> Resources:  # noqa: E501
     :type level: int
     :param force_refresh: Force to retrieve current available resource information.
     :type force_refresh: bool
+    :param start_date: starting date to check availability from
+    :type start_date: str
+    :param end_date: end date to check availability until
+    :type end_date: str
+    :param includes: comma separated lists of sites to include
+    :type includes: str
+    :param excludes: comma separated lists of sites to exclude
+    :type excludes: str
 
     :rtype: Resources
     """
@@ -81,9 +106,12 @@ def resources_get(level, force_refresh) -> Resources:  # noqa: E501
     received_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
     try:
         token = get_token()
-        bqm_dict = handler.list_resources(token=token, level=level, force_refresh=force_refresh)
+        start = handler.validate_lease_time(lease_time=start_date)
+        end = handler.validate_lease_time(lease_time=end_date)
+        model = handler.list_resources(token=token, level=level, force_refresh=force_refresh,
+                                       start=start, end=end, includes=includes, excludes=excludes)
         response = Resources()
-        response.data = [Resource().from_dict(bqm_dict)]
+        response.data = [Resource(model)]
         response.size = 1
         response.type = "resources"
         success_counter.labels(GET_METHOD, RESOURCES_PATH).inc()

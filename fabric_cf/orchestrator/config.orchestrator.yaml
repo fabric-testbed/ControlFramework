@@ -107,6 +107,7 @@ container:
 bqm:
   # in seconds (default set to 300 seconds)
   refresh-interval: 300
+  local: True
 
 time:
   # This section controls settings, which are generally useful

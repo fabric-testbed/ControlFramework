@@ -23,8 +23,10 @@
 #
 #
 # Author: Ilya Baldin (ibaldin@renci.org)
+from __future__ import annotations
 
-from typing import Tuple, List, Dict
+from datetime import datetime
+from typing import Tuple, Dict, TYPE_CHECKING
 from collections import defaultdict
 
 import uuid
@@ -43,6 +45,9 @@ from fim.slivers.interface_info import InterfaceType
 from fim.slivers.network_service import ServiceType
 
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+
+if TYPE_CHECKING:
+    from fabric_cf.actor.core.apis.abc_database import ABCDatabase
 
 
 class AggregatedBQMPlugin:
@@ -81,8 +86,9 @@ class AggregatedBQMPlugin:
         result.finalize()
         return result
 
-    def __occupied_node_capacity(self, *, node_id: str) -> Tuple[Capacities,
-                                                                 Dict[ComponentType, Dict[str, Capacities]]]:
+    @staticmethod
+    def occupied_node_capacity(*, db: ABCDatabase, node_id: str, start: datetime,
+                               end: datetime) -> Tuple[Capacities, Dict[ComponentType, Dict[str, Capacities]]]:
         """
         Figure out the total capacity occupied in the network node and return a tuple of
         capacities occupied in this node and a dict of component capacities that are occupied
@@ -95,9 +101,7 @@ class AggregatedBQMPlugin:
                   ReservationStates.Nascent.value]
 
         # get existing reservations for this node
-        existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
-                                                                                        states=states)
-
+        existing_reservations = db.get_reservations(graph_node_id=node_id, states=states, start=start, end=end)
         # node capacities
         occupied_capacities = Capacities()
         occupied_component_capacities = defaultdict(dict)
@@ -142,6 +146,15 @@ class AggregatedBQMPlugin:
         if kwargs.get('query_level', None) is None or kwargs['query_level'] > 2:
             return cbm.clone_graph(new_graph_id=str(uuid.uuid4()))
 
+        includes = kwargs.get('includes', None)
+        excludes = kwargs.get('excludes', None)
+
+        sites_to_include = [s.strip().upper() for s in includes.split(",")] if includes else []
+        sites_to_exclude = [s.strip().upper() for s in excludes.split(",")] if excludes else []
+
+        start = kwargs.get('start', None)
+        end = kwargs.get('end', None)
+
         # do a one-pass aggregation of servers, their components and interfaces
         # and some flags (e.g. PTP availability)
         # this includes facilities
@@ -153,14 +166,23 @@ class AggregatedBQMPlugin:
             slivers_by_site[node_sliver.site].append(node_sliver)
 
         # create a new blank Aggregated BQM NetworkX graph
-        abqm = NetworkXAggregateBQM(graph_id=str(uuid.uuid4()),
-                                    importer=NetworkXGraphImporter(logger=self.logger),
-                                    logger=self.logger)
+        if kwargs['query_level'] == 0:
+            abqm = NetworkXAggregateBQM(graph_id=cbm.graph_id,
+                                        importer=NetworkXGraphImporter(logger=self.logger),
+                                        logger=self.logger)
+        else:
+            abqm = NetworkXAggregateBQM(graph_id=str(uuid.uuid4()),
+                                        importer=NetworkXGraphImporter(logger=self.logger),
+                                        logger=self.logger)
 
         site_to_composite_node_id = dict()
         site_to_ns_node_id = dict()
         facilities_by_site = defaultdict(list)
         for s, ls in slivers_by_site.items():
+            if len(sites_to_include) and s not in sites_to_include:
+                continue
+            if len(sites_to_exclude) and s in sites_to_exclude:
+                continue
             # add up capacities and delegated capacities, skip labels for now
             # count up components and figure out links between site
 
@@ -196,12 +218,16 @@ class AggregatedBQMPlugin:
                 worker_sliver.resource_type = NodeType.Server
                 worker_sliver.set_site(s)
                 worker_sliver.node_id = str(uuid.uuid4())
-                if self.DEBUG_FLAG:
+                if self.DEBUG_FLAG or kwargs['query_level'] == 0:
                     # for debugging and running in a test environment
+                    # also for level 0; only return capacity information
                     allocated_comp_caps = dict()
+                    worker_sliver.node_id = sliver.node_id
                 else:
+                    db = self.actor.get_plugin().get_database()
                     # query database for everything taken on this node
-                    allocated_caps, allocated_comp_caps = self.__occupied_node_capacity(node_id=sliver.node_id)
+                    allocated_caps, allocated_comp_caps = self.occupied_node_capacity(db=db, node_id=sliver.node_id,
+                                                                                      start=start, end=end)
                     site_sliver.capacity_allocations = site_sliver.capacity_allocations + allocated_caps
                     worker_sliver.capacity_allocations = allocated_caps
 
@@ -223,8 +249,12 @@ class AggregatedBQMPlugin:
                         site_sliver.capacities = site_sliver.capacities + \
                             delegation.get_details()
                         worker_sliver.capacities = delegation.get_details()
+                # This for the case when BQM is generated from Orchestrator
+                else:
+                    site_sliver.capacities += sliver.get_capacities()
+                    worker_sliver.capacities = sliver.get_capacities()
 
-                # collect available components in lists by type and model for the site (for later aggregation)
+                    # collect available components in lists by type and model for the site (for later aggregation)
                 if sliver.attached_components_info is None:
                     continue
                 worker_sliver.attached_components_info = AttachedComponentsInfo()
@@ -273,7 +303,7 @@ class AggregatedBQMPlugin:
                           props=site_props)
 
             # Add per worker metrics for query level 2
-            if kwargs['query_level'] == 2:
+            if kwargs['query_level'] == 2 or kwargs['query_level'] == 0:
                 for w in workers:
                     # Add workers
                     abqm.add_node(node_id=w.node_id, label=ABCPropertyGraph.CLASS_NetworkNode,
@@ -331,6 +361,11 @@ class AggregatedBQMPlugin:
             sink_site = l[4]
             source_cp = l[5]
             sink_cp = l[6]
+            # Exclude the sites requested to be filtered
+            if includes and (source_site not in includes or sink_site not in includes):
+                continue
+            if excludes and (source_site in excludes or sink_site not in excludes):
+                continue
             _, cbm_source_cp_props = cbm.get_node_properties(node_id=source_cp)
             _, cbm_sink_cp_props = cbm.get_node_properties(node_id=sink_cp)
             _, cbm_link_props = cbm.get_node_properties(node_id=link)
