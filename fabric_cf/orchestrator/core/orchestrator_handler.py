@@ -146,7 +146,7 @@ class OrchestratorHandler:
         """
         broker_query_model = None
         # Always get Fresh copy for advanced resource requests
-        if not start and not end:
+        if not start and not end and not includes and not excludes:
             saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format, level=level)
             if saved_bqm is not None:
                 if not force_refresh and not saved_bqm.can_refresh() and not saved_bqm.refresh_in_progress:
@@ -179,7 +179,7 @@ class OrchestratorHandler:
                 broker_query_model = model.get_model()
 
             # Do not update cache for advance requests
-            if not start and not end:
+            if not start and not end and not includes and not excludes:
                 self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format, level=level)
 
         return broker_query_model
