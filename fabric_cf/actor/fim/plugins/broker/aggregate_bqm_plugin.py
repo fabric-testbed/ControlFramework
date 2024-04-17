@@ -361,6 +361,11 @@ class AggregatedBQMPlugin:
             sink_site = l[4]
             source_cp = l[5]
             sink_cp = l[6]
+            # Exclude the sites requested to be filtered
+            if includes and (source_site not in includes or sink_site not in includes):
+                continue
+            if excludes and (source_site in excludes or sink_site not in excludes):
+                continue
             _, cbm_source_cp_props = cbm.get_node_properties(node_id=source_cp)
             _, cbm_sink_cp_props = cbm.get_node_properties(node_id=sink_cp)
             _, cbm_link_props = cbm.get_node_properties(node_id=link)

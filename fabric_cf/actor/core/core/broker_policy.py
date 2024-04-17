@@ -151,7 +151,7 @@ class BrokerPolicy(Policy, ABCBrokerPolicyMixin):
             properties[Constants.END] = end.strftime(Constants.LEASE_TIME_FORMAT)
         if includes:
             properties[Constants.INCLUDES] = includes
-        if includes:
+        if excludes:
             properties[Constants.EXCLUDES] = excludes
         return properties
 
