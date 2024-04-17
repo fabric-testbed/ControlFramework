@@ -205,7 +205,7 @@ class OrchestratorHandler:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"list_resources invoked controller:{controller}")
 
-            graph_format = self.__translate_graph_format(graph_format=graph_format_str) if graph_format_str else None
+            graph_format = self.__translate_graph_format(graph_format=graph_format_str) if graph_format_str else GraphFormat.GRAPHML
 
             if authorize:
                 self.__authorize_request(id_token=token, action_id=ActionId.query)
