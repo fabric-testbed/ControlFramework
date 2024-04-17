@@ -179,9 +179,9 @@ class AggregatedBQMPlugin:
         site_to_ns_node_id = dict()
         facilities_by_site = defaultdict(list)
         for s, ls in slivers_by_site.items():
-            if s not in sites_to_include:
+            if len(sites_to_include) and s not in sites_to_include:
                 continue
-            if s in sites_to_exclude:
+            if len(sites_to_exclude) and s in sites_to_exclude:
                 continue
             # add up capacities and delegated capacities, skip labels for now
             # count up components and figure out links between site
