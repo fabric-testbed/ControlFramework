@@ -249,6 +249,78 @@
                 "CYTOSCAPE"
               ]
             }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "description": "Level of details",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "force_refresh",
+            "in": "query",
+            "description": "Force to retrieve current available resource information.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "description": "starting date to check availability from",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "2023-01-01 16:20:15 +00:00"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "description": "end date to check availability until",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "2023-01-01 16:20:15 +00:00"
+            }
+          },
+          {
+            "name": "includes",
+            "in": "query",
+            "description": "comma separated lists of sites to include",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "RENC,UKY"
+            }
+          },
+          {
+            "name": "excludes",
+            "in": "query",
+            "description": "comma separated lists of sites to exclude",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "SRI,LBNL"
+            }
           }
         ],
         "responses": {

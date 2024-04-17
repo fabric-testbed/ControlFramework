@@ -184,8 +184,9 @@ class OrchestratorHandler:
 
         return broker_query_model
 
-    def list_resources(self, *, token: str, level: int, force_refresh: bool = False, start: datetime = None,
-                       end: datetime, includes: str = None, excludes: str = None) -> str:
+    def list_resources(self, *, level: int, force_refresh: bool = False, start: datetime = None,
+                       end: datetime, includes: str = None, excludes: str = None, graph_format_str: str = None,
+                       token: str = None, authorize: bool = True) -> str:
         """
         List Resources
         :param token Fabric Identity Token
@@ -195,6 +196,8 @@ class OrchestratorHandler:
         :param end: end time
         :param includes: comma separated lists of sites to include
         :param excludes: comma separated lists of sites to exclude
+        :param graph_format_str: Graph format
+        :param authorize: Authorize the request; Not authorized for Portal requests
         :raises Raises an exception in case of failure
         :returns Broker Query Model on success
         """
@@ -202,36 +205,19 @@ class OrchestratorHandler:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"list_resources invoked controller:{controller}")
 
-            self.__authorize_request(id_token=token, action_id=ActionId.query)
+            graph_format = self.__translate_graph_format(graph_format=graph_format_str) if graph_format_str else None
+
+            if authorize:
+                self.__authorize_request(id_token=token, action_id=ActionId.query)
             broker_query_model = self.discover_broker_query_model(controller=controller, token=token, level=level,
                                                                   force_refresh=force_refresh, start=start,
-                                                                  end=end, includes=includes, excludes=excludes)
+                                                                  end=end, includes=includes, excludes=excludes,
+                                                                  graph_format=graph_format)
             return broker_query_model
 
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing list_resources e: {e}")
-            raise e
-
-    def portal_list_resources(self, *, graph_format_str: str) -> dict:
-        """
-        List Resources
-        :param graph_format_str: Graph format
-        :raises Raises an exception in case of failure
-        :returns Broker Query Model on success
-        """
-        try:
-            controller = self.controller_state.get_management_actor()
-            self.logger.debug(f"portal_list_resources invoked controller:{controller}")
-
-            graph_format = self.__translate_graph_format(graph_format=graph_format_str)
-            broker_query_model = self.discover_broker_query_model(controller=controller, level=1,
-                                                                  graph_format=graph_format)
-            return ResponseBuilder.get_broker_query_model_summary(bqm=broker_query_model)
-
-        except Exception as e:
-            self.logger.error(traceback.format_exc())
-            self.logger.error(f"Exception occurred processing portal_list_resources e: {e}")
             raise e
 
     def create_slice(self, *, token: str, slice_name: str, slice_graph: str, ssh_key: str,
