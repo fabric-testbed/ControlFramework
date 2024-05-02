@@ -252,7 +252,7 @@ class MainClass:
                 return
             inventory_location = pb_section.get(AmConstants.PB_INVENTORY)
             pb_dir = pb_section.get(AmConstants.PB_LOCATION)
-            vm_playbook_name = pb_section.get(AmConstants.CLEAN_ALL)
+            vm_playbook_name = pb_section.get("VM")
             if inventory_location is None or pb_dir is None or vm_playbook_name is None:
                 return
 
@@ -281,10 +281,11 @@ class MainClass:
                     cf_active_sliver_ids.append(s.get_reservation_id())
 
             # Get the VMs from Openstack
-            result_1 = self.execute_ansible(inventory_path=inventory_location,
-                                            playbook_path=vm_playbook_path,
-                                            extra_vars={"operation": "list"},
-                                            ansible_python_interpreter=ansible_python_interpreter)
+            result_callback_1 = self.execute_ansible(inventory_path=inventory_location,
+                                                     playbook_path=vm_playbook_path,
+                                                     extra_vars={"operation": "list"},
+                                                     ansible_python_interpreter=ansible_python_interpreter)
+            result_1 = result_callback_1.get_json_result_ok()
 
             os_vms = {}
             if result_1 and result_1.get('openstack_servers'):
@@ -310,7 +311,7 @@ class MainClass:
                                                             playbook_path=vm_playbook_path,
                                                             extra_vars={"operation": "delete", "vmname": vm_name},
                                                             ansible_python_interpreter=ansible_python_interpreter)
-                            self.logger.info(f"Deleted instance: {vm_name}; result: {result_2}")
+                            self.logger.info(f"Deleted instance: {vm_name}; result: {result_2.get_json_result_ok()}")
                     else:
                         print("Sliver Id not found in the input string.")
                 except Exception as e:
@@ -334,7 +335,7 @@ class MainClass:
                                                                  playbook_path=vm_playbook_path,
                                                                  extra_vars={"operation": "delete", "host": str(host)},
                                                                  ansible_python_interpreter=ansible_python_interpreter)
-                                self.logger.info(f"Deleted instance: {instance}; result: {results_4}")
+                                self.logger.info(f"Deleted instance: {instance}; result: {results_4.get_json_result_ok()}")
                 except Exception as e:
                     self.logger.error(f"Failed to cleanup openstack and virsh inconsistencies on {host}: {e}")
                     self.logger.error(traceback.format_exc())
