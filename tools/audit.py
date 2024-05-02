@@ -278,7 +278,9 @@ class MainClass:
             cf_active_sliver_ids = []
             if slivers:
                 for s in slivers:
-                    cf_active_sliver_ids.append(s.get_reservation_id())
+                    cf_active_sliver_ids.append(str(s.get_reservation_id()))
+
+            self.logger.info(f"Active Slivers: {cf_active_sliver_ids}")
 
             # Get the VMs from Openstack
             result_callback_1 = self.execute_ansible(inventory_path=inventory_location,
@@ -297,26 +299,27 @@ class MainClass:
             uuid_pattern = r'([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})'
 
             # Cleanup inconsistencies between CF and Open Stack
-            for instance, vm_name in os_vms.items():
-                try:
-                    # Search for UUID in the input string
-                    match = re.search(uuid_pattern, vm_name)
+            if len(cf_active_sliver_ids):
+                for instance, vm_name in os_vms.items():
+                    try:
+                        # Search for UUID in the input string
+                        match = re.search(uuid_pattern, vm_name)
 
-                    # Extract UUID if found
-                    if match:
-                        sliver_id = match.group(1)
-                        print("Sliver Id:", sliver_id)
-                        if sliver_id not in cf_active_sliver_ids:
-                            result_2 = self.execute_ansible(inventory_path=inventory_location,
-                                                            playbook_path=vm_playbook_path,
-                                                            extra_vars={"operation": "delete", "vmname": vm_name},
-                                                            ansible_python_interpreter=ansible_python_interpreter)
-                            self.logger.info(f"Deleted instance: {vm_name}; result: {result_2.get_json_result_ok()}")
-                    else:
-                        print("Sliver Id not found in the input string.")
-                except Exception as e:
-                    self.logger.error(f"Failed to cleanup CF and openstack inconsistencies instance: {instance} vm: {vm_name}: {e}")
-                    self.logger.error(traceback.format_exc())
+                        # Extract UUID if found
+                        if match:
+                            sliver_id = match.group(1)
+                            print("Sliver Id:", sliver_id)
+                            if sliver_id not in cf_active_sliver_ids:
+                                result_2 = self.execute_ansible(inventory_path=inventory_location,
+                                                                playbook_path=vm_playbook_path,
+                                                                extra_vars={"operation": "delete", "vmname": vm_name},
+                                                                ansible_python_interpreter=ansible_python_interpreter)
+                                self.logger.info(f"Deleted instance: {vm_name}; result: {result_2.get_json_result_ok()}")
+                        else:
+                            print("Sliver Id not found in the input string.")
+                    except Exception as e:
+                        self.logger.error(f"Failed to cleanup CF and openstack inconsistencies instance: {instance} vm: {vm_name}: {e}")
+                        self.logger.error(traceback.format_exc())
 
             # Cleanup inconsistencies between Open Stack and Virsh
             result_3 = self.execute_ansible(inventory_path=inventory_location,
