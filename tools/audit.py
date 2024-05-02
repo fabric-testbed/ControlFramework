@@ -241,95 +241,106 @@ class MainClass:
         return ansible_helper.get_result_callback()
 
     def clean_sliver_inconsistencies(self):
-        actor_type = self.actor_config[Constants.TYPE]
-        if actor_type.lower() != ActorType.Authority.name.lower() or self.am_config_dict is None:
-            return
+        try:
+            actor_type = self.actor_config[Constants.TYPE]
+            if actor_type.lower() != ActorType.Authority.name.lower() or self.am_config_dict is None:
+                return
 
-        from fabric_am.util.am_constants import AmConstants
-        pb_section = self.am_config_dict.get(AmConstants.PLAYBOOK_SECTION)
-        if pb_section is None:
-            return 
-        inventory_location = pb_section.get(AmConstants.PB_INVENTORY)
-        pb_dir = pb_section.get(AmConstants.PB_LOCATION)
-        vm_playbook_name = pb_section.get(AmConstants.CLEAN_ALL)
-        if inventory_location is None or pb_dir is None or vm_playbook_name is None:
-            return
-        
-        vm_playbook_path = f"{pb_dir}/{vm_playbook_name}"
+            from fabric_am.util.am_constants import AmConstants
+            pb_section = self.am_config_dict.get(AmConstants.PLAYBOOK_SECTION)
+            if pb_section is None:
+                return
+            inventory_location = pb_section.get(AmConstants.PB_INVENTORY)
+            pb_dir = pb_section.get(AmConstants.PB_LOCATION)
+            vm_playbook_name = pb_section.get(AmConstants.CLEAN_ALL)
+            if inventory_location is None or pb_dir is None or vm_playbook_name is None:
+                return
 
-        ansible_python_interpreter = None
-        ansible_section = self.am_config_dict.get(AmConstants.ANSIBLE_SECTION)
-        if ansible_section:
-            ansible_python_interpreter = ansible_section.get(AmConstants.ANSIBLE_PYTHON_INTERPRETER)
-            
-        actor_db = ActorDatabase(user=self.database_config[Constants.PROPERTY_CONF_DB_USER],
-                                 password=self.database_config[Constants.PROPERTY_CONF_DB_PASSWORD],
-                                 database=self.database_config[Constants.PROPERTY_CONF_DB_NAME],
-                                 db_host=self.database_config[Constants.PROPERTY_CONF_DB_HOST],
-                                 logger=self.logger)
+            vm_playbook_path = f"{pb_dir}/{vm_playbook_name}"
 
-        states = [ReservationStates.Active.value, ReservationStates.ActiveTicketed.value,
-                  ReservationStates.Failed.value]
-        resource_type = []
-        for s in ServiceType:
-            resource_type.append(str(s))
+            ansible_python_interpreter = None
+            ansible_section = self.am_config_dict.get(AmConstants.ANSIBLE_SECTION)
+            if ansible_section:
+                ansible_python_interpreter = ansible_section.get(AmConstants.ANSIBLE_PYTHON_INTERPRETER)
 
-        # Get the Active Slivers from CF
-        slivers = actor_db.get_reservations(states=states, rsv_type=resource_type)
-        cf_active_sliver_ids = []
-        if slivers:
-            for s in slivers:
-                cf_active_sliver_ids.append(s.get_reservation_id())
+            actor_db = ActorDatabase(user=self.database_config[Constants.PROPERTY_CONF_DB_USER],
+                                     password=self.database_config[Constants.PROPERTY_CONF_DB_PASSWORD],
+                                     database=self.database_config[Constants.PROPERTY_CONF_DB_NAME],
+                                     db_host=self.database_config[Constants.PROPERTY_CONF_DB_HOST],
+                                     logger=self.logger)
 
-        # Get the VMs from Openstack
-        result_1 = self.execute_ansible(inventory_path=inventory_location,
-                                        playbook_path=vm_playbook_path,
-                                        extra_vars={"operation": "list"},
-                                        ansible_python_interpreter=ansible_python_interpreter)
+            states = [ReservationStates.Active.value, ReservationStates.ActiveTicketed.value,
+                      ReservationStates.Failed.value]
+            resource_type = ["VM"]
 
-        os_vms = {}
-        if result_1 and result_1.get('openstack_servers'):
-            servers = result_1.get('openstack_servers')
-            for s in servers:
-                os_vms[s.get('OS-EXT-SRV-ATTR:instance_name')] = s.get('name')
+            # Get the Active Slivers from CF
+            slivers = actor_db.get_reservations(states=states, rsv_type=resource_type)
+            cf_active_sliver_ids = []
+            if slivers:
+                for s in slivers:
+                    cf_active_sliver_ids.append(s.get_reservation_id())
 
-        uuid_pattern = r'([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})'
+            # Get the VMs from Openstack
+            result_1 = self.execute_ansible(inventory_path=inventory_location,
+                                            playbook_path=vm_playbook_path,
+                                            extra_vars={"operation": "list"},
+                                            ansible_python_interpreter=ansible_python_interpreter)
 
-        # Cleanup inconsistencies between CF and Open Stack
-        for instance, vm_name in os_vms.items():
-            # Search for UUID in the input string
-            match = re.search(uuid_pattern, vm_name)
+            os_vms = {}
+            if result_1 and result_1.get('openstack_servers'):
+                servers = result_1.get('openstack_servers')
+                for s in servers:
+                    if s.get('OS-EXT-SRV-ATTR:instance_name') and s.get('name'):
+                        os_vms[s.get('OS-EXT-SRV-ATTR:instance_name')] = s.get('name')
 
-            # Extract UUID if found
-            if match:
-                sliver_id = match.group(1)
-                print("Sliver Id:", sliver_id)
-                if sliver_id not in cf_active_sliver_ids:
-                    result_2 = self.execute_ansible(inventory_path=inventory_location,
-                                                    playbook_path=vm_playbook_path,
-                                                    extra_vars={"operation": "delete", "vmname": vm_name},
-                                                    ansible_python_interpreter=ansible_python_interpreter)
-                    self.logger.info(f"Deleted instance: {vm_name}; result: {result_2}")
-            else:
-                print("Sliver Id not found in the input string.")
+            uuid_pattern = r'([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})'
 
-        # Cleanup inconsistencies between Open Stack and Virsh
-        result_3 = self.execute_ansible(inventory_path=inventory_location,
-                                        playbook_path=f"{pb_dir}/worker_libvirt_operations.yml",
-                                        extra_vars={"operation": "listall"},
-                                        ansible_python_interpreter=ansible_python_interpreter)
+            # Cleanup inconsistencies between CF and Open Stack
+            for instance, vm_name in os_vms.items():
+                try:
+                    # Search for UUID in the input string
+                    match = re.search(uuid_pattern, vm_name)
 
-        for host, ok_result in result_3.host_ok.items():
-            if ok_result and ok_result._result:
-                virsh_vms = ok_result._result.get('stdout_lines', [])
-                self.logger.info(f"Host: {host} has VMs: {virsh_vms}")
-                for instance in virsh_vms:
-                    if instance not in os_vms:
-                        results_4 = self.execute_ansible(inventory_path=inventory_location,
-                                                         playbook_path=vm_playbook_path,
-                                                         extra_vars={"operation": "delete", "host": str(host)},
-                                                         ansible_python_interpreter=ansible_python_interpreter)
-                        self.logger.info(f"Deleted instance: {instance}; result: {results_4}")
+                    # Extract UUID if found
+                    if match:
+                        sliver_id = match.group(1)
+                        print("Sliver Id:", sliver_id)
+                        if sliver_id not in cf_active_sliver_ids:
+                            result_2 = self.execute_ansible(inventory_path=inventory_location,
+                                                            playbook_path=vm_playbook_path,
+                                                            extra_vars={"operation": "delete", "vmname": vm_name},
+                                                            ansible_python_interpreter=ansible_python_interpreter)
+                            self.logger.info(f"Deleted instance: {vm_name}; result: {result_2}")
+                    else:
+                        print("Sliver Id not found in the input string.")
+                except Exception as e:
+                    self.logger.error(f"Failed to cleanup CF and openstack inconsistencies instance: {instance} vm: {vm_name}: {e}")
+                    self.logger.error(traceback.format_exc())
+
+            # Cleanup inconsistencies between Open Stack and Virsh
+            result_3 = self.execute_ansible(inventory_path=inventory_location,
+                                            playbook_path=f"{pb_dir}/worker_libvirt_operations.yml",
+                                            extra_vars={"operation": "listall"},
+                                            ansible_python_interpreter=ansible_python_interpreter)
+
+            for host, ok_result in result_3.host_ok.items():
+                try:
+                    if ok_result and ok_result._result:
+                        virsh_vms = ok_result._result.get('stdout_lines', [])
+                        self.logger.info(f"Host: {host} has VMs: {virsh_vms}")
+                        for instance in virsh_vms:
+                            if instance not in os_vms:
+                                results_4 = self.execute_ansible(inventory_path=inventory_location,
+                                                                 playbook_path=vm_playbook_path,
+                                                                 extra_vars={"operation": "delete", "host": str(host)},
+                                                                 ansible_python_interpreter=ansible_python_interpreter)
+                                self.logger.info(f"Deleted instance: {instance}; result: {results_4}")
+                except Exception as e:
+                    self.logger.error(f"Failed to cleanup openstack and virsh inconsistencies on {host}: {e}")
+                    self.logger.error(traceback.format_exc())
+        except Exception as e:
+            self.logger.error(f"Failed to cleanup inconsistencies: {e}")
+            self.logger.error(traceback.format_exc())
 
     def handle_command(self, args):
         """
