@@ -308,7 +308,6 @@ class MainClass:
                         # Extract UUID if found
                         if match:
                             sliver_id = match.group(1)
-                            print("Sliver Id:", sliver_id)
                             if sliver_id not in cf_active_sliver_ids:
                                 result_2 = self.execute_ansible(inventory_path=inventory_location,
                                                                 playbook_path=vm_playbook_path,
@@ -316,7 +315,7 @@ class MainClass:
                                                                 ansible_python_interpreter=ansible_python_interpreter)
                                 self.logger.info(f"Deleted instance: {vm_name}; result: {result_2.get_json_result_ok()}")
                         else:
-                            print("Sliver Id not found in the input string.")
+                            self.logger.error(f"Sliver Id not found in the input string: {vm_name}")
                     except Exception as e:
                         self.logger.error(f"Failed to cleanup CF and openstack inconsistencies instance: {instance} vm: {vm_name}: {e}")
                         self.logger.error(traceback.format_exc())
