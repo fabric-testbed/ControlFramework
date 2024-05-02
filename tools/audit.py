@@ -25,6 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import argparse
 import logging
+import os
+import re
 import traceback
 from datetime import datetime, timezone, timedelta
 from logging.handlers import RotatingFileHandler
@@ -50,9 +52,14 @@ class MainClass:
     - Remove/Delete slices older than specified number of days
     - Remove/Delete dangling network services which connect the ports to deleted/closed VMs
     """
-    def __init__(self, config_file: str):
+    def __init__(self, config_file: str, am_config_file: str):
+        self.am_config_dict = None
         with open(config_file) as f:
             config_dict = yaml.safe_load(f)
+
+        if am_config_file is not None and os.path.exists(am_config_file):
+            with open(am_config_file) as f:
+                self.am_config_dict = yaml.safe_load(f)
 
         # Load the config file
         self.log_config = config_dict[Constants.CONFIG_LOGGING_SECTION]
@@ -215,6 +222,115 @@ class MainClass:
                 self.logger.error(f"Failed to delete slice: {s.get_slice_id()}: e: {e}")
                 self.logger.error(traceback.format_exc())
 
+    def execute_ansible(self, *, inventory_path: str, playbook_path: str, extra_vars: dict,
+                        ansible_python_interpreter: str, sources: str = None, private_key_file: str = None,
+                        host_vars: dict = None, host: str = None, user: str = None):
+        from fabric_am.util.ansible_helper import AnsibleHelper
+        ansible_helper = AnsibleHelper(inventory_path=inventory_path, logger=self.logger,
+                                       ansible_python_interpreter=ansible_python_interpreter,
+                                       sources=sources)
+
+        ansible_helper.set_extra_vars(extra_vars=extra_vars)
+
+        if host is not None and host_vars is not None and len(host_vars) > 0:
+            for key, value in host_vars.items():
+                ansible_helper.add_vars(host=host, var_name=key, value=value)
+
+        self.logger.info(f"Executing playbook {playbook_path} extra_vars: {extra_vars} host_vars: {host_vars}")
+        ansible_helper.run_playbook(playbook_path=playbook_path, private_key_file=private_key_file, user=user)
+        return ansible_helper.get_result_callback()
+
+    def clean_sliver_inconsistencies(self):
+        actor_type = self.actor_config[Constants.TYPE]
+        if actor_type.lower() != ActorType.Authority.name.lower() or self.am_config_dict is None:
+            return
+
+        from fabric_am.util.am_constants import AmConstants
+        pb_section = self.am_config_dict.get(AmConstants.PLAYBOOK_SECTION)
+        if pb_section is None:
+            return 
+        inventory_location = pb_section.get(AmConstants.PB_INVENTORY)
+        pb_dir = pb_section.get(AmConstants.PB_LOCATION)
+        vm_playbook_name = pb_section.get(AmConstants.CLEAN_ALL)
+        if inventory_location is None or pb_dir is None or vm_playbook_name is None:
+            return
+        
+        vm_playbook_path = f"{pb_dir}/{vm_playbook_name}"
+
+        ansible_python_interpreter = None
+        ansible_section = self.am_config_dict.get(AmConstants.ANSIBLE_SECTION)
+        if ansible_section:
+            ansible_python_interpreter = ansible_section.get(AmConstants.ANSIBLE_PYTHON_INTERPRETER)
+            
+        actor_db = ActorDatabase(user=self.database_config[Constants.PROPERTY_CONF_DB_USER],
+                                 password=self.database_config[Constants.PROPERTY_CONF_DB_PASSWORD],
+                                 database=self.database_config[Constants.PROPERTY_CONF_DB_NAME],
+                                 db_host=self.database_config[Constants.PROPERTY_CONF_DB_HOST],
+                                 logger=self.logger)
+
+        states = [ReservationStates.Active.value, ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Failed.value]
+        resource_type = []
+        for s in ServiceType:
+            resource_type.append(str(s))
+
+        # Get the Active Slivers from CF
+        slivers = actor_db.get_reservations(states=states, rsv_type=resource_type)
+        cf_active_sliver_ids = []
+        if slivers:
+            for s in slivers:
+                cf_active_sliver_ids.append(s.get_reservation_id())
+
+        # Get the VMs from Openstack
+        result_1 = self.execute_ansible(inventory_path=inventory_location,
+                                        playbook_path=vm_playbook_path,
+                                        extra_vars={"operation": "list"},
+                                        ansible_python_interpreter=ansible_python_interpreter)
+
+        os_vms = {}
+        if result_1 and result_1.get('openstack_servers'):
+            servers = result_1.get('openstack_servers')
+            for s in servers:
+                os_vms[s.get('OS-EXT-SRV-ATTR:instance_name')] = s.get('name')
+
+        uuid_pattern = r'([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})'
+
+        # Cleanup inconsistencies between CF and Open Stack
+        for instance, vm_name in os_vms.items():
+            # Search for UUID in the input string
+            match = re.search(uuid_pattern, vm_name)
+
+            # Extract UUID if found
+            if match:
+                sliver_id = match.group(1)
+                print("Sliver Id:", sliver_id)
+                if sliver_id not in cf_active_sliver_ids:
+                    result_2 = self.execute_ansible(inventory_path=inventory_location,
+                                                    playbook_path=vm_playbook_path,
+                                                    extra_vars={"operation": "delete", "vmname": vm_name},
+                                                    ansible_python_interpreter=ansible_python_interpreter)
+                    self.logger.info(f"Deleted instance: {vm_name}; result: {result_2}")
+            else:
+                print("Sliver Id not found in the input string.")
+
+        # Cleanup inconsistencies between Open Stack and Virsh
+        result_3 = self.execute_ansible(inventory_path=inventory_location,
+                                        playbook_path=f"{pb_dir}/worker_libvirt_operations.yml",
+                                        extra_vars={"operation": "listall"},
+                                        ansible_python_interpreter=ansible_python_interpreter)
+
+        for host, ok_result in result_3.host_ok.items():
+            if ok_result and ok_result._result:
+                virsh_vms = ok_result._result.get('stdout_lines', [])
+                self.logger.info(f"Host: {host} has VMs: {virsh_vms}")
+                for instance in virsh_vms:
+                    if instance not in os_vms:
+                        results_4 = self.execute_ansible(inventory_path=inventory_location,
+                                                         playbook_path=vm_playbook_path,
+                                                         extra_vars={"operation": "delete", "host": str(host)},
+                                                         ansible_python_interpreter=ansible_python_interpreter)
+                        self.logger.info(f"Deleted instance: {instance}; result: {results_4}")
+
     def handle_command(self, args):
         """
         Command Handler
@@ -230,8 +346,15 @@ class MainClass:
         # Slivers
         elif args.command == "slivers":
             # Close operation
-            if args.operation is not None and args.operation == "close":
-                self.delete_dangling_network_slivers()
+            if args.operation is not None and args.operation == "cleanup":
+                self.clean_sliver_inconsistencies()
+            else:
+                print(f"Unsupported operation: {args.operation}")
+        elif args.command == "audit":
+            # Close operation
+            if args.operation is not None and args.operation == "audit":
+                self.delete_dead_closing_slice(days=args.days)
+                self.clean_sliver_inconsistencies()
             else:
                 print(f"Unsupported operation: {args.operation}")
         else:
@@ -240,12 +363,13 @@ class MainClass:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument("-a", dest='amconfig', required=True, type=str)
     parser.add_argument("-f", dest='config', required=True, type=str)
     parser.add_argument("-d", dest='days', required=False, type=int, default=30)
     parser.add_argument("-c", dest='command', required=True, type=str)
     parser.add_argument("-o", dest='operation', required=True, type=str)
     args = parser.parse_args()
 
-    mc = MainClass(config_file=args.config)
+    mc = MainClass(config_file=args.config, am_config_file=args.amconfig)
     mc.handle_command(args)
 
