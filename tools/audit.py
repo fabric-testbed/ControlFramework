@@ -269,8 +269,11 @@ class MainClass:
                                      db_host=self.database_config[Constants.PROPERTY_CONF_DB_HOST],
                                      logger=self.logger)
 
-            states = [ReservationStates.Active.value, ReservationStates.ActiveTicketed.value,
-                      ReservationStates.Failed.value]
+            states = [ReservationStates.Active.value,
+                      ReservationStates.ActiveTicketed.value,
+                      ReservationStates.Ticketed.value,
+                      ReservationStates.Nascent.value]
+            
             resource_type = ["VM"]
 
             # Get the Active Slivers from CF
