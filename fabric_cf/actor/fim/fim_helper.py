@@ -639,7 +639,7 @@ class FimHelper:
         return workers
 
     @staticmethod
-    def build_broker_query_model(db, level_0_broker_query_model: str, level: int,
+    def build_broker_query_model(level_0_broker_query_model: str, level: int,
                                  graph_format: GraphFormat = GraphFormat.GRAPHML,
                                  start: datetime = None, end: datetime = None,
                                  includes: str = None, excludes: str = None) -> str:

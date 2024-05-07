@@ -27,19 +27,17 @@ import time
 import traceback
 from datetime import datetime, timedelta, timezone
 from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
-from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.graph.networkx_property_graph_disjoint import NetworkXGraphImporterDisjoint
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_service import NetworkServiceSliver
-from fim.user import GraphFormat, Node, NodeType
-from fim.user.topology import ExperimentTopology, AdvertizedTopology
-from fim.view_only_dict import ViewOnlyDict
+from fim.user import GraphFormat
+from fim.user.topology import ExperimentTopology
 
 from fabric_cf.actor.core.common.event_logger import EventLoggerSingleton
 from fabric_cf.actor.core.kernel.poa import PoaStates
@@ -115,17 +113,6 @@ class OrchestratorHandler:
                 return result
         except Exception as e:
             self.logger.error(f"Error occurred: {e}", stack_info=True)
-
-    def build_broker_query_model(self, controller: ABCMgmtControllerMixin, level: int, graph_format: GraphFormat = GraphFormat.GRAPHML,
-                                 start: datetime = None, end: datetime = None) -> str:
-        try:
-            saved_bqm = self.controller_state.get_saved_bqm(graph_format=GraphFormat.GRAPHML, level=0)
-            if saved_bqm and saved_bqm.get_bqm() and len(saved_bqm.get_bqm()):
-
-                return ""
-        except Exception as e:
-            self.logger.error(f"Exception occurred build_broker_query_model e: {e}")
-            self.logger.error(traceback.format_exc())
 
     def discover_broker_query_model(self, *, controller: ABCMgmtControllerMixin, token: str = None,
                                     level: int = 10, graph_format: GraphFormat = GraphFormat.GRAPHML,
@@ -572,7 +559,9 @@ class OrchestratorHandler:
                           SliceState.StableError.value,
                           SliceState.StableOK.value,
                           SliceState.ModifyOK.value,
-                          SliceState.ModifyError.value]
+                          SliceState.ModifyError.value,
+                          SliceState.AllocatedError.value,
+                          SliceState.AllocatedOK.value]
             slice_list = controller.get_slices(slice_id=slice_guid, user_id=fabric_token.uuid,
                                                project=project, states=states)
 
@@ -589,7 +578,8 @@ class OrchestratorHandler:
                     self.logger.debug(f"Slice# {slice_object.get_slice_id()} already closed")
                     continue
 
-                if not SliceState.is_stable(state=slice_state) and not SliceState.is_modified(state=slice_state):
+                if not SliceState.is_stable(state=slice_state) and not SliceState.is_modified(state=slice_state) and \
+                        not SliceState.is_allocated(state=slice_state):
                     self.logger.info(f"Unable to delete Slice# {slice_object.get_slice_id()} that is not yet stable, "
                                      f"try again later")
                     failed_to_delete_slice_ids.append(slice_object.get_slice_id())
@@ -794,14 +784,14 @@ class OrchestratorHandler:
             raise e
 
     @staticmethod
-    def validate_lease_time(lease_time: str) -> datetime:
+    def validate_lease_time(lease_time: str) -> Union[datetime, None]:
         """
         Validate Lease Time
         :param lease_time: Lease Time
         :return Lease Time
         :raises Exception if new lease time is in past
         """
-        if not lease_time:
+        if lease_time is None:
             return lease_time
         try:
             new_time = datetime.strptime(lease_time, Constants.LEASE_TIME_FORMAT)
