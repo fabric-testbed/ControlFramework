@@ -336,7 +336,8 @@ class OrchestratorSliceWrapper:
                 reservation = self.reservation_converter.generate_reservation(sliver=sliver,
                                                                               slice_id=self.slice_obj.get_slice_id(),
                                                                               end_time=self.slice_obj.get_lease_end(),
-                                                                              pred_list=redeem_predecessors)
+                                                                              pred_list=redeem_predecessors,
+                                                                              start_time=self.slice_obj.get_lease_start())
 
                 if sliver.node_id not in node_res_mapping:
                     node_res_mapping[sliver.node_id] = reservation.get_reservation_id()
@@ -429,7 +430,8 @@ class OrchestratorSliceWrapper:
         # Generate reservation for the sliver
         reservation = self.reservation_converter.generate_reservation(sliver=sliver,
                                                                       slice_id=self.slice_obj.get_slice_id(),
-                                                                      end_time=self.slice_obj.get_lease_end())
+                                                                      end_time=self.slice_obj.get_lease_end(),
+                                                                      start_time=self.slice_obj.get_lease_start())
         return reservation
 
     def __build_network_node_reservations(self, *, slice_graph: ABCASMPropertyGraph) \

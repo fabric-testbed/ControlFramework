@@ -221,13 +221,14 @@ class OrchestratorHandler:
             raise e
 
     def create_slice(self, *, token: str, slice_name: str, slice_graph: str, ssh_key: str,
-                     lease_end_time: str) -> List[dict]:
+                     lease_start_time: datetime = None, lease_end_time: datetime = None) -> List[dict]:
         """
         Create a slice
         :param token Fabric Identity Token
         :param slice_name Slice Name
         :param slice_graph Slice Graph Model
         :param ssh_key: User ssh key
+        :param lease_start_time: Lease Start Time (UTC)
         :param lease_end_time: Lease End Time (UTC)
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
@@ -243,8 +244,9 @@ class OrchestratorHandler:
             fabric_token = AccessChecker.validate_and_decode_token(token=token)
             project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
-            end_time = self.__compute_lease_end_time(lease_end_time=lease_end_time, allow_long_lived=allow_long_lived,
-                                                     project_id=project)
+            start_time, end_time = self.__compute_lease_end_time(lease_end_time=lease_end_time,
+                                                                 allow_long_lived=allow_long_lived,
+                                                                 project_id=project, lease_start_time=lease_start_time)
 
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
@@ -294,6 +296,7 @@ class OrchestratorHandler:
                                                    Constants.TAGS: tags,
                                                    Constants.CLAIMS_EMAIL: fabric_token.email,
                                                    Constants.TOKEN_HASH: fabric_token.token_hash})
+            slice_obj.set_lease_start(lease_start=start_time)
             slice_obj.set_lease_end(lease_end=end_time)
             auth = AuthAvro()
             auth.name = self.controller_state.get_management_actor().get_name()
@@ -703,7 +706,7 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")
             raise e
 
-    def renew_slice(self, *, token: str, slice_id: str, new_lease_end_time: str):
+    def renew_slice(self, *, token: str, slice_id: str, new_lease_end_time: datetime):
         """
         Renew a slice
         :param token Fabric Identity Token
@@ -741,9 +744,9 @@ class OrchestratorHandler:
             fabric_token = AccessChecker.validate_and_decode_token(token=token)
             project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
-            new_end_time = self.__compute_lease_end_time(lease_end_time=new_lease_end_time,
-                                                         allow_long_lived=allow_long_lived,
-                                                         project_id=project)
+            start_time, new_end_time = self.__compute_lease_end_time(lease_end_time=new_lease_end_time,
+                                                                     allow_long_lived=allow_long_lived,
+                                                                     project_id=project)
 
             reservations = controller.get_reservations(slice_id=slice_id)
             if reservations is None or len(reservations) < 1:
@@ -801,46 +804,49 @@ class OrchestratorHandler:
         if not lease_time:
             return lease_time
         try:
-            new_end_time = datetime.strptime(lease_time, Constants.LEASE_TIME_FORMAT)
+            new_time = datetime.strptime(lease_time, Constants.LEASE_TIME_FORMAT)
         except Exception as e:
-            raise OrchestratorException(f"Lease End Time is not in format {Constants.LEASE_TIME_FORMAT}",
+            raise OrchestratorException(f"Lease Time is not in format {Constants.LEASE_TIME_FORMAT}",
                                         http_error_code=BAD_REQUEST)
 
         now = datetime.now(timezone.utc)
-        if new_end_time <= now:
-            raise OrchestratorException(f"New term end time {new_end_time} is in the past! ",
+        if new_time <= now:
+            raise OrchestratorException(f"New lease time {new_time} is in the past! ",
                                         http_error_code=BAD_REQUEST)
 
-        return new_end_time
+        return new_time
 
-    def __compute_lease_end_time(self, lease_end_time: str, allow_long_lived: bool = False,
-                                 project_id: str = None) -> datetime:
+    def __compute_lease_end_time(self, lease_end_time: datetime, allow_long_lived: bool = False,
+                                 project_id: str = None, lease_start_time: datetime = None) -> Tuple[datetime, datetime]:
         """
         Validate Lease End Time
         :param lease_end_time: New End Time
         :param allow_long_lived: Allow long lived tokens
         :param project_id: Project Id
+        :param lease_start_time: New Start Time
         :return End Time
         :raises Exception if new end time is in past
         """
+        base_time = datetime.now(timezone.utc)
+        if lease_start_time and lease_start_time > base_time:
+            base_time = lease_start_time
         if lease_end_time is None:
-            new_end_time = datetime.now(timezone.utc) + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
-            return new_end_time
+            new_end_time = base_time + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
+            return base_time, new_end_time
 
-        new_end_time = self.validate_lease_time(lease_time=lease_end_time)
-        now = datetime.now(timezone.utc)
+        new_end_time = lease_end_time
 
         if allow_long_lived:
             default_long_lived_duration = Constants.LONG_LIVED_SLICE_TIME_WEEKS
         else:
             default_long_lived_duration = Constants.DEFAULT_MAX_DURATION
-        if project_id not in self.infrastructure_project_id and (new_end_time - now) > default_long_lived_duration:
+        if project_id not in self.infrastructure_project_id and (new_end_time - base_time) > default_long_lived_duration:
             self.logger.info(f"New term end time {new_end_time} exceeds system default "
                              f"{default_long_lived_duration}, setting to system default: ")
 
-            new_end_time = now + default_long_lived_duration
+            new_end_time = base_time + default_long_lived_duration
 
-        return new_end_time
+        return base_time, new_end_time
 
     @staticmethod
     def __translate_graph_format(*, graph_format: str) -> GraphFormat:

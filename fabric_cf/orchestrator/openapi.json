@@ -821,6 +821,18 @@
             }
           },
           {
+            "name": "lease_start_time",
+            "in": "query",
+            "description": "Lease End Time for the Slice",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "2023-01-01 16:20:15 +00:00"
+            }
+          },
+          {
             "name": "lease_end_time",
             "in": "query",
             "description": "Lease End Time for the Slice",
@@ -1112,6 +1124,95 @@
             "required": true,
             "style": "form",
             "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_200_ok_no_content"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_400_bad_request"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_401_unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_403_forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_404_not_found"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_500_internal_server_error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/slices/redeem/{slice_id}": {
+      "post": {
+        "tags": [
+          "slices"
+        ],
+        "summary": "Redeem resources for a slice requested in future via create",
+        "description": "Request to provision resources for a slice scheduled in advance via the create request once the schedule for the slice is current.\n",
+        "parameters": [
+          {
+            "name": "slice_id",
+            "in": "path",
+            "description": "Slice identified by universally unique identifier",
+            "required": true,
+            "style": "simple",
+            "explode": false,
             "schema": {
               "type": "string"
             }

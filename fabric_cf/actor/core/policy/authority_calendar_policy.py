@@ -39,7 +39,7 @@ from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.authority_policy import AuthorityPolicy
 from fabric_cf.actor.core.common.exceptions import AuthorityException
-from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
 from fabric_cf.actor.core.apis.abc_resource_control import ABCResourceControl
@@ -423,6 +423,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         except Exception as e:
             self.logger.error(f"Could not assign {e}")
             reservation.fail(message=str(e))
+            return node_id_to_reservations
 
     def assign_reservation(self, *, reservation: ABCAuthorityReservation, node_id_to_reservations: dict):
         """
@@ -614,6 +615,13 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
 
         existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
                                                                                         states=states)
+        if existing_reservations:
+            closing_reservations = []
+            for r in existing_reservations:
+                if r.get_pending_state() == ReservationPendingStates.Closing:
+                    closing_reservations.append(r)
+            for c in closing_reservations:
+                existing_reservations.remove(c)
 
         reservations_allocated_in_cycle = node_id_to_reservations.get(node_id, None)
 

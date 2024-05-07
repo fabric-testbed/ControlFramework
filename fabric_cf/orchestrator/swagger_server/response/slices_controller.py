@@ -39,7 +39,8 @@ from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
-def slices_create_post(body: SlicesPost, name, lease_end_time) -> Slivers:  # noqa: E501
+def slices_create_post(body: SlicesPost, name: str, lease_start_time: str = None,
+                       lease_end_time: str = None) -> Slivers:  # noqa: E501
     """Create slice
 
     Request to create slice as described in the request. Request would be a graph ML describing the requested resources.
@@ -49,11 +50,13 @@ def slices_create_post(body: SlicesPost, name, lease_end_time) -> Slivers:  # no
     resources asynchronously on the appropriate sites either now or in the future as requested. Experimenter can
     invoke get slice API to get the latest state of the requested resources.   # noqa: E501
 
-    :param body:
-    :type body: SlicesPost
+    :param body: Create new Slice
+    :type body: dict | bytes
     :param name: Slice Name
     :type name: str
-    :param lease_end_time: New Lease End Time for the Slice
+    :param lease_start_time: Lease End Time for the Slice
+    :type lease_start_time: str
+    :param lease_end_time: Lease End Time for the Slice
     :type lease_end_time: str
 
     :rtype: Slivers
@@ -65,8 +68,12 @@ def slices_create_post(body: SlicesPost, name, lease_end_time) -> Slivers:  # no
     try:
         token = get_token()
         ssh_key = ','.join(body.ssh_keys)
+        start = handler.validate_lease_time(lease_time=lease_start_time)
+        print(f"KOMAL --- {start} --- {lease_start_time}")
+        end = handler.validate_lease_time(lease_time=lease_end_time)
         slivers_dict = handler.create_slice(token=token, slice_name=name, slice_graph=body.graph_model,
-                                            lease_end_time=lease_end_time, ssh_key=ssh_key)
+                                            lease_start_time=start, lease_end_time=end,
+                                            ssh_key=ssh_key)
         response = Slivers()
         response.data = []
         for s in slivers_dict:
@@ -306,7 +313,8 @@ def slices_renew_slice_id_post(slice_id, lease_end_time) -> Status200OkNoContent
 
     try:
         token = get_token()
-        handler.renew_slice(token=token, slice_id=slice_id, new_lease_end_time=lease_end_time)
+        end = handler.validate_lease_time(lease_time=lease_end_time)
+        handler.renew_slice(token=token, slice_id=slice_id, new_lease_end_time=end)
         success_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
 
         slice_info = Status200OkNoContentData()

@@ -262,6 +262,8 @@ class ActorDatabase(ABCDatabase):
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
 
+            term = reservation.get_term()
+
             self.db.add_reservation(slc_guid=str(reservation.get_slice_id()),
                                     rsv_resid=str(reservation.get_reservation_id()),
                                     rsv_category=reservation.get_category().value,
@@ -271,7 +273,9 @@ class ActorDatabase(ABCDatabase):
                                     properties=properties,
                                     rsv_graph_node_id=reservation.get_graph_node_id(),
                                     oidc_claim_sub=oidc_claim_sub, email=email, site=site, rsv_type=rsv_type,
-                                    components=components)
+                                    components=components,
+                                    lease_start=term.get_start_time() if term else None,
+                                    lease_end=term.get_end_time() if term else None)
             self.logger.debug(
                 "Reservation {} added to slice {}".format(reservation.get_reservation_id(), reservation.get_slice()))
         finally:
@@ -308,6 +312,7 @@ class ActorDatabase(ABCDatabase):
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
 
+            term = reservation.get_term()
             begin = time.time()
             properties = pickle.dumps(reservation)
             diff = int(time.time() - begin)
@@ -322,7 +327,9 @@ class ActorDatabase(ABCDatabase):
                                        rsv_joining=reservation.get_join_state().value,
                                        properties=properties,
                                        rsv_graph_node_id=reservation.get_graph_node_id(),
-                                       site=site, rsv_type=rsv_type, components=components)
+                                       site=site, rsv_type=rsv_type, components=components,
+                                       lease_start=term.get_start_time() if term else None,
+                                       lease_end=term.get_end_time() if term else None)
             diff = int(time.time() - begin)
             if diff > 0:
                 self.logger.info(f"DB TIME: {diff}")
@@ -459,10 +466,10 @@ class ActorDatabase(ABCDatabase):
         return result
 
     def get_components(self, *, node_id: str, states: list[int], rsv_type: list[str], component: str = None,
-                       bdf: str = None) -> Dict[str, List[str]]:
+                       bdf: str = None, start: datetime = None, end: datetime = None) -> Dict[str, List[str]]:
         try:
             return self.db.get_components(node_id=node_id, states=states, component=component, bdf=bdf,
-                                          rsv_type=rsv_type)
+                                          rsv_type=rsv_type, start=start, end=end)
         except Exception as e:
             self.logger.error(e)
         finally:

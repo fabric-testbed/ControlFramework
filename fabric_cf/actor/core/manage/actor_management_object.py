@@ -195,7 +195,11 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 slice_obj_new.set_graph_id(graph_id=slice_obj.graph_id)
                 slice_obj_new.set_config_properties(value=slice_obj.get_config_properties())
                 slice_obj_new.set_lease_end(lease_end=slice_obj.get_lease_end())
-                slice_obj_new.set_lease_start(lease_start=datetime.now(timezone.utc))
+                now = datetime.now(timezone.utc)
+                if slice_obj.get_lease_start() and slice_obj.get_lease_start() > now:
+                    slice_obj.set_lease_start(lease_start=slice_obj.get_lease_start())
+                else:
+                    slice_obj_new.set_lease_start(lease_start=datetime.now(timezone.utc))
 
                 if slice_obj.get_inventory():
                     slice_obj_new.set_inventory(value=True)

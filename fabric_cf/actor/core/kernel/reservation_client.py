@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import datetime
 import json
 import re
 import threading
@@ -422,6 +423,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
         @return true if approved; false otherwise
         """
         approved = True
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if self.requested_term and self.requested_term.get_start_time() > now:
+            print("Future Reservation!")
+            return False
 
         for pred_state in self.redeem_predecessors.values():
             if pred_state.get_reservation() is None or \
@@ -1004,6 +1009,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
             # blocked for a predecessor: see if we can get it going now.
             assert self.state == ReservationStates.Ticketed
 
+            print(f"KOMAL -- APPROVE REDEEM----- {self.requested_term} {self.approved_term}")
             if self.approve_redeem():
                 self.transition_with_join(prefix="unblock redeem", state=ReservationStates.Ticketed,
                                           pending=ReservationPendingStates.Redeeming, join_state=JoinState.NoJoin)

@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 
-from sqlalchemy import JSON, ForeignKey, LargeBinary, TIMESTAMP, Index
+from sqlalchemy import JSON, ForeignKey, LargeBinary, Index, TIMESTAMP
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, String, Integer, Sequence
 from sqlalchemy.orm import relationship
@@ -121,8 +121,8 @@ class Reservations(Base):
     rsv_category = Column(Integer, nullable=False)
     rsv_pending = Column(Integer, nullable=False)
     rsv_joining = Column(Integer, nullable=False)
-    lease_start = Column(TIMESTAMP, nullable=True)
-    lease_end = Column(TIMESTAMP, nullable=True)
+    lease_start = Column(TIMESTAMP(timezone=True), nullable=True)
+    lease_end = Column(TIMESTAMP(timezone=True), nullable=True)
     properties = Column(LargeBinary)
     components = relationship('Components', back_populates='reservation')
 
@@ -148,8 +148,8 @@ class Slices(Base):
     slc_state = Column(Integer, nullable=False, index=True)
     slc_type = Column(Integer, nullable=False, index=True)
     slc_resource_type = Column(String)
-    lease_start = Column(TIMESTAMP, nullable=True)
-    lease_end = Column(TIMESTAMP, nullable=True)
+    lease_start = Column(TIMESTAMP(timezone=True), nullable=True)
+    lease_end = Column(TIMESTAMP(timezone=True), nullable=True)
     properties = Column(LargeBinary)
 
     Index('idx_slc_guid_name', slc_guid, slc_name)
@@ -207,7 +207,7 @@ class Poas(Base):
     sliver_id = Column(String, nullable=True, index=True)
     state = Column(Integer, nullable=False, index=True)
     slice_id = Column(String, nullable=True, index=True)
-    last_update_time = Column(TIMESTAMP, nullable=True)
+    last_update_time = Column(TIMESTAMP(timezone=True), nullable=True)
     properties = Column(LargeBinary)
 
     Index('idx_poa_guid_email', poa_guid, email)
