@@ -234,6 +234,7 @@ class AggregatedBQMPlugin:
                 # get the location if available
                 if loc is None:
                     loc = sliver.get_location()
+                worker_sliver.set_location(loc)
 
                 # look at flags
                 flags = sliver.get_flags()
