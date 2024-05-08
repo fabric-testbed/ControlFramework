@@ -142,7 +142,7 @@ class OrchestratorHandler:
                     saved_bqm.start_refresh()
 
         if broker_query_model is None:
-            if self.local_bqm:
+            if self.local_bqm and level != 0:
                 saved_bqm = self.controller_state.get_saved_bqm(graph_format=GraphFormat.GRAPHML, level=0)
                 if saved_bqm and saved_bqm.get_bqm() and len(saved_bqm.get_bqm()):
                     broker_query_model = controller.build_broker_query_model(level_0_broker_query_model=saved_bqm.get_bqm(),
