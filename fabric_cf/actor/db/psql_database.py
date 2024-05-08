@@ -784,7 +784,8 @@ class PsqlDatabase:
 
     def get_reservations(self, *, slice_id: str = None, graph_node_id: str = None, project_id: str = None,
                          email: str = None, oidc_sub: str = None, rid: str = None, states: list[int] = None,
-                         category: list[int] = None, site: str = None, rsv_type: list[str] = None) -> List[dict]:
+                         category: list[int] = None, site: str = None, rsv_type: list[str] = None,
+                         start: datetime = None, end: datetime = None) -> List[dict]:
         """
         Get Reservations for an actor
         @param slice_id slice id
@@ -797,6 +798,8 @@ class PsqlDatabase:
         @param category reservation category
         @param site site name
         @param rsv_type rsv_type
+        @param start search for slivers with lease_end_time after start
+        @param end search for slivers with lease_end_time before end
 
         @return list of reservations
         """
@@ -816,6 +819,12 @@ class PsqlDatabase:
 
             if category is not None:
                 rows = rows.filter(Reservations.rsv_category.in_(category))
+
+            if start is not None:
+                rows = rows.filter(start <= Reservations.lease_end)
+
+            if end is not None:
+                rows = rows.filter(Reservations.lease_end <= end)
 
             for row in rows.all():
                 result.append(self.generate_dict_from_row(row=row))

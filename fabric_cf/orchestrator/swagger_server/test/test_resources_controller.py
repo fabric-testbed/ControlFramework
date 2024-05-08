@@ -5,13 +5,13 @@ from __future__ import absolute_import
 from flask import json
 from six import BytesIO
 
-from fabric_cf.orchestrator.swagger_server.models.resources import Resources  # noqa: E501
-from fabric_cf.orchestrator.swagger_server.models.status400_bad_request import Status400BadRequest  # noqa: E501
-from fabric_cf.orchestrator.swagger_server.models.status401_unauthorized import Status401Unauthorized  # noqa: E501
-from fabric_cf.orchestrator.swagger_server.models.status403_forbidden import Status403Forbidden  # noqa: E501
-from fabric_cf.orchestrator.swagger_server.models.status404_not_found import Status404NotFound  # noqa: E501
-from fabric_cf.orchestrator.swagger_server.models.status500_internal_server_error import Status500InternalServerError  # noqa: E501
-from fabric_cf.orchestrator.swagger_server.test import BaseTestCase
+from fabric_cf.orchestrator.fabric_cf.orchestrator.swagger_server.models.resources import Resources  # noqa: E501
+from fabric_cf.orchestrator.fabric_cf.orchestrator.swagger_server.models.status400_bad_request import Status400BadRequest  # noqa: E501
+from fabric_cf.orchestrator.fabric_cf.orchestrator.swagger_server.models.status401_unauthorized import Status401Unauthorized  # noqa: E501
+from fabric_cf.orchestrator.fabric_cf.orchestrator.swagger_server.models.status403_forbidden import Status403Forbidden  # noqa: E501
+from fabric_cf.orchestrator.fabric_cf.orchestrator.swagger_server.models.status404_not_found import Status404NotFound  # noqa: E501
+from fabric_cf.orchestrator.fabric_cf.orchestrator.swagger_server.models.status500_internal_server_error import Status500InternalServerError  # noqa: E501
+from fabric_cf.orchestrator.fabric_cf.orchestrator.swagger_server.test import BaseTestCase
 
 
 class TestResourcesController(BaseTestCase):
@@ -22,9 +22,15 @@ class TestResourcesController(BaseTestCase):
 
         Retrieve a listing and description of available resources for portal
         """
-        query_string = [('graph_format', 'GRAPHML')]
+        query_string = [('graph_format', 'GRAPHML'),
+                        ('level', 1),
+                        ('force_refresh', false),
+                        ('start_date', 'start_date_example'),
+                        ('end_date', 'end_date_example'),
+                        ('includes', 'includes_example'),
+                        ('excludes', 'excludes_example')]
         response = self.client.open(
-            '/portalresources',
+            '//portalresources',
             method='GET',
             query_string=query_string)
         self.assert200(response,
@@ -36,9 +42,13 @@ class TestResourcesController(BaseTestCase):
         Retrieve a listing and description of available resources. By default, a cached available resource information is returned. User can force to request the current available resources.
         """
         query_string = [('level', 1),
-                        ('force_refresh', false)]
+                        ('force_refresh', false),
+                        ('start_date', 'start_date_example'),
+                        ('end_date', 'end_date_example'),
+                        ('includes', 'includes_example'),
+                        ('excludes', 'excludes_example')]
         response = self.client.open(
-            '/resources',
+            '//resources',
             method='GET',
             query_string=query_string)
         self.assert200(response,

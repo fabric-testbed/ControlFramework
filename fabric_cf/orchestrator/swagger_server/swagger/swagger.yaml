@@ -76,6 +76,42 @@ paths:
         schema:
           type: boolean
           default: false
+      - name: start_date
+        in: query
+        description: starting date to check availability from
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: 2023-01-01 16:20:15 +00:00
+      - name: end_date
+        in: query
+        description: end date to check availability until
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: 2023-01-01 16:20:15 +00:00
+      - name: includes
+        in: query
+        description: comma separated lists of sites to include
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "RENC,UKY"
+      - name: excludes
+        in: query
+        description: comma separated lists of sites to exclude
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "SRI,LBNL"
       responses:
         "200":
           description: OK
@@ -137,6 +173,60 @@ paths:
           - JSON_NODELINK
           - CYTOSCAPE
           default: GRAPHML
+      - name: level
+        in: query
+        description: Level of details
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          default: 1
+      - name: force_refresh
+        in: query
+        description: Force to retrieve current available resource information.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: start_date
+        in: query
+        description: starting date to check availability from
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: 2023-01-01 16:20:15 +00:00
+      - name: end_date
+        in: query
+        description: end date to check availability until
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: 2023-01-01 16:20:15 +00:00
+      - name: includes
+        in: query
+        description: comma separated lists of sites to include
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "RENC,UKY"
+      - name: excludes
+        in: query
+        description: comma separated lists of sites to exclude
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "SRI,LBNL"
       responses:
         "200":
           description: OK
@@ -194,6 +284,23 @@ paths:
         schema:
           minLength: 3
           type: string
+      - name: search
+        in: query
+        description: search term applied
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: exact_match
+        in: query
+        description: Exact Match for Search term
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
       - name: as_self
         in: query
         description: GET object as Self
@@ -248,23 +355,6 @@ paths:
           type: integer
           format: int32
           default: 0
-      - name: search
-        in: query
-        description: search term applied
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: string
-      - name: exact_match
-        in: query
-        description: Exact Match for Search term
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: boolean
-          default: false
       responses:
         "200":
           description: OK
@@ -499,6 +589,7 @@ paths:
         explode: true
         schema:
           type: string
+          example: 2023-01-01 16:20:15 +00:00
       requestBody:
         $ref: '#/components/requestBodies/payload_slices_create'
       responses:
@@ -1600,7 +1691,7 @@ components:
   requestBodies:
     Request:
       content:
-        text/plain:
+        application/json:
           schema:
             type: string
       required: true

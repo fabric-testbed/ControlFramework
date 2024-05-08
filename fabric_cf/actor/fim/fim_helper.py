@@ -26,6 +26,9 @@
 import logging
 import random
 import traceback
+import uuid
+from collections import defaultdict
+from datetime import datetime
 from typing import Tuple, List, Union
 
 from fim.graph.abc_property_graph import ABCPropertyGraph, ABCGraphImporter
@@ -35,18 +38,22 @@ from fim.graph.resources.abc_arm import ABCARMPropertyGraph
 from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph, Neo4jCBMFactory
+from fim.graph.resources.networkx_abqm import NetworkXAggregateBQM
 from fim.graph.slices.abc_asm import ABCASMPropertyGraph
 from fim.graph.slices.neo4j_asm import Neo4jASMFactory
 from fim.graph.slices.networkx_asm import NetworkxASM, NetworkXASMFactory
+from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.attached_components import ComponentSliver
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities
 from fim.slivers.delegations import Delegations
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
-from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_node import NodeSliver, CompositeNodeSliver
 from fim.slivers.network_service import NetworkServiceSliver, ServiceType
-from fim.user import ExperimentTopology, Labels, NodeType, Component, ReservationInfo
+from fim.user import ExperimentTopology, NodeType, Component, ReservationInfo, Node, GraphFormat
+from fim.user.composite_node import CompositeNode
 from fim.user.interface import Interface
+from fim.user.topology import AdvertizedTopology
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
@@ -611,3 +618,37 @@ class FimHelper:
         slice_topology.prune(reservation_state=ReservationStates.CloseFail.name)
 
         return slice_topology
+
+    @staticmethod
+    def get_workers(site: CompositeNode) -> dict:
+        node_id_list = site.topo.graph_model.get_first_neighbor(
+            node_id=site.node_id,
+            rel=ABCPropertyGraph.REL_HAS,
+            node_label=ABCPropertyGraph.CLASS_NetworkNode,
+        )
+        workers = dict()
+        for nid in node_id_list:
+            _, node_props = site.topo.graph_model.get_node_properties(node_id=nid)
+            n = Node(
+                name=node_props[ABCPropertyGraph.PROP_NAME],
+                node_id=nid,
+                topo=site.topo,
+            )
+            if n.type != NodeType.Facility:
+                workers[n.name] = n
+        return workers
+
+    @staticmethod
+    def build_broker_query_model(db, level_0_broker_query_model: str, level: int,
+                                 graph_format: GraphFormat = GraphFormat.GRAPHML,
+                                 start: datetime = None, end: datetime = None,
+                                 includes: str = None, excludes: str = None) -> str:
+        if level_0_broker_query_model and len(level_0_broker_query_model) > 0:
+            cbm = FimHelper.get_neo4j_cbm_graph_from_string_direct(graph_str=level_0_broker_query_model)
+            substrate = cbm.get_bqm(query_level=level, start=start, end=end, includes=includes,
+                                    excludes=excludes)
+
+            result = substrate.serialize_graph(format=graph_format)
+            substrate.delete_graph()
+            cbm.delete_graph()
+            return result

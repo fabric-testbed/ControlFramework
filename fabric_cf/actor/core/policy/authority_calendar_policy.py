@@ -402,23 +402,27 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         @param node_id_to_reservations: node_id_to_reservations
         @throws Exception in case of error
         """
-        assigned = self.assign_reservation(reservation=reservation, node_id_to_reservations=node_id_to_reservations)
-        if assigned is not None:
-            approved = reservation.get_requested_term()
-            reservation.set_approved(term=approved, approved_resources=assigned)
-            reservation.set_bid_pending(value=False)
-            node_id = assigned.get_sliver().get_node_map()[1]
+        try:
+            assigned = self.assign_reservation(reservation=reservation, node_id_to_reservations=node_id_to_reservations)
+            if assigned is not None:
+                approved = reservation.get_requested_term()
+                reservation.set_approved(term=approved, approved_resources=assigned)
+                reservation.set_bid_pending(value=False)
+                node_id = assigned.get_sliver().get_node_map()[1]
 
-            if node_id_to_reservations.get(node_id, None) is None:
-                node_id_to_reservations[node_id] = ReservationSet()
-            node_id_to_reservations[node_id].add(reservation=reservation)
-        else:
-            if not reservation.is_terminal():
-                self.logger.debug(f"Deferring reservation {reservation} for the next cycle: "
-                                  f"{self.actor.get_current_cycle() + 1}")
-                self.reschedule(reservation=reservation)
+                if node_id_to_reservations.get(node_id, None) is None:
+                    node_id_to_reservations[node_id] = ReservationSet()
+                node_id_to_reservations[node_id].add(reservation=reservation)
+            else:
+                if not reservation.is_terminal():
+                    self.logger.debug(f"Deferring reservation {reservation} for the next cycle: "
+                                      f"{self.actor.get_current_cycle() + 1}")
+                    self.reschedule(reservation=reservation)
 
-        return node_id_to_reservations
+            return node_id_to_reservations
+        except Exception as e:
+            self.logger.error(f"Could not assign {e}")
+            reservation.fail(message=str(e))
 
     def assign_reservation(self, *, reservation: ABCAuthorityReservation, node_id_to_reservations: dict):
         """
@@ -472,7 +476,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Could not assign {e}")
-            return None
+            raise e
 
     def configuration_complete(self, *, action: str, token: ConfigToken, out_properties: dict):
         super().configuration_complete(action=action, token=token, out_properties=out_properties)
