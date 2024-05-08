@@ -241,6 +241,8 @@ class AggregatedBQMPlugin:
                 if flags and not ptp and flags.ptp:
                     ptp = True
 
+                site_sliver.set_flags(Flags(ptp=ptp))
+
                 # calculate available node capacities based on delegations
                 if sliver.get_capacity_delegations() is not None:
                     # CBM only has one delegation if it has one
