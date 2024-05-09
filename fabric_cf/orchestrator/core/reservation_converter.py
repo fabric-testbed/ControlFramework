@@ -71,7 +71,6 @@ class ReservationConverter:
         if start_time and start_time > start:
             print(f"Start_time: {start_time}")
             start = start_time
-        print(f"KOMAL -START-- {start}")
 
         end = start + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
         if end_time is not None:

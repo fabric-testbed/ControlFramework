@@ -503,9 +503,6 @@ class NetworkNodeInventory(InventoryForType):
             raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
                                   msg=f"resource type: {graph_node.get_type()}")
 
-        print(f"KOMAL - existing reservations: {existing_reservations}")
-        print(f"KOMAL - existing reservations: {existing_components}")
-
         delegation_id = None
         requested_capacities = None
         # For create, we need to allocate the VM

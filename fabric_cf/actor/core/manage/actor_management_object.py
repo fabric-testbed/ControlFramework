@@ -30,8 +30,6 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List, Dict, Tuple
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
-from fabric_mb.message_bus.messages.poa_avro import PoaAvro
-from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_poa_avro import ResultPoaAvro
@@ -43,7 +41,6 @@ from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.user import GraphFormat
-from fim.user.topology import AdvertizedTopology
 
 from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
@@ -96,7 +93,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         return properties
 
     def recover(self):
-        actor_name = None
         if Constants.PROPERTY_ACTOR_NAME in self.serial:
             actor_name = self.serial[Constants.PROPERTY_ACTOR_NAME]
         else:
@@ -135,7 +131,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
     def set_actor(self, *, actor: ABCActorMixin):
         if self.actor is None:
             self.actor = actor
-            #self.db = actor.get_plugin().get_database()
             self.logger = actor.get_logger()
             self.id = actor.get_guid()
             self.make_local_db_object(actor=actor)
@@ -195,11 +190,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 slice_obj_new.set_graph_id(graph_id=slice_obj.graph_id)
                 slice_obj_new.set_config_properties(value=slice_obj.get_config_properties())
                 slice_obj_new.set_lease_end(lease_end=slice_obj.get_lease_end())
-                now = datetime.now(timezone.utc)
-                if slice_obj.get_lease_start() and slice_obj.get_lease_start() > now:
-                    slice_obj.set_lease_start(lease_start=slice_obj.get_lease_start())
-                else:
-                    slice_obj_new.set_lease_start(lease_start=datetime.now(timezone.utc))
+                slice_obj_new.set_lease_start(lease_start=slice_obj.get_lease_start())
 
                 if slice_obj.get_inventory():
                     slice_obj_new.set_inventory(value=True)

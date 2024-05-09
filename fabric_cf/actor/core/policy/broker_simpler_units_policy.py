@@ -569,7 +569,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                         self.logger.info(f"Skipping candidate node: {graph_node}")
                         continue
 
-                print(f"KOMAL Start: {term.get_start_time()} End: {term.get_end_time()}")
                 existing_reservations = self.get_existing_reservations(node_id=node_id,
                                                                        node_id_to_reservations=node_id_to_reservations,
                                                                        start=term.get_start_time(),

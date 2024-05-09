@@ -69,7 +69,6 @@ def slices_create_post(body: SlicesPost, name: str, lease_start_time: str = None
         token = get_token()
         ssh_key = ','.join(body.ssh_keys)
         start = handler.validate_lease_time(lease_time=lease_start_time)
-        print(f"KOMAL --- {start} --- {lease_start_time}")
         end = handler.validate_lease_time(lease_time=lease_end_time)
         slivers_dict = handler.create_slice(token=token, slice_name=name, slice_graph=body.graph_model,
                                             lease_start_time=start, lease_end_time=end,

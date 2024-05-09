@@ -1009,7 +1009,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
             # blocked for a predecessor: see if we can get it going now.
             assert self.state == ReservationStates.Ticketed
 
-            print(f"KOMAL -- APPROVE REDEEM----- {self.requested_term} {self.approved_term}")
             if self.approve_redeem():
                 self.transition_with_join(prefix="unblock redeem", state=ReservationStates.Ticketed,
                                           pending=ReservationPendingStates.Redeeming, join_state=JoinState.NoJoin)
