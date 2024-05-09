@@ -820,13 +820,6 @@ class PsqlDatabase:
             if category is not None:
                 rows = rows.filter(Reservations.rsv_category.in_(category))
 
-            '''
-            if start is not None:
-                rows = rows.filter(start <= Reservations.lease_end)
-
-            if end is not None:
-                rows = rows.filter(Reservations.lease_end <= end)
-            '''
             # Construct filter condition for lease_end within the given time range
             if start is not None or end is not None:
                 lease_end_filter = True  # Initialize with True to avoid NoneType comparison
@@ -851,32 +844,30 @@ class PsqlDatabase:
         result = {}
         session = self.get_session()
         try:
+            lease_end_filter = True  # Initialize with True to avoid NoneType comparison
+            # Construct filter condition for lease_end within the given time range
+            if start is not None or end is not None:
+                if start is not None and end is not None:
+                    lease_end_filter = and_(start <= Reservations.lease_end, Reservations.lease_end <= end)
+                elif start is not None:
+                    lease_end_filter = start <= Reservations.lease_end
+                elif end is not None:
+                    lease_end_filter = Reservations.lease_end <= end
+
             # Query to retrieve Components based on specific Reservation types and states
             rows = (
                 session.query(Components)
                     .join(Reservations, Components.reservation_id == Reservations.rsv_id)
                     .filter(Reservations.rsv_type.in_(rsv_type))
                     .filter(Reservations.rsv_state.in_(states))
+                    .filter(lease_end_filter)
                     .filter(Components.node_id == node_id)
                     .options(joinedload(Components.reservation))
-                    # Use joinedload to efficiently load the associated Reservation
             )
-
-            # Apply filter for lease_end within the given time range
-            if start is not None or end is not None:
-                lease_end_filter = or_(
-                    and_(Reservations.lease_end > start,
-                         Reservations.lease_end < end) if start is not None and end is not None else True,
-                    Reservations.lease_end > start if start is not None else True,
-                    Reservations.lease_end < end if end is not None else True,
-                    Reservations.lease_end.is_(None)
-                )
-                rows = rows.filter(lease_end_filter)
 
             # Query Component records for reservations in the specified state and owner with the target string
             if component is not None and bdf is not None:
-                rows = rows.filter(Components.component == component,
-                                               Components.bdf == bdf)
+                rows = rows.filter(Components.component == component, Components.bdf == bdf)
             elif component is not None:
                 rows = rows.filter(Components.component == component)
             elif bdf is not None:
