@@ -234,11 +234,14 @@ class AggregatedBQMPlugin:
                 # get the location if available
                 if loc is None:
                     loc = sliver.get_location()
+                worker_sliver.set_location(loc)
 
                 # look at flags
                 flags = sliver.get_flags()
                 if flags and not ptp and flags.ptp:
                     ptp = True
+
+                site_sliver.set_flags(Flags(ptp=ptp))
 
                 # calculate available node capacities based on delegations
                 if sliver.get_capacity_delegations() is not None:

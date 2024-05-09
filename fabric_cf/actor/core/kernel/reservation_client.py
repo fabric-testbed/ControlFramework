@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import datetime
 import json
 import re
 import threading
@@ -422,6 +423,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
         @return true if approved; false otherwise
         """
         approved = True
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if self.requested_term and self.requested_term.get_start_time() > now:
+            self.logger.debug(f"Future Reservation : {self}!")
+            return False
 
         for pred_state in self.redeem_predecessors.values():
             if pred_state.get_reservation() is None or \

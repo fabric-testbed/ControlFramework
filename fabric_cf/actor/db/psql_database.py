@@ -30,7 +30,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import List, Tuple, Dict
 
-from sqlalchemy import create_engine, desc, func
+from sqlalchemy import create_engine, desc, func, and_, or_
 from sqlalchemy.orm import scoped_session, sessionmaker, joinedload
 
 from fabric_cf.actor.core.common.constants import Constants
@@ -820,11 +820,17 @@ class PsqlDatabase:
             if category is not None:
                 rows = rows.filter(Reservations.rsv_category.in_(category))
 
-            if start is not None:
-                rows = rows.filter(start <= Reservations.lease_end)
+            # Construct filter condition for lease_end within the given time range
+            if start is not None or end is not None:
+                lease_end_filter = True  # Initialize with True to avoid NoneType comparison
+                if start is not None and end is not None:
+                    lease_end_filter = and_(start <= Reservations.lease_end, Reservations.lease_end <= end)
+                elif start is not None:
+                    lease_end_filter = start <= Reservations.lease_end
+                elif end is not None:
+                    lease_end_filter = Reservations.lease_end <= end
 
-            if end is not None:
-                rows = rows.filter(Reservations.lease_end <= end)
+                rows = rows.filter(lease_end_filter)
 
             for row in rows.all():
                 result.append(self.generate_dict_from_row(row=row))
@@ -834,25 +840,34 @@ class PsqlDatabase:
         return result
 
     def get_components(self, *, node_id: str, states: list[int], rsv_type: list[str], component: str = None,
-                       bdf: str = None) -> Dict[str, List[str]]:
+                       bdf: str = None, start: datetime = None, end: datetime = None) -> Dict[str, List[str]]:
         result = {}
         session = self.get_session()
         try:
+            lease_end_filter = True  # Initialize with True to avoid NoneType comparison
+            # Construct filter condition for lease_end within the given time range
+            if start is not None or end is not None:
+                if start is not None and end is not None:
+                    lease_end_filter = and_(start <= Reservations.lease_end, Reservations.lease_end <= end)
+                elif start is not None:
+                    lease_end_filter = start <= Reservations.lease_end
+                elif end is not None:
+                    lease_end_filter = Reservations.lease_end <= end
+
             # Query to retrieve Components based on specific Reservation types and states
             rows = (
                 session.query(Components)
                     .join(Reservations, Components.reservation_id == Reservations.rsv_id)
                     .filter(Reservations.rsv_type.in_(rsv_type))
                     .filter(Reservations.rsv_state.in_(states))
+                    .filter(lease_end_filter)
                     .filter(Components.node_id == node_id)
                     .options(joinedload(Components.reservation))
-                    # Use joinedload to efficiently load the associated Reservation
             )
 
             # Query Component records for reservations in the specified state and owner with the target string
             if component is not None and bdf is not None:
-                rows = rows.filter(Components.component == component,
-                                               Components.bdf == bdf)
+                rows = rows.filter(Components.component == component, Components.bdf == bdf)
             elif component is not None:
                 rows = rows.filter(Components.component == component)
             elif bdf is not None:

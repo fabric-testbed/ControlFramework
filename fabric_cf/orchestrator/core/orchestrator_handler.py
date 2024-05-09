@@ -27,19 +27,17 @@ import time
 import traceback
 from datetime import datetime, timedelta, timezone
 from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
-from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.graph.networkx_property_graph_disjoint import NetworkXGraphImporterDisjoint
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_service import NetworkServiceSliver
-from fim.user import GraphFormat, Node, NodeType
-from fim.user.topology import ExperimentTopology, AdvertizedTopology
-from fim.view_only_dict import ViewOnlyDict
+from fim.user import GraphFormat
+from fim.user.topology import ExperimentTopology
 
 from fabric_cf.actor.core.common.event_logger import EventLoggerSingleton
 from fabric_cf.actor.core.kernel.poa import PoaStates
@@ -116,17 +114,6 @@ class OrchestratorHandler:
         except Exception as e:
             self.logger.error(f"Error occurred: {e}", stack_info=True)
 
-    def build_broker_query_model(self, controller: ABCMgmtControllerMixin, level: int, graph_format: GraphFormat = GraphFormat.GRAPHML,
-                                 start: datetime = None, end: datetime = None) -> str:
-        try:
-            saved_bqm = self.controller_state.get_saved_bqm(graph_format=GraphFormat.GRAPHML, level=0)
-            if saved_bqm and saved_bqm.get_bqm() and len(saved_bqm.get_bqm()):
-
-                return ""
-        except Exception as e:
-            self.logger.error(f"Exception occurred build_broker_query_model e: {e}")
-            self.logger.error(traceback.format_exc())
-
     def discover_broker_query_model(self, *, controller: ABCMgmtControllerMixin, token: str = None,
                                     level: int = 10, graph_format: GraphFormat = GraphFormat.GRAPHML,
                                     force_refresh: bool = False, start: datetime = None,
@@ -155,7 +142,7 @@ class OrchestratorHandler:
                     saved_bqm.start_refresh()
 
         if broker_query_model is None:
-            if self.local_bqm:
+            if self.local_bqm and level != 0 and not force_refresh:
                 saved_bqm = self.controller_state.get_saved_bqm(graph_format=GraphFormat.GRAPHML, level=0)
                 if saved_bqm and saved_bqm.get_bqm() and len(saved_bqm.get_bqm()):
                     broker_query_model = controller.build_broker_query_model(level_0_broker_query_model=saved_bqm.get_bqm(),
@@ -221,13 +208,14 @@ class OrchestratorHandler:
             raise e
 
     def create_slice(self, *, token: str, slice_name: str, slice_graph: str, ssh_key: str,
-                     lease_end_time: str) -> List[dict]:
+                     lease_start_time: datetime = None, lease_end_time: datetime = None) -> List[dict]:
         """
         Create a slice
         :param token Fabric Identity Token
         :param slice_name Slice Name
         :param slice_graph Slice Graph Model
         :param ssh_key: User ssh key
+        :param lease_start_time: Lease Start Time (UTC)
         :param lease_end_time: Lease End Time (UTC)
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
@@ -243,8 +231,9 @@ class OrchestratorHandler:
             fabric_token = AccessChecker.validate_and_decode_token(token=token)
             project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
-            end_time = self.__compute_lease_end_time(lease_end_time=lease_end_time, allow_long_lived=allow_long_lived,
-                                                     project_id=project)
+            start_time, end_time = self.__compute_lease_end_time(lease_end_time=lease_end_time,
+                                                                 allow_long_lived=allow_long_lived,
+                                                                 project_id=project, lease_start_time=lease_start_time)
 
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
@@ -294,6 +283,7 @@ class OrchestratorHandler:
                                                    Constants.TAGS: tags,
                                                    Constants.CLAIMS_EMAIL: fabric_token.email,
                                                    Constants.TOKEN_HASH: fabric_token.token_hash})
+            slice_obj.set_lease_start(lease_start=start_time)
             slice_obj.set_lease_end(lease_end=end_time)
             auth = AuthAvro()
             auth.name = self.controller_state.get_management_actor().get_name()
@@ -569,7 +559,9 @@ class OrchestratorHandler:
                           SliceState.StableError.value,
                           SliceState.StableOK.value,
                           SliceState.ModifyOK.value,
-                          SliceState.ModifyError.value]
+                          SliceState.ModifyError.value,
+                          SliceState.AllocatedError.value,
+                          SliceState.AllocatedOK.value]
             slice_list = controller.get_slices(slice_id=slice_guid, user_id=fabric_token.uuid,
                                                project=project, states=states)
 
@@ -586,7 +578,8 @@ class OrchestratorHandler:
                     self.logger.debug(f"Slice# {slice_object.get_slice_id()} already closed")
                     continue
 
-                if not SliceState.is_stable(state=slice_state) and not SliceState.is_modified(state=slice_state):
+                if not SliceState.is_stable(state=slice_state) and not SliceState.is_modified(state=slice_state) and \
+                        not SliceState.is_allocated(state=slice_state):
                     self.logger.info(f"Unable to delete Slice# {slice_object.get_slice_id()} that is not yet stable, "
                                      f"try again later")
                     failed_to_delete_slice_ids.append(slice_object.get_slice_id())
@@ -703,7 +696,7 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")
             raise e
 
-    def renew_slice(self, *, token: str, slice_id: str, new_lease_end_time: str):
+    def renew_slice(self, *, token: str, slice_id: str, new_lease_end_time: datetime):
         """
         Renew a slice
         :param token Fabric Identity Token
@@ -741,9 +734,9 @@ class OrchestratorHandler:
             fabric_token = AccessChecker.validate_and_decode_token(token=token)
             project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
-            new_end_time = self.__compute_lease_end_time(lease_end_time=new_lease_end_time,
-                                                         allow_long_lived=allow_long_lived,
-                                                         project_id=project)
+            start_time, new_end_time = self.__compute_lease_end_time(lease_end_time=new_lease_end_time,
+                                                                     allow_long_lived=allow_long_lived,
+                                                                     project_id=project)
 
             reservations = controller.get_reservations(slice_id=slice_id)
             if reservations is None or len(reservations) < 1:
@@ -791,56 +784,59 @@ class OrchestratorHandler:
             raise e
 
     @staticmethod
-    def validate_lease_time(lease_time: str) -> datetime:
+    def validate_lease_time(lease_time: str) -> Union[datetime, None]:
         """
         Validate Lease Time
         :param lease_time: Lease Time
         :return Lease Time
         :raises Exception if new lease time is in past
         """
-        if not lease_time:
+        if lease_time is None:
             return lease_time
         try:
-            new_end_time = datetime.strptime(lease_time, Constants.LEASE_TIME_FORMAT)
+            new_time = datetime.strptime(lease_time, Constants.LEASE_TIME_FORMAT)
         except Exception as e:
-            raise OrchestratorException(f"Lease End Time is not in format {Constants.LEASE_TIME_FORMAT}",
+            raise OrchestratorException(f"Lease Time is not in format {Constants.LEASE_TIME_FORMAT}",
                                         http_error_code=BAD_REQUEST)
 
         now = datetime.now(timezone.utc)
-        if new_end_time <= now:
-            raise OrchestratorException(f"New term end time {new_end_time} is in the past! ",
+        if new_time <= now:
+            raise OrchestratorException(f"New lease time {new_time} is in the past! ",
                                         http_error_code=BAD_REQUEST)
 
-        return new_end_time
+        return new_time
 
-    def __compute_lease_end_time(self, lease_end_time: str, allow_long_lived: bool = False,
-                                 project_id: str = None) -> datetime:
+    def __compute_lease_end_time(self, lease_end_time: datetime, allow_long_lived: bool = False,
+                                 project_id: str = None, lease_start_time: datetime = None) -> Tuple[datetime, datetime]:
         """
         Validate Lease End Time
         :param lease_end_time: New End Time
         :param allow_long_lived: Allow long lived tokens
         :param project_id: Project Id
+        :param lease_start_time: New Start Time
         :return End Time
         :raises Exception if new end time is in past
         """
+        base_time = datetime.now(timezone.utc)
+        if lease_start_time and lease_start_time > base_time:
+            base_time = lease_start_time
         if lease_end_time is None:
-            new_end_time = datetime.now(timezone.utc) + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
-            return new_end_time
+            new_end_time = base_time + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
+            return base_time, new_end_time
 
-        new_end_time = self.validate_lease_time(lease_time=lease_end_time)
-        now = datetime.now(timezone.utc)
+        new_end_time = lease_end_time
 
         if allow_long_lived:
             default_long_lived_duration = Constants.LONG_LIVED_SLICE_TIME_WEEKS
         else:
             default_long_lived_duration = Constants.DEFAULT_MAX_DURATION
-        if project_id not in self.infrastructure_project_id and (new_end_time - now) > default_long_lived_duration:
+        if project_id not in self.infrastructure_project_id and (new_end_time - base_time) > default_long_lived_duration:
             self.logger.info(f"New term end time {new_end_time} exceeds system default "
                              f"{default_long_lived_duration}, setting to system default: ")
 
-            new_end_time = now + default_long_lived_duration
+            new_end_time = base_time + default_long_lived_duration
 
-        return new_end_time
+        return base_time, new_end_time
 
     @staticmethod
     def __translate_graph_format(*, graph_format: str) -> GraphFormat:

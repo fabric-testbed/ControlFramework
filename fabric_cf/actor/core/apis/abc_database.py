@@ -172,7 +172,7 @@ class ABCDatabase(ABC):
 
     @abstractmethod
     def get_components(self, *, node_id: str, states: list[int], rsv_type: list[str], component: str = None,
-                       bdf: str = None) -> Dict[str, List[str]]:
+                       bdf: str = None, start: datetime = None, end: datetime = None) -> Dict[str, List[str]]:
         """
         Retrieves the components.
 

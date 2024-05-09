@@ -30,7 +30,7 @@ class TestResourcesController(BaseTestCase):
                         ('includes', 'includes_example'),
                         ('excludes', 'excludes_example')]
         response = self.client.open(
-            '//portalresources',
+            '/portalresources',
             method='GET',
             query_string=query_string)
         self.assert200(response,
@@ -48,7 +48,7 @@ class TestResourcesController(BaseTestCase):
                         ('includes', 'includes_example'),
                         ('excludes', 'excludes_example')]
         response = self.client.open(
-            '//resources',
+            '/resources',
             method='GET',
             query_string=query_string)
         self.assert200(response,
