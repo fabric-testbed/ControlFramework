@@ -425,7 +425,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         approved = True
         now = datetime.datetime.now(datetime.timezone.utc)
         if self.requested_term and self.requested_term.get_start_time() > now:
-            print("Future Reservation!")
+            self.logger.debug(f"Future Reservation : {self}!")
             return False
 
         for pred_state in self.redeem_predecessors.values():

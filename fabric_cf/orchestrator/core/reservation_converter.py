@@ -69,7 +69,6 @@ class ReservationConverter:
         ticket.set_resource_type(str(sliver.get_type()))
         start = datetime.now(timezone.utc)
         if start_time and start_time > start:
-            print(f"Start_time: {start_time}")
             start = start_time
 
         end = start + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
