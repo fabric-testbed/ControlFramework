@@ -362,6 +362,8 @@ paths:
             - Modifying
             - ModifyOK
             - ModifyError
+            - AllocatedOK
+            - AllocatedError
             - All
       - name: limit
         in: query
