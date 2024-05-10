@@ -199,6 +199,7 @@ class Constants:
     STATE_FILE_LOCATION = '/tmp/fabric_actor.tmp'
     MAINT_PROJECT_ID = 'maint.project.id'
     INFRASTRUCTURE_PROJECT_ID = "infrastructure.project.id"
+    TOTAL_SLICE_COUNT_SEED = "total_slice_count_seed"
 
     ELASTIC_TIME = "request.elasticTime"
     ELASTIC_SIZE = "request.elasticSize"

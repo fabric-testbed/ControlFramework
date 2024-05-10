@@ -63,6 +63,45 @@ class ABCMgmtActor(ABCComponent):
         @return returns list of slices
         """
 
+    def increment_metrics(self, *, project_id: str, oidc_sub: str, slice_count: int = 1) -> bool:
+        """
+        Add or update metrics
+
+        @param project_id project id
+        @param oidc_sub oidc sub
+        @param slice_count slice_count
+
+        @return true or false
+
+        @throws Exception in case of error
+        """
+        raise NotImplementedError
+
+    def get_metrics(self, *, project_id: str, oidc_sub: str) -> list:
+        """
+        Get metrics
+
+        @param project_id project id
+        @param oidc_sub oidc sub
+
+        @return list of metric information
+
+        @throws Exception in case of error
+        """
+        raise NotImplementedError
+
+    def get_slice_count(self, *, email: str = None, project: str = None, states: List[int] = None,
+                        user_id: str = None) -> int:
+        """
+        Obtains slice count.
+        @param email email
+        @param project project id
+        @param states slice states
+        @param user_id user_id
+        @return returns list of slices
+        """
+        raise NotImplementedError
+
     @abstractmethod
     def add_slice(self, *, slice_obj: SliceAvro) -> ID:
         """

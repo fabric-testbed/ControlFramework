@@ -3,6 +3,7 @@
 # flake8: noqa
 from __future__ import absolute_import
 # import models into model package
+from fabric_cf.orchestrator.swagger_server.models.metrics import Metrics
 from fabric_cf.orchestrator.swagger_server.models.poa import Poa
 from fabric_cf.orchestrator.swagger_server.models.poa_data import PoaData
 from fabric_cf.orchestrator.swagger_server.models.poa_post import PoaPost

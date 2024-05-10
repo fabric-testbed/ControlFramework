@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 
 from sqlalchemy import JSON, ForeignKey, LargeBinary, Index, TIMESTAMP
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, String, Integer, Sequence
 from sqlalchemy.orm import relationship
@@ -90,6 +91,17 @@ class Miscellaneous(Base):
     msc_id = Column(Integer, Sequence('msc_id', start=1, increment=1), autoincrement=True, primary_key=True)
     msc_path = Column(String, nullable=False, unique=True)
     properties = Column(JSON)
+
+
+class Metrics(Base):
+    """
+    Represents Metrics Database Table
+    """
+    __tablename__ = 'Metrics'
+    m_id = Column(Integer, Sequence('m_id', start=1, increment=1), autoincrement=True, primary_key=True)
+    user_id = Column(String, nullable=False, index=True)
+    project_id = Column(String, nullable=False, index=True)
+    slice_count = Column(Integer, nullable=False)
 
 
 class Proxies(Base):

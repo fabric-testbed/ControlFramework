@@ -230,6 +230,45 @@ class ActorDatabase(ABCDatabase):
                 self.lock.release()
         return result
 
+    def increment_metrics(self, *, project_id: str, oidc_sub: str, slice_count: int = 1) -> bool:
+        try:
+            self.lock.acquire()
+            self.db.increment_metrics(project_id=project_id, user_id=oidc_sub, slice_count=slice_count)
+            return True
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error(traceback.format_exc())
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+        return False
+
+    def get_metrics(self, *, project_id: str, oidc_sub: str) -> list:
+        try:
+            return self.db.get_metrics(project_id=project_id, user_id=oidc_sub)
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error(traceback.format_exc())
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+
+    def get_slice_count(self, *, project_id: str = None, email: str = None, states: list[int] = None,
+                        oidc_sub: str = None, slc_type: List[SliceTypes] = None) -> List[ABCSlice] or None:
+        try:
+            slice_type = None
+            if slc_type is not None:
+                slice_type = [x.value for x in slc_type]
+            return self.db.get_slice_count(project_id=project_id, email=email,
+                                           states=states, oidc_sub=oidc_sub, slc_type=slice_type)
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error(traceback.format_exc())
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+        return -1
+
     def add_reservation(self, *, reservation: ABCReservationMixin):
         try:
             #self.lock.acquire()

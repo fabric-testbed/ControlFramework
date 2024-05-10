@@ -127,17 +127,6 @@ class TestSlicesController(BaseTestCase):
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
-    def test_slices_redeem_slice_id_post(self):
-        """Test case for slices_redeem_slice_id_post
-
-        Redeem resources for a slice requested in future via create
-        """
-        response = self.client.open(
-            '//slices/redeem/{slice_id}'.format(slice_id='slice_id_example'),
-            method='POST')
-        self.assert200(response,
-                       'Response body is : ' + response.data.decode('utf-8'))
-
     def test_slices_renew_slice_id_post(self):
         """Test case for slices_renew_slice_id_post
 
