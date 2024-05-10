@@ -997,5 +997,5 @@ class OrchestratorHandler:
             return result
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.logger.error(f"Exception occurred processing get_slices e: {e}")
+            self.logger.error(f"Exception occurred processing get_metrics_overview e: {e}")
             raise e

@@ -257,7 +257,7 @@ class ActorDatabase(ABCDatabase):
                         oidc_sub: str = None, slc_type: List[SliceTypes] = None,
                         excluded_projects: List[str] = None) -> int:
         try:
-            slice_type = None
+            slice_type = [SliceTypes.ClientSlice.value]
             if slc_type is not None:
                 slice_type = [x.value for x in slc_type]
             return self.db.get_slice_count(project_id=project_id, email=email, states=states, oidc_sub=oidc_sub,
