@@ -959,7 +959,7 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing poa e: {e}")
             raise e
 
-    def get_metrics_overview(self, *, token: str):
+    def get_metrics_overview(self, *, token: str = None, excluded_projects: List[str] = None):
         """
         Get metrics overview
         """
@@ -978,8 +978,10 @@ class OrchestratorHandler:
                 user_id = fabric_token.uuid
 
             active_states = SliceState.list_values_ex_closing_dead()
-            active_slice_count = controller.get_slice_count(states=active_states, user_id=user_id, project=project)
-            non_active_metrics = controller.get_metrics(user_id=user_id, project_id=project)
+            active_slice_count = controller.get_slice_count(states=active_states, user_id=user_id, project=project,
+                                                            excluded_projects=excluded_projects)
+            non_active_metrics = controller.get_metrics(user_id=user_id, project_id=project,
+                                                        excluded_projects=excluded_projects)
             total_slices = 0
             for m in non_active_metrics:
                 total_slices += m.get("slice_count", 0)

@@ -243,9 +243,9 @@ class ActorDatabase(ABCDatabase):
                 self.lock.release()
         return False
 
-    def get_metrics(self, *, project_id: str, oidc_sub: str) -> list:
+    def get_metrics(self, *, project_id: str, oidc_sub: str, excluded_projects: List[str] = None) -> list:
         try:
-            return self.db.get_metrics(project_id=project_id, user_id=oidc_sub)
+            return self.db.get_metrics(project_id=project_id, user_id=oidc_sub, excluded_projects=excluded_projects)
         except Exception as e:
             self.logger.error(e)
             self.logger.error(traceback.format_exc())
@@ -254,13 +254,14 @@ class ActorDatabase(ABCDatabase):
                 self.lock.release()
 
     def get_slice_count(self, *, project_id: str = None, email: str = None, states: list[int] = None,
-                        oidc_sub: str = None, slc_type: List[SliceTypes] = None) -> List[ABCSlice] or None:
+                        oidc_sub: str = None, slc_type: List[SliceTypes] = None,
+                        excluded_projects: List[str] = None) -> int:
         try:
             slice_type = None
             if slc_type is not None:
                 slice_type = [x.value for x in slc_type]
-            return self.db.get_slice_count(project_id=project_id, email=email,
-                                           states=states, oidc_sub=oidc_sub, slc_type=slice_type)
+            return self.db.get_slice_count(project_id=project_id, email=email, states=states, oidc_sub=oidc_sub,
+                                           slc_type=slice_type, excluded_projects=excluded_projects)
         except Exception as e:
             self.logger.error(e)
             self.logger.error(traceback.format_exc())

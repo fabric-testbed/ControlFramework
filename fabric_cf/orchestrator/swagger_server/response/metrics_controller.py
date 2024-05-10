@@ -1,3 +1,7 @@
+from typing import List
+
+from fabric_cf.orchestrator.swagger_server.response.utils import get_token
+
 from fabric_cf.orchestrator.swagger_server.response.constants import GET_METHOD, METRICS_GET_PATH
 
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
@@ -9,7 +13,7 @@ from fabric_cf.orchestrator.swagger_server.response.cors_response import cors_20
 from fabric_cf.orchestrator.swagger_server.models import Metrics
 
 
-def metrics_overview_get() -> Metrics:  # noqa: E501
+def metrics_overview_get(excluded_projects: List[str] = None) -> Metrics:  # noqa: E501
     """Control Framework metrics overview
     {
     "results": [
@@ -32,7 +36,8 @@ def metrics_overview_get() -> Metrics:  # noqa: E501
     logger = handler.get_logger()
     received_counter.labels(GET_METHOD, METRICS_GET_PATH).inc()
     try:
-        metrics = handler.get_metrics_overview()
+        token = get_token()
+        metrics = handler.get_metrics_overview(token=token, excluded_projects=excluded_projects)
         response = Metrics()
         if metrics:
             if isinstance(metrics.json_data, list):

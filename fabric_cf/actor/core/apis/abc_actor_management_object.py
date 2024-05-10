@@ -291,12 +291,13 @@ class ABCActorManagementObject(ABCManagementObject):
         """
 
     @abstractmethod
-    def get_metrics(self, *, project_id: str, oidc_sub: str) -> list:
+    def get_metrics(self, *, project_id: str, oidc_sub: str, excluded_projects: List[str] = None) -> list:
         """
         Get metrics
 
         @param project_id project id
         @param oidc_sub oidc sub
+        @param excluded_projects excluded_projects
 
         @return list of metric information
 
@@ -304,7 +305,7 @@ class ABCActorManagementObject(ABCManagementObject):
         """
 
     def get_slice_count(self, *, caller: AuthToken, email: str = None, states: List[int] = None,
-                        project: str = None, user_id: str = None) -> int:
+                        project: str = None, user_id: str = None, excluded_projects: List[str] = None) -> int:
         """
         Obtains Slice count matching the filter criteria.
 
@@ -313,6 +314,7 @@ class ABCActorManagementObject(ABCManagementObject):
         @param states slice states
         @param caller caller
         @param user_id user_id
+        @param excluded_projects excluded_projects
         @return returns number of slices
         """
 

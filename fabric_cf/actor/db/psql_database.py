@@ -539,8 +539,8 @@ class PsqlDatabase:
             filter_dict['oidc_claim_sub'] = oidc_sub
         return filter_dict
 
-    def get_slice_count(self, *, project_id: str = None, email: str = None, states: list[int] = None,
-                        oidc_sub: str = None, slc_type: list[int] = None) -> int:
+    def get_slice_count(self, *, project_id: str = None, email: str = None, states: List[int] = None,
+                        oidc_sub: str = None, slc_type: List[int] = None, excluded_projects: List[str]) -> int:
         """
         Get slices count for an actor
         @param project_id project id
@@ -548,6 +548,7 @@ class PsqlDatabase:
         @param states states
         @param oidc_sub oidc claim sub
         @param slc_type slice type
+        @param excluded_projects excluded_projects
         @return list of slices
         """
         session = self.get_session()
@@ -563,6 +564,9 @@ class PsqlDatabase:
 
             if slc_type is not None:
                 rows = rows.filter(Slices.slc_type.in_(slc_type))
+
+            if excluded_projects is not None:
+                rows = rows.filter(Slices.project_id.notin_(excluded_projects))
 
             return rows.count()
         except Exception as e:
@@ -1626,12 +1630,13 @@ class PsqlDatabase:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
-    def get_metrics(self, *, project_id: str = None, user_id: str = None) -> list:
+    def get_metrics(self, *, project_id: str = None, user_id: str = None, excluded_projects: List[str] = None) -> list:
         """
         Get Metric count
         @param project_id: project_id
         @param user_id: user_id
-        @return entry identified by name
+        @param excluded_projects: excluded_projects
+        @return list of metrics
         """
         result = []
         session = self.get_session()
@@ -1644,6 +1649,10 @@ class PsqlDatabase:
                 filter_criteria = and_(Metrics.project_id == project_id)
             elif user_id is not None:
                 filter_criteria = and_(Metrics.user_id == user_id)
+
+            if excluded_projects:
+                filter_criteria = and_(Metrics.project_id.notin_(excluded_projects))
+
             rows = session.query(Metrics).filter(filter_criteria).all()
 
             for r in rows:

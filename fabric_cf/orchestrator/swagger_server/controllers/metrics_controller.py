@@ -12,4 +12,4 @@ def metrics_overview_get(excluded_projects=None):  # noqa: E501
 
     :rtype: Metrics
     """
-    return rc.metrics_overview_get()
+    return rc.metrics_overview_get(excluded_projects=excluded_projects)

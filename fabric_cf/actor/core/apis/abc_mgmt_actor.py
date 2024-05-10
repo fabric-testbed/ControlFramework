@@ -77,12 +77,13 @@ class ABCMgmtActor(ABCComponent):
         """
         raise NotImplementedError
 
-    def get_metrics(self, *, project_id: str, oidc_sub: str) -> list:
+    def get_metrics(self, *, project_id: str, oidc_sub: str, excluded_projects: List[str] = None) -> list:
         """
         Get metrics
 
         @param project_id project id
         @param oidc_sub oidc sub
+        @param excluded_projects excluded_projects
 
         @return list of metric information
 
@@ -91,13 +92,14 @@ class ABCMgmtActor(ABCComponent):
         raise NotImplementedError
 
     def get_slice_count(self, *, email: str = None, project: str = None, states: List[int] = None,
-                        user_id: str = None) -> int:
+                        user_id: str = None, excluded_projects: List[str] = None) -> int:
         """
         Obtains slice count.
         @param email email
         @param project project id
         @param states slice states
         @param user_id user_id
+        @param excluded_projects excluded_projects
         @return returns list of slices
         """
         raise NotImplementedError

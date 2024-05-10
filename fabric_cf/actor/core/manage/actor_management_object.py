@@ -170,9 +170,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
         return result
 
-    def get_metrics(self, *, project_id: str, oidc_sub: str) -> list:
+    def get_metrics(self, *, project_id: str, oidc_sub: str, excluded_projects: List[str] = None) -> list:
         try:
-            return self.db.get_metrics(project_id=project_id, oidc_sub=oidc_sub)
+            return self.db.get_metrics(project_id=project_id, oidc_sub=oidc_sub, excluded_projects=excluded_projects)
         except Exception as e:
             self.logger.error("get_metrics {}".format(e))
 
@@ -183,7 +183,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             self.logger.error("add_or_update_metrics {}".format(e))
 
     def get_slice_count(self, *, caller: AuthToken, email: str = None, states: List[int] = None,
-                        project: str = None, user_id: str = None) -> int:
+                        project: str = None, user_id: str = None, excluded_projects: List[str] = None) -> int:
         try:
             return self.db.get_slice_count(email=email, states=states, project_id=project, oidc_sub=user_id)
         except Exception as e:
