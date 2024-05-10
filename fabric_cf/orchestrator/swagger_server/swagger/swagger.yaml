@@ -53,7 +53,7 @@ paths:
       tags:
       - metrics
       summary: Control Framework metrics overview
-      description: Control Framework  metrics overview
+      description: Control Framework metrics overview
       operationId: metrics_overview_get
       parameters:
       - name: excluded_projects
@@ -73,6 +73,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/metrics'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_400_bad_request'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_401_unauthorized'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_403_forbidden'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_404_not_found'
         "500":
           description: Internal Server Error
           content:
