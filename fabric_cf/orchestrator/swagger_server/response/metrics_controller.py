@@ -1,6 +1,6 @@
 from typing import List
 
-from fabric_cf.orchestrator.swagger_server.response.utils import get_token
+from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 from fabric_cf.orchestrator.swagger_server.response.constants import GET_METHOD, METRICS_GET_PATH
 
@@ -8,7 +8,7 @@ from fabric_cf.orchestrator.swagger_server import received_counter, success_coun
 
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 
-from fabric_cf.orchestrator.swagger_server.response.cors_response import cors_200, cors_500
+from fabric_cf.orchestrator.swagger_server.response.cors_response import cors_200
 
 from fabric_cf.orchestrator.swagger_server.models import Metrics
 
@@ -51,9 +51,8 @@ def metrics_overview_get(excluded_projects: List[str] = None) -> Metrics:  # noq
         response.status = 200
         response.type = 'metrics.overview'
         success_counter.labels(GET_METHOD, METRICS_GET_PATH).inc()
-        return cors_200(response_body=response)
-    except Exception as exc:
-        details = 'Oops! something went wrong with metrics_overview_get(): {0}'.format(exc)
-        logger.error(details)
+        return cors_success_response(response_body=response)
+    except Exception as e:
+        logger.exception(e)
         failure_counter.labels(GET_METHOD, METRICS_GET_PATH).inc()
-        return cors_500(details=details)
+        return cors_error_response(error=e)
