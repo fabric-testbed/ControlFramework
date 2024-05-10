@@ -26,6 +26,10 @@
   ],
   "tags": [
     {
+      "name": "metrics",
+      "description": "Control Framework Metrics"
+    },
+    {
       "name": "slices",
       "description": "Slices in FABRIC"
     },
