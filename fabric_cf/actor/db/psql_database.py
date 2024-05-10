@@ -107,6 +107,7 @@ class PsqlDatabase:
             session.query(Actors).delete()
             session.query(Sites).delete()
             session.query(Poas).delete()
+            session.query(Metrics).delete()
             session.commit()
         except Exception as e:
             session.rollback()
