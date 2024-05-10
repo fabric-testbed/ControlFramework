@@ -40,10 +40,10 @@ def metrics_overview_get(excluded_projects: List[str] = None) -> Metrics:  # noq
         metrics = handler.get_metrics_overview(token=token, excluded_projects=excluded_projects)
         response = Metrics()
         if metrics:
-            if isinstance(metrics.json_data, list):
-                response.results = metrics.json_data
+            if isinstance(metrics, list):
+                response.results = metrics
             else:
-                response.results = [metrics.json_data]
+                response.results = [metrics]
         else:
             response.results = []
 

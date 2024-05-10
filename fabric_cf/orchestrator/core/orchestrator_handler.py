@@ -980,7 +980,7 @@ class OrchestratorHandler:
             active_states = SliceState.list_values_ex_closing_dead()
             active_slice_count = controller.get_slice_count(states=active_states, user_id=user_id, project=project,
                                                             excluded_projects=excluded_projects)
-            non_active_metrics = controller.get_metrics(user_id=user_id, project_id=project,
+            non_active_metrics = controller.get_metrics(oidc_sub=user_id, project_id=project,
                                                         excluded_projects=excluded_projects)
             total_slices = 0
             for m in non_active_metrics:
