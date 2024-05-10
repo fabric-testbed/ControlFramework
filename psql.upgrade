@@ -72,3 +72,10 @@ ALTER TABLE "Poas" DROP COLUMN last_update_time;
 
 -- Rename the new columns to the original column names
 ALTER TABLE "Poas" RENAME COLUMN last_update_time_with_tz TO last_update_time;
+
+CREATE TABLE IF NOT EXISTS "Metrics" (
+  m_id  INTEGER NOT NULL DEFAULT nextval('m_id') PRIMARY KEY,
+  user_id VARCHAR NOT NULL,
+  project_id VARCHAR NOT NULL,
+  slice_count INTEGER NOT NULL,
+);

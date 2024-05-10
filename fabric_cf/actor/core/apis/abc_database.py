@@ -218,6 +218,50 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
+    def get_slice_count(self, *, project_id: str = None, email: str = None, states: list[int] = None,
+                        oidc_sub: str = None, slc_type: List[SliceTypes] = None,
+                        excluded_projects: List[str] = None) -> int:
+        """
+        Retrieves the slices count.
+
+        @param project_id project id
+        @param email email
+        @param states states
+        @param oidc_sub oidc sub
+        @param slc_type slice type
+        @param excluded_projects excluded_projects
+
+        @return number of slices matching the filter criteria
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def increment_metrics(self, *, project_id: str, oidc_sub: str, slice_count: int = 1) -> bool:
+        """
+        Add or Update Metrics
+
+        @param project_id project id
+        @param oidc_sub oidc sub
+        @param slice_count slice_count
+
+        @return true or false
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def get_metrics(self, *, project_id: str, oidc_sub: str, excluded_projects: List[str] = None) -> list:
+        """
+        Get Metrics
+        @param project_id: project id
+        @param oidc_sub: user id
+        @param excluded_projects: list of project ids to exclude
+
+        @return list of metrics
+        """
+
+    @abstractmethod
     def initialize(self):
         """
         Initializes the object.

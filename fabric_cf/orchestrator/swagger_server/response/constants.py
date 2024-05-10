@@ -50,3 +50,5 @@ POAS_GET_PATH = '/poas'
 POAS_GET_POA_ID_PATH = '/poas/{poa_id}'
 
 VERSIONS_PATH = '/version'
+
+METRICS_GET_PATH = '/metrics/overview'

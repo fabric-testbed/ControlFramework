@@ -64,7 +64,9 @@ class OrchestratorHandler:
         self.logger = self.globals.get_logger()
         self.jwks_url = self.globals.get_config().get_oauth_config().get(Constants.PROPERTY_CONF_O_AUTH_JWKS_URL, None)
         self.pdp_config = self.globals.get_config().get_global_config().get_pdp_config()
-        self.infrastructure_project_id = self.globals.get_config().get_runtime_config().get(Constants.INFRASTRUCTURE_PROJECT_ID, None)
+        self.config = self.globals.get_config()
+        self.infrastructure_project_id = self.config.get_runtime_config().get(Constants.INFRASTRUCTURE_PROJECT_ID, None)
+        self.total_slice_count_seed = self.config.get_runtime_config().get(Constants.TOTAL_SLICE_COUNT_SEED, 0)
         self.local_bqm = self.globals.get_config().get_global_config().get_bqm_config().get(
                     Constants.LOCAL_BQM, False)
 
@@ -333,6 +335,7 @@ class OrchestratorHandler:
             EventLoggerSingleton.get().log_slice_event(slice_object=slice_obj, action=ActionId.create,
                                                        topology=topology)
 
+            controller.increment_metrics(project_id=project, oidc_sub=fabric_token.uuid)
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
             if slice_id is not None and controller is not None and asm_graph is not None:
@@ -954,4 +957,45 @@ class OrchestratorHandler:
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing poa e: {e}")
+            raise e
+
+    def get_metrics_overview(self, *, token: str = None, excluded_projects: List[str] = None):
+        """
+        Get metrics overview
+        """
+        try:
+            controller = self.controller_state.get_management_actor()
+            self.logger.debug(f"get_metrics_overview invoked for Controller: {controller}")
+
+            project = None
+            user_id = None
+            # Filter based on project_id and user_id when token is provided
+            if token:
+                fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
+                projects = fabric_token.projects
+                if len(projects) == 1:
+                    project, tags, project_name = fabric_token.first_project
+                user_id = fabric_token.uuid
+
+            active_states = SliceState.list_values_ex_closing_dead()
+            active_slice_count = controller.get_slice_count(states=active_states, user_id=user_id, project=project,
+                                                            excluded_projects=excluded_projects)
+            non_active_metrics = controller.get_metrics(oidc_sub=user_id, project_id=project,
+                                                        excluded_projects=excluded_projects)
+            total_slices = 0
+            for m in non_active_metrics:
+                total_slices += m.get("slice_count", 0)
+            if not user_id and not project:
+                # Get Seed value from config
+                total_slices += self.total_slice_count_seed
+            result = {
+                "slices": {
+                    "active_cumulative": active_slice_count,
+                    "non_active_cumulative": total_slices
+                }
+            }
+            return result
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing get_metrics_overview e: {e}")
             raise e

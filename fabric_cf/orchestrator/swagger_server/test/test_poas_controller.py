@@ -25,7 +25,7 @@ class TestPoasController(BaseTestCase):
         """
         body = PoaPost()
         response = self.client.open(
-            '/poas/create/{sliver_id}'.format(sliver_id='sliver_id_example'),
+            '//poas/create/{sliver_id}'.format(sliver_id='sliver_id_example'),
             method='POST',
             data=json.dumps(body),
             content_type='application/json')
@@ -42,7 +42,7 @@ class TestPoasController(BaseTestCase):
                         ('limit', 200),
                         ('offset', 1)]
         response = self.client.open(
-            '/poas/',
+            '//poas/',
             method='GET',
             query_string=query_string)
         self.assert200(response,
@@ -54,7 +54,7 @@ class TestPoasController(BaseTestCase):
         Perform an operational action on a sliver.
         """
         response = self.client.open(
-            '/poas/{poa_id}'.format(poa_id='poa_id_example'),
+            '//poas/{poa_id}'.format(poa_id='poa_id_example'),
             method='GET')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))

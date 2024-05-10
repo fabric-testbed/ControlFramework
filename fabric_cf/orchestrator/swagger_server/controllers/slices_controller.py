@@ -148,19 +148,6 @@ def slices_modify_slice_id_put(body, slice_id):  # noqa: E501
     return rc.slices_modify_slice_id_put(body, slice_id)
 
 
-def slices_redeem_slice_id_post(slice_id):  # noqa: E501
-    """Redeem resources for a slice requested in future via create
-
-    Request to provision resources for a slice scheduled in advance via the create request once the schedule for the slice is current.  # noqa: E501
-
-    :param slice_id: Slice identified by universally unique identifier
-    :type slice_id: str
-
-    :rtype: Status200OkNoContent
-    """
-    return 'do some magic!'
-
-
 def slices_renew_slice_id_post(slice_id, lease_end_time):  # noqa: E501
     """Renew slice
 

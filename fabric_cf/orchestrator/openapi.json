@@ -26,6 +26,10 @@
   ],
   "tags": [
     {
+      "name": "metrics",
+      "description": "Control Framework Metrics"
+    },
+    {
       "name": "slices",
       "description": "Slices in FABRIC"
     },
@@ -58,6 +62,93 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/version"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_500_internal_server_error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metrics/overview": {
+      "get": {
+        "tags": [
+          "metrics"
+        ],
+        "summary": "Control Framework metrics overview",
+        "description": "Control Framework metrics overview",
+        "parameters": [
+          {
+            "name": "excluded_projects",
+            "in": "query",
+            "description": "List of projects to exclude from the metrics overview",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/metrics"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_400_bad_request"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_401_unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_403_forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_404_not_found"
                 }
               }
             }
@@ -463,6 +554,8 @@
                   "Modifying",
                   "ModifyOK",
                   "ModifyError",
+                  "AllocatedOK",
+                  "AllocatedError",
                   "All"
                 ]
               }
@@ -1124,95 +1217,6 @@
             "required": true,
             "style": "form",
             "explode": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/status_200_ok_no_content"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/status_400_bad_request"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/status_401_unauthorized"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/status_403_forbidden"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/status_404_not_found"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/status_500_internal_server_error"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/slices/redeem/{slice_id}": {
-      "post": {
-        "tags": [
-          "slices"
-        ],
-        "summary": "Redeem resources for a slice requested in future via create",
-        "description": "Request to provision resources for a slice scheduled in advance via the create request once the schedule for the slice is current.\n",
-        "parameters": [
-          {
-            "name": "slice_id",
-            "in": "path",
-            "description": "Slice identified by universally unique identifier",
-            "required": true,
-            "style": "simple",
-            "explode": false,
             "schema": {
               "type": "string"
             }
@@ -2285,6 +2289,25 @@
             "type": "string"
           }
         }
+      },
+      "metrics": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/status_200_ok_single"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "results": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        ]
       },
       "slices": {
         "type": "object",

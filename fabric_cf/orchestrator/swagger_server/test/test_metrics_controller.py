@@ -5,7 +5,7 @@ from __future__ import absolute_import
 from flask import json
 from six import BytesIO
 
-from fabric_cf.orchestrator.swagger_server.models.slivers import Slivers  # noqa: E501
+from fabric_cf.orchestrator.swagger_server.models.metrics import Metrics  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.models.status400_bad_request import Status400BadRequest  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.models.status401_unauthorized import Status401Unauthorized  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.models.status403_forbidden import Status403Forbidden  # noqa: E501
@@ -14,32 +14,17 @@ from fabric_cf.orchestrator.swagger_server.models.status500_internal_server_erro
 from fabric_cf.orchestrator.swagger_server.test import BaseTestCase
 
 
-class TestSliversController(BaseTestCase):
-    """SliversController integration test stubs"""
+class TestMetricsController(BaseTestCase):
+    """MetricsController integration test stubs"""
 
-    def test_slivers_get(self):
-        """Test case for slivers_get
+    def test_metrics_overview_get(self):
+        """Test case for metrics_overview_get
 
-        Retrieve a listing of user slivers
+        Control Framework metrics overview
         """
-        query_string = [('slice_id', 'slice_id_example'),
-                        ('as_self', true)]
+        query_string = [('excluded_projects', 'excluded_projects_example')]
         response = self.client.open(
-            '//slivers',
-            method='GET',
-            query_string=query_string)
-        self.assert200(response,
-                       'Response body is : ' + response.data.decode('utf-8'))
-
-    def test_slivers_sliver_id_get(self):
-        """Test case for slivers_sliver_id_get
-
-        slivers properties
-        """
-        query_string = [('slice_id', 'slice_id_example'),
-                        ('as_self', true)]
-        response = self.client.open(
-            '//slivers/{sliver_id}'.format(sliver_id='sliver_id_example'),
+            '//metrics/overview',
             method='GET',
             query_string=query_string)
         self.assert200(response,

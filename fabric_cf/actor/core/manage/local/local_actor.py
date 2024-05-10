@@ -72,6 +72,30 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return None
 
+    def increment_metrics(self, *, project_id: str, oidc_sub: str, slice_count: int = 1) -> bool:
+        try:
+            return self.manager.increment_metrics(project_id=project_id, oidc_sub=oidc_sub, slice_count=slice_count)
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+        return False
+
+    def get_metrics(self, *, project_id: str, oidc_sub: str, excluded_projects: List[str] = None) -> list:
+        try:
+            return self.manager.get_metrics(project_id=project_id, oidc_sub=oidc_sub,
+                                            excluded_projects=excluded_projects)
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+    def get_slice_count(self, *, email: str = None, project: str = None, states: List[int] = None,
+                        user_id: str = None, excluded_projects: List[str] = None) -> int:
+        try:
+            return self.manager.get_slice_count(caller=self.auth, states=states, email=email, project=project,
+                                                user_id=user_id, excluded_projects=excluded_projects)
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+        return -1
+
     def remove_slice(self, *, slice_id: ID) -> bool:
         self.clear_last()
         try:
