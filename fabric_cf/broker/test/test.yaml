@@ -138,7 +138,7 @@ actor:
         algorithm: FirstFit
   controls:
       - control:
-          type: VM, Container, Baremetal
+          type: VM, Container, Baremetal, Switch
           class: NetworkNodeInventory
           module: fabric_cf.actor.core.policy.network_node_inventory
       - control:

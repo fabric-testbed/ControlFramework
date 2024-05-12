@@ -494,6 +494,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         node_props = {ABCPropertyGraphConstants.PROP_SITE: sliver.site,
                       ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Server)}
+        if sliver.get_type() == NodeType.Switch:
+            node_props[ABCPropertyGraphConstants.PROP_TYPE] = str(NodeType.Switch)
 
         storage_components = []
         # remove storage components before the check
@@ -508,6 +510,17 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             label=ABCPropertyGraphConstants.CLASS_NetworkNode,
             props=node_props,
             comps=sliver.attached_components_info)
+
+        # Skip nodes without any delegations which would be data-switch in this case
+        if sliver.get_type() == NodeType.Switch:
+            exclude = []
+            for n in result:
+                graph_node = self.get_network_node_from_graph(node_id=n)
+                if graph_node.get_capacity_delegations() is None:
+                    exclude.append(n)
+            for e in exclude:
+                result.remove(e)
+
         # re-add storage components
         if len(storage_components) > 0:
             for c in storage_components:
@@ -903,8 +916,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             # intended link (and possibly interfaces connected to it)
 
             res_sliver = rset.get_sliver()
-            delegation_id = None
-            sliver = None
 
             if isinstance(res_sliver, NodeSliver):
                 delegation_id, sliver, error_msg = self.__allocate_nodes(reservation=reservation, inv=inv,

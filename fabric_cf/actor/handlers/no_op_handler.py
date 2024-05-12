@@ -28,7 +28,7 @@ import traceback
 from typing import Tuple
 
 from fim.slivers.attached_components import ComponentType
-from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver, ServiceType
 
 from fabric_cf.actor.core.common.constants import Constants
@@ -125,7 +125,8 @@ class NoOpHandler(HandlerBase):
             time.sleep(10)
 
             if isinstance(sliver, NodeSliver):
-                self.__process_node_sliver(sliver=sliver)
+                if sliver.get_type() == NodeType.VM:
+                    self.__process_node_sliver(sliver=sliver)
 
             elif isinstance(sliver, NetworkServiceSliver):
                 self.__process_ns_sliver(sliver=sliver)

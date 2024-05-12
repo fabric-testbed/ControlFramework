@@ -219,7 +219,6 @@ class NetworkNodeControl(ResourceControl):
                         properties=reservation.get_slice().get_config_properties())
             gained = UnitSet(plugin=self.authority.get_plugin(), units={unit.reservation_id: unit})
         else:
-            # FIX ME: handle modify
             self.logger.info(f"Extend Lease for now, no modify supported res# {reservation}")
             current_sliver = current.get_sliver()
             diff = current_sliver.diff(other_sliver=requested)
