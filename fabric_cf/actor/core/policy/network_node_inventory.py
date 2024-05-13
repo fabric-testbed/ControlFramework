@@ -479,6 +479,20 @@ class NetworkNodeInventory(InventoryForType):
     def __allocate_p4_switch(self, *, rid: ID, requested_sliver: NodeSliver, graph_id: str, graph_node: NodeSliver,
                              existing_reservations: List[ABCReservationMixin], existing_components: Dict[str, List[str]],
                              is_create: bool = False) -> Tuple[str, BaseSliver]:
+        """
+        Allocate an extending or ticketing reservation for a P4 switch
+
+        :param rid: reservation id of the reservation to be allocated
+        :param requested_sliver: requested sliver
+        :param graph_id: BQM graph id
+        :param graph_node: BQM graph node identified to serve the reservation
+        :param existing_components: Existing Components
+        :param existing_reservations: Existing Reservations served by the same BQM node
+        :param is_create: Indicates if this is create or modify
+
+        :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
+        :raises: BrokerException in case the request cannot be satisfied
+        """
         delegation_id = None
 
         if not is_create:
@@ -489,8 +503,16 @@ class NetworkNodeInventory(InventoryForType):
             # Nothing to do, just return
             return delegation_id, requested_sliver
 
+        # Handle allocation to account for leaked Network Services
+        for n in existing_components.keys():
+            if n in graph_node.node_id:
+                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                      msg=f"Node of type: {graph_node.get_type()} not available on site: "
+                                          f"{graph_node.get_site()}, already in use by another reservation")
+
         # For create, we need to allocate the P4
         requested_capacities = requested_sliver.get_capacities()
+
         # Check if Capacities can be satisfied
         delegation_id = self.__check_capacities(rid=rid,
                                                 requested_capacities=requested_capacities,
@@ -502,17 +524,6 @@ class NetworkNodeInventory(InventoryForType):
 
         requested_sliver.set_node_map(node_map=(graph_id, graph_node.node_id))
         requested_sliver.management_ip = graph_node.management_ip
-
-        '''
-        graph_node_ns = next(iter(graph_node.network_service_info.network_services.values()))
-        if requested_sliver.network_service_info:
-            requested_ns = next(iter(requested_sliver.network_service_info.network_services.values()))
-            requested_ns.set_node_map(node_map=(graph_id, graph_node_ns.node_id))
-            if requested_ns.interface_info:
-                for ifs_name, ifs in requested_ns.interface_info.interfaces.items():
-                    ifs_local_name = graph_node_ns.interface_info.interfaces[ifs_name].labels.local_name
-                    ifs.set_node_map(node_map=(graph_id, ifs_local_name))
-        '''
 
         self.logger.info(f"Reservation# {rid} is being served by delegation# {delegation_id} "
                          f"node# [{graph_id}/{graph_node.node_id}]")

@@ -174,11 +174,18 @@ class ABCDatabase(ABC):
     def get_components(self, *, node_id: str, states: list[int], rsv_type: list[str], component: str = None,
                        bdf: str = None, start: datetime = None, end: datetime = None) -> Dict[str, List[str]]:
         """
-        Retrieves the components.
+        Returns components matching the search criteria
+        @param node_id: Worker Node ID to which components belong
+        @param states: list of states used to find reservations
+        @param rsv_type: type of reservations
+        @param component: component name
+        @param bdf: Component's PCI address
+        @param start: start time
+        @param end: end time
 
-        @return list of components
+        NOTE# For P4 switches; node_id=node+renc-p4-sw  component=ip+192.168.11.8 bdf=p1
 
-        @throws Exception in case of error
+        @return Dictionary with component name as the key and value as list of associated PCI addresses in use.
         """
 
     @abstractmethod

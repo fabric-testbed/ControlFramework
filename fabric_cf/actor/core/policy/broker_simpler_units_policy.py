@@ -515,8 +515,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         if sliver.get_type() == NodeType.Switch:
             exclude = []
             for n in result:
-                graph_node = self.get_network_node_from_graph(node_id=n)
-                if graph_node.get_capacity_delegations() is None:
+                if "p4" not in n:
                     exclude.append(n)
             for e in exclude:
                 result.remove(e)
@@ -665,7 +664,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         error_msg = None
         owner_ns = None
         owner_ns_id = None
-        bqm_component = None
+        bqm_node = None
         is_vnic = False
         owner_mpls_ns = None
         owner_switch = None
@@ -677,29 +676,31 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             node_map_id = self.combined_broker_model_graph_id
 
             # Fetch Network Node Id and BQM Component Id
-            node_id, bqm_component_id = ifs.get_node_map()
+            node_id, bqm_node_id = ifs.get_node_map()
 
             # Skipping the already allocated interface on a modify
-            #if node_id == self.combined_broker_model_graph_id:
             if self.combined_broker_model_graph_id in node_id:
                 continue
 
             if node_id == str(NodeType.Facility):
-                bqm_component = self.get_facility_sliver(node_name=bqm_component_id)
+                bqm_node = self.get_facility_sliver(node_name=bqm_node_id)
             # Peered Interfaces are handled at the end
             elif node_id == str(Constants.PEERED):
                 peered_ns_interfaces.append(ifs)
                 continue
+            elif node_id == str(NodeType.Switch):
+                bqm_node = self.get_network_node_from_graph(node_id=bqm_node_id)
+                node_map_id = f"{node_map_id}:{bqm_node.get_name()}:{bqm_node_id}:{ifs.get_labels().local_name}"
             else:
                 # For VM interfaces
-                bqm_component = self.get_component_sliver(node_id=bqm_component_id)
-                node_map_id = f"{node_map_id}:{node_id}:{bqm_component_id}:{ifs.get_labels().bdf}"
+                bqm_node = self.get_component_sliver(node_id=bqm_node_id)
+                node_map_id = f"{node_map_id}:{node_id}:{bqm_node_id}:{ifs.get_labels().bdf}"
 
-            if bqm_component is None:
+            if bqm_node is None:
                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES)
 
             # Get BQM Connection Point in Site Delegation (c)
-            site_cp = FimHelper.get_site_interface_sliver(component=bqm_component,
+            site_cp = FimHelper.get_site_interface_sliver(component=bqm_node,
                                                           local_name=ifs.get_labels().local_name,
                                                           region=ifs.get_labels().region,
                                                           device_name=ifs.get_labels().device_name)
@@ -725,13 +726,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 owner_ns_id = owner_ns_id.replace('ipv6ext-ns', 'ipv6-ns')
 
             bqm_cp = net_cp
-            if bqm_component.get_type() == NodeType.Facility or \
+            if bqm_node.get_type() == NodeType.Facility or \
                     (sliver.get_type() == ServiceType.L2Bridge and
-                     bqm_component.get_model() == Constants.OPENSTACK_VNIC_MODEL):
+                     bqm_node.get_model() == Constants.OPENSTACK_VNIC_MODEL):
                 bqm_cp = site_cp
 
-            if bqm_component.get_type() == ComponentType.SharedNIC:
-                if bqm_component.get_model() == Constants.OPENSTACK_VNIC_MODEL:
+            if bqm_node.get_type() == ComponentType.SharedNIC:
+                if bqm_node.get_model() == Constants.OPENSTACK_VNIC_MODEL:
                     is_vnic = True
 
                 # VLAN is already set by the Orchestrator using the information from the Node Sliver Parent Reservation
@@ -767,7 +768,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             # Set the NSO device-name
             ifs_labels = Labels.update(ifs_labels, device_name=device_name)
             adm_ids = owner_switch.get_structural_info().adm_graph_ids
-            site_adm_ids = bqm_component.get_structural_info().adm_graph_ids
+            site_adm_ids = bqm_node.get_structural_info().adm_graph_ids
 
             self.logger.debug(f"Owner Network Service: {owner_ns}")
             self.logger.debug(f"Owner Switch: {owner_switch}")
@@ -775,7 +776,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.logger.debug(f"Owner Switch NS: {owner_switch.network_service_info.network_services.values()}")
 
             net_adm_ids = site_adm_ids
-            if bqm_component.get_type() != NodeType.Facility and not is_vnic:
+            if bqm_node.get_type() != NodeType.Facility and not is_vnic:
                 net_adm_ids = [x for x in adm_ids if not x in site_adm_ids or site_adm_ids.remove(x)]
                 # For sites like EDC which share switch with other sites like NCSA,
                 # the net_adm_ids also includes delegation id from the other side,
@@ -820,7 +821,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         # Allocate VLAN for the Network Service
         if is_vnic:
-            site_adm_ids = bqm_component.get_structural_info().adm_graph_ids
+            site_adm_ids = bqm_node.get_structural_info().adm_graph_ids
             delegation_id = site_adm_ids[0]
             inv.allocate_vnic(rid=rid, requested_ns=sliver, owner_ns=owner_ns,
                               existing_reservations=existing_reservations)
