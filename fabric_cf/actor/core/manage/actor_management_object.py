@@ -459,10 +459,11 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             if res_list is not None:
                 result.reservations = []
                 for r in res_list:
-                    slice_id = r.get_slice_id()
-                    slice_obj = self.get_slice_by_guid(guid=slice_id)
+                    r_slice_id = r.get_slice_id()
+                    slice_obj = self.get_slice_by_guid(guid=r_slice_id)
                     r.restore(actor=self.actor, slice_obj=slice_obj)
-                    rr = Converter.fill_reservation(reservation=r, full=True)
+                    full = True if slice_id or rid else False
+                    rr = Converter.fill_reservation(reservation=r, full=full)
                     result.reservations.append(rr)
         except ReservationNotFoundException as e:
             self.logger.error("getReservations: {}".format(e))

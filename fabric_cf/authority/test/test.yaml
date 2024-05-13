@@ -137,9 +137,16 @@ actor:
           handler:
             module: fabric_cf.actor.handlers.no_op_handler
             class: NoOpHandler
+      - resource:
+          type: Switch
+          label: P4 Switch AM
+          description: P4 Switch AM
+          handler:
+            module: fabric_cf.actor.handlers.no_op_handler
+            class: NoOpHandler
   controls:
       - control:
-          type: VM, Container, Baremetal
+          type: VM, Container, Baremetal, Switch
           module: fabric_cf.actor.core.policy.network_node_control
           class: NetworkNodeControl
 

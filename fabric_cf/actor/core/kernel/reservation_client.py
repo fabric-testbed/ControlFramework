@@ -515,24 +515,29 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
             if parent_res is not None and (parent_res.is_ticketed() or parent_res.is_active()):
                 node_sliver = parent_res.get_resources().get_sliver()
-                component = node_sliver.attached_components_info.get_device(name=value1)
-                graph_id, bqm_component_id = component.get_node_map()
-                graph_id, node_id = node_sliver.get_node_map()
-                ifs.set_node_map(node_map=(node_id, bqm_component_id))
+                # P4 Switch
+                if node_sliver.get_type() == NodeType.Switch:
+                    graph_id, node_id = node_sliver.get_node_map()
+                    ifs.set_node_map(node_map=(str(NodeType.Switch), node_id))
+                else:
+                    component = node_sliver.attached_components_info.get_device(name=value1)
+                    graph_id, bqm_component_id = component.get_node_map()
+                    graph_id, node_id = node_sliver.get_node_map()
+                    ifs.set_node_map(node_map=(node_id, bqm_component_id))
 
-                # For shared NICs grab the MAC & VLAN from corresponding Interface Sliver
-                # maintained in the Parent Reservation Sliver
-                if component.get_type() == ComponentType.SharedNIC:
-                    parent_res_ifs_sliver = FimHelper.get_site_interface_sliver(component=component,
-                                                                                local_name=ifs.get_labels().local_name)
-                    parent_labs = parent_res_ifs_sliver.get_label_allocations()
+                    # For shared NICs grab the MAC & VLAN from corresponding Interface Sliver
+                    # maintained in the Parent Reservation Sliver
+                    if component.get_type() == ComponentType.SharedNIC:
+                        parent_res_ifs_sliver = FimHelper.get_site_interface_sliver(component=component,
+                                                                                    local_name=ifs.get_labels().local_name)
+                        parent_labs = parent_res_ifs_sliver.get_label_allocations()
 
-                    if component.get_model() == Constants.OPENSTACK_VNIC_MODEL:
-                        ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, bdf=parent_labs.bdf,
-                                                   instance_parent=f"{parent_res.get_reservation_id()}-{node_sliver.get_name()}")
-                    else:
-                        ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan,
-                                                   bdf=parent_labs.bdf)
+                        if component.get_model() == Constants.OPENSTACK_VNIC_MODEL:
+                            ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, bdf=parent_labs.bdf,
+                                                       instance_parent=f"{parent_res.get_reservation_id()}-{node_sliver.get_name()}")
+                        else:
+                            ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan,
+                                                       bdf=parent_labs.bdf)
 
             self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {sliver}")
 

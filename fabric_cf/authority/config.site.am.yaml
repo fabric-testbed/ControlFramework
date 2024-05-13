@@ -143,9 +143,18 @@ actor:
             class: VMHandler
             properties:
               config.properties.file: /etc/fabric/actor/config/vm_handler_config.yml
+      - resource:
+          type: Switch
+          label: Switch AM
+          description: Switch AM
+          handler:
+            module: fabric_am.handlers.switch_handler
+            class: VMHandler
+            properties:
+              config.properties.file: /etc/fabric/actor/config/switch_handler_config.yml
   controls:
       - control:
-          type: VM, Container, Baremetal
+          type: VM, Container, Baremetal, Switch
           module: fabric_cf.actor.core.policy.network_node_control
           class: NetworkNodeControl
 peers:

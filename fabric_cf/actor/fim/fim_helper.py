@@ -441,6 +441,10 @@ class FimHelper:
         if peer_ifs.get_type() in [InterfaceType.DedicatedPort, InterfaceType.SharedPort]:
             component_name, component_id = slice_graph.get_parent(node_id=peer_ns_id, rel=ABCPropertyGraph.REL_HAS,
                                                                   parent=ABCPropertyGraph.CLASS_Component)
+            # Possibly P4 switch; parent will be a switch
+            if not component_name:
+                component_id = peer_ns_id
+                component_name = str(NodeType.Switch)
 
             node_name, node_id = slice_graph.get_parent(node_id=component_id, rel=ABCPropertyGraph.REL_HAS,
                                                         parent=ABCPropertyGraph.CLASS_NetworkNode)
@@ -535,6 +539,9 @@ class FimHelper:
         """
         result = None
         for ns in component.network_service_info.network_services.values():
+            if not ns.interface_info:
+                continue
+
             # Filter on region
             if region is not None:
                 result = list(filter(lambda x: (region in x.labels.region), ns.interface_info.interfaces.values()))

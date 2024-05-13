@@ -63,7 +63,7 @@ def portalresources_get(graph_format: str, level: int = 1, force_refresh: bool =
         start = handler.validate_lease_time(lease_time=start_date)
         end = handler.validate_lease_time(lease_time=end_date)
         model = handler.list_resources(graph_format_str=graph_format, level=level, force_refresh=force_refresh,
-                                       start=start, end=end, includes=includes, excludes=excludes)
+                                       start=start, end=end, includes=includes, excludes=excludes, authorize=False)
         response = Resources()
         response.data = [Resource(model)]
         response.size = 1
