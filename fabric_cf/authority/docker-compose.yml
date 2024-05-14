@@ -65,6 +65,7 @@ services:
       - ./arm.graphml:/etc/fabric/actor/config/neo4j/arm.graphml
       - ./logs/:/var/log/actor
       - ./vm_handler_config.yml:/etc/fabric/actor/config/vm_handler_config.yml
+      - ./switch_handler_config.yml:/etc/fabric/actor/config/switch_handler_config.yml
       - ../../../../AMHandlers/fabric_am/playbooks:/etc/fabric/actor/playbooks
       - ../../../../AMHandlers/fabric_am/playbooks/inventory:/etc/fabric/actor/playbooks/inventory
       - ~/.ssh:/root/.ssh
