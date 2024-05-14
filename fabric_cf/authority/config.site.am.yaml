@@ -149,7 +149,7 @@ actor:
           description: Switch AM
           handler:
             module: fabric_am.handlers.switch_handler
-            class: VMHandler
+            class: SwitchHandler
             properties:
               config.properties.file: /etc/fabric/actor/config/switch_handler_config.yml
   controls:
