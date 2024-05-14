@@ -154,3 +154,4 @@ neo4j/RENC.graphml
 neo4j/Network-dev.graphml
 .DS_Store
 *.log*
+*.avsc
