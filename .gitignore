@@ -151,3 +151,6 @@ secrets/kafkacat2-ca1-signed.pem
 secrets/kafkacat1-ca1-signed.pem
 secrets/...
 neo4j/RENC.graphml
+neo4j/Network-dev.graphml
+.DS_Store
+*.log*
