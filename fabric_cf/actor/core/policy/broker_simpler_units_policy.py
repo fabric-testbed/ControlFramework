@@ -606,9 +606,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 else:
                     raise e
 
-        if delegation_id is None and requested_sliver.labels is not None and requested_sliver.labels.instance_parent is not None:
+        if delegation_id is None and requested_sliver.labels is not None and \
+                requested_sliver.labels.instance_parent is not None:
             error_msg = f"Insufficient Resources: {requested_sliver.labels.instance_parent} " \
-                        f"cannot serve the requested sliver"
+                        f"cannot serve the requested sliver - {error_msg}"
 
         return delegation_id, sliver, error_msg
 

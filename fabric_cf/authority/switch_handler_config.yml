@@ -22,12 +22,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-ansible:
-  ansible_python_interpreter: /usr/bin/python3.6
-runtime:
 playbooks:
   location: /etc/fabric/actor/playbooks
   inventory_location: /etc/fabric/actor/playbooks/inventory
-  admin_ssh_key: /root/.ssh/id_rsa_nova
-  admin_user: rare
   Switch: head_switch_provisioning.yml
+  cleanup:
+    ALL: head_switch_provisioning.yml
