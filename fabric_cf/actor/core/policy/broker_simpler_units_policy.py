@@ -802,7 +802,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 raise BrokerException(msg=error_msg)
 
             if bqm_node.get_type() == NodeType.Facility:
-                node_map_id = f"{node_map_id}#{bqm_node.get_name()}#{ifs_labels.local_name}#{ifs_labels.vlan}"
+                node_map_id = f"{node_map_id}#{bqm_node.get_name()}#{bqm_cp.node_id}#{ifs_labels.vlan}"
 
             # Update the Interface Sliver Node Map to map to (a)
             ifs.set_node_map(node_map=(node_map_id, bqm_cp.node_id))

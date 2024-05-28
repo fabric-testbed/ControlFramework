@@ -26,7 +26,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Tuple, Dict, TYPE_CHECKING
+from typing import Tuple, Dict, TYPE_CHECKING, List
 from collections import defaultdict
 
 import uuid
@@ -36,7 +36,7 @@ from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
 from fim.graph.resources.abc_bqm import ABCBQMPropertyGraph
 from fim.graph.networkx_property_graph import NetworkXGraphImporter
 from fim.graph.resources.networkx_abqm import NetworkXAggregateBQM
-from fim.slivers.capacities_labels import Capacities, Flags
+from fim.slivers.capacities_labels import Capacities, Flags, Labels
 from fim.slivers.delegations import DelegationFormat
 from fim.slivers.maintenance_mode import MaintenanceInfo, MaintenanceEntry, MaintenanceState
 from fim.slivers.network_node import CompositeNodeSliver, NodeType, NodeSliver
@@ -85,6 +85,35 @@ class AggregatedBQMPlugin:
             result.add(site_name, entry)
         result.finalize()
         return result
+
+    @staticmethod
+    def occupied_vlans(db: ABCDatabase, node_id: str, component_name: str, start: datetime = None,
+                       end: datetime = None) -> List[str]:
+        """
+        Get existing components attached to Active/Ticketed Network Service Slivers
+        :param db:
+        :param node_id:
+        :param component_name:
+        :param start:
+        :param end:
+        :return: list of components
+        """
+        assert node_id is not None
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value,
+                  ReservationStates.Nascent.value]
+
+        result = []
+        res_type = []
+        for x in ServiceType:
+            res_type.append(str(x))
+
+        # Only get Active or Ticketing reservations
+        comps = db.get_components(node_id=node_id, component=component_name, rsv_type=res_type, states=states,
+                                  start=start, end=end)
+        if comps is not None:
+            return comps.get(component_name)
 
     @staticmethod
     def occupied_node_capacity(*, db: ABCDatabase, node_id: str, start: datetime,
@@ -154,6 +183,7 @@ class AggregatedBQMPlugin:
 
         start = kwargs.get('start', None)
         end = kwargs.get('end', None)
+        db = self.actor.get_plugin().get_database()
 
         # do a one-pass aggregation of servers, their components and interfaces
         # and some flags (e.g. PTP availability)
@@ -227,7 +257,6 @@ class AggregatedBQMPlugin:
                     allocated_comp_caps = dict()
                     worker_sliver.node_id = sliver.node_id
                 else:
-                    db = self.actor.get_plugin().get_database()
                     # query database for everything taken on this node
                     allocated_caps, allocated_comp_caps = self.occupied_node_capacity(db=db, node_id=sliver.node_id,
                                                                                       start=start, end=end)
@@ -320,7 +349,6 @@ class AggregatedBQMPlugin:
                     p4_sliver.capacity_allocations = Capacities()
                     p4_sliver.capacities += p4.get_capacities()
                     # query database for everything taken on this node
-                    db = self.actor.get_plugin().get_database()
                     allocated_caps, allocated_comp_caps = self.occupied_node_capacity(db=db, node_id=p4.node_id,
                                                                                       start=start, end=end)
                     if allocated_caps:
@@ -465,6 +493,11 @@ class AggregatedBQMPlugin:
                 _, fac_ns_props = cbm.get_node_properties(node_id=fac_ns_node_id)
                 _, fac_cp_props = cbm.get_node_properties(node_id=fac_cp_node_id)
 
+                allocated_vlans = self.occupied_vlans(db=db, node_id=fac_sliver.resource_name,
+                                                      component_name=fac_sliver.node_id, start=start, end=end)
+                labels = Labels()
+                labels.vlan = allocated_vlans
+
                 # filter down only the needed properties then recreate the structure of facility in ABQM
                 new_fac_props = {ABCPropertyGraph.PROP_NAME: fac_props[ABCPropertyGraph.PROP_NAME],
                                  ABCPropertyGraph.PROP_TYPE: fac_props[ABCPropertyGraph.PROP_TYPE],
@@ -482,6 +515,8 @@ class AggregatedBQMPlugin:
                                 ABCPropertyGraph.PROP_LABELS: fac_cp_props.get(ABCPropertyGraph.PROP_LABELS),
                                 ABCPropertyGraph.PROP_CAPACITIES: fac_cp_props.get(ABCPropertyGraph.PROP_CAPACITIES)
                                 }
+                if len(labels.vlan):
+                    new_cp_props[ABCPropertyGraph.PROP_LABEL_ALLOCATIONS] = labels.to_dict()
                 new_cp_props = {k: v for (k, v) in new_cp_props.items() if v}
                 abqm.add_node(node_id=fac_cp_node_id, label=ABCPropertyGraph.CLASS_ConnectionPoint,
                               props=new_cp_props)
@@ -515,7 +550,7 @@ class AggregatedBQMPlugin:
                 abqm.add_node(node_id=fac_link_id, label=ABCPropertyGraph.CLASS_Link,
                               props=new_link_props)
                 try:
-                    abqm.get_node_properties(node_id=fac_sp_id)
+                    new_sp_props = abqm.get_node_properties(node_id=fac_sp_id)
                 except PropertyGraphQueryException:
                     # if the node doesn't exist we need to create it (it could have been created in the first pass)
                     _, fac_sp_props = cbm.get_node_properties(node_id=fac_sp_id)
