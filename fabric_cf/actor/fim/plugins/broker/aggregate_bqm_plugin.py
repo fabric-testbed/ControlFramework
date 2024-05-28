@@ -160,10 +160,13 @@ class AggregatedBQMPlugin:
         # this includes facilities
         nnodes = cbm.get_all_nodes_by_class(label=ABCPropertyGraph.CLASS_NetworkNode)
         slivers_by_site = defaultdict(list)
+        p4s_by_site = defaultdict(list)
         for n in nnodes:
             # build deep slivers for each advertised server, aggregate by site
             node_sliver = cbm.build_deep_node_sliver(node_id=n)
             slivers_by_site[node_sliver.site].append(node_sliver)
+            if node_sliver.get_type() == NodeType.Switch and "p4" in node_sliver.get_name():
+                p4s_by_site[node_sliver.site].append(node_sliver)
 
         # create a new blank Aggregated BQM NetworkX graph
         if kwargs['query_level'] == 0:
@@ -304,6 +307,30 @@ class AggregatedBQMPlugin:
             site_props = abqm.node_sliver_to_graph_properties_dict(site_sliver)
             abqm.add_node(node_id=site_sliver.node_id, label=ABCPropertyGraph.CLASS_CompositeNode,
                           props=site_props)
+
+            p4s = p4s_by_site.get(site_sliver.site)
+            if p4s:
+                for p4 in p4s:
+                    p4_sliver = NodeSliver()
+                    p4_sliver.node_id = str(uuid.uuid4())
+                    p4_sliver.set_type(resource_type=NodeType.Switch)
+                    p4_sliver.set_name(resource_name=p4.get_name())
+                    p4_sliver.set_site(site=p4.get_site())
+                    p4_sliver.capacities = Capacities()
+                    p4_sliver.capacity_allocations = Capacities()
+                    p4_sliver.capacities += p4.get_capacities()
+                    # query database for everything taken on this node
+                    db = self.actor.get_plugin().get_database()
+                    allocated_caps, allocated_comp_caps = self.occupied_node_capacity(db=db, node_id=p4.node_id,
+                                                                                      start=start, end=end)
+                    if allocated_caps:
+                        p4_sliver.capacity_allocations = p4_sliver.capacity_allocations + allocated_caps
+                    p4_props = abqm.node_sliver_to_graph_properties_dict(p4_sliver)
+                    node_id = p4.node_id
+                    if kwargs['query_level'] != 0:
+                        node_id = p4_sliver.node_id
+                    abqm.add_node(node_id=node_id, label=ABCPropertyGraph.CLASS_NetworkNode, props=p4_props)
+                    abqm.add_link(node_a=site_sliver.node_id, rel=ABCPropertyGraph.REL_HAS, node_b=node_id)
 
             # Add per worker metrics for query level 2
             if kwargs['query_level'] == 2 or kwargs['query_level'] == 0:
