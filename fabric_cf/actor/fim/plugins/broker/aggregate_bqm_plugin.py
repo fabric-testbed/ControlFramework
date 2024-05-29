@@ -113,7 +113,9 @@ class AggregatedBQMPlugin:
         comps = db.get_components(node_id=node_id, component=component_name, rsv_type=res_type, states=states,
                                   start=start, end=end)
         if comps is not None:
-            return comps.get(component_name)
+            if comps.get(component_name):
+                result = comps.get(component_name)
+        return result
 
     @staticmethod
     def occupied_node_capacity(*, db: ABCDatabase, node_id: str, start: datetime,
@@ -473,15 +475,42 @@ class AggregatedBQMPlugin:
         for s, lf in facilities_by_site.items():
             # multiple facilities per site possible
             for fac_sliver in lf:
-                fac_nbs = cbm.get_first_and_second_neighbor(node_id=fac_sliver.node_id,
-                                                            rel1=ABCPropertyGraph.REL_HAS,
-                                                            node1_label=ABCPropertyGraph.CLASS_NetworkService,
-                                                            rel2=ABCPropertyGraph.REL_CONNECTS,
-                                                            node2_label=ABCPropertyGraph.CLASS_ConnectionPoint)
-                try:
-                    fac_ns_node_id = fac_nbs[0][0]
-                    fac_cp_node_id = fac_nbs[0][1]
-                except KeyError:
+                ns_list = cbm.get_first_neighbor(node_id=fac_sliver.node_id,
+                                                 rel=ABCPropertyGraph.REL_HAS,
+                                                 node_label=ABCPropertyGraph.CLASS_NetworkService)
+
+                if not ns_list or not len(ns_list):
+                    if self.logger:
+                        self.logger.warning(f'Unable to trace facility NetworkService for '
+                                            f'facility {fac_sliver.resource_name}, continuing')
+                    else:
+                        print(f'Unable to trace facility NetworkService for '
+                              f'facility {fac_sliver.resource_name}, continuing')
+                    continue
+
+                _, fac_props = cbm.get_node_properties(node_id=fac_sliver.node_id)
+                new_fac_props = {ABCPropertyGraph.PROP_NAME: fac_props[ABCPropertyGraph.PROP_NAME],
+                                 ABCPropertyGraph.PROP_TYPE: fac_props[ABCPropertyGraph.PROP_TYPE],
+                                 ABCPropertyGraph.PROP_SITE: s
+                                 }
+                abqm.add_node(node_id=fac_sliver.node_id, label=ABCPropertyGraph.CLASS_NetworkNode,
+                              props=new_fac_props)
+
+                fac_ns_node_id = ns_list[0]
+                _, fac_ns_props = cbm.get_node_properties(node_id=fac_ns_node_id)
+
+                # filter down only the needed properties then recreate the structure of facility in ABQM
+                new_ns_props = {ABCPropertyGraph.PROP_NAME: fac_ns_props[ABCPropertyGraph.PROP_NAME],
+                                ABCPropertyGraph.PROP_TYPE: fac_ns_props[ABCPropertyGraph.PROP_TYPE]
+                                }
+
+                abqm.add_node(node_id=fac_ns_node_id, label=ABCPropertyGraph.CLASS_NetworkService,
+                              props=new_ns_props)
+
+                abqm.add_link(node_a=fac_sliver.node_id, rel=ABCPropertyGraph.REL_HAS, node_b=fac_ns_node_id)
+
+                fac_ns_cp_list = cbm.get_all_ns_or_link_connection_points(link_id=ns_list[0])
+                if not fac_ns_cp_list:
                     if self.logger:
                         self.logger.warning(f'Unable to trace facility ConnectionPoint for '
                                             f'facility {fac_sliver.resource_name}, continuing')
@@ -489,84 +518,74 @@ class AggregatedBQMPlugin:
                         print(f'Unable to trace facility ConnectionPoint for '
                               f'facility {fac_sliver.resource_name}, continuing')
                     continue
-                _, fac_props = cbm.get_node_properties(node_id=fac_sliver.node_id)
-                _, fac_ns_props = cbm.get_node_properties(node_id=fac_ns_node_id)
-                _, fac_cp_props = cbm.get_node_properties(node_id=fac_cp_node_id)
 
-                allocated_vlans = self.occupied_vlans(db=db, node_id=fac_sliver.resource_name,
-                                                      component_name=fac_sliver.node_id, start=start, end=end)
-                labels = Labels()
-                labels.vlan = allocated_vlans
+                for fac_cp_node_id in fac_ns_cp_list:
+                    _, fac_cp_props = cbm.get_node_properties(node_id=fac_cp_node_id)
 
-                # filter down only the needed properties then recreate the structure of facility in ABQM
-                new_fac_props = {ABCPropertyGraph.PROP_NAME: fac_props[ABCPropertyGraph.PROP_NAME],
-                                 ABCPropertyGraph.PROP_TYPE: fac_props[ABCPropertyGraph.PROP_TYPE],
-                                 ABCPropertyGraph.PROP_SITE: s
-                                 }
-                abqm.add_node(node_id=fac_sliver.node_id, label=ABCPropertyGraph.CLASS_NetworkNode,
-                              props=new_fac_props)
-                new_ns_props = {ABCPropertyGraph.PROP_NAME: fac_ns_props[ABCPropertyGraph.PROP_NAME],
-                                ABCPropertyGraph.PROP_TYPE: fac_ns_props[ABCPropertyGraph.PROP_TYPE]
-                                }
-                abqm.add_node(node_id=fac_ns_node_id, label=ABCPropertyGraph.CLASS_NetworkService,
-                              props=new_ns_props)
-                new_cp_props = {ABCPropertyGraph.PROP_NAME: fac_cp_props[ABCPropertyGraph.PROP_NAME],
-                                ABCPropertyGraph.PROP_TYPE: fac_cp_props[ABCPropertyGraph.PROP_TYPE],
-                                ABCPropertyGraph.PROP_LABELS: fac_cp_props.get(ABCPropertyGraph.PROP_LABELS),
-                                ABCPropertyGraph.PROP_CAPACITIES: fac_cp_props.get(ABCPropertyGraph.PROP_CAPACITIES)
-                                }
-                if len(labels.vlan):
-                    new_cp_props[ABCPropertyGraph.PROP_LABEL_ALLOCATIONS] = labels.to_dict()
-                new_cp_props = {k: v for (k, v) in new_cp_props.items() if v}
-                abqm.add_node(node_id=fac_cp_node_id, label=ABCPropertyGraph.CLASS_ConnectionPoint,
-                              props=new_cp_props)
-                abqm.add_link(node_a=fac_sliver.node_id, rel=ABCPropertyGraph.REL_HAS, node_b=fac_ns_node_id)
-                abqm.add_link(node_a=fac_ns_node_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=fac_cp_node_id)
+                    allocated_vlans = self.occupied_vlans(db=db, node_id=fac_sliver.resource_name,
+                                                          component_name=fac_cp_node_id, start=start, end=end)
+                    labels = Labels()
+                    labels.vlan = allocated_vlans
 
-                # trace the link to a switch port/ConnectionPoint and replicate them for simplicity
-                fac_cp_nbs = cbm.get_first_and_second_neighbor(node_id=fac_cp_node_id,
-                                                               rel1=ABCPropertyGraph.REL_CONNECTS,
-                                                               node1_label=ABCPropertyGraph.CLASS_Link,
-                                                               rel2=ABCPropertyGraph.REL_CONNECTS,
-                                                               node2_label=ABCPropertyGraph.CLASS_ConnectionPoint)
-                if len(fac_cp_nbs) == 0 or len(fac_cp_nbs) > 1:
-                    if self.logger:
-                        self.logger.warning(f'Unable to trace switch port from Facility port '
-                                            f'for facility {fac_sliver.resource_name} {fac_cp_nbs}')
-                    else:
-                        print(f'Unable to trace switch port from Facility port '
-                              f'for facility {fac_sliver.resource_name} {fac_cp_nbs}')
-                    continue
-
-                fac_link_id = fac_cp_nbs[0][0]
-                fac_sp_id = fac_cp_nbs[0][1]
-
-                _, fac_link_props = cbm.get_node_properties(node_id=fac_link_id)
-                # selectively replicate link properties
-                new_link_props = {ABCPropertyGraph.PROP_NAME: fac_link_props[ABCPropertyGraph.PROP_NAME],
-                                  ABCPropertyGraph.PROP_TYPE: fac_link_props[ABCPropertyGraph.PROP_TYPE],
-                                  ABCPropertyGraph.PROP_LAYER: fac_link_props[ABCPropertyGraph.PROP_LAYER]
-                                  }
-                abqm.add_node(node_id=fac_link_id, label=ABCPropertyGraph.CLASS_Link,
-                              props=new_link_props)
-                try:
-                    new_sp_props = abqm.get_node_properties(node_id=fac_sp_id)
-                except PropertyGraphQueryException:
-                    # if the node doesn't exist we need to create it (it could have been created in the first pass)
-                    _, fac_sp_props = cbm.get_node_properties(node_id=fac_sp_id)
-                    new_sp_props = {ABCPropertyGraph.PROP_NAME: fac_sp_props[ABCPropertyGraph.PROP_NAME],
-                                    ABCPropertyGraph.PROP_TYPE: fac_sp_props[ABCPropertyGraph.PROP_TYPE],
-                                    ABCPropertyGraph.PROP_CAPACITIES: fac_sp_props.get(
-                                        ABCPropertyGraph.PROP_CAPACITIES),
-                                    ABCPropertyGraph.PROP_LABELS: fac_sp_props.get(ABCPropertyGraph.PROP_LABELS)
+                    new_cp_props = {ABCPropertyGraph.PROP_NAME: fac_cp_props[ABCPropertyGraph.PROP_NAME],
+                                    ABCPropertyGraph.PROP_TYPE: fac_cp_props[ABCPropertyGraph.PROP_TYPE],
+                                    ABCPropertyGraph.PROP_LABELS: fac_cp_props.get(ABCPropertyGraph.PROP_LABELS),
+                                    ABCPropertyGraph.PROP_CAPACITIES: fac_cp_props.get(ABCPropertyGraph.PROP_CAPACITIES)
                                     }
-                    new_sp_props = {k: v for (k, v) in new_sp_props.items() if v}
-                    abqm.add_node(node_id=fac_sp_id, label=ABCPropertyGraph.CLASS_ConnectionPoint,
-                                  props=new_sp_props)
 
-                # link these together
-                abqm.add_link(node_a=fac_cp_node_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=fac_link_id)
-                abqm.add_link(node_a=fac_link_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=fac_sp_id)
-                abqm.add_link(node_a=fac_sp_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=site_to_ns_node_id[s])
+                    if len(labels.vlan):
+                        new_cp_props[ABCPropertyGraph.PROP_LABEL_ALLOCATIONS] = labels.to_dict()
+
+                    new_cp_props = {k: v for (k, v) in new_cp_props.items() if v}
+
+                    abqm.add_node(node_id=fac_cp_node_id, label=ABCPropertyGraph.CLASS_ConnectionPoint,
+                                  props=new_cp_props)
+                    abqm.add_link(node_a=fac_ns_node_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=fac_cp_node_id)
+
+                    # trace the link to a switch port/ConnectionPoint and replicate them for simplicity
+                    fac_cp_nbs = cbm.get_first_and_second_neighbor(node_id=fac_cp_node_id,
+                                                                   rel1=ABCPropertyGraph.REL_CONNECTS,
+                                                                   node1_label=ABCPropertyGraph.CLASS_Link,
+                                                                   rel2=ABCPropertyGraph.REL_CONNECTS,
+                                                                   node2_label=ABCPropertyGraph.CLASS_ConnectionPoint)
+                    if len(fac_cp_nbs) == 0 or len(fac_cp_nbs) > 1:
+                        if self.logger:
+                            self.logger.warning(f'Unable to trace switch port from Facility port '
+                                                f'for facility {fac_sliver.resource_name} {fac_cp_nbs}')
+                        else:
+                            print(f'Unable to trace switch port from Facility port '
+                                  f'for facility {fac_sliver.resource_name} {fac_cp_nbs}')
+                        continue
+
+                    fac_link_id = fac_cp_nbs[0][0]
+                    fac_sp_id = fac_cp_nbs[0][1]
+
+                    _, fac_link_props = cbm.get_node_properties(node_id=fac_link_id)
+                    # selectively replicate link properties
+                    new_link_props = {ABCPropertyGraph.PROP_NAME: fac_link_props[ABCPropertyGraph.PROP_NAME],
+                                      ABCPropertyGraph.PROP_TYPE: fac_link_props[ABCPropertyGraph.PROP_TYPE],
+                                      ABCPropertyGraph.PROP_LAYER: fac_link_props[ABCPropertyGraph.PROP_LAYER]
+                                      }
+                    abqm.add_node(node_id=fac_link_id, label=ABCPropertyGraph.CLASS_Link,
+                                  props=new_link_props)
+                    try:
+                        new_sp_props = abqm.get_node_properties(node_id=fac_sp_id)
+                    except PropertyGraphQueryException:
+                        # if the node doesn't exist we need to create it (it could have been created in the first pass)
+                        _, fac_sp_props = cbm.get_node_properties(node_id=fac_sp_id)
+                        new_sp_props = {ABCPropertyGraph.PROP_NAME: fac_sp_props[ABCPropertyGraph.PROP_NAME],
+                                        ABCPropertyGraph.PROP_TYPE: fac_sp_props[ABCPropertyGraph.PROP_TYPE],
+                                        ABCPropertyGraph.PROP_CAPACITIES: fac_sp_props.get(
+                                            ABCPropertyGraph.PROP_CAPACITIES),
+                                        ABCPropertyGraph.PROP_LABELS: fac_sp_props.get(ABCPropertyGraph.PROP_LABELS)
+                                        }
+                        new_sp_props = {k: v for (k, v) in new_sp_props.items() if v}
+                        abqm.add_node(node_id=fac_sp_id, label=ABCPropertyGraph.CLASS_ConnectionPoint,
+                                      props=new_sp_props)
+
+                    # link these together
+                    abqm.add_link(node_a=fac_cp_node_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=fac_link_id)
+                    abqm.add_link(node_a=fac_link_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=fac_sp_id)
+                    abqm.add_link(node_a=fac_sp_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=site_to_ns_node_id[s])
 
         return abqm
