@@ -533,7 +533,7 @@ class AggregatedBQMPlugin:
                                     }
 
                     if allocated_vlans and len(allocated_vlans):
-                        labels = Labels(vlan=allocated_vlans)
+                        labels = Labels(vlan_range=allocated_vlans)
                         new_cp_props[ABCPropertyGraph.PROP_LABEL_ALLOCATIONS] = json.dumps(labels.to_json())
 
                     new_cp_props = {k: v for (k, v) in new_cp_props.items() if v}
