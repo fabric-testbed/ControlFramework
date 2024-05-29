@@ -25,6 +25,7 @@
 # Author: Ilya Baldin (ibaldin@renci.org)
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from typing import Tuple, Dict, TYPE_CHECKING, List
 from collections import defaultdict
@@ -524,8 +525,6 @@ class AggregatedBQMPlugin:
 
                     allocated_vlans = self.occupied_vlans(db=db, node_id=fac_sliver.resource_name,
                                                           component_name=fac_cp_node_id, start=start, end=end)
-                    labels = Labels()
-                    labels.vlan = allocated_vlans
 
                     new_cp_props = {ABCPropertyGraph.PROP_NAME: fac_cp_props[ABCPropertyGraph.PROP_NAME],
                                     ABCPropertyGraph.PROP_TYPE: fac_cp_props[ABCPropertyGraph.PROP_TYPE],
@@ -533,8 +532,9 @@ class AggregatedBQMPlugin:
                                     ABCPropertyGraph.PROP_CAPACITIES: fac_cp_props.get(ABCPropertyGraph.PROP_CAPACITIES)
                                     }
 
-                    if len(labels.vlan):
-                        new_cp_props[ABCPropertyGraph.PROP_LABEL_ALLOCATIONS] = labels.to_dict()
+                    if allocated_vlans and len(allocated_vlans):
+                        labels = Labels(vlan=allocated_vlans)
+                        new_cp_props[ABCPropertyGraph.PROP_LABEL_ALLOCATIONS] = json.dumps(labels.to_json())
 
                     new_cp_props = {k: v for (k, v) in new_cp_props.items() if v}
 
