@@ -41,6 +41,7 @@ from fim.slivers.capacities_labels import Labels
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver, ServiceType, NSLayer
+from fim.slivers.path_info import Path
 
 from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
@@ -671,6 +672,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         owner_switch = None
 
         peered_ns_interfaces = []
+        sw_info_per_interface = {}
 
         # For each Interface Sliver;
         for ifs in sliver.interface_info.interfaces.values():
@@ -815,6 +817,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
             self.logger.info(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
 
+            if owner_switch.get_labels() and owner_switch.get_labels().ipv4:
+                sw_info_per_interface[owner_switch.get_name()] = owner_switch.get_labels().ipv4
+
         # Update the Network Service Sliver Node Map to map to parent of (a)
         sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns_id))
 
@@ -836,6 +841,24 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.__allocate_peered_interfaces(peered_interfaces=peered_ns_interfaces, owner_switch=owner_switch,
                                           owner_mpls=owner_mpls_ns, inv=inv, sliver=sliver, owner_ns=owner_ns,
                                           node_id_to_reservations=node_id_to_reservations, term=term)
+
+        if sliver.ero and len(sliver.ero.get()) and len(sw_info_per_interface) == 2:
+            ero_hops = {}
+            type, path = sliver.ero.get()
+            for hop in path.get()[0]:
+                # User passes the site names; Broker maps the sites names to the respective switch IP
+                hop_switch = self.get_switch_sliver(site=hop)
+                if not hop_switch:
+                    self.logger.error(f"Requested hop: {hop} in the ERO does not exist")
+                    raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                          msg=f"Requested hop: {hop} in the ERO does not exist ")
+
+                if hop_switch.get_labels() and hop_switch.get_labels().ipv4:
+                    ero_hops[hop] = hop_switch.get_labels().ipv4
+                    hop = hop_switch.get_labels().ipv4
+
+            # TODO check loops in the path and raise error
+            self.logger.info(f"Network Service ERO: {sliver.ero}")
 
         return delegation_id, sliver, error_msg
 
@@ -1275,20 +1298,17 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         """
         try:
             self.lock.acquire()
-            if self.combined_broker_model is None:
-                return None
-            node_props = {ABCPropertyGraphConstants.PROP_SITE: site,
-                          ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Switch)}
-            candidates = self.combined_broker_model.get_matching_nodes_with_components(
-                label=ABCPropertyGraphConstants.CLASS_NetworkNode,
-                props=node_props)
+            if self.combined_broker_model:
+                node_props = {ABCPropertyGraphConstants.PROP_SITE: site,
+                              ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Switch)}
+                candidates = self.combined_broker_model.get_matching_nodes_with_components(
+                    label=ABCPropertyGraphConstants.CLASS_NetworkNode,
+                    props=node_props)
 
-            if candidates is not None:
-                for c in candidates:
-                    ns_sliver = self.combined_broker_model.build_deep_node_sliver(node_id=c)
-                    return ns_sliver
-
-            return None
+                if candidates is not None:
+                    for c in candidates:
+                        ns_sliver = self.combined_broker_model.build_deep_node_sliver(node_id=c)
+                        return ns_sliver
         finally:
             self.lock.release()
 
