@@ -584,7 +584,7 @@ class Kernel:
             state_changed, slice_state = slice_obj.transition_slice(operation=SliceStateMachine.REEVALUATE)
             if state_changed:
                 slice_obj.set_dirty()
-                if slice_state == SliceState.Closing:
+                if slice_state in [SliceState.Dead, SliceState.Closing]:
                     slice_avro = Translate.translate_slice_to_avro(slice_obj=slice_obj)
                     EventLoggerSingleton.get().log_slice_event(slice_object=slice_avro, action=ActionId.delete)
             self.plugin.get_database().update_slice(slice_object=slice_obj)

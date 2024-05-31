@@ -691,7 +691,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 continue
             elif node_id == str(NodeType.Switch):
                 bqm_node = self.get_network_node_from_graph(node_id=bqm_node_id)
-                node_map_id = f"{node_map_id}:{bqm_node.get_name()}:{bqm_node_id}:{ifs.get_labels().local_name}"
+                node_map_id = f"{node_map_id}#{bqm_node.get_name()}#{bqm_node_id}#{ifs.get_labels().local_name}"
             else:
                 # For VM interfaces
                 bqm_node = self.get_component_sliver(node_id=bqm_node_id)
@@ -800,6 +800,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 error_msg = f"More than 1 or 0 Network Delegations found! net_adm_ids: {net_adm_ids}"
                 self.logger.error(error_msg)
                 raise BrokerException(msg=error_msg)
+
+            if bqm_node.get_type() == NodeType.Facility:
+                node_map_id = f"{node_map_id}#{bqm_node.get_name()}#{bqm_cp.node_id}#{ifs_labels.vlan}"
 
             # Update the Interface Sliver Node Map to map to (a)
             ifs.set_node_map(node_map=(node_map_id, bqm_cp.node_id))
