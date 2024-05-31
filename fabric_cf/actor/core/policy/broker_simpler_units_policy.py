@@ -817,8 +817,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
             self.logger.info(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
 
-            if owner_switch.get_labels() and owner_switch.get_labels().ipv4:
-                sw_info_per_interface[owner_switch.get_name()] = owner_switch.get_labels().ipv4
+            owner_v4_service = self.get_ns_from_switch(switch=owner_switch, ns_type=ServiceType.FABNetv4)
+            if owner_v4_service and owner_v4_service.get_labels():
+                sw_info_per_interface[owner_switch.get_name()] = owner_v4_service.get_labels().ipv4
 
         # Update the Network Service Sliver Node Map to map to parent of (a)
         sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns_id))
@@ -844,6 +845,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         if sliver.ero and len(sliver.ero.get()) and len(sw_info_per_interface) == 2:
             ero_hops = {}
+            new_path = []
             type, path = sliver.ero.get()
             for hop in path.get()[0]:
                 # User passes the site names; Broker maps the sites names to the respective switch IP
@@ -853,12 +855,15 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                     raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                           msg=f"Requested hop: {hop} in the ERO does not exist ")
 
-                if hop_switch.get_labels() and hop_switch.get_labels().ipv4:
-                    ero_hops[hop] = hop_switch.get_labels().ipv4
-                    hop = hop_switch.get_labels().ipv4
+                hop_v4_service = self.get_ns_from_switch(switch=hop_switch, ns_type=ServiceType.FABNetv4)
+                if hop_v4_service and hop_v4_service.get_labels() and hop_v4_service.get_labels().ipv4:
+                    sw_info_per_interface[hop_switch.get_name()] = hop_v4_service.get_labels().ipv4
+                    new_path.append(hop_v4_service.get_labels().ipv4)
+                    hop = hop_v4_service.get_labels().ipv4
 
             # TODO check loops in the path and raise error
-            self.logger.info(f"Network Service ERO: {sliver.ero}")
+            self.logger.info(f"KOMAL ---- Network Service ERO: {sliver.ero}")
+            self.logger.info(f"KOMAL ---- Network Service ERO NEW PATH: {new_path}")
 
         return delegation_id, sliver, error_msg
 
@@ -1289,6 +1294,19 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             return peer_node
         else:
             return self.get_switch_sliver(site=site)
+
+    @staticmethod
+    def get_ns_from_switch(switch: NodeSliver, ns_type: ServiceType) -> NetworkServiceSliver:
+        """
+        Extract specific type of service from a switch
+        :param switch: switch
+        :param ns_type: type of service requested
+        :return Network Service
+        """
+        if switch and switch.network_service_info:
+            for service_name, service in switch.network_service_info.network_services.items():
+                if service.get_type() == ns_type:
+                    return service
 
     def get_switch_sliver(self, *, site: str) -> NodeSliver:
         """
