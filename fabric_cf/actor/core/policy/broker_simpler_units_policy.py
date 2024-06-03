@@ -844,8 +844,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                           node_id_to_reservations=node_id_to_reservations, term=term)
 
         if sliver.ero and len(sliver.ero.get()) and len(sw_info_per_interface) == 2:
+            source_end = list(sw_info_per_interface.values())
             ero_hops = {}
-            new_path = []
+            new_path = [source_end[0]]
             type, path = sliver.ero.get()
             for hop in path.get()[0]:
                 # User passes the site names; Broker maps the sites names to the respective switch IP
@@ -857,13 +858,15 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
                 hop_v4_service = self.get_ns_from_switch(switch=hop_switch, ns_type=ServiceType.FABNetv4)
                 if hop_v4_service and hop_v4_service.get_labels() and hop_v4_service.get_labels().ipv4:
-                    sw_info_per_interface[hop_switch.get_name()] = hop_v4_service.get_labels().ipv4
+                    ero_hops[hop_switch.get_name()] = hop_v4_service.get_labels().ipv4
                     new_path.append(hop_v4_service.get_labels().ipv4)
-                    hop = hop_v4_service.get_labels().ipv4
 
-            # TODO check loops in the path and raise error
-            self.logger.info(f"KOMAL ---- Network Service ERO: {sliver.ero}")
-            self.logger.info(f"KOMAL ---- Network Service ERO NEW PATH: {new_path}")
+            new_path.append(source_end[1])
+
+            if len(new_path):
+                ero_path = Path()
+                ero_path.set_symmetric(new_path)
+                sliver.ero.set(ero_path)
 
         return delegation_id, sliver, error_msg
 
