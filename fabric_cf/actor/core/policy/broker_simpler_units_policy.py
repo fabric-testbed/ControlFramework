@@ -1311,21 +1311,23 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         :return Network Service
         """
         if switch and switch.network_service_info:
-            for service_name, service in switch.network_service_info.network_services.items():
+            for service in switch.network_service_info.network_services.values():
                 if service.get_type() == ns_type:
                     return service
 
-    def get_switch_sliver(self, *, site: str) -> NodeSliver:
+    def get_switch_sliver(self, *, site: str, stitch: bool = True) -> NodeSliver:
         """
         Get Component Sliver from BQM
         @param site: Node Site Name
+        @param stitch: Flag indicating if the StitchNode is being looked up
         @return Facility Sliver
         """
         try:
             self.lock.acquire()
             if self.combined_broker_model:
                 node_props = {ABCPropertyGraphConstants.PROP_SITE: site,
-                              ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Switch)}
+                              ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Switch),
+                              ABCPropertyGraphConstants.PROP_STITCH_NODE: stitch}
                 candidates = self.combined_broker_model.get_matching_nodes_with_components(
                     label=ABCPropertyGraphConstants.CLASS_NetworkNode,
                     props=node_props)
