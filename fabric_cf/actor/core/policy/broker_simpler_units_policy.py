@@ -1327,7 +1327,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             if self.combined_broker_model:
                 node_props = {ABCPropertyGraphConstants.PROP_SITE: site,
                               ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Switch),
-                              ABCPropertyGraphConstants.PROP_STITCH_NODE: stitch}
+                              ABCPropertyGraphConstants.PROP_STITCH_NODE: str(stitch)}
                 candidates = self.combined_broker_model.get_matching_nodes_with_components(
                     label=ABCPropertyGraphConstants.CLASS_NetworkNode,
                     props=node_props)
