@@ -844,6 +844,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                           node_id_to_reservations=node_id_to_reservations, term=term)
 
         if sliver.ero and len(sliver.ero.get()) and len(sw_info_per_interface) == 2:
+            self.logger.info(f"Requested ERO: {sliver.ero}")
             source_end = list(sw_info_per_interface.values())
             ero_hops = {}
             new_path = [source_end[0]]
@@ -851,6 +852,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             for hop in path.get()[0]:
                 # User passes the site names; Broker maps the sites names to the respective switch IP
                 hop_switch = self.get_switch_sliver(site=hop)
+                self.logger.debug(f"Switch information for {hop}: {hop_switch}")
                 if not hop_switch:
                     self.logger.error(f"Requested hop: {hop} in the ERO does not exist")
                     raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
@@ -858,6 +860,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
                 hop_v4_service = self.get_ns_from_switch(switch=hop_switch, ns_type=ServiceType.FABNetv4)
                 if hop_v4_service and hop_v4_service.get_labels() and hop_v4_service.get_labels().ipv4:
+                    self.logger.debug(f"Fabnetv4 information for {hop}: {hop_v4_service}")
                     ero_hops[hop_switch.get_name()] = hop_v4_service.get_labels().ipv4
                     new_path.append(hop_v4_service.get_labels().ipv4)
 
@@ -867,6 +870,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 ero_path = Path()
                 ero_path.set_symmetric(new_path)
                 sliver.ero.set(ero_path)
+                self.logger.info(f"Allocated ERO: {sliver.ero}")
 
         return delegation_id, sliver, error_msg
 
