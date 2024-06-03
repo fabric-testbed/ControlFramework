@@ -846,7 +846,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         if sliver.ero and len(sliver.ero.get()) and len(sw_info_per_interface) == 2:
             self.logger.info(f"Requested ERO: {sliver.ero}")
             source_end = list(sw_info_per_interface.values())
-            ero_hops = {}
+            ero_hops = []
             new_path = [source_end[0]]
             type, path = sliver.ero.get()
             for hop in path.get()[0]:
@@ -861,12 +861,16 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 hop_v4_service = self.get_ns_from_switch(switch=hop_switch, ns_type=ServiceType.FABNetv4)
                 if hop_v4_service and hop_v4_service.get_labels() and hop_v4_service.get_labels().ipv4:
                     self.logger.debug(f"Fabnetv4 information for {hop}: {hop_v4_service}")
-                    ero_hops[hop_switch.get_name()] = hop_v4_service.get_labels().ipv4
+                    ero_hops = f"{hop_switch.node_id}-ns"
                     new_path.append(hop_v4_service.get_labels().ipv4)
 
             new_path.append(source_end[1])
 
             if len(new_path):
+                if not self.validate_requested_ero_path(source_node=source_end[0], end_node=source_end[1],
+                                                        hops=ero_hops):
+                    raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                          msg=f"Requested ERO path: {sliver.ero} is invalid!")
                 ero_path = Path()
                 ero_path.set_symmetric(new_path)
                 sliver.ero.set(ero_path)
@@ -1315,6 +1319,18 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 if service.get_type() == ns_type:
                     return service
 
+    def validate_requested_ero_path(self, source_node: str, end_node: str, hops: List[str]) -> bool:
+        try:
+            self.lock.acquire()
+            if self.combined_broker_model:
+                path = self.combined_broker_model.get_nodes_on_path_with_hops(node_a=source_node,
+                                                                              node_z=end_node, hops=hops)
+                if len(path) and path[0] == source_node and path[-1] == end_node:
+                    return True
+        finally:
+            self.lock.release()
+        return False
+
     def get_switch_sliver(self, *, site: str, stitch: bool = True) -> NodeSliver:
         """
         Get Component Sliver from BQM
@@ -1326,14 +1342,16 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.lock.acquire()
             if self.combined_broker_model:
                 node_props = {ABCPropertyGraphConstants.PROP_SITE: site,
-                              ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Switch),
-                              ABCPropertyGraphConstants.PROP_STITCH_NODE: str(stitch)}
+                              ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Switch)}
+                              #ABCPropertyGraphConstants.PROP_STITCH_NODE: str(stitch).lower()}
                 candidates = self.combined_broker_model.get_matching_nodes_with_components(
                     label=ABCPropertyGraphConstants.CLASS_NetworkNode,
                     props=node_props)
 
                 if candidates is not None:
                     for c in candidates:
+                        if stitch and "p4" in c:
+                            continue
                         ns_sliver = self.combined_broker_model.build_deep_node_sliver(node_id=c)
                         return ns_sliver
         finally:
