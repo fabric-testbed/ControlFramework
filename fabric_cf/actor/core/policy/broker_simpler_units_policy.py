@@ -672,7 +672,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         owner_switch = None
 
         peered_ns_interfaces = []
-        sw_info_per_interface = {}
+        ero_source_end_info = []
 
         # For each Interface Sliver;
         for ifs in sliver.interface_info.interfaces.values():
@@ -819,7 +819,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
             owner_v4_service = self.get_ns_from_switch(switch=owner_switch, ns_type=ServiceType.FABNetv4)
             if owner_v4_service and owner_v4_service.get_labels():
-                sw_info_per_interface[owner_switch.get_name()] = owner_v4_service.get_labels().ipv4
+                ero_source_end_info.append((owner_switch.get_name(),owner_v4_service.get_labels().ipv4))
 
         # Update the Network Service Sliver Node Map to map to parent of (a)
         sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns_id))
@@ -843,11 +843,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                           owner_mpls=owner_mpls_ns, inv=inv, sliver=sliver, owner_ns=owner_ns,
                                           node_id_to_reservations=node_id_to_reservations, term=term)
 
-        if sliver.ero and len(sliver.ero.get()) and len(sw_info_per_interface) == 2:
+        if sliver.ero and len(sliver.ero.get()) and len(ero_source_end_info) == 2:
             self.logger.info(f"Requested ERO: {sliver.ero}")
-            source_end = list(sw_info_per_interface.values())
             ero_hops = []
-            new_path = [source_end[0]]
+            new_path = [ero_source_end_info[0][1]]
             type, path = sliver.ero.get()
             for hop in path.get()[0]:
                 # User passes the site names; Broker maps the sites names to the respective switch IP
@@ -864,10 +863,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                     ero_hops = f"{hop_switch.node_id}-ns"
                     new_path.append(hop_v4_service.get_labels().ipv4)
 
-            new_path.append(source_end[1])
+            new_path.append(ero_source_end_info[1][1])
 
             if len(new_path):
-                if not self.validate_requested_ero_path(source_node=source_end[0], end_node=source_end[1],
+                if not self.validate_requested_ero_path(source_node=ero_source_end_info[0][0],
+                                                        end_node=ero_source_end_info[1][0],
                                                         hops=ero_hops):
                     raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                           msg=f"Requested ERO path: {sliver.ero} is invalid!")
@@ -1324,7 +1324,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.lock.acquire()
             if self.combined_broker_model:
                 path = self.combined_broker_model.get_nodes_on_path_with_hops(node_a=source_node,
-                                                                              node_z=end_node, hops=hops)
+                                                                              node_z=end_node, hops=hops, cut_off=200)
                 if len(path) and path[0] == source_node and path[-1] == end_node:
                     return True
         finally:
