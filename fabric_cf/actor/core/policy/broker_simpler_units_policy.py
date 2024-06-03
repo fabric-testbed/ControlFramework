@@ -819,7 +819,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
             owner_v4_service = self.get_ns_from_switch(switch=owner_switch, ns_type=ServiceType.FABNetv4)
             if owner_v4_service and owner_v4_service.get_labels():
-                ero_source_end_info.append((owner_switch.get_name(),owner_v4_service.get_labels().ipv4))
+                ero_source_end_info.append((owner_switch.node_id, owner_v4_service.get_labels().ipv4))
 
         # Update the Network Service Sliver Node Map to map to parent of (a)
         sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns_id))
@@ -860,7 +860,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 hop_v4_service = self.get_ns_from_switch(switch=hop_switch, ns_type=ServiceType.FABNetv4)
                 if hop_v4_service and hop_v4_service.get_labels() and hop_v4_service.get_labels().ipv4:
                     self.logger.debug(f"Fabnetv4 information for {hop}: {hop_v4_service}")
-                    ero_hops = f"{hop_switch.node_id}-ns"
+                    ero_hops.append(f"{hop_switch.node_id}-ns")
                     new_path.append(hop_v4_service.get_labels().ipv4)
 
             new_path.append(ero_source_end_info[1][1])
@@ -1325,6 +1325,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             if self.combined_broker_model:
                 path = self.combined_broker_model.get_nodes_on_path_with_hops(node_a=source_node,
                                                                               node_z=end_node, hops=hops, cut_off=200)
+                self.logger.debug(f"Network path from source:{source_node} to end: {end_node} "
+                                  f"with hops: {hops} is path: {path}")
                 if len(path) and path[0] == source_node and path[-1] == end_node:
                     return True
         finally:
