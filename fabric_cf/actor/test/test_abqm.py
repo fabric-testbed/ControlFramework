@@ -4,6 +4,8 @@ from fim.graph.abc_property_graph import ABCPropertyGraph, GraphFormat
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMFactory, Neo4jCBMGraph
+from fim.user import NodeType
+
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
 
 """
@@ -28,9 +30,10 @@ class ABQM_Test(unittest.TestCase):
     def test_abqm(self):
         self.n4j_imp.delete_all_graphs()
         # these are produced by substrate tests
-        site_ads = ['../../../neo4j/Network-ad.graphml', '../../../neo4j/LBNL-ad.graphml',
-                    '../../../neo4j/RENCI-ad.graphml',
-                    '../../../neo4j/UKY-ad.graphml']
+        site_ads = ['../../../neo4j/Network-dev.graphml',
+                    '../../../neo4j/LBNL.graphml',
+                    '../../../neo4j/RENC.graphml',
+                    '../../../neo4j/UKY.graphml']
 
         cbm = Neo4jCBMGraph(importer=self.n4j_imp)
 
@@ -105,6 +108,38 @@ class ABQM_Test(unittest.TestCase):
         cbm_string = cbm.serialize_graph()
         with open('cbm.graphml', 'w') as f:
             f.write(cbm_string)
+
+        plain_cbm = self.n4j_imp.import_graph_from_string_direct(graph_string=abqm_level2_string)
+        temp = Neo4jCBMFactory.create(Neo4jPropertyGraph(graph_id=plain_cbm.graph_id,
+                                                         importer=self.n4j_imp))
+
+        site_node_ids = {}
+        for s in temp.get_all_nodes_by_class_and_type(label=ABCPropertyGraph.CLASS_CompositeNode,
+                                                      ntype=str(NodeType.Server)):
+            labels, props = temp.get_node_properties(node_id=s)
+            site_node_ids[props.get('Site')] = s
+
+        ns_node_ids = {}
+        for s in temp.get_all_network_service_nodes():
+            labels, props = temp.get_node_properties(node_id=s)
+            ns_node_ids[props.get('Name')] = s
+
+        path = temp.get_nodes_on_path_with_hops(node_a=site_node_ids['UKY'], node_z=site_node_ids['LBNL'],
+                                                hops=[ns_node_ids['RENC_ns']])
+
+        assert(len(path) != 0)
+        from fim.user.topology import AdvertizedTopology
+        substrate = AdvertizedTopology()
+        substrate.load(graph_string=abqm_level2_string)
+
+        uky_node_id = substrate.sites.get("UKY").node_id
+        lbnl_node_id = substrate.sites.get("LBNL").node_id
+        renc_ns_node_id = substrate.network_services.get("RENC_ns").node_id
+
+        path = substrate.graph_model.get_nodes_on_path_with_hops(node_a=uky_node_id, node_z=lbnl_node_id,
+                                                                 hops=[renc_ns_node_id])
+
+        assert(len(path) != 0)
 
         self.n4j_imp.delete_all_graphs()
 

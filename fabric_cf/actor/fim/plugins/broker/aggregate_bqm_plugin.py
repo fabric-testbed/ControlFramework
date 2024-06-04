@@ -186,7 +186,10 @@ class AggregatedBQMPlugin:
 
         start = kwargs.get('start', None)
         end = kwargs.get('end', None)
-        db = self.actor.get_plugin().get_database()
+        if not self.DEBUG_FLAG:
+            db = self.actor.get_plugin().get_database()
+        else:
+            db = None
 
         # do a one-pass aggregation of servers, their components and interfaces
         # and some flags (e.g. PTP availability)
@@ -351,11 +354,12 @@ class AggregatedBQMPlugin:
                     p4_sliver.capacities = Capacities()
                     p4_sliver.capacity_allocations = Capacities()
                     p4_sliver.capacities += p4.get_capacities()
-                    # query database for everything taken on this node
-                    allocated_caps, allocated_comp_caps = self.occupied_node_capacity(db=db, node_id=p4.node_id,
-                                                                                      start=start, end=end)
-                    if allocated_caps:
-                        p4_sliver.capacity_allocations = p4_sliver.capacity_allocations + allocated_caps
+                    if not self.DEBUG_FLAG:
+                        # query database for everything taken on this node
+                        allocated_caps, allocated_comp_caps = self.occupied_node_capacity(db=db, node_id=p4.node_id,
+                                                                                          start=start, end=end)
+                        if allocated_caps:
+                            p4_sliver.capacity_allocations = p4_sliver.capacity_allocations + allocated_caps
                     p4_props = abqm.node_sliver_to_graph_properties_dict(p4_sliver)
                     node_id = p4.node_id
                     if kwargs['query_level'] != 0:
@@ -523,18 +527,19 @@ class AggregatedBQMPlugin:
                 for fac_cp_node_id in fac_ns_cp_list:
                     _, fac_cp_props = cbm.get_node_properties(node_id=fac_cp_node_id)
 
-                    allocated_vlans = self.occupied_vlans(db=db, node_id=fac_sliver.resource_name,
-                                                          component_name=fac_cp_node_id, start=start, end=end)
-
                     new_cp_props = {ABCPropertyGraph.PROP_NAME: fac_cp_props[ABCPropertyGraph.PROP_NAME],
                                     ABCPropertyGraph.PROP_TYPE: fac_cp_props[ABCPropertyGraph.PROP_TYPE],
                                     ABCPropertyGraph.PROP_LABELS: fac_cp_props.get(ABCPropertyGraph.PROP_LABELS),
                                     ABCPropertyGraph.PROP_CAPACITIES: fac_cp_props.get(ABCPropertyGraph.PROP_CAPACITIES)
                                     }
 
-                    if allocated_vlans and len(allocated_vlans):
-                        labels = Labels(vlan=allocated_vlans)
-                        new_cp_props[ABCPropertyGraph.PROP_LABEL_ALLOCATIONS] = labels.to_json()
+                    if not self.DEBUG_FLAG:
+                        allocated_vlans = self.occupied_vlans(db=db, node_id=fac_sliver.resource_name,
+                                                              component_name=fac_cp_node_id, start=start, end=end)
+
+                        if allocated_vlans and len(allocated_vlans):
+                            labels = Labels(vlan=allocated_vlans)
+                            new_cp_props[ABCPropertyGraph.PROP_LABEL_ALLOCATIONS] = labels.to_json()
 
                     new_cp_props = {k: v for (k, v) in new_cp_props.items() if v}
 
