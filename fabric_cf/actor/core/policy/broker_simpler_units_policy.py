@@ -41,6 +41,7 @@ from fim.slivers.capacities_labels import Labels
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver, ServiceType, NSLayer
+from fim.slivers.path_info import Path
 
 from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
@@ -671,6 +672,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         owner_switch = None
 
         peered_ns_interfaces = []
+        ero_source_end_info = []
 
         # For each Interface Sliver;
         for ifs in sliver.interface_info.interfaces.values():
@@ -815,6 +817,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
             self.logger.info(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
 
+            owner_v4_service = self.get_ns_from_switch(switch=owner_switch, ns_type=ServiceType.FABNetv4)
+            if owner_v4_service and owner_v4_service.get_labels():
+                ero_source_end_info.append((owner_switch.node_id, owner_v4_service.get_labels().ipv4))
+
         # Update the Network Service Sliver Node Map to map to parent of (a)
         sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns_id))
 
@@ -836,6 +842,39 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.__allocate_peered_interfaces(peered_interfaces=peered_ns_interfaces, owner_switch=owner_switch,
                                           owner_mpls=owner_mpls_ns, inv=inv, sliver=sliver, owner_ns=owner_ns,
                                           node_id_to_reservations=node_id_to_reservations, term=term)
+
+        if sliver.ero and len(sliver.ero.get()) and len(ero_source_end_info) == 2:
+            self.logger.info(f"Requested ERO: {sliver.ero}")
+            ero_hops = []
+            new_path = [ero_source_end_info[0][1]]
+            type, path = sliver.ero.get()
+            for hop in path.get()[0]:
+                # User passes the site names; Broker maps the sites names to the respective switch IP
+                hop_switch = self.get_switch_sliver(site=hop)
+                self.logger.debug(f"Switch information for {hop}: {hop_switch}")
+                if not hop_switch:
+                    self.logger.error(f"Requested hop: {hop} in the ERO does not exist")
+                    raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                          msg=f"Requested hop: {hop} in the ERO does not exist ")
+
+                hop_v4_service = self.get_ns_from_switch(switch=hop_switch, ns_type=ServiceType.FABNetv4)
+                if hop_v4_service and hop_v4_service.get_labels() and hop_v4_service.get_labels().ipv4:
+                    self.logger.debug(f"Fabnetv4 information for {hop}: {hop_v4_service}")
+                    ero_hops.append(f"{hop_switch.node_id}-ns")
+                    new_path.append(hop_v4_service.get_labels().ipv4)
+
+            new_path.append(ero_source_end_info[1][1])
+
+            if len(new_path):
+                if not self.validate_requested_ero_path(source_node=ero_source_end_info[0][0],
+                                                        end_node=ero_source_end_info[1][0],
+                                                        hops=ero_hops):
+                    raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                          msg=f"Requested ERO path: {sliver.ero} is invalid!")
+                ero_path = Path()
+                ero_path.set_symmetric(new_path)
+                sliver.ero.set(ero_path)
+                self.logger.info(f"Allocated ERO: {sliver.ero}")
 
         return delegation_id, sliver, error_msg
 
@@ -1267,28 +1306,56 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         else:
             return self.get_switch_sliver(site=site)
 
-    def get_switch_sliver(self, *, site: str) -> NodeSliver:
+    @staticmethod
+    def get_ns_from_switch(switch: NodeSliver, ns_type: ServiceType) -> NetworkServiceSliver:
+        """
+        Extract specific type of service from a switch
+        :param switch: switch
+        :param ns_type: type of service requested
+        :return Network Service
+        """
+        if switch and switch.network_service_info:
+            for service in switch.network_service_info.network_services.values():
+                if service.get_type() == ns_type:
+                    return service
+
+    def validate_requested_ero_path(self, source_node: str, end_node: str, hops: List[str]) -> bool:
+        try:
+            self.lock.acquire()
+            if self.combined_broker_model:
+                path = self.combined_broker_model.get_nodes_on_path_with_hops(node_a=source_node,
+                                                                              node_z=end_node, hops=hops, cut_off=200)
+                self.logger.debug(f"Network path from source:{source_node} to end: {end_node} "
+                                  f"with hops: {hops} is path: {path}")
+                if len(path) and path[0] == source_node and path[-1] == end_node:
+                    return True
+        finally:
+            self.lock.release()
+        return False
+
+    def get_switch_sliver(self, *, site: str, stitch: bool = True) -> NodeSliver:
         """
         Get Component Sliver from BQM
         @param site: Node Site Name
+        @param stitch: Flag indicating if the StitchNode is being looked up
         @return Facility Sliver
         """
         try:
             self.lock.acquire()
-            if self.combined_broker_model is None:
-                return None
-            node_props = {ABCPropertyGraphConstants.PROP_SITE: site,
-                          ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Switch)}
-            candidates = self.combined_broker_model.get_matching_nodes_with_components(
-                label=ABCPropertyGraphConstants.CLASS_NetworkNode,
-                props=node_props)
+            if self.combined_broker_model:
+                node_props = {ABCPropertyGraphConstants.PROP_SITE: site,
+                              ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Switch)}
+                              #ABCPropertyGraphConstants.PROP_STITCH_NODE: str(stitch).lower()}
+                candidates = self.combined_broker_model.get_matching_nodes_with_components(
+                    label=ABCPropertyGraphConstants.CLASS_NetworkNode,
+                    props=node_props)
 
-            if candidates is not None:
-                for c in candidates:
-                    ns_sliver = self.combined_broker_model.build_deep_node_sliver(node_id=c)
-                    return ns_sliver
-
-            return None
+                if candidates is not None:
+                    for c in candidates:
+                        if stitch and "p4" in c:
+                            continue
+                        ns_sliver = self.combined_broker_model.build_deep_node_sliver(node_id=c)
+                        return ns_sliver
         finally:
             self.lock.release()
 

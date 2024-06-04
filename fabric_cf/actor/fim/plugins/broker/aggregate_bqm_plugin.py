@@ -150,7 +150,7 @@ class AggregatedBQMPlugin:
                     allocated_sliver = reservation.get_resources().get_sliver()
 
                 if allocated_sliver is not None:
-                    occupied_capacities = occupied_capacities + allocated_sliver.get_capacities()
+                    occupied_capacities = occupied_capacities + allocated_sliver.get_capacity_allocations()
 
                     if allocated_sliver.attached_components_info is not None:
                         for allocated_component in allocated_sliver.attached_components_info.devices.values():
