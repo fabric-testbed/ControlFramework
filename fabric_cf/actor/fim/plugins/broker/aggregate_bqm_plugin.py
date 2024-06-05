@@ -533,7 +533,7 @@ class AggregatedBQMPlugin:
                                     ABCPropertyGraph.PROP_CAPACITIES: fac_cp_props.get(ABCPropertyGraph.PROP_CAPACITIES)
                                     }
 
-                    if not self.DEBUG_FLAG:
+                    if not self.DEBUG_FLAG and kwargs['query_level'] != 0:
                         allocated_vlans = self.occupied_vlans(db=db, node_id=fac_sliver.resource_name,
                                                               component_name=fac_cp_node_id, start=start, end=end)
 

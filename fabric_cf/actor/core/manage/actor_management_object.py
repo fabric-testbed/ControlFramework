@@ -886,7 +886,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                                  start: datetime = None, end: datetime = None, includes: str = None,
                                  excludes: str = None) -> str:
         try:
-            return FimHelper.build_broker_query_model(level_0_broker_query_model=level_0_broker_query_model,
+            return FimHelper.build_broker_query_model(db=self.db, level_0_broker_query_model=level_0_broker_query_model,
                                                       level=level, graph_format=graph_format, start=start,
                                                       end=end, includes=includes, excludes=excludes)
         except Exception as e:

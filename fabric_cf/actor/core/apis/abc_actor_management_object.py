@@ -29,7 +29,6 @@ from abc import abstractmethod
 from datetime import datetime
 from typing import TYPE_CHECKING, Tuple, Dict, List
 
-from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_poa_avro import ResultPoaAvro

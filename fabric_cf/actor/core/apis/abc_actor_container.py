@@ -152,3 +152,12 @@ class ABCActorContainer(ABCContainerClock):
         Remove Actor Database
         @params actor_name: actor name
         """
+
+    @abstractmethod
+    def get_actor(self) -> ABCActorMixin:
+        """
+        Return Actor
+
+        @return Actor
+        """
+        pass
