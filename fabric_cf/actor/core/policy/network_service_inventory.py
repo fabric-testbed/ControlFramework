@@ -333,6 +333,9 @@ class NetworkServiceInventory(InventoryForType):
                 subnet_list = list(ip_network.subnets(new_prefix=64))
                 # Exclude the 1st subnet as it is reserved for control plane
                 subnet_list.pop(0)
+                # https://github.com/fabric-testbed/ControlFramework/issues/376
+                # Exclude the last subnet as the last subnet will be used for the FABRIC STAR Bastion Host Allocation
+                subnet_list.pop(-1)
 
             elif owner_ns.get_type() == ServiceType.FABNetv4:
                 ip_network = IPv4Network(delegated_label.ipv4_subnet)
