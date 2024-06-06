@@ -39,7 +39,7 @@ from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.authority_policy import AuthorityPolicy
 from fabric_cf.actor.core.common.exceptions import AuthorityException
-from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
 from fabric_cf.actor.core.apis.abc_resource_control import ABCResourceControl
@@ -402,23 +402,28 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         @param node_id_to_reservations: node_id_to_reservations
         @throws Exception in case of error
         """
-        assigned = self.assign_reservation(reservation=reservation, node_id_to_reservations=node_id_to_reservations)
-        if assigned is not None:
-            approved = reservation.get_requested_term()
-            reservation.set_approved(term=approved, approved_resources=assigned)
-            reservation.set_bid_pending(value=False)
-            node_id = assigned.get_sliver().get_node_map()[1]
+        try:
+            assigned = self.assign_reservation(reservation=reservation, node_id_to_reservations=node_id_to_reservations)
+            if assigned is not None:
+                approved = reservation.get_requested_term()
+                reservation.set_approved(term=approved, approved_resources=assigned)
+                reservation.set_bid_pending(value=False)
+                node_id = assigned.get_sliver().get_node_map()[1]
 
-            if node_id_to_reservations.get(node_id, None) is None:
-                node_id_to_reservations[node_id] = ReservationSet()
-            node_id_to_reservations[node_id].add(reservation=reservation)
-        else:
-            if not reservation.is_terminal():
-                self.logger.debug(f"Deferring reservation {reservation} for the next cycle: "
-                                  f"{self.actor.get_current_cycle() + 1}")
-                self.reschedule(reservation=reservation)
+                if node_id_to_reservations.get(node_id, None) is None:
+                    node_id_to_reservations[node_id] = ReservationSet()
+                node_id_to_reservations[node_id].add(reservation=reservation)
+            else:
+                if not reservation.is_terminal():
+                    self.logger.debug(f"Deferring reservation {reservation} for the next cycle: "
+                                      f"{self.actor.get_current_cycle() + 1}")
+                    self.reschedule(reservation=reservation)
 
-        return node_id_to_reservations
+            return node_id_to_reservations
+        except Exception as e:
+            self.logger.error(f"Could not assign {e}")
+            reservation.fail(message=str(e))
+            return node_id_to_reservations
 
     def assign_reservation(self, *, reservation: ABCAuthorityReservation, node_id_to_reservations: dict):
         """
@@ -472,7 +477,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Could not assign {e}")
-            return None
+            raise e
 
     def configuration_complete(self, *, action: str, token: ConfigToken, out_properties: dict):
         super().configuration_complete(action=action, token=token, out_properties=out_properties)
@@ -610,6 +615,13 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
 
         existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
                                                                                         states=states)
+        if existing_reservations:
+            closing_reservations = []
+            for r in existing_reservations:
+                if r.get_pending_state() == ReservationPendingStates.Closing:
+                    closing_reservations.append(r)
+            for c in closing_reservations:
+                existing_reservations.remove(c)
 
         reservations_allocated_in_cycle = node_id_to_reservations.get(node_id, None)
 

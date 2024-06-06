@@ -1,6 +1,5 @@
 import connexion
 
-from fabric_cf.orchestrator.swagger_server.models import SlicesPost
 from fabric_cf.orchestrator.swagger_server.models.slice_details import SliceDetails  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.models.slices import Slices  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.models.slices_post import SlicesPost  # noqa: E501
@@ -33,10 +32,10 @@ def slices_create_post(body, name, ssh_key, lease_end_time=None):  # noqa: E501
     post_body = SlicesPost()
     post_body.graph_model = body.decode("utf-8")
     post_body.ssh_keys = [ssh_key]
-    return rc.slices_create_post(post_body, name, lease_end_time)
+    return rc.slices_create_post(body=post_body, name=name, lease_end_time=lease_end_time)
 
 
-def slices_creates_post(body, name, lease_end_time=None):  # noqa: E501
+def slices_creates_post(body, name, lease_start_time=None, lease_end_time=None):  # noqa: E501
     """Create slice
 
     Request to create slice as described in the request. Request would be a graph ML describing the requested resources.
@@ -50,6 +49,8 @@ def slices_creates_post(body, name, lease_end_time=None):  # noqa: E501
     :type body: dict | bytes
     :param name: Slice Name
     :type name: str
+    :param lease_start_time: Lease End Time for the Slice
+    :type lease_start_time: str
     :param lease_end_time: Lease End Time for the Slice
     :type lease_end_time: str
 
@@ -57,7 +58,7 @@ def slices_creates_post(body, name, lease_end_time=None):  # noqa: E501
     """
     if connexion.request.is_json:
         body = SlicesPost.from_dict(connexion.request.get_json())  # noqa: E501
-    return rc.slices_create_post(body, name, lease_end_time)
+    return rc.slices_create_post(body=body, name=name, lease_start_time=lease_start_time, lease_end_time=lease_end_time)
 
 
 def slices_delete_delete():  # noqa: E501
@@ -86,14 +87,17 @@ def slices_delete_slice_id_delete(slice_id):  # noqa: E501
     return rc.slices_delete_slice_id_delete(slice_id)
 
 
-def slices_get(name=None, as_self=None, states=None, limit=None, offset=None):  # noqa: E501
+def slices_get(name=None, search=None, exact_match=None, as_self=None, states=None, limit=None, offset=None):  # noqa: E501
     """Retrieve a listing of user slices
 
-    Retrieve a listing of user slices. It returns list of all slices belonging to all members in a project when
-    &#x27;as_self&#x27; is False otherwise returns only the all user&#x27;s slices in a project. # noqa: E501
+    Retrieve a listing of user slices. It returns list of all slices belonging to all members in a project when &#x27;as_self&#x27; is False otherwise returns only the all user&#x27;s slices in a project. # noqa: E501
 
     :param name: Search for Slices with the name
     :type name: str
+    :param search: search term applied
+    :type search: str
+    :param exact_match: Exact Match for Search term
+    :type exact_match: bool
     :param as_self: GET object as Self
     :type as_self: bool
     :param states: Search for Slices in the specified states
@@ -105,7 +109,8 @@ def slices_get(name=None, as_self=None, states=None, limit=None, offset=None):  
 
     :rtype: Slices
     """
-    return rc.slices_get(name, states, limit, offset, as_self=as_self)
+    return rc.slices_get(name=name, states=states, limit=limit, offset=offset, as_self=as_self,
+                         search=search, exact_match=exact_match)
 
 
 def slices_modify_slice_id_accept_post(slice_id):  # noqa: E501

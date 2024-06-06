@@ -48,8 +48,7 @@ class KafkaMgmtMessageProcessor(AvroConsumerApi):
         super(KafkaMgmtMessageProcessor, self).__init__(consumer_conf=consumer_conf,
                                                         key_schema_location=key_schema_location,
                                                         value_schema_location=value_schema_location,
-                                                        topics=topics, batch_size=batch_size, logger=logger,
-                                                        sync=sync)
+                                                        topics=topics, batch_size=batch_size, logger=logger)
         self.thread_lock = threading.Lock()
         self.thread = None
         self.messages = {}

@@ -23,11 +23,21 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from __future__ import annotations
+
+from collections import defaultdict
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from fabric_cf.actor.core.apis.abc_database import ABCDatabase
+
 import logging
 import random
-import traceback
+from datetime import datetime
 from typing import Tuple, List, Union
 
+
+from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
 from fim.graph.abc_property_graph import ABCPropertyGraph, ABCGraphImporter
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
 from fim.graph.networkx_property_graph import NetworkXGraphImporter
@@ -35,6 +45,7 @@ from fim.graph.resources.abc_arm import ABCARMPropertyGraph
 from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph, Neo4jCBMFactory
+from fim.graph.resources.networkx_abqm import NetworkXABQMFactory
 from fim.graph.slices.abc_asm import ABCASMPropertyGraph
 from fim.graph.slices.neo4j_asm import Neo4jASMFactory
 from fim.graph.slices.networkx_asm import NetworkxASM, NetworkXASMFactory
@@ -45,8 +56,10 @@ from fim.slivers.delegations import Delegations
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver, ServiceType
-from fim.user import ExperimentTopology, Labels, NodeType, Component, ReservationInfo
+from fim.user import ExperimentTopology, NodeType, Component, ReservationInfo, Node, GraphFormat, Labels
+from fim.user.composite_node import CompositeNode
 from fim.user.interface import Interface
+from fim.user.topology import AdvertizedTopology
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
@@ -123,7 +136,7 @@ class FimHelper:
     """
     Provides methods to load Graph Models and perform various operations on them
     """
-    __neo4j_graph_importer = None
+    _neo4j_graph_importer = None
 
     @staticmethod
     def get_neo4j_importer(neo4j_config: dict = None) -> ABCGraphImporter:
@@ -132,17 +145,17 @@ class FimHelper:
         :return: Neo4jGraphImporter
         """
         logger = None
-        if neo4j_config is None:
-            from fabric_cf.actor.core.container.globals import GlobalsSingleton
-            neo4j_config = GlobalsSingleton.get().get_config().get_global_config().get_neo4j_config()
-            logger = GlobalsSingleton.get().get_logger()
+        if FimHelper._neo4j_graph_importer is None:
+            if neo4j_config is None:
+                from fabric_cf.actor.core.container.globals import GlobalsSingleton
+                neo4j_config = GlobalsSingleton.get().get_config().get_global_config().get_neo4j_config()
+                logger = GlobalsSingleton.get().get_logger()
 
-        if FimHelper.__neo4j_graph_importer is None:
-            FimHelper.__neo4j_graph_importer = Neo4jGraphImporter(url=neo4j_config["url"], user=neo4j_config["user"],
-                                                                  pswd=neo4j_config["pass"],
-                                                                  import_host_dir=neo4j_config["import_host_dir"],
-                                                                  import_dir=neo4j_config["import_dir"], logger=logger)
-        return FimHelper.__neo4j_graph_importer
+            FimHelper._neo4j_graph_importer = Neo4jGraphImporter(url=neo4j_config["url"], user=neo4j_config["user"],
+                                                                 pswd=neo4j_config["pass"],
+                                                                 import_host_dir=neo4j_config["import_host_dir"],
+                                                                 import_dir=neo4j_config["import_dir"], logger=logger)
+        return FimHelper._neo4j_graph_importer
 
     @staticmethod
     def get_networkx_importer(logger: logging.Logger = None) -> ABCGraphImporter:
@@ -434,6 +447,10 @@ class FimHelper:
         if peer_ifs.get_type() in [InterfaceType.DedicatedPort, InterfaceType.SharedPort]:
             component_name, component_id = slice_graph.get_parent(node_id=peer_ns_id, rel=ABCPropertyGraph.REL_HAS,
                                                                   parent=ABCPropertyGraph.CLASS_Component)
+            # Possibly P4 switch; parent will be a switch
+            if not component_name:
+                component_id = peer_ns_id
+                component_name = str(NodeType.Switch)
 
             node_name, node_id = slice_graph.get_parent(node_id=component_id, rel=ABCPropertyGraph.REL_HAS,
                                                         parent=ABCPropertyGraph.CLASS_NetworkNode)
@@ -528,6 +545,9 @@ class FimHelper:
         """
         result = None
         for ns in component.network_service_info.network_services.values():
+            if not ns.interface_info:
+                continue
+
             # Filter on region
             if region is not None:
                 result = list(filter(lambda x: (region in x.labels.region), ns.interface_info.interfaces.values()))
@@ -611,3 +631,84 @@ class FimHelper:
         slice_topology.prune(reservation_state=ReservationStates.CloseFail.name)
 
         return slice_topology
+
+    @staticmethod
+    def get_workers(site: CompositeNode) -> dict:
+        node_id_list = site.topo.graph_model.get_first_neighbor(
+            node_id=site.node_id,
+            rel=ABCPropertyGraph.REL_HAS,
+            node_label=ABCPropertyGraph.CLASS_NetworkNode,
+        )
+        workers = dict()
+        for nid in node_id_list:
+            _, node_props = site.topo.graph_model.get_node_properties(node_id=nid)
+            n = Node(
+                name=node_props[ABCPropertyGraph.PROP_NAME],
+                node_id=nid,
+                topo=site.topo,
+            )
+            if n.type != NodeType.Facility:
+                workers[n.name] = n
+        return workers
+
+    @staticmethod
+    def build_broker_query_model(db: ABCDatabase, level_0_broker_query_model: str, level: int,
+                                 graph_format: GraphFormat = GraphFormat.GRAPHML,
+                                 start: datetime = None, end: datetime = None,
+                                 includes: str = None, excludes: str = None) -> str:
+        if level == 2:
+            sites_to_include = [s.strip().upper() for s in includes.split(",")] if includes else []
+            sites_to_exclude = [s.strip().upper() for s in excludes.split(",")] if excludes else []
+
+            if level_0_broker_query_model and len(level_0_broker_query_model) > 0:
+                topology = AdvertizedTopology()
+
+                nx_pgraph = topology.graph_model.importer.import_graph_from_string(graph_string=level_0_broker_query_model)
+                topology.graph_model = NetworkXABQMFactory.create(nx_pgraph)
+
+                sites_to_remove = []
+
+                for site_name, site in topology.sites.items():
+                    if len(sites_to_include) and site_name not in sites_to_include:
+                        sites_to_remove.append(site_name)
+                        continue
+
+                    if len(sites_to_exclude) and site_name in sites_to_exclude:
+                        sites_to_remove.append(site_name)
+                        continue
+
+                    site_cap_alloc = Capacities()
+
+                    for child_name, child in site.children.items():
+                        allocated_caps, allocated_comp_caps = AggregatedBQMPlugin.occupied_node_capacity(db=db,
+                                                                                                         node_id=child.node_id,
+                                                                                                         start=start,
+                                                                                                         end=end)
+                        site_cap_alloc += allocated_caps
+                        child.set_property(pname="capacity_allocations", pval=allocated_caps)
+
+                        # merge allocated component capacities
+                        for kt, v in allocated_comp_caps.items():
+                            for km, vcap in v.items():
+                                name = f"{kt}-{km}"
+                                if child.components.get(name) is not None:
+                                    capacity_allocations = Capacities()
+                                    if child.components[name].capacity_allocations:
+                                        capacity_allocations = child.components[name].capacity_allocations
+                                    capacity_allocations += vcap
+                                    child.components[name].set_property(pname="capacity_allocations",
+                                                                        pval=capacity_allocations)
+
+                for s in sites_to_remove:
+                    topology.remove_node(s)
+
+                for f_name, facility in topology.facilities.items():
+                    for if_name, interface in facility.interfaces.items():
+                        allocated_vlans = AggregatedBQMPlugin.occupied_vlans(db=db, node_id=f_name,
+                                                                             component_name=interface.node_id,
+                                                                             start=start, end=end)
+                        if allocated_vlans and len(allocated_vlans):
+                            label_allocations = Labels(vlan=allocated_vlans)
+                            interface.set_property(pname="label_allocations", pval=label_allocations)
+
+                return topology.serialize(fmt=graph_format)

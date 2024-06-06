@@ -23,8 +23,11 @@
 #
 #
 # Author: Ilya Baldin (ibaldin@renci.org)
+from __future__ import annotations
 
-from typing import Tuple, List, Dict
+import json
+from datetime import datetime
+from typing import Tuple, Dict, TYPE_CHECKING, List
 from collections import defaultdict
 
 import uuid
@@ -34,7 +37,7 @@ from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
 from fim.graph.resources.abc_bqm import ABCBQMPropertyGraph
 from fim.graph.networkx_property_graph import NetworkXGraphImporter
 from fim.graph.resources.networkx_abqm import NetworkXAggregateBQM
-from fim.slivers.capacities_labels import Capacities, Flags
+from fim.slivers.capacities_labels import Capacities, Flags, Labels
 from fim.slivers.delegations import DelegationFormat
 from fim.slivers.maintenance_mode import MaintenanceInfo, MaintenanceEntry, MaintenanceState
 from fim.slivers.network_node import CompositeNodeSliver, NodeType, NodeSliver
@@ -43,6 +46,9 @@ from fim.slivers.interface_info import InterfaceType
 from fim.slivers.network_service import ServiceType
 
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+
+if TYPE_CHECKING:
+    from fabric_cf.actor.core.apis.abc_database import ABCDatabase
 
 
 class AggregatedBQMPlugin:
@@ -81,8 +87,40 @@ class AggregatedBQMPlugin:
         result.finalize()
         return result
 
-    def __occupied_node_capacity(self, *, node_id: str) -> Tuple[Capacities,
-                                                                 Dict[ComponentType, Dict[str, Capacities]]]:
+    @staticmethod
+    def occupied_vlans(db: ABCDatabase, node_id: str, component_name: str, start: datetime = None,
+                       end: datetime = None) -> List[str]:
+        """
+        Get existing components attached to Active/Ticketed Network Service Slivers
+        :param db:
+        :param node_id:
+        :param component_name:
+        :param start:
+        :param end:
+        :return: list of components
+        """
+        assert node_id is not None
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value,
+                  ReservationStates.Nascent.value]
+
+        result = []
+        res_type = []
+        for x in ServiceType:
+            res_type.append(str(x))
+
+        # Only get Active or Ticketing reservations
+        comps = db.get_components(node_id=node_id, component=component_name, rsv_type=res_type, states=states,
+                                  start=start, end=end)
+        if comps is not None:
+            if comps.get(component_name):
+                result = comps.get(component_name)
+        return result
+
+    @staticmethod
+    def occupied_node_capacity(*, db: ABCDatabase, node_id: str, start: datetime,
+                               end: datetime) -> Tuple[Capacities, Dict[ComponentType, Dict[str, Capacities]]]:
         """
         Figure out the total capacity occupied in the network node and return a tuple of
         capacities occupied in this node and a dict of component capacities that are occupied
@@ -95,9 +133,7 @@ class AggregatedBQMPlugin:
                   ReservationStates.Nascent.value]
 
         # get existing reservations for this node
-        existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
-                                                                                        states=states)
-
+        existing_reservations = db.get_reservations(graph_node_id=node_id, states=states, start=start, end=end)
         # node capacities
         occupied_capacities = Capacities()
         occupied_component_capacities = defaultdict(dict)
@@ -114,7 +150,7 @@ class AggregatedBQMPlugin:
                     allocated_sliver = reservation.get_resources().get_sliver()
 
                 if allocated_sliver is not None:
-                    occupied_capacities = occupied_capacities + allocated_sliver.get_capacities()
+                    occupied_capacities = occupied_capacities + allocated_sliver.get_capacity_allocations()
 
                     if allocated_sliver.attached_components_info is not None:
                         for allocated_component in allocated_sliver.attached_components_info.devices.values():
@@ -142,25 +178,50 @@ class AggregatedBQMPlugin:
         if kwargs.get('query_level', None) is None or kwargs['query_level'] > 2:
             return cbm.clone_graph(new_graph_id=str(uuid.uuid4()))
 
+        includes = kwargs.get('includes', None)
+        excludes = kwargs.get('excludes', None)
+
+        sites_to_include = [s.strip().upper() for s in includes.split(",")] if includes else []
+        sites_to_exclude = [s.strip().upper() for s in excludes.split(",")] if excludes else []
+
+        start = kwargs.get('start', None)
+        end = kwargs.get('end', None)
+        if not self.DEBUG_FLAG:
+            db = self.actor.get_plugin().get_database()
+        else:
+            db = None
+
         # do a one-pass aggregation of servers, their components and interfaces
         # and some flags (e.g. PTP availability)
         # this includes facilities
         nnodes = cbm.get_all_nodes_by_class(label=ABCPropertyGraph.CLASS_NetworkNode)
         slivers_by_site = defaultdict(list)
+        p4s_by_site = defaultdict(list)
         for n in nnodes:
             # build deep slivers for each advertised server, aggregate by site
             node_sliver = cbm.build_deep_node_sliver(node_id=n)
             slivers_by_site[node_sliver.site].append(node_sliver)
+            if node_sliver.get_type() == NodeType.Switch and "p4" in node_sliver.get_name():
+                p4s_by_site[node_sliver.site].append(node_sliver)
 
         # create a new blank Aggregated BQM NetworkX graph
-        abqm = NetworkXAggregateBQM(graph_id=str(uuid.uuid4()),
-                                    importer=NetworkXGraphImporter(logger=self.logger),
-                                    logger=self.logger)
+        if kwargs['query_level'] == 0:
+            abqm = NetworkXAggregateBQM(graph_id=cbm.graph_id,
+                                        importer=NetworkXGraphImporter(logger=self.logger),
+                                        logger=self.logger)
+        else:
+            abqm = NetworkXAggregateBQM(graph_id=str(uuid.uuid4()),
+                                        importer=NetworkXGraphImporter(logger=self.logger),
+                                        logger=self.logger)
 
         site_to_composite_node_id = dict()
         site_to_ns_node_id = dict()
         facilities_by_site = defaultdict(list)
         for s, ls in slivers_by_site.items():
+            if len(sites_to_include) and s not in sites_to_include:
+                continue
+            if len(sites_to_exclude) and s in sites_to_exclude:
+                continue
             # add up capacities and delegated capacities, skip labels for now
             # count up components and figure out links between site
 
@@ -196,23 +257,29 @@ class AggregatedBQMPlugin:
                 worker_sliver.resource_type = NodeType.Server
                 worker_sliver.set_site(s)
                 worker_sliver.node_id = str(uuid.uuid4())
-                if self.DEBUG_FLAG:
+                if self.DEBUG_FLAG or kwargs['query_level'] == 0:
                     # for debugging and running in a test environment
+                    # also for level 0; only return capacity information
                     allocated_comp_caps = dict()
+                    worker_sliver.node_id = sliver.node_id
                 else:
                     # query database for everything taken on this node
-                    allocated_caps, allocated_comp_caps = self.__occupied_node_capacity(node_id=sliver.node_id)
+                    allocated_caps, allocated_comp_caps = self.occupied_node_capacity(db=db, node_id=sliver.node_id,
+                                                                                      start=start, end=end)
                     site_sliver.capacity_allocations = site_sliver.capacity_allocations + allocated_caps
                     worker_sliver.capacity_allocations = allocated_caps
 
                 # get the location if available
                 if loc is None:
                     loc = sliver.get_location()
+                worker_sliver.set_location(loc)
 
                 # look at flags
                 flags = sliver.get_flags()
                 if flags and not ptp and flags.ptp:
                     ptp = True
+
+                site_sliver.set_flags(Flags(ptp=ptp))
 
                 # calculate available node capacities based on delegations
                 if sliver.get_capacity_delegations() is not None:
@@ -223,8 +290,12 @@ class AggregatedBQMPlugin:
                         site_sliver.capacities = site_sliver.capacities + \
                             delegation.get_details()
                         worker_sliver.capacities = delegation.get_details()
+                # This for the case when BQM is generated from Orchestrator
+                else:
+                    site_sliver.capacities += sliver.get_capacities()
+                    worker_sliver.capacities = sliver.get_capacities()
 
-                # collect available components in lists by type and model for the site (for later aggregation)
+                    # collect available components in lists by type and model for the site (for later aggregation)
                 if sliver.attached_components_info is None:
                     continue
                 worker_sliver.attached_components_info = AttachedComponentsInfo()
@@ -272,8 +343,32 @@ class AggregatedBQMPlugin:
             abqm.add_node(node_id=site_sliver.node_id, label=ABCPropertyGraph.CLASS_CompositeNode,
                           props=site_props)
 
+            p4s = p4s_by_site.get(site_sliver.site)
+            if p4s:
+                for p4 in p4s:
+                    p4_sliver = NodeSliver()
+                    p4_sliver.node_id = str(uuid.uuid4())
+                    p4_sliver.set_type(resource_type=NodeType.Switch)
+                    p4_sliver.set_name(resource_name=p4.get_name())
+                    p4_sliver.set_site(site=p4.get_site())
+                    p4_sliver.capacities = Capacities()
+                    p4_sliver.capacity_allocations = Capacities()
+                    p4_sliver.capacities += p4.get_capacities()
+                    if not self.DEBUG_FLAG:
+                        # query database for everything taken on this node
+                        allocated_caps, allocated_comp_caps = self.occupied_node_capacity(db=db, node_id=p4.node_id,
+                                                                                          start=start, end=end)
+                        if allocated_caps:
+                            p4_sliver.capacity_allocations = p4_sliver.capacity_allocations + allocated_caps
+                    p4_props = abqm.node_sliver_to_graph_properties_dict(p4_sliver)
+                    node_id = p4.node_id
+                    if kwargs['query_level'] != 0:
+                        node_id = p4_sliver.node_id
+                    abqm.add_node(node_id=node_id, label=ABCPropertyGraph.CLASS_NetworkNode, props=p4_props)
+                    abqm.add_link(node_a=site_sliver.node_id, rel=ABCPropertyGraph.REL_HAS, node_b=node_id)
+
             # Add per worker metrics for query level 2
-            if kwargs['query_level'] == 2:
+            if kwargs['query_level'] == 2 or kwargs['query_level'] == 0:
                 for w in workers:
                     # Add workers
                     abqm.add_node(node_id=w.node_id, label=ABCPropertyGraph.CLASS_NetworkNode,
@@ -331,6 +426,11 @@ class AggregatedBQMPlugin:
             sink_site = l[4]
             source_cp = l[5]
             sink_cp = l[6]
+            # Exclude the sites requested to be filtered
+            if includes and (source_site not in includes or sink_site not in includes):
+                continue
+            if excludes and (source_site in excludes or sink_site not in excludes):
+                continue
             _, cbm_source_cp_props = cbm.get_node_properties(node_id=source_cp)
             _, cbm_sink_cp_props = cbm.get_node_properties(node_id=sink_cp)
             _, cbm_link_props = cbm.get_node_properties(node_id=link)
@@ -380,15 +480,42 @@ class AggregatedBQMPlugin:
         for s, lf in facilities_by_site.items():
             # multiple facilities per site possible
             for fac_sliver in lf:
-                fac_nbs = cbm.get_first_and_second_neighbor(node_id=fac_sliver.node_id,
-                                                            rel1=ABCPropertyGraph.REL_HAS,
-                                                            node1_label=ABCPropertyGraph.CLASS_NetworkService,
-                                                            rel2=ABCPropertyGraph.REL_CONNECTS,
-                                                            node2_label=ABCPropertyGraph.CLASS_ConnectionPoint)
-                try:
-                    fac_ns_node_id = fac_nbs[0][0]
-                    fac_cp_node_id = fac_nbs[0][1]
-                except KeyError:
+                ns_list = cbm.get_first_neighbor(node_id=fac_sliver.node_id,
+                                                 rel=ABCPropertyGraph.REL_HAS,
+                                                 node_label=ABCPropertyGraph.CLASS_NetworkService)
+
+                if not ns_list or not len(ns_list):
+                    if self.logger:
+                        self.logger.warning(f'Unable to trace facility NetworkService for '
+                                            f'facility {fac_sliver.resource_name}, continuing')
+                    else:
+                        print(f'Unable to trace facility NetworkService for '
+                              f'facility {fac_sliver.resource_name}, continuing')
+                    continue
+
+                _, fac_props = cbm.get_node_properties(node_id=fac_sliver.node_id)
+                new_fac_props = {ABCPropertyGraph.PROP_NAME: fac_props[ABCPropertyGraph.PROP_NAME],
+                                 ABCPropertyGraph.PROP_TYPE: fac_props[ABCPropertyGraph.PROP_TYPE],
+                                 ABCPropertyGraph.PROP_SITE: s
+                                 }
+                abqm.add_node(node_id=fac_sliver.node_id, label=ABCPropertyGraph.CLASS_NetworkNode,
+                              props=new_fac_props)
+
+                fac_ns_node_id = ns_list[0]
+                _, fac_ns_props = cbm.get_node_properties(node_id=fac_ns_node_id)
+
+                # filter down only the needed properties then recreate the structure of facility in ABQM
+                new_ns_props = {ABCPropertyGraph.PROP_NAME: fac_ns_props[ABCPropertyGraph.PROP_NAME],
+                                ABCPropertyGraph.PROP_TYPE: fac_ns_props[ABCPropertyGraph.PROP_TYPE]
+                                }
+
+                abqm.add_node(node_id=fac_ns_node_id, label=ABCPropertyGraph.CLASS_NetworkService,
+                              props=new_ns_props)
+
+                abqm.add_link(node_a=fac_sliver.node_id, rel=ABCPropertyGraph.REL_HAS, node_b=fac_ns_node_id)
+
+                fac_ns_cp_list = cbm.get_all_ns_or_link_connection_points(link_id=ns_list[0])
+                if not fac_ns_cp_list:
                     if self.logger:
                         self.logger.warning(f'Unable to trace facility ConnectionPoint for '
                                             f'facility {fac_sliver.resource_name}, continuing')
@@ -396,77 +523,74 @@ class AggregatedBQMPlugin:
                         print(f'Unable to trace facility ConnectionPoint for '
                               f'facility {fac_sliver.resource_name}, continuing')
                     continue
-                _, fac_props = cbm.get_node_properties(node_id=fac_sliver.node_id)
-                _, fac_ns_props = cbm.get_node_properties(node_id=fac_ns_node_id)
-                _, fac_cp_props = cbm.get_node_properties(node_id=fac_cp_node_id)
 
-                # filter down only the needed properties then recreate the structure of facility in ABQM
-                new_fac_props = {ABCPropertyGraph.PROP_NAME: fac_props[ABCPropertyGraph.PROP_NAME],
-                                 ABCPropertyGraph.PROP_TYPE: fac_props[ABCPropertyGraph.PROP_TYPE],
-                                 ABCPropertyGraph.PROP_SITE: s
-                                 }
-                abqm.add_node(node_id=fac_sliver.node_id, label=ABCPropertyGraph.CLASS_NetworkNode,
-                              props=new_fac_props)
-                new_ns_props = {ABCPropertyGraph.PROP_NAME: fac_ns_props[ABCPropertyGraph.PROP_NAME],
-                                ABCPropertyGraph.PROP_TYPE: fac_ns_props[ABCPropertyGraph.PROP_TYPE]
-                                }
-                abqm.add_node(node_id=fac_ns_node_id, label=ABCPropertyGraph.CLASS_NetworkService,
-                              props=new_ns_props)
-                new_cp_props = {ABCPropertyGraph.PROP_NAME: fac_cp_props[ABCPropertyGraph.PROP_NAME],
-                                ABCPropertyGraph.PROP_TYPE: fac_cp_props[ABCPropertyGraph.PROP_TYPE],
-                                ABCPropertyGraph.PROP_LABELS: fac_cp_props.get(ABCPropertyGraph.PROP_LABELS),
-                                ABCPropertyGraph.PROP_CAPACITIES: fac_cp_props.get(ABCPropertyGraph.PROP_CAPACITIES)
-                                }
-                new_cp_props = {k: v for (k, v) in new_cp_props.items() if v}
-                abqm.add_node(node_id=fac_cp_node_id, label=ABCPropertyGraph.CLASS_ConnectionPoint,
-                              props=new_cp_props)
-                abqm.add_link(node_a=fac_sliver.node_id, rel=ABCPropertyGraph.REL_HAS, node_b=fac_ns_node_id)
-                abqm.add_link(node_a=fac_ns_node_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=fac_cp_node_id)
+                for fac_cp_node_id in fac_ns_cp_list:
+                    _, fac_cp_props = cbm.get_node_properties(node_id=fac_cp_node_id)
 
-                # trace the link to a switch port/ConnectionPoint and replicate them for simplicity
-                fac_cp_nbs = cbm.get_first_and_second_neighbor(node_id=fac_cp_node_id,
-                                                               rel1=ABCPropertyGraph.REL_CONNECTS,
-                                                               node1_label=ABCPropertyGraph.CLASS_Link,
-                                                               rel2=ABCPropertyGraph.REL_CONNECTS,
-                                                               node2_label=ABCPropertyGraph.CLASS_ConnectionPoint)
-                if len(fac_cp_nbs) == 0 or len(fac_cp_nbs) > 1:
-                    if self.logger:
-                        self.logger.warning(f'Unable to trace switch port from Facility port '
-                                            f'for facility {fac_sliver.resource_name} {fac_cp_nbs}')
-                    else:
-                        print(f'Unable to trace switch port from Facility port '
-                              f'for facility {fac_sliver.resource_name} {fac_cp_nbs}')
-                    continue
-
-                fac_link_id = fac_cp_nbs[0][0]
-                fac_sp_id = fac_cp_nbs[0][1]
-
-                _, fac_link_props = cbm.get_node_properties(node_id=fac_link_id)
-                # selectively replicate link properties
-                new_link_props = {ABCPropertyGraph.PROP_NAME: fac_link_props[ABCPropertyGraph.PROP_NAME],
-                                  ABCPropertyGraph.PROP_TYPE: fac_link_props[ABCPropertyGraph.PROP_TYPE],
-                                  ABCPropertyGraph.PROP_LAYER: fac_link_props[ABCPropertyGraph.PROP_LAYER]
-                                  }
-                abqm.add_node(node_id=fac_link_id, label=ABCPropertyGraph.CLASS_Link,
-                              props=new_link_props)
-                try:
-                    abqm.get_node_properties(node_id=fac_sp_id)
-                except PropertyGraphQueryException:
-                    # if the node doesn't exist we need to create it (it could have been created in the first pass)
-                    _, fac_sp_props = cbm.get_node_properties(node_id=fac_sp_id)
-                    new_sp_props = {ABCPropertyGraph.PROP_NAME: fac_sp_props[ABCPropertyGraph.PROP_NAME],
-                                    ABCPropertyGraph.PROP_TYPE: fac_sp_props[ABCPropertyGraph.PROP_TYPE],
-                                    ABCPropertyGraph.PROP_CAPACITIES: fac_sp_props.get(
-                                        ABCPropertyGraph.PROP_CAPACITIES),
-                                    ABCPropertyGraph.PROP_LABELS: fac_sp_props.get(ABCPropertyGraph.PROP_LABELS)
+                    new_cp_props = {ABCPropertyGraph.PROP_NAME: fac_cp_props[ABCPropertyGraph.PROP_NAME],
+                                    ABCPropertyGraph.PROP_TYPE: fac_cp_props[ABCPropertyGraph.PROP_TYPE],
+                                    ABCPropertyGraph.PROP_LABELS: fac_cp_props.get(ABCPropertyGraph.PROP_LABELS),
+                                    ABCPropertyGraph.PROP_CAPACITIES: fac_cp_props.get(ABCPropertyGraph.PROP_CAPACITIES)
                                     }
-                    new_sp_props = {k: v for (k, v) in new_sp_props.items() if v}
-                    abqm.add_node(node_id=fac_sp_id, label=ABCPropertyGraph.CLASS_ConnectionPoint,
-                                  props=new_sp_props)
 
-                # link these together
-                abqm.add_link(node_a=fac_cp_node_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=fac_link_id)
-                abqm.add_link(node_a=fac_link_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=fac_sp_id)
-                abqm.add_link(node_a=fac_sp_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=site_to_ns_node_id[s])
+                    if not self.DEBUG_FLAG and kwargs['query_level'] != 0:
+                        allocated_vlans = self.occupied_vlans(db=db, node_id=fac_sliver.resource_name,
+                                                              component_name=fac_cp_node_id, start=start, end=end)
+
+                        if allocated_vlans and len(allocated_vlans):
+                            labels = Labels(vlan=allocated_vlans)
+                            new_cp_props[ABCPropertyGraph.PROP_LABEL_ALLOCATIONS] = labels.to_json()
+
+                    new_cp_props = {k: v for (k, v) in new_cp_props.items() if v}
+
+                    abqm.add_node(node_id=fac_cp_node_id, label=ABCPropertyGraph.CLASS_ConnectionPoint,
+                                  props=new_cp_props)
+                    abqm.add_link(node_a=fac_ns_node_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=fac_cp_node_id)
+
+                    # trace the link to a switch port/ConnectionPoint and replicate them for simplicity
+                    fac_cp_nbs = cbm.get_first_and_second_neighbor(node_id=fac_cp_node_id,
+                                                                   rel1=ABCPropertyGraph.REL_CONNECTS,
+                                                                   node1_label=ABCPropertyGraph.CLASS_Link,
+                                                                   rel2=ABCPropertyGraph.REL_CONNECTS,
+                                                                   node2_label=ABCPropertyGraph.CLASS_ConnectionPoint)
+                    if len(fac_cp_nbs) == 0 or len(fac_cp_nbs) > 1:
+                        if self.logger:
+                            self.logger.warning(f'Unable to trace switch port from Facility port '
+                                                f'for facility {fac_sliver.resource_name} {fac_cp_nbs}')
+                        else:
+                            print(f'Unable to trace switch port from Facility port '
+                                  f'for facility {fac_sliver.resource_name} {fac_cp_nbs}')
+                        continue
+
+                    fac_link_id = fac_cp_nbs[0][0]
+                    fac_sp_id = fac_cp_nbs[0][1]
+
+                    _, fac_link_props = cbm.get_node_properties(node_id=fac_link_id)
+                    # selectively replicate link properties
+                    new_link_props = {ABCPropertyGraph.PROP_NAME: fac_link_props[ABCPropertyGraph.PROP_NAME],
+                                      ABCPropertyGraph.PROP_TYPE: fac_link_props[ABCPropertyGraph.PROP_TYPE],
+                                      ABCPropertyGraph.PROP_LAYER: fac_link_props[ABCPropertyGraph.PROP_LAYER]
+                                      }
+                    abqm.add_node(node_id=fac_link_id, label=ABCPropertyGraph.CLASS_Link,
+                                  props=new_link_props)
+                    try:
+                        new_sp_props = abqm.get_node_properties(node_id=fac_sp_id)
+                    except PropertyGraphQueryException:
+                        # if the node doesn't exist we need to create it (it could have been created in the first pass)
+                        _, fac_sp_props = cbm.get_node_properties(node_id=fac_sp_id)
+                        new_sp_props = {ABCPropertyGraph.PROP_NAME: fac_sp_props[ABCPropertyGraph.PROP_NAME],
+                                        ABCPropertyGraph.PROP_TYPE: fac_sp_props[ABCPropertyGraph.PROP_TYPE],
+                                        ABCPropertyGraph.PROP_CAPACITIES: fac_sp_props.get(
+                                            ABCPropertyGraph.PROP_CAPACITIES),
+                                        ABCPropertyGraph.PROP_LABELS: fac_sp_props.get(ABCPropertyGraph.PROP_LABELS)
+                                        }
+                        new_sp_props = {k: v for (k, v) in new_sp_props.items() if v}
+                        abqm.add_node(node_id=fac_sp_id, label=ABCPropertyGraph.CLASS_ConnectionPoint,
+                                      props=new_sp_props)
+
+                    # link these together
+                    abqm.add_link(node_a=fac_cp_node_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=fac_link_id)
+                    abqm.add_link(node_a=fac_link_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=fac_sp_id)
+                    abqm.add_link(node_a=fac_sp_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=site_to_ns_node_id[s])
 
         return abqm

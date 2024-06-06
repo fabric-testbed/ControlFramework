@@ -191,8 +191,11 @@ class OrchestratorSliceWrapper:
         @param sliver Node Sliver
         @raises exception for invalid slivers
         """
-        if sliver.get_capacities() is None and sliver.get_capacity_hints() is None:
+        if sliver.get_type() == NodeType.VM and sliver.get_capacities() is None and sliver.get_capacity_hints() is None:
             raise OrchestratorException(message="Either Capacity or Capacity Hints must be specified!",
+                                        http_error_code=BAD_REQUEST)
+        if sliver.get_type() == NodeType.Switch and sliver.get_capacities() is None:
+            raise OrchestratorException(message="Either Capacity must be specified!",
                                         http_error_code=BAD_REQUEST)
 
     def __build_ns_sliver_reservation(self, *, slice_graph: ABCASMPropertyGraph, node_id: str,
@@ -336,7 +339,8 @@ class OrchestratorSliceWrapper:
                 reservation = self.reservation_converter.generate_reservation(sliver=sliver,
                                                                               slice_id=self.slice_obj.get_slice_id(),
                                                                               end_time=self.slice_obj.get_lease_end(),
-                                                                              pred_list=redeem_predecessors)
+                                                                              pred_list=redeem_predecessors,
+                                                                              start_time=self.slice_obj.get_lease_start())
 
                 if sliver.node_id not in node_res_mapping:
                     node_res_mapping[sliver.node_id] = reservation.get_reservation_id()
@@ -405,31 +409,33 @@ class OrchestratorSliceWrapper:
         # Build Network Node Sliver
         sliver = slice_graph.build_deep_node_sliver(node_id=node_id)
 
-        if sliver.get_type() not in [NodeType.VM]:
+        if sliver.get_type() not in [NodeType.VM, NodeType.Switch]:
             return None
 
         # Validate Node Sliver
         self.__validate_node_sliver(sliver=sliver)
 
-        # Compute Requested Capacities from Capacity Hints
-        requested_capacities = sliver.get_capacities()
-        requested_capacity_hints = sliver.get_capacity_hints()
-        catalog = InstanceCatalog()
-        if requested_capacities is None and requested_capacity_hints is not None:
-            requested_capacities = catalog.get_instance_capacities(
-                instance_type=requested_capacity_hints.instance_type)
-            sliver.set_capacities(cap=requested_capacities)
+        if sliver.get_type() == NodeType.VM:
+            # Compute Requested Capacities from Capacity Hints
+            requested_capacities = sliver.get_capacities()
+            requested_capacity_hints = sliver.get_capacity_hints()
+            catalog = InstanceCatalog()
+            if requested_capacities is None and requested_capacity_hints is not None:
+                requested_capacities = catalog.get_instance_capacities(
+                    instance_type=requested_capacity_hints.instance_type)
+                sliver.set_capacities(cap=requested_capacities)
 
-        # Compute Capacity Hints from Requested Capacities
-        if requested_capacity_hints is None and requested_capacities is not None:
-            instance_type = catalog.map_capacities_to_instance(cap=requested_capacities)
-            requested_capacity_hints = CapacityHints(instance_type=instance_type)
-            sliver.set_capacity_hints(caphint=requested_capacity_hints)
+            # Compute Capacity Hints from Requested Capacities
+            if requested_capacity_hints is None and requested_capacities is not None:
+                instance_type = catalog.map_capacities_to_instance(cap=requested_capacities)
+                requested_capacity_hints = CapacityHints(instance_type=instance_type)
+                sliver.set_capacity_hints(caphint=requested_capacity_hints)
 
         # Generate reservation for the sliver
         reservation = self.reservation_converter.generate_reservation(sliver=sliver,
                                                                       slice_id=self.slice_obj.get_slice_id(),
-                                                                      end_time=self.slice_obj.get_lease_end())
+                                                                      end_time=self.slice_obj.get_lease_end(),
+                                                                      start_time=self.slice_obj.get_lease_start())
         return reservation
 
     def __build_network_node_reservations(self, *, slice_graph: ABCASMPropertyGraph) \
@@ -700,3 +706,7 @@ class OrchestratorSliceWrapper:
                                     management_ip=sliver.management_ip,
                                     capacity_hints=sliver.capacity_hints,
                                     capacities=sliver.capacities)
+
+    def has_sliver_updates_at_authority(self):
+        return len(self.computed_reservations) and len(self.computed_remove_reservations) or \
+               len(self.computed_modify_reservations) or len(self.computed_modify_properties_reservations)

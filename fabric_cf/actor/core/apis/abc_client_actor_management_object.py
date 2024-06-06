@@ -128,7 +128,9 @@ class ABCClientActorManagementObject(ABC):
 
     @abstractmethod
     def get_broker_query_model(self, *, broker: ID, caller: AuthToken, id_token: str,
-                               level: int, graph_format: GraphFormat) -> ResultBrokerQueryModelAvro:
+                               level: int, graph_format: GraphFormat, start: datetime = None,
+                               end: datetime = None, includes: str = None,
+                               excludes: str = None) -> ResultBrokerQueryModelAvro:
         """
         Get Pool Info
         @param broker : broker ID
@@ -136,7 +138,12 @@ class ABCClientActorManagementObject(ABC):
         @param id_token: str
         @param level: level of details
         @param graph_format: Graph Format
-        @return pool information
+        @param start: start time
+        @param end: end time
+        @param includes: comma separated lists of sites to include
+        @param excludes: comma separated lists of sites to exclude
+
+        @return resource information
         """
 
     @abstractmethod

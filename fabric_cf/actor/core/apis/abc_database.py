@@ -159,9 +159,9 @@ class ABCDatabase(ABC):
 
     @abstractmethod
     def get_reservations(self, *, slice_id: ID = None, graph_node_id: str = None, project_id: str = None,
-                         email: str = None, oidc_sub: str = None, rid: ID = None,
-                         states: list[int] = None, site: str = None,
-                         rsv_type: list[str] = None) -> List[ABCReservationMixin]:
+                         email: str = None, oidc_sub: str = None, rid: ID = None, states: list[int] = None,
+                         site: str = None, rsv_type: list[str] = None, start: datetime = None,
+                         end: datetime = None) -> List[ABCReservationMixin]:
         """
         Retrieves the reservations.
 
@@ -172,13 +172,20 @@ class ABCDatabase(ABC):
 
     @abstractmethod
     def get_components(self, *, node_id: str, states: list[int], rsv_type: list[str], component: str = None,
-                       bdf: str = None) -> Dict[str, List[str]]:
+                       bdf: str = None, start: datetime = None, end: datetime = None) -> Dict[str, List[str]]:
         """
-        Retrieves the components.
+        Returns components matching the search criteria
+        @param node_id: Worker Node ID to which components belong
+        @param states: list of states used to find reservations
+        @param rsv_type: type of reservations
+        @param component: component name
+        @param bdf: Component's PCI address
+        @param start: start time
+        @param end: end time
 
-        @return list of components
+        NOTE# For P4 switches; node_id=node+renc-p4-sw  component=ip+192.168.11.8 bdf=p1
 
-        @throws Exception in case of error
+        @return Dictionary with component name as the key and value as list of associated PCI addresses in use.
         """
 
     @abstractmethod
@@ -194,7 +201,8 @@ class ABCDatabase(ABC):
     @abstractmethod
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, project_id: str = None, email: str = None,
                    states: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
-                   limit: int = None, offset: int = None, lease_end: datetime = None) -> List[ABCSlice] or None:
+                   limit: int = None, offset: int = None, lease_end: datetime = None,
+                   search: str = None, exact_match: bool = False) -> List[ABCSlice] or None:
         """
         Retrieves the specified slices.
 
@@ -208,10 +216,56 @@ class ABCDatabase(ABC):
         @param limit limit
         @param offset offset
         @param lease_end lease_end
+        @param search: search term applied
+        @param exact_match: Exact Match for Search term
 
         @return list of slices
 
         @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def get_slice_count(self, *, project_id: str = None, email: str = None, states: list[int] = None,
+                        oidc_sub: str = None, slc_type: List[SliceTypes] = None,
+                        excluded_projects: List[str] = None) -> int:
+        """
+        Retrieves the slices count.
+
+        @param project_id project id
+        @param email email
+        @param states states
+        @param oidc_sub oidc sub
+        @param slc_type slice type
+        @param excluded_projects excluded_projects
+
+        @return number of slices matching the filter criteria
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def increment_metrics(self, *, project_id: str, oidc_sub: str, slice_count: int = 1) -> bool:
+        """
+        Add or Update Metrics
+
+        @param project_id project id
+        @param oidc_sub oidc sub
+        @param slice_count slice_count
+
+        @return true or false
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def get_metrics(self, *, project_id: str, oidc_sub: str, excluded_projects: List[str] = None) -> list:
+        """
+        Get Metrics
+        @param project_id: project id
+        @param oidc_sub: user id
+        @param excluded_projects: list of project ids to exclude
+
+        @return list of metrics
         """
 
     @abstractmethod

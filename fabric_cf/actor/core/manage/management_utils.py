@@ -34,7 +34,6 @@ from fabric_cf.actor.core.apis.abc_query_response_handler import ABCQueryRespons
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.apis.abc_mgmt_container import ABCMgmtContainer
 from fabric_cf.actor.core.manage.local.local_container import LocalContainer
-from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.rpc_exception import RPCException, RPCError
 from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation

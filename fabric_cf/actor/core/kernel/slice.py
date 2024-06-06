@@ -289,7 +289,7 @@ class Slice(ABCSlice):
     def is_stable(self) -> bool:
         state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
 
-        if slice_state == SliceState.StableError or slice_state == SliceState.StableOk:
+        if slice_state in [SliceState.StableError, SliceState.StableOK]:
             return True
 
         return False
@@ -313,7 +313,23 @@ class Slice(ABCSlice):
     def is_modified(self) -> bool:
         state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
 
-        if slice_state == SliceState.ModifyError or slice_state == SliceState.ModifyOK:
+        if slice_state in [SliceState.ModifyError, SliceState.ModifyOK]:
+            return True
+
+        return False
+
+    def is_allocated_error(self) -> bool:
+        state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
+
+        if slice_state == SliceState.AllocatedError:
+            return True
+
+        return False
+
+    def is_allocated(self) -> bool:
+        state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
+
+        if slice_state in [SliceState.AllocatedOK, SliceState.AllocatedError]:
             return True
 
         return False
@@ -321,7 +337,7 @@ class Slice(ABCSlice):
     def is_dead_or_closing(self) -> bool:
         state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
 
-        if slice_state == SliceState.Dead or slice_state == SliceState.Closing:
+        if slice_state in [SliceState.Dead, SliceState.Closing]:
             return True
 
         return False

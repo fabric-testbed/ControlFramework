@@ -92,6 +92,7 @@ class OrchestratorKernel(ABCTick):
                 saved_bqm.set_refresh_interval(refresh_interval=int(refresh_interval))
             saved_bqm.save(bqm=bqm, graph_format=graph_format, level=level)
             self.bqm_cache[key] = saved_bqm
+
         finally:
             self.lock.release()
 
@@ -156,6 +157,11 @@ class OrchestratorKernel(ABCTick):
         Start threads
         :return:
         """
+        if not len(self.bqm_cache):
+            self.save_bqm(bqm="", graph_format=GraphFormat.GRAPHML, level=0)
+            saved_bqm = self.get_saved_bqm(graph_format=GraphFormat.GRAPHML, level=0)
+            saved_bqm.last_query_time = None
+
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         GlobalsSingleton.get().get_container().register(tickable=self)
 

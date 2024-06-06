@@ -163,8 +163,8 @@ class NetworkServiceInventory(InventoryForType):
                                                             existing_reservations=existing_reservations)
 
                 if requested_vlan is None:
-                    #requested_ifs.labels.vlan = str(random.choice(vlan_range))
-                    requested_ifs.labels.vlan = str(vlan_range[0])
+                    requested_ifs.labels.vlan = str(random.choice(vlan_range))
+                    #requested_ifs.labels.vlan = str(vlan_range[0])
                     return requested_ifs
 
                 if requested_vlan not in vlan_range:
@@ -196,7 +196,7 @@ class NetworkServiceInventory(InventoryForType):
                         return requested_ifs
 
                     if requested_ifs.labels.vlan is None:
-                        #requested_ifs.labels.vlan = str(random.choice(vlan_range))
+                        requested_ifs.labels.vlan = str(random.choice(vlan_range))
                         requested_ifs.labels.vlan = str(vlan_range[0])
 
                     if int(requested_ifs.labels.vlan) not in vlan_range:
@@ -333,6 +333,9 @@ class NetworkServiceInventory(InventoryForType):
                 subnet_list = list(ip_network.subnets(new_prefix=64))
                 # Exclude the 1st subnet as it is reserved for control plane
                 subnet_list.pop(0)
+                # https://github.com/fabric-testbed/ControlFramework/issues/376
+                # Exclude the last subnet as the last subnet will be used for the FABRIC STAR Bastion Host Allocation
+                subnet_list.pop(-1)
 
             elif owner_ns.get_type() == ServiceType.FABNetv4:
                 ip_network = IPv4Network(delegated_label.ipv4_subnet)
@@ -452,8 +455,8 @@ class NetworkServiceInventory(InventoryForType):
             available_vlans = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_interface,
                                                              existing_reservations=existing_reservations)
 
-            #vlan = str(random.choice(available_vlans))
-            vlan = str(available_vlans[0])
+            vlan = str(random.choice(available_vlans))
+            #vlan = str(available_vlans[0])
             ifs_labels = Labels.update(ifs_labels, vlan=vlan)
 
         requested_ifs.labels = ifs_labels

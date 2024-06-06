@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from typing import List
 
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
@@ -38,7 +39,8 @@ from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
-def slices_create_post(body: SlicesPost, name, lease_end_time) -> Slivers:  # noqa: E501
+def slices_create_post(body: SlicesPost, name: str, lease_start_time: str = None,
+                       lease_end_time: str = None) -> Slivers:  # noqa: E501
     """Create slice
 
     Request to create slice as described in the request. Request would be a graph ML describing the requested resources.
@@ -48,11 +50,13 @@ def slices_create_post(body: SlicesPost, name, lease_end_time) -> Slivers:  # no
     resources asynchronously on the appropriate sites either now or in the future as requested. Experimenter can
     invoke get slice API to get the latest state of the requested resources.   # noqa: E501
 
-    :param body:
-    :type body: SlicesPost
+    :param body: Create new Slice
+    :type body: dict | bytes
     :param name: Slice Name
     :type name: str
-    :param lease_end_time: New Lease End Time for the Slice
+    :param lease_start_time: Lease End Time for the Slice
+    :type lease_start_time: str
+    :param lease_end_time: Lease End Time for the Slice
     :type lease_end_time: str
 
     :rtype: Slivers
@@ -64,8 +68,11 @@ def slices_create_post(body: SlicesPost, name, lease_end_time) -> Slivers:  # no
     try:
         token = get_token()
         ssh_key = ','.join(body.ssh_keys)
+        start = handler.validate_lease_time(lease_time=lease_start_time)
+        end = handler.validate_lease_time(lease_time=lease_end_time)
         slivers_dict = handler.create_slice(token=token, slice_name=name, slice_graph=body.graph_model,
-                                            lease_end_time=lease_end_time, ssh_key=ssh_key)
+                                            lease_start_time=start, lease_end_time=end,
+                                            ssh_key=ssh_key)
         response = Slivers()
         response.data = []
         for s in slivers_dict:
@@ -158,21 +165,27 @@ def slices_delete_slice_id_delete(slice_id) -> Status200OkNoContent:  # noqa: E5
         return cors_error_response(error=e)
 
 
-def slices_get(name=None, states=None, limit=None, offset=None, as_self=True) -> Slices:  # noqa: E501
+def slices_get(name: str = None, search: str = None, exact_match: bool = False,
+               as_self: bool = True, states: List[str] = None, limit: int = 5, offset: int = 0):  # noqa: E501
     """Retrieve a listing of user slices
 
-    Retrieve a listing of user slices # noqa: E501
+    Retrieve a listing of user slices. It returns list of all slices belonging to all members in a project when
+    &#x27;as_self&#x27; is False otherwise returns only the all user&#x27;s slices in a project. # noqa: E501
 
     :param name: Search for Slices with the name
     :type name: str
+    :param search: search term applied
+    :type search: str
+    :param exact_match: Exact Match for Search term
+    :type exact_match: str
+    :param as_self: GET object as Self
+    :type as_self: bool
     :param states: Search for Slices in the specified states
     :type states: List[str]
     :param limit: maximum number of results to return per page (1 or more)
     :type limit: int
     :param offset: number of items to skip before starting to collect the result set
     :type offset: int
-    :param as_self: GET object as Self
-    :type as_self: bool
 
     :rtype: Slices
     """
@@ -182,7 +195,7 @@ def slices_get(name=None, states=None, limit=None, offset=None, as_self=True) ->
     try:
         token = get_token()
         slices_dict = handler.get_slices(token=token, states=states, name=name, limit=limit, offset=offset,
-                                         as_self=as_self)
+                                         as_self=as_self, search=search, exact_match=exact_match)
         response = Slices()
         response.data = []
         response.type = 'slices'
@@ -299,7 +312,8 @@ def slices_renew_slice_id_post(slice_id, lease_end_time) -> Status200OkNoContent
 
     try:
         token = get_token()
-        handler.renew_slice(token=token, slice_id=slice_id, new_lease_end_time=lease_end_time)
+        end = handler.validate_lease_time(lease_time=lease_end_time)
+        handler.renew_slice(token=token, slice_id=slice_id, new_lease_end_time=end)
         success_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
 
         slice_info = Status200OkNoContentData()

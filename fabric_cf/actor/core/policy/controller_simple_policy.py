@@ -143,14 +143,6 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
         if demand is None:
             return ReservationSet()
 
-        '''
-        for reservation in demand.values():
-            kernel_slice = reservation.get_slice()
-            for slice_reservation in kernel_slice.get_reservations().values():
-                self.logger.debug(f"Reservation {slice_reservation.get_reservation_id()} is in state: "
-                                  f"{slice_reservation.get_state().name} type: {type(reservation)}")
-        '''
-
         broker = self.actor.get_default_broker()
         for reservation in demand.values():
             if reservation.get_broker() is None:

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # MIT License
 #
 # Copyright (c) 2020 FABRIC Testbed
@@ -23,32 +22,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-
-GET_METHOD = 'get'
-POST_METHOD = 'post'
-PUT_METHOD = 'put'
-DELETE_METHOD = 'delete'
-
-RESOURCES_PATH = '/resources'
-PORTAL_RESOURCES_PATH = '/portalresources'
-
-SLICES_CREATE_PATH = '/slices/create'
-SLICES_MODIFY_PATH = '/slices/modify/{slice_id}'
-SLICES_MODIFY_ACCEPT_PATH = '/slices/modify/{slice_id}/accept'
-SLICES_DELETE_PATH = '/slices/delete'
-SLICES_DELETE_SLICE_ID_PATH = '/slices/delete/{slice_id}'
-SLICES_GET_PATH = '/slices'
-SLICES_GET_SLICE_ID_PATH = '/slices/{slice_id}'
-SLICES_RENEW_PATH = '/slices/renew/{slice_id}'
-SLICE_STATUS_SLICE_ID_PATH = '/slices/status/{slice_id}'
-
-
-SLIVERS_GET_PATH = '/slivers'
-SLIVERS_GET_SLIVER_ID_PATH = '/slivers/{sliver_id}'
-POAS_POST_SLIVER_ID_PATH = '/poas/create/{sliver_id}'
-POAS_GET_PATH = '/poas'
-POAS_GET_POA_ID_PATH = '/poas/{poa_id}'
-
-VERSIONS_PATH = '/version'
-
-METRICS_GET_PATH = '/metrics/overview'
+playbooks:
+  location: /etc/fabric/actor/playbooks
+  inventory_location: /etc/fabric/actor/playbooks/inventory
+  Switch: head_switch_provisioning.yml
+  cleanup:
+    ALL: head_switch_provisioning.yml

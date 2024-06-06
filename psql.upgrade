@@ -21,3 +21,61 @@ CREATE TABLE IF NOT EXISTS "Components" (
 );
 
 ALTER TABLE "Reservations" ADD COLUMN IF NOT EXISTS components VARCHAR;
+
+
+-- Add new columns with the TIMESTAMP WITH TIME ZONE data type
+ALTER TABLE "Reservations" ADD COLUMN lease_start_with_tz TIMESTAMPTZ;
+ALTER TABLE "Reservations" ADD COLUMN lease_end_with_tz TIMESTAMPTZ;
+
+-- Update the new columns with data from the existing columns
+UPDATE "Reservations" SET lease_start_with_tz = lease_start::TIMESTAMPTZ;
+UPDATE "Reservations" SET lease_end_with_tz = lease_end::TIMESTAMPTZ;
+
+-- Drop the existing columns
+ALTER TABLE "Reservations" DROP COLUMN lease_start;
+ALTER TABLE "Reservations" DROP COLUMN lease_end;
+
+-- Rename the new columns to the original column names
+ALTER TABLE "Reservations" RENAME COLUMN lease_start_with_tz TO lease_start;
+ALTER TABLE "Reservations" RENAME COLUMN lease_end_with_tz TO lease_end;
+
+
+ALTER TABLE "Slices" ADD COLUMN IF NOT EXISTS components VARCHAR;
+
+
+-- Add new columns with the TIMESTAMP WITH TIME ZONE data type
+ALTER TABLE "Slices" ADD COLUMN lease_start_with_tz TIMESTAMPTZ;
+ALTER TABLE "Slices" ADD COLUMN lease_end_with_tz TIMESTAMPTZ;
+
+-- Update the new columns with data from the existing columns
+UPDATE "Slices" SET lease_start_with_tz = lease_start::TIMESTAMPTZ;
+UPDATE "Slices" SET lease_end_with_tz = lease_end::TIMESTAMPTZ;
+
+-- Drop the existing columns
+ALTER TABLE "Slices" DROP COLUMN lease_start;
+ALTER TABLE "Slices" DROP COLUMN lease_end;
+
+-- Rename the new columns to the original column names
+ALTER TABLE "Slices" RENAME COLUMN lease_start_with_tz TO lease_start;
+ALTER TABLE "Slices" RENAME COLUMN lease_end_with_tz TO lease_end;
+
+
+
+-- Add new columns with the TIMESTAMP WITH TIME ZONE data type
+ALTER TABLE "Poas" ADD COLUMN last_update_time_with_tz TIMESTAMPTZ;
+
+-- Update the new columns with data from the existing columns
+UPDATE "Poas" SET last_update_time_with_tz = last_update_time::TIMESTAMPTZ;
+
+-- Drop the existing columns
+ALTER TABLE "Poas" DROP COLUMN last_update_time;
+
+-- Rename the new columns to the original column names
+ALTER TABLE "Poas" RENAME COLUMN last_update_time_with_tz TO last_update_time;
+
+CREATE TABLE IF NOT EXISTS "Metrics" (
+  m_id  INTEGER NOT NULL DEFAULT nextval('m_id') PRIMARY KEY,
+  user_id VARCHAR NOT NULL,
+  project_id VARCHAR NOT NULL,
+  slice_count INTEGER NOT NULL,
+);

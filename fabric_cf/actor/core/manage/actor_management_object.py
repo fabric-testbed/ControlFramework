@@ -25,11 +25,11 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import traceback
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List, Dict, Tuple
 
-from fabric_mb.message_bus.messages.poa_avro import PoaAvro
-from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
+from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_poa_avro import ResultPoaAvro
@@ -40,6 +40,7 @@ from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+from fim.user import GraphFormat
 
 from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
@@ -92,7 +93,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         return properties
 
     def recover(self):
-        actor_name = None
         if Constants.PROPERTY_ACTOR_NAME in self.serial:
             actor_name = self.serial[Constants.PROPERTY_ACTOR_NAME]
         else:
@@ -131,14 +131,14 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
     def set_actor(self, *, actor: ABCActorMixin):
         if self.actor is None:
             self.actor = actor
-            #self.db = actor.get_plugin().get_database()
             self.logger = actor.get_logger()
             self.id = actor.get_guid()
             self.make_local_db_object(actor=actor)
 
     def get_slices(self, *, slice_id: ID, caller: AuthToken, slice_name: str = None, email: str = None,
                    states: List[int] = None, project: str = None, limit: int = None,
-                   offset: int = None, user_id: str = None) -> ResultSliceAvro:
+                   offset: int = None, user_id: str = None, search: str = None,
+                   exact_match: bool = False) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
 
@@ -152,7 +152,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 try:
                     slice_list = self.db.get_slices(slice_id=slice_id, slice_name=slice_name, email=email,
                                                     states=states, project_id=project, limit=limit, offset=offset,
-                                                    oidc_sub=user_id)
+                                                    oidc_sub=user_id, search=search, exact_match=exact_match)
                 except Exception as e:
                     self.logger.error("getSlices:db access {}".format(e))
                     result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
@@ -169,6 +169,26 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
         return result
+
+    def get_metrics(self, *, project_id: str, oidc_sub: str, excluded_projects: List[str] = None) -> list:
+        try:
+            return self.db.get_metrics(project_id=project_id, oidc_sub=oidc_sub, excluded_projects=excluded_projects)
+        except Exception as e:
+            self.logger.error("get_metrics {}".format(e))
+
+    def increment_metrics(self, *, project_id: str, oidc_sub: str, slice_count: int = 1) -> bool:
+        try:
+            return self.db.increment_metrics(project_id=project_id, oidc_sub=oidc_sub, slice_count=slice_count)
+        except Exception as e:
+            self.logger.error("add_or_update_metrics {}".format(e))
+
+    def get_slice_count(self, *, caller: AuthToken, email: str = None, states: List[int] = None,
+                        project: str = None, user_id: str = None, excluded_projects: List[str] = None) -> int:
+        try:
+            return self.db.get_slice_count(email=email, states=states, project_id=project, oidc_sub=user_id)
+        except Exception as e:
+            self.logger.error("get_slice_count {}".format(e))
+            return -1
 
     def add_slice(self, *, slice_obj: SliceAvro, caller: AuthToken) -> ResultStringAvro:
         result = ResultStringAvro()
@@ -190,7 +210,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 slice_obj_new.set_graph_id(graph_id=slice_obj.graph_id)
                 slice_obj_new.set_config_properties(value=slice_obj.get_config_properties())
                 slice_obj_new.set_lease_end(lease_end=slice_obj.get_lease_end())
-                slice_obj_new.set_lease_start(lease_start=datetime.now(timezone.utc))
+                slice_obj_new.set_lease_start(lease_start=slice_obj.get_lease_start())
 
                 if slice_obj.get_inventory():
                     slice_obj_new.set_inventory(value=True)
@@ -439,10 +459,11 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             if res_list is not None:
                 result.reservations = []
                 for r in res_list:
-                    slice_id = r.get_slice_id()
-                    slice_obj = self.get_slice_by_guid(guid=slice_id)
+                    r_slice_id = r.get_slice_id()
+                    slice_obj = self.get_slice_by_guid(guid=r_slice_id)
                     r.restore(actor=self.actor, slice_obj=slice_obj)
-                    rr = Converter.fill_reservation(reservation=r, full=True)
+                    full = True if slice_id or rid else False
+                    rr = Converter.fill_reservation(reservation=r, full=full)
                     result.reservations.append(rr)
         except ReservationNotFoundException as e:
             self.logger.error("getReservations: {}".format(e))
@@ -859,3 +880,15 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
+
+    def build_broker_query_model(self, level_0_broker_query_model: str, level: int,
+                                 graph_format: GraphFormat = GraphFormat.GRAPHML,
+                                 start: datetime = None, end: datetime = None, includes: str = None,
+                                 excludes: str = None) -> str:
+        try:
+            return FimHelper.build_broker_query_model(db=self.db, level_0_broker_query_model=level_0_broker_query_model,
+                                                      level=level, graph_format=graph_format, start=start,
+                                                      end=end, includes=includes, excludes=excludes)
+        except Exception as e:
+            self.logger.error(f"Exception occurred build_broker_query_model e: {e}")
+            self.logger.error(traceback.format_exc())

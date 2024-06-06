@@ -31,7 +31,7 @@ from fim.slivers.capacities_labels import Capacities, Labels
 from fim.slivers.delegations import Delegations
 from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.interface_info import InterfaceSliver
-from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NSLayer
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -476,6 +476,60 @@ class NetworkNodeInventory(InventoryForType):
 
         return requested_components
 
+    def __allocate_p4_switch(self, *, rid: ID, requested_sliver: NodeSliver, graph_id: str, graph_node: NodeSliver,
+                             existing_reservations: List[ABCReservationMixin], existing_components: Dict[str, List[str]],
+                             is_create: bool = False) -> Tuple[str, BaseSliver]:
+        """
+        Allocate an extending or ticketing reservation for a P4 switch
+
+        :param rid: reservation id of the reservation to be allocated
+        :param requested_sliver: requested sliver
+        :param graph_id: BQM graph id
+        :param graph_node: BQM graph node identified to serve the reservation
+        :param existing_components: Existing Components
+        :param existing_reservations: Existing Reservations served by the same BQM node
+        :param is_create: Indicates if this is create or modify
+
+        :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
+        :raises: BrokerException in case the request cannot be satisfied
+        """
+        delegation_id = None
+
+        if not is_create:
+            # In case of modify, directly get delegation_id
+            if len(graph_node.get_capacity_delegations().get_delegation_ids()) > 0:
+                delegation_id = next(iter(graph_node.get_capacity_delegations().get_delegation_ids()))
+
+            # Nothing to do, just return
+            return delegation_id, requested_sliver
+
+        # Handle allocation to account for leaked Network Services
+        for n in existing_components.keys():
+            if n in graph_node.node_id:
+                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                      msg=f"Node of type: {graph_node.get_type()} not available on site: "
+                                          f"{graph_node.get_site()}, already in use by another reservation")
+
+        # For create, we need to allocate the P4
+        requested_capacities = requested_sliver.get_capacities()
+
+        # Check if Capacities can be satisfied
+        delegation_id = self.__check_capacities(rid=rid,
+                                                requested_capacities=requested_capacities,
+                                                delegated_capacities=graph_node.get_capacity_delegations(),
+                                                existing_reservations=existing_reservations)
+        requested_sliver.capacity_allocations = Capacities()
+        requested_sliver.capacity_allocations = Capacities.update(lab=requested_capacities)
+        requested_sliver.label_allocations = Labels(local_name=graph_node.get_name())
+
+        requested_sliver.set_node_map(node_map=(graph_id, graph_node.node_id))
+        requested_sliver.management_ip = graph_node.management_ip
+
+        self.logger.info(f"Reservation# {rid} is being served by delegation# {delegation_id} "
+                         f"node# [{graph_id}/{graph_node.node_id}]")
+
+        return delegation_id, requested_sliver
+
     def allocate(self, *, rid: ID, requested_sliver: BaseSliver, graph_id: str, graph_node: BaseSliver,
                  existing_reservations: List[ABCReservationMixin], existing_components: Dict[str, List[str]],
                  is_create: bool = False) -> Tuple[str, BaseSliver]:
@@ -492,16 +546,25 @@ class NetworkNodeInventory(InventoryForType):
         :raises: BrokerException in case the request cannot be satisfied
         """
         if graph_node.get_capacity_delegations() is None or rid is None:
-            raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
+            raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                   msg=f"capacity_delegations is missing or reservation is None")
 
         if not isinstance(requested_sliver, NodeSliver):
-            raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
+            raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                   msg=f"resource type: {requested_sliver.get_type()}")
 
         if not isinstance(graph_node, NodeSliver):
-            raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
+            raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                   msg=f"resource type: {graph_node.get_type()}")
+
+        if requested_sliver.get_type() not in [NodeType.VM, NodeType.Switch]:
+            raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                  msg=f"Unsupported resource type: {graph_node.get_type()}")
+
+        if requested_sliver.get_type() == NodeType.Switch:
+            return self.__allocate_p4_switch(rid=rid, requested_sliver=requested_sliver, graph_id=graph_id,
+                                             graph_node=graph_node, existing_reservations=existing_reservations,
+                                             existing_components=existing_components, is_create=is_create)
 
         delegation_id = None
         requested_capacities = None
@@ -547,4 +610,4 @@ class NetworkNodeInventory(InventoryForType):
         return delegation_id, requested_sliver
 
     def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:
-        return
+        pass
