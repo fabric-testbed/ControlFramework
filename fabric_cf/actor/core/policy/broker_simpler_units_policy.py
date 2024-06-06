@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 import enum
+import random
 import threading
 import traceback
 from datetime import datetime, timezone
@@ -77,6 +78,7 @@ class BrokerAllocationAlgorithm(Enum):
     FirstFit = enum.auto()
     BestFit = enum.auto()
     WorstFit = enum.auto()
+    Random = enum.auto()
 
     def __repr__(self):
         return self.name
@@ -626,6 +628,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         """
         delegation_id = None
         node_id_list = self.__candidate_nodes(sliver=sliver)
+        if self.get_algorithm_type(site=sliver.site) == BrokerAllocationAlgorithm.Random:
+            random.shuffle(node_id_list)
 
         if len(node_id_list) == 0 and sliver.site not in self.combined_broker_model.get_sites():
             error_msg = f'Unknown site {sliver.site} requested for {reservation}'
@@ -642,14 +646,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.logger.error(error_msg)
             return delegation_id, sliver, error_msg
 
-        if self.get_algorithm_type().lower() == BrokerAllocationAlgorithm.FirstFit.name.lower():
-            return self.__find_first_fit(node_id_list=node_id_list,
-                                         node_id_to_reservations=node_id_to_reservations,
-                                         inv=inv, reservation=reservation, term=term)
-
-        else:
-            raise BrokerException(error_code=ExceptionErrorCode.NOT_SUPPORTED,
-                                  msg=f"Broker currently only supports First Fit")
+        return self.__find_first_fit(node_id_list=node_id_list,
+                                     node_id_to_reservations=node_id_to_reservations,
+                                     inv=inv, reservation=reservation, term=term)
 
     def __allocate_services(self, *, rid: ID, inv: NetworkServiceInventory, sliver: NetworkServiceSliver,
                             node_id_to_reservations: dict, term: Term) -> Tuple[str, BaseSliver, Any]:
@@ -1560,12 +1559,17 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.combined_broker_model.rollback(graph_id=snapshot_graph_id)
             raise e
 
-    def get_algorithm_type(self) -> str:
+    def get_algorithm_type(self, site: str) -> BrokerAllocationAlgorithm:
         if self.properties is not None:
-            algo_str = self.properties.get(Constants.ALGORITHM, None)
-            if algo_str is not None:
-                return algo_str
-        return BrokerAllocationAlgorithm.FirstFit.name
+            algorithms = self.properties.get(Constants.ALGORITHM, None)
+            random_algo = algorithms.get(str(BrokerAllocationAlgorithm.Random))
+            if random_algo and random_algo.get('enabled') and random_algo.get('sites') and \
+                    site in random_algo.get('sites'):
+                return BrokerAllocationAlgorithm.Random
+            first_fit_algo = algorithms.get(BrokerAllocationAlgorithm.Random.name)
+            if first_fit_algo and first_fit_algo.get('enabled'):
+                return BrokerAllocationAlgorithm.FirstFit
+        return BrokerAllocationAlgorithm.FirstFit
 
 
 if __name__ == '__main__':

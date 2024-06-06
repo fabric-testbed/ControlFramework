@@ -121,6 +121,9 @@ class Policy(ABCPolicy):
             if self.clock is None:
                 raise ActorException("Missing clock")
 
+            if config and config.get_policy() and config.get_policy().get_properties():
+                self.set_properties(properties=config.get_policy().get_properties())
+
             self.initialized = True
 
     def internal_error(self, *, message: str):

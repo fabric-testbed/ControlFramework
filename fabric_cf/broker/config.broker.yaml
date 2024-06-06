@@ -139,7 +139,14 @@ actor:
       module: fabric_cf.actor.core.policy.broker_simpler_units_policy
       class: BrokerSimplerUnitsPolicy
       properties:
-        algorithm: FirstFit
+        algorithm:
+          FirstFit: # Default policy for all sites
+            enabled: true
+          Random: # Random policy for specific sites
+            enabled: true
+            sites: # Specify the sites where Random policy should be used
+              - EDUKY
+              # Add more sites as needed
   controls:
       - control:
           type: VM, Container, Baremetal, Switch
