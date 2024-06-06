@@ -648,7 +648,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return self.__find_first_fit(node_id_list=node_id_list,
                                      node_id_to_reservations=node_id_to_reservations,
-                                     inv=inv, reservation=reservation)
+                                     inv=inv, reservation=reservation, term=term)
 
     def __allocate_services(self, *, rid: ID, inv: NetworkServiceInventory, sliver: NetworkServiceSliver,
                             node_id_to_reservations: dict, term: Term) -> Tuple[str, BaseSliver, Any]:
