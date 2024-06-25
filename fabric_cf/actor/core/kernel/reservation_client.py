@@ -505,12 +505,18 @@ class ReservationClient(Reservation, ABCControllerReservation):
             parent_res = pred_state.get_reservation()
 
             if Constants.PEERED in value1:
+                self.logger.debug(f"KOMAL --- Node MAP:{ifs.get_node_map()} Result: {result}")
                 if parent_res is not None:
                     ns_sliver = parent_res.get_resources().get_sliver()
                     # component_name contains =>  Peered:<peered ns id>:<peer ifs name>
                     al2s_ifs = ns_sliver.interface_info.interfaces.get(result[2])
-                    ifs.labels = Labels.update(ifs.labels, vlan=al2s_ifs.labels.vlan)
-                    ifs.set_node_map(node_map=(Constants.PEERED, value2))
+                    if al2s_ifs:
+                        ifs.labels = Labels.update(ifs.labels, vlan=al2s_ifs.labels.vlan)
+                        ifs.set_node_map(node_map=(Constants.PEERED, value2))
+                    else:
+                        msg = f"Could not determine al2s_ifs: {al2s_ifs} result: {result}"
+                        self.logger.error(msg)
+                        self.fail(message=msg)
                 continue
 
             if parent_res is not None and (parent_res.is_ticketed() or parent_res.is_active()):
