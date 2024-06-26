@@ -820,6 +820,19 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             if owner_v4_service and owner_v4_service.get_labels():
                 ero_source_end_info.append((owner_switch.node_id, owner_v4_service.get_labels().ipv4))
 
+        if not owner_ns:
+            bqm_graph_id, bqm_node_id = sliver.get_node_map()
+            owner_ns, owner_switch = self.get_network_service_from_graph(node_id=bqm_node_id,
+                                                                         parent=True)
+            owner_mpls_ns = None
+            if owner_switch:
+                for ns in owner_switch.network_service_info.network_services.values():
+                    if ServiceType.MPLS == ns.get_type():
+                        owner_mpls_ns = ns
+                        break
+            delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
+                                                                              owner_ns.get_label_delegations())
+
         # Update the Network Service Sliver Node Map to map to parent of (a)
         sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns_id))
 
