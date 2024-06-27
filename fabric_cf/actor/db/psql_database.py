@@ -855,11 +855,21 @@ class PsqlDatabase:
             if category is not None:
                 rows = rows.filter(Reservations.rsv_category.in_(category))
 
+            # Ensure start and end are datetime objects
+            if start and isinstance(start, str):
+                start = datetime.fromisoformat(start)
+            if end and isinstance(end, str):
+                end = datetime.fromisoformat(end)
+
             # Construct filter condition for lease_end within the given time range
             if start is not None or end is not None:
                 lease_end_filter = True  # Initialize with True to avoid NoneType comparison
                 if start is not None and end is not None:
-                    lease_end_filter = and_(start <= Reservations.lease_end, Reservations.lease_end <= end)
+                    lease_end_filter = or_(
+                        and_(start <= Reservations.lease_end, Reservations.lease_end <= end),
+                        and_(start <= Reservations.lease_start, Reservations.lease_start <= end),
+                        and_(Reservations.lease_start <= start, Reservations.lease_end >= end)
+                    )
                 elif start is not None:
                     lease_end_filter = start <= Reservations.lease_end
                 elif end is not None:
@@ -897,7 +907,11 @@ class PsqlDatabase:
             # Construct filter condition for lease_end within the given time range
             if start is not None or end is not None:
                 if start is not None and end is not None:
-                    lease_end_filter = and_(start <= Reservations.lease_end, Reservations.lease_end <= end)
+                    lease_end_filter = or_(
+                        and_(start <= Reservations.lease_end, Reservations.lease_end <= end),
+                        and_(start <= Reservations.lease_start, Reservations.lease_start <= end),
+                        and_(Reservations.lease_start <= start, Reservations.lease_end >= end)
+                    )
                 elif start is not None:
                     lease_end_filter = start <= Reservations.lease_end
                 elif end is not None:
