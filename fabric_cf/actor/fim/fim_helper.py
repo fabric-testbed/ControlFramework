@@ -436,15 +436,23 @@ class FimHelper:
             raise Exception(f"More than one Peer Interface Sliver found for IFS: {ifs_node_id}!")
         peer_ifs = next(iter(peer_interfaces))
 
-        peer_ns_node_name, peer_ns_id = slice_graph.get_parent(node_id=peer_ifs.node_id,
-                                                               rel=ABCPropertyGraph.REL_CONNECTS,
-                                                               parent=ABCPropertyGraph.CLASS_NetworkService)
+        if peer_ifs.get_type() == InterfaceType.SubInterface:
+            parent_cp_node_name, parent_cp_node_id = slice_graph.get_parent(node_id=peer_ifs.node_id,
+                                                                            rel=ABCPropertyGraph.REL_CONNECTS,
+                                                                            parent=ABCPropertyGraph.CLASS_ConnectionPoint)
+            peer_ns_node_name, peer_ns_id = slice_graph.get_parent(node_id=parent_cp_node_id,
+                                                                   rel=ABCPropertyGraph.REL_CONNECTS,
+                                                                   parent=ABCPropertyGraph.CLASS_NetworkService)
+        else:
+            peer_ns_node_name, peer_ns_id = slice_graph.get_parent(node_id=peer_ifs.node_id,
+                                                                   rel=ABCPropertyGraph.REL_CONNECTS,
+                                                                   parent=ABCPropertyGraph.CLASS_NetworkService)
 
         component_name = None
         facility = False
         peer_site = None
 
-        if peer_ifs.get_type() in [InterfaceType.DedicatedPort, InterfaceType.SharedPort]:
+        if peer_ifs.get_type() in [InterfaceType.DedicatedPort, InterfaceType.SharedPort, InterfaceType.SubInterface]:
             component_name, component_id = slice_graph.get_parent(node_id=peer_ns_id, rel=ABCPropertyGraph.REL_HAS,
                                                                   parent=ABCPropertyGraph.CLASS_Component)
             # Possibly P4 switch; parent will be a switch
@@ -467,6 +475,7 @@ class FimHelper:
 
             # Peer Network Service is FABRIC L3VPN connected to a FABRIC Site
             # Determine the site to which AL2S Peered Interface is connected to
+
             for ifs in peer_ns.interface_info.interfaces.values():
                 # Skip the peered interface
                 if ifs.node_id == peer_ifs.node_id:
