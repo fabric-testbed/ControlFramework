@@ -69,8 +69,8 @@ def node_sliver_to_str(*, sliver: NodeSliver):
                         for i in ns.interface_info.interfaces.values():
                             result += f"\nIFS: {i}"
                             if i.interface_info and i.interface_info.interfaces:
-                                for c in ns.interface_info.interfaces.values():
-                                    result += f"\nSub IFS: {c}"
+                                for ch_ifc in i.interface_info.interfaces.values():
+                                    result += f"\nSub IFS: {ch_ifc}"
     return result
 
 
