@@ -42,7 +42,7 @@ from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver
 from fim.slivers.topology_diff import WhatsModifiedFlag
-from fim.user import ServiceType, ExperimentTopology
+from fim.user import ServiceType, ExperimentTopology, InterfaceType
 
 from fabric_cf.actor.core.common.constants import ErrorCodes, Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
@@ -539,6 +539,8 @@ class OrchestratorSliceWrapper:
 
         # Added Interfaces
         for x in topology_diff.added.interfaces:
+            if x.type == InterfaceType.SubInterface:
+                continue
             new_sliver, parent_node_id = FimHelper.get_parent_node(graph_model=new_slice_graph, interface=x)
             rid = new_sliver.reservation_info.reservation_id
             # If corresponding sliver also has add operations; it's already in the map
@@ -556,6 +558,8 @@ class OrchestratorSliceWrapper:
 
         # Removed Interfaces
         for x in topology_diff.removed.interfaces:
+            if x.type == InterfaceType.SubInterface:
+                continue
             sliver, parent_node_id = FimHelper.get_parent_node(graph_model=existing_topology.graph_model, interface=x)
             rid = sliver.reservation_info.reservation_id
             # If corresponding sliver also has add operations; it's already in the map
