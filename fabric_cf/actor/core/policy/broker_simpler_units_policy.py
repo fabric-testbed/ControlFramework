@@ -1031,8 +1031,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             sliver = current_resources.get_sliver()
             diff = sliver.diff(other_sliver=requested_resources.get_sliver())
 
-            #if diff is not None and (diff.added is None or
-            #                         (len(diff.added.components) == 0 and len(diff.added.interfaces) == 0)):
             if diff is not None:
                 sliver = requested_resources.get_sliver()
 

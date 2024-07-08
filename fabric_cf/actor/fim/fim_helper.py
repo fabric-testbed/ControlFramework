@@ -609,23 +609,85 @@ class FimHelper:
         return switch, mpls_ns, requested_ns
 
     @staticmethod
-    def get_parent_node(*, graph_model: ABCPropertyGraph, component: Component = None, interface: Interface = None,
+    def get_parent_node(*, graph_model: ABCPropertyGraph, node: Union[Component, Interface],
                         sliver: bool = True) -> Tuple[Union[NodeSliver, NetworkServiceSliver, None], str]:
-        node = None
-        if component is not None:
-            node_name, node_id = graph_model.get_parent(node_id=component.node_id, rel=ABCPropertyGraph.REL_HAS,
-                                                        parent=ABCPropertyGraph.CLASS_NetworkNode)
-            if sliver:
-                node = graph_model.build_deep_node_sliver(node_id=node_id)
-        elif interface is not None:
-            node_name, node_id = graph_model.get_parent(node_id=interface.node_id, rel=ABCPropertyGraph.REL_CONNECTS,
-                                                        parent=ABCPropertyGraph.CLASS_NetworkService)
-            if sliver:
-                node = graph_model.build_deep_ns_sliver(node_id=node_id)
-        else:
+        """
+        Retrieve the parent node of a given component or interface in the graph model.
+
+        This method determines the parent node of a specified component or interface within the provided
+        property graph model. It can return either a node sliver or a network service sliver based on the
+        type of the input node and the `sliver` flag.
+
+        :param graph_model: The property graph model used to find parent nodes.
+        :type graph_model: ABCPropertyGraph
+
+        :param node: The component or interface for which to find the parent node.
+        :type node: Union[Component, Interface]
+
+        :param sliver: Flag indicating whether to build and return a sliver object for the parent node.
+                       Defaults to True.
+        :type sliver: bool
+
+        :return: A tuple containing the parent node sliver (or network service sliver) and the parent node ID.
+                 If no parent node is found, returns (None, None).
+        :rtype: Tuple[Union[NodeSliver, NetworkServiceSliver, None], str]
+
+        :raises Exception: If the `node` argument is None or is neither a Component nor an Interface.
+
+        Example:
+            >>> parent_node, parent_node_id = get_parent_node(graph_model=my_graph_model, node=my_component)
+            >>> print(parent_node, parent_node_id)
+        """
+        if node is None:
             raise Exception("Invalid Arguments - component/interface both are None")
 
-        return node, node_id
+        parent_node = None
+        parent_node_id = None
+
+        if isinstance(node, Component):
+            node_name, parent_node_id = graph_model.get_parent(
+                node_id=node.node_id,
+                rel=ABCPropertyGraph.REL_HAS,
+                parent=ABCPropertyGraph.CLASS_NetworkNode
+            )
+            if sliver:
+                parent_node = graph_model.build_deep_node_sliver(node_id=parent_node_id)
+        elif isinstance(node, Interface):
+            if node.type == InterfaceType.SubInterface:
+                # Get the OVS Network Service attached to Sub Interface
+                sub_cp_nbs = graph_model.get_first_and_second_neighbor(
+                    node_id=node.node_id,
+                    rel1=ABCPropertyGraph.REL_CONNECTS,
+                    node1_label=ABCPropertyGraph.CLASS_ConnectionPoint,
+                    rel2=ABCPropertyGraph.REL_CONNECTS,
+                    node2_label=ABCPropertyGraph.CLASS_NetworkService
+                )
+                if len(sub_cp_nbs) == 0:
+                    raise Exception(f"Parent (NS-OVS) for Sub Interface: {node.name} cannot be found!")
+
+                # Get the component and node associated with Sub Interface
+                sub_node = graph_model.get_first_and_second_neighbor(
+                    node_id=sub_cp_nbs[0][1],
+                    rel1=ABCPropertyGraph.REL_HAS,
+                    node1_label=ABCPropertyGraph.CLASS_Component,
+                    rel2=ABCPropertyGraph.REL_HAS,
+                    node2_label=ABCPropertyGraph.CLASS_NetworkNode
+                )
+                if len(sub_node) == 0:
+                    raise Exception(f"Parent for Sub Interface: {node.name} cannot be found!")
+                parent_node_id = sub_node[0][1]
+                if sliver:
+                    parent_node = graph_model.build_deep_node_sliver(node_id=parent_node_id)
+            else:
+                node_name, parent_node_id = graph_model.get_parent(
+                    node_id=node.node_id,
+                    rel=ABCPropertyGraph.REL_CONNECTS,
+                    parent=ABCPropertyGraph.CLASS_NetworkService
+                )
+                if sliver:
+                    parent_node = graph_model.build_deep_ns_sliver(node_id=parent_node_id)
+
+        return parent_node, parent_node_id
 
     @staticmethod
     def prune_graph(*, graph_id: str) -> ExperimentTopology:

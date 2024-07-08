@@ -519,7 +519,7 @@ class OrchestratorSliceWrapper:
 
         # Add components
         for x in topology_diff.added.components:
-            sliver, parent_node_id = FimHelper.get_parent_node(graph_model=new_slice_graph, component=x)
+            sliver, parent_node_id = FimHelper.get_parent_node(graph_model=new_slice_graph, node=x)
             rid = sliver.reservation_info.reservation_id
             # If corresponding sliver also has add operations; it's already in the map
             # No need to rebuild it
@@ -529,7 +529,7 @@ class OrchestratorSliceWrapper:
         # Remove components
         for x in topology_diff.removed.components:
             # Grab the old sliver
-            sliver, parent_node_id = FimHelper.get_parent_node(graph_model=existing_topology.graph_model, component=x)
+            sliver, parent_node_id = FimHelper.get_parent_node(graph_model=existing_topology.graph_model, node=x)
             rid = sliver.reservation_info.reservation_id
             # If corresponding sliver also has add operations; it's already in the map
             # No need to rebuild it
@@ -539,41 +539,44 @@ class OrchestratorSliceWrapper:
 
         # Added Interfaces
         for x in topology_diff.added.interfaces:
-            if x.type == InterfaceType.SubInterface:
-                continue
-            new_sliver, parent_node_id = FimHelper.get_parent_node(graph_model=new_slice_graph, interface=x)
+            new_sliver, parent_node_id = FimHelper.get_parent_node(graph_model=new_slice_graph, node=x)
             rid = new_sliver.reservation_info.reservation_id
             # If corresponding sliver also has add operations; it's already in the map
             # No need to rebuild it
             if rid not in self.computed_modify_reservations:
-                new_reservation, dep_update_needed = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
-                                                                                        node_id=parent_node_id,
-                                                                                        node_res_mapping=node_res_mapping)
-                self.computed_modify_reservations[rid] = ModifiedReservation(sliver=new_reservation.get_sliver(),
-                                                                             dependencies=new_reservation.redeem_processors)
+                if x.type == InterfaceType.SubInterface:
+                    self.computed_modify_reservations[rid] = ModifiedReservation(sliver=new_sliver)
+                else:
+                    new_reservation, dep_update_needed = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
+                                                                                            node_id=parent_node_id,
+                                                                                            node_res_mapping=node_res_mapping)
+                    self.computed_modify_reservations[rid] = ModifiedReservation(sliver=new_reservation.get_sliver(),
+                                                                                 dependencies=new_reservation.redeem_processors)
 
-                if dep_update_needed:
-                    ns_peered_reservations.append(new_reservation)
-                ns_mapping[new_reservation.sliver.node_id] = rid
+                    if dep_update_needed:
+                        ns_peered_reservations.append(new_reservation)
+                    ns_mapping[new_reservation.sliver.node_id] = rid
 
         # Removed Interfaces
         for x in topology_diff.removed.interfaces:
-            if x.type == InterfaceType.SubInterface:
-                continue
-            sliver, parent_node_id = FimHelper.get_parent_node(graph_model=existing_topology.graph_model, interface=x)
+            sliver, parent_node_id = FimHelper.get_parent_node(graph_model=existing_topology.graph_model, node=x)
             rid = sliver.reservation_info.reservation_id
             # If corresponding sliver also has add operations; it's already in the map
             # No need to rebuild it
             if rid not in self.computed_modify_reservations:
-                new_reservation, dep_update_needed = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
-                                                                                        node_id=parent_node_id,
-                                                                                        node_res_mapping=node_res_mapping)
-                self.computed_modify_reservations[rid] = ModifiedReservation(sliver=new_reservation.get_sliver(),
-                                                                             dependencies=new_reservation.redeem_processors)
+                if x.type == InterfaceType.SubInterface:
+                    new_sliver = new_slice_graph.build_deep_node_sliver(node_id=parent_node_id)
+                    self.computed_modify_reservations[rid] = ModifiedReservation(sliver=new_sliver)
+                else:
+                    new_reservation, dep_update_needed = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
+                                                                                            node_id=parent_node_id,
+                                                                                            node_res_mapping=node_res_mapping)
+                    self.computed_modify_reservations[rid] = ModifiedReservation(sliver=new_reservation.get_sliver(),
+                                                                                 dependencies=new_reservation.redeem_processors)
 
-                if dep_update_needed:
-                    ns_peered_reservations.append(new_reservation)
-                ns_mapping[new_reservation.sliver.node_id] = rid
+                    if dep_update_needed:
+                        ns_peered_reservations.append(new_reservation)
+                    ns_mapping[new_reservation.sliver.node_id] = rid
 
         # Remove nodes
         for x in topology_diff.removed.nodes:
