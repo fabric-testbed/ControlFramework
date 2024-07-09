@@ -48,6 +48,7 @@ runtime:
   commit.batch.size: 1
   enable.auto.commit: False
   consumer.poll.timeout: 250
+  infrastructure.project.id: 4604cab7-41ff-4c1a-a935-0ca6f20cceeb
 
 logging:
   ## The directory in which actor should create log files.

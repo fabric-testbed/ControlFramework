@@ -885,7 +885,8 @@ class PsqlDatabase:
         return result
 
     def get_components(self, *, node_id: str, states: list[int], rsv_type: list[str], component: str = None,
-                       bdf: str = None, start: datetime = None, end: datetime = None) -> Dict[str, List[str]]:
+                       bdf: str = None, start: datetime = None, end: datetime = None,
+                       excludes: List[str] = None) -> Dict[str, List[str]]:
         """
         Returns components matching the search criteria
         @param node_id: Worker Node ID to which components belong
@@ -895,6 +896,7 @@ class PsqlDatabase:
         @param bdf: Component's PCI address
         @param start: start time
         @param end: end time
+        @param excludes: list of the reservations ids to exclude
 
         NOTE# For P4 switches; node_id=node+renc-p4-sw  component=ip+192.168.11.8 bdf=p1
 
@@ -927,6 +929,10 @@ class PsqlDatabase:
                     .filter(Components.node_id == node_id)
                     .options(joinedload(Components.reservation))
             )
+
+            # Add excludes filter if excludes list is not None and not empty
+            if excludes:
+                rows = rows.filter(Reservations.rsv_resid.notin_(excludes))
 
             # Query Component records for reservations in the specified state and owner with the target string
             if component is not None and bdf is not None:
@@ -1876,3 +1882,8 @@ if __name__ == '__main__':
     test2()
     #test()
     #test3()
+
+    logger = logging.getLogger('PsqlDatabase')
+    db = PsqlDatabase(user='fabric', password='fabric', database='orchestrator', db_host='127.0.0.1:5432',
+                      logger=logger)
+    comps = db.get_components(node_id="HX7LQ53")

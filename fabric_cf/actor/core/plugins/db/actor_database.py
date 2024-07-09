@@ -290,6 +290,8 @@ class ActorDatabase(ABCDatabase):
                 site = sliver.get_site()
                 rsv_type = sliver.get_type().name
                 from fim.slivers.network_service import NetworkServiceSliver
+                from fim.slivers.network_node import NodeSliver
+
                 if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
                     components = []
                     for interface in sliver.interface_info.interfaces.values():
@@ -304,6 +306,18 @@ class ActorDatabase(ABCDatabase):
                             bdf = ":".join(split_string[3:]) if len(split_string) > 3 else None
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
+                elif isinstance(sliver, NodeSliver) and sliver.attached_components_info:
+                    node_id = reservation.get_graph_node_id()
+                    if node_id:
+                        components = []
+                        for c in sliver.attached_components_info.devices.values():
+                            bqm_id, comp_id = c.get_node_map()
+                            if c.labels and c.labels.bdf:
+                                bdf = c.labels.bdf
+                                if isinstance(c.labels.bdf, str):
+                                    bdf = [c.labels.bdf]
+                                for x in bdf:
+                                    components.append((node_id, comp_id, x))
 
             term = reservation.get_term()
 
@@ -343,6 +357,7 @@ class ActorDatabase(ABCDatabase):
                 site = sliver.get_site()
                 rsv_type = sliver.get_type().name
                 from fim.slivers.network_service import NetworkServiceSliver
+                from fim.slivers.network_node import NodeSliver
                 if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
                     components = []
                     for interface in sliver.interface_info.interfaces.values():
@@ -357,6 +372,18 @@ class ActorDatabase(ABCDatabase):
                             bdf = ":".join(split_string[3:]) if len(split_string) > 3 else None
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
+                elif isinstance(sliver, NodeSliver) and sliver.attached_components_info:
+                    node_id = reservation.get_graph_node_id()
+                    if node_id:
+                        components = []
+                        for c in sliver.attached_components_info.devices.values():
+                            bqm_id, comp_id = c.get_node_map()
+                            if c.labels and c.labels.bdf:
+                                bdf = c.labels.bdf
+                                if isinstance(c.labels.bdf, str):
+                                    bdf = [c.labels.bdf]
+                                for x in bdf:
+                                    components.append((node_id, comp_id, x))
 
             term = reservation.get_term()
             begin = time.time()
@@ -512,10 +539,11 @@ class ActorDatabase(ABCDatabase):
         return result
 
     def get_components(self, *, node_id: str, states: list[int], rsv_type: list[str], component: str = None,
-                       bdf: str = None, start: datetime = None, end: datetime = None) -> Dict[str, List[str]]:
+                       bdf: str = None, start: datetime = None, end: datetime = None,
+                       excludes: List[str] = None) -> Dict[str, List[str]]:
         try:
             return self.db.get_components(node_id=node_id, states=states, component=component, bdf=bdf,
-                                          rsv_type=rsv_type, start=start, end=end)
+                                          rsv_type=rsv_type, start=start, end=end, excludes=excludes)
         except Exception as e:
             self.logger.error(e)
         finally:

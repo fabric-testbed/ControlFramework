@@ -434,8 +434,19 @@ class NetworkNodeInventory(InventoryForType):
         self.logger.debug(f"requested_components: {requested_components.devices.values()} for reservation# {rid}")
         for name, requested_component in requested_components.devices.items():
             if not is_create and requested_component.get_node_map() is not None:
+                bqm_id, node_id = requested_component.get_node_map()
+                allocated_bdfs = existing_components.get(node_id)
+                if allocated_bdfs and requested_component.labels and requested_component.labels.bdf:
+                    bdfs = requested_component.labels.bdf
+                    if isinstance(requested_component.labels.bdf, str):
+                        bdfs = [requested_component.labels.bdf]
+                    for x in bdfs:
+                        if x in allocated_bdfs:
+                            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                                  msg=f"Renew failed: Component of type: {requested_component.get_model()} "
+                                                      f"not available in graph node: {graph_node.node_id}")
+
                 self.logger.debug(f"==========Ignoring Allocated component: {requested_component} for modify")
-                # TODO exclude already allocated component to the same reservation
                 continue
             self.logger.debug(f"==========Allocating component: {requested_component}")
             resource_type = requested_component.get_type()
@@ -499,9 +510,6 @@ class NetworkNodeInventory(InventoryForType):
             # In case of modify, directly get delegation_id
             if len(graph_node.get_capacity_delegations().get_delegation_ids()) > 0:
                 delegation_id = next(iter(graph_node.get_capacity_delegations().get_delegation_ids()))
-
-            # Nothing to do, just return
-            return delegation_id, requested_sliver
 
         # Handle allocation to account for leaked Network Services
         for n in existing_components.keys():
@@ -574,16 +582,17 @@ class NetworkNodeInventory(InventoryForType):
             requested_capacity_hints = requested_sliver.get_capacity_hints()
             catalog = InstanceCatalog()
             requested_capacities = catalog.get_instance_capacities(instance_type=requested_capacity_hints.instance_type)
-
-            # Check if Capacities can be satisfied
-            delegation_id = self.__check_capacities(rid=rid,
-                                                    requested_capacities=requested_capacities,
-                                                    delegated_capacities=graph_node.get_capacity_delegations(),
-                                                    existing_reservations=existing_reservations)
         else:
+            requested_capacities = requested_sliver.get_capacity_allocations()
             # In case of modify, directly get delegation_id
             if len(graph_node.get_capacity_delegations().get_delegation_ids()) > 0:
                 delegation_id = next(iter(graph_node.get_capacity_delegations().get_delegation_ids()))
+
+        # Check if Capacities can be satisfied
+        delegation_id = self.__check_capacities(rid=rid,
+                                                requested_capacities=requested_capacities,
+                                                delegated_capacities=graph_node.get_capacity_delegations(),
+                                                existing_reservations=existing_reservations)
 
         # Check if Components can be allocated
         if requested_sliver.attached_components_info is not None:
