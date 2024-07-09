@@ -422,17 +422,30 @@ class NetworkServiceInventory(InventoryForType):
                 continue
 
             if allocated_sliver.get_type() == ServiceType.FABNetv4:
-                subnet_to_remove = IPv4Network(allocated_sliver.get_gateway().lab.ipv4_subnet)
+                subnet_to_remove = IPv4Network(allocated_sliver.get_gateway().subnet)
+                self.logger.debug(
+                    f"Excluding already allocated IP4Subnet: "
+                    f"{allocated_sliver.get_gateway().subnet}"
+                    f" to res# {reservation.get_reservation_id()}")
                 subnet_list.remove(subnet_to_remove)
 
             elif allocated_sliver.get_type() == ServiceType.FABNetv4Ext:
                 if allocated_sliver.labels is not None and allocated_sliver.labels.ipv4 is not None:
                     for x in allocated_sliver.labels.ipv4:
                         subnet_to_remove = ipaddress.IPv4Address(x)
+                        self.logger.debug(
+                            f"Excluding already allocated IP4: "
+                            f"{x}"
+                            f" to res# {reservation.get_reservation_id()}")
                         subnet_list.remove(subnet_to_remove)
 
             elif allocated_sliver.get_type() in Constants.L3_FABNETv6_SERVICES:
-                subnet_to_remove = IPv6Network(allocated_sliver.get_gateway().lab.ipv6_subnet)
+                subnet_to_remove = IPv6Network(allocated_sliver.get_gateway().subnet)
+                self.logger.debug(
+                    f"Excluding already allocated IP6Subnet: "
+                    f"{allocated_sliver.get_gateway().subnet}"
+                    f" to res# {reservation.get_reservation_id()}")
+
                 subnet_list.remove(subnet_to_remove)
 
             self.logger.debug(f"Excluding already allocated subnet for reservation {reservation.get_reservation_id()}")
