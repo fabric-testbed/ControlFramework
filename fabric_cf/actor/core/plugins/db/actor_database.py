@@ -311,13 +311,14 @@ class ActorDatabase(ABCDatabase):
                     if node_id:
                         components = []
                         for c in sliver.attached_components_info.devices.values():
-                            bqm_id, comp_id = c.get_node_map()
-                            if c.labels and c.labels.bdf:
-                                bdf = c.labels.bdf
-                                if isinstance(c.labels.bdf, str):
-                                    bdf = [c.labels.bdf]
-                                for x in bdf:
-                                    components.append((node_id, comp_id, x))
+                            if c.get_node_map():
+                                bqm_id, comp_id = c.get_node_map()
+                                if c.labels and c.labels.bdf:
+                                    bdf = c.labels.bdf
+                                    if isinstance(c.labels.bdf, str):
+                                        bdf = [c.labels.bdf]
+                                    for x in bdf:
+                                        components.append((node_id, comp_id, x))
 
             term = reservation.get_term()
 
@@ -377,13 +378,14 @@ class ActorDatabase(ABCDatabase):
                     if node_id:
                         components = []
                         for c in sliver.attached_components_info.devices.values():
-                            bqm_id, comp_id = c.get_node_map()
-                            if c.labels and c.labels.bdf:
-                                bdf = c.labels.bdf
-                                if isinstance(c.labels.bdf, str):
-                                    bdf = [c.labels.bdf]
-                                for x in bdf:
-                                    components.append((node_id, comp_id, x))
+                            if c.get_node_map():
+                                bqm_id, comp_id = c.get_node_map()
+                                if c.labels and c.labels.bdf:
+                                    bdf = c.labels.bdf
+                                    if isinstance(c.labels.bdf, str):
+                                        bdf = [c.labels.bdf]
+                                    for x in bdf:
+                                        components.append((node_id, comp_id, x))
 
             term = reservation.get_term()
             begin = time.time()
