@@ -1452,15 +1452,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.lock.release()
 
     def get_existing_reservations(self, node_id: str, node_id_to_reservations: dict,
-                                  start: datetime = None, end: datetime = None,
-                                  excludes: List[str] = None) -> List[ABCReservationMixin]:
+                                  start: datetime = None, end: datetime = None) -> List[ABCReservationMixin]:
         """
         Get existing reservations which are served by CBM node identified by node_id
         :param node_id:
         :param node_id_to_reservations:
         :param start
         :param end
-        :param excludes:
         :return: list of reservations
         """
         states = [ReservationStates.Active.value,
@@ -1472,8 +1470,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
                                                                                         states=states,
                                                                                         start=start,
-                                                                                        end=end,
-                                                                                        excludes=excludes)
+                                                                                        end=end)
 
         reservations_allocated_in_cycle = node_id_to_reservations.get(node_id, None)
 
