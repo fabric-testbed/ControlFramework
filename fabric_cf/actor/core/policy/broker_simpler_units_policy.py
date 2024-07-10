@@ -52,7 +52,7 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.container.maintenance import Maintenance
 from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicketFactory
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
-from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationOperation
 from fabric_cf.actor.core.policy.broker_calendar_policy import BrokerCalendarPolicy
 from fabric_cf.actor.core.policy.fifo_queue import FIFOQueue
 from fabric_cf.actor.core.policy.network_node_inventory import NetworkNodeInventory
@@ -477,7 +477,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.logger.debug(f"Inventory type: {type(inv)}")
                 term = Term(start=start, end=end)
                 return self.ticket_inventory(reservation=reservation, inv=inv, term=term,
-                                             node_id_to_reservations=node_id_to_reservations)
+                                             node_id_to_reservations=node_id_to_reservations,
+                                             operation=ReservationOperation.Create)
             else:
                 reservation.fail(message=Constants.NO_POOL)
         else:
@@ -557,7 +558,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return node_id_list
 
     def __find_first_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: NetworkNodeInventory,
-                         reservation: ABCBrokerReservation, term: Term, sliver: NodeSliver) -> Tuple[str, BaseSliver, Any]:
+                         reservation: ABCBrokerReservation, term: Term, sliver: NodeSliver,
+                         operation: ReservationOperation = ReservationOperation.Create) -> Tuple[str, BaseSliver, Any]:
         """
         Find First Available Node which can serve the reservation
         @param node_id_list: Candidate Nodes
@@ -569,7 +571,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         delegation_id = None
         error_msg = None
         self.logger.debug(f"Possible candidates to serve {reservation} candidates# {node_id_list}")
-        is_create = sliver.get_node_map() is None
         for node_id in node_id_list:
             try:
                 self.logger.debug(f"Attempting to allocate {reservation} via graph_node# {node_id}")
@@ -597,7 +598,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                      graph_node=graph_node,
                                                      existing_reservations=existing_reservations,
                                                      existing_components=existing_components,
-                                                     is_create=is_create)
+                                                     operation=operation)
 
                 if delegation_id is not None and sliver is not None:
                     break
@@ -616,7 +617,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return delegation_id, sliver, error_msg
 
     def __allocate_nodes(self, *, reservation: ABCBrokerReservation, inv: NetworkNodeInventory, sliver: NodeSliver,
-                         node_id_to_reservations: dict, term: Term) -> Tuple[str or None, BaseSliver, Any]:
+                         node_id_to_reservations: dict, term: Term,
+                         operation: ReservationOperation = ReservationOperation.Create) -> Tuple[str or None, BaseSliver, Any]:
         """
         Allocate Network Node Slivers
         @param reservation Reservation
@@ -647,7 +649,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return self.__find_first_fit(node_id_list=node_id_list,
                                      node_id_to_reservations=node_id_to_reservations,
-                                     inv=inv, reservation=reservation, term=term, sliver=sliver)
+                                     inv=inv, reservation=reservation, term=term, sliver=sliver,
+                                     operation=operation)
 
     def __allocate_services(self, *, rid: ID, inv: NetworkServiceInventory, sliver: NetworkServiceSliver,
                             node_id_to_reservations: dict, term: Term) -> Tuple[str, BaseSliver, Any]:
@@ -962,10 +965,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns.node_id))
 
     def ticket_inventory(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term,
-                         node_id_to_reservations: dict, extend: bool = False) -> Tuple[bool, dict, Any]:
+                         node_id_to_reservations: dict,
+                         operation: ReservationOperation = ReservationOperation.Create) -> Tuple[bool, dict, Any]:
         error_msg = None
         try:
-            if extend:
+            if operation == ReservationOperation.Extend:
                 rset = reservation.get_resources()
             else:
                 rset = reservation.get_requested_resources()
@@ -984,7 +988,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 delegation_id, sliver, error_msg = self.__allocate_nodes(reservation=reservation, inv=inv,
                                                                          sliver=res_sliver,
                                                                          node_id_to_reservations=node_id_to_reservations,
-                                                                         term=term)
+                                                                         term=term,
+                                                                         operation=operation)
 
             elif isinstance(res_sliver, NetworkServiceSliver):
                 delegation_id, sliver, error_msg = self.__allocate_services(rid=reservation.get_reservation_id(),
@@ -1038,12 +1043,15 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             sliver = current_resources.get_sliver()
             diff = sliver.diff(other_sliver=requested_resources.get_sliver())
 
+            operation = ReservationOperation.Extend
             if diff is not None:
                 sliver = requested_resources.get_sliver()
+                operation = ReservationOperation.Modify
 
             #if diff is None or diff.added is None or \
             #        (len(diff.added.components) == 0 and len(diff.added.interfaces) == 0) or \
             #        self.__is_modify_on_openstack_vnic(sliver=sliver):
+
             if self.__is_modify_on_openstack_vnic(sliver=sliver):
                 self.issue_ticket(reservation=reservation, units=needed, rtype=requested_resources.get_type(),
                                   term=term, source=reservation.get_source(), sliver=sliver)
@@ -1051,7 +1059,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 status, node_id_to_reservations, error_msg = self.ticket_inventory(reservation=reservation,
                                                                                    inv=inv, term=term,
                                                                                    node_id_to_reservations=node_id_to_reservations,
-                                                                                   extend=True)
+                                                                                   operation=operation)
                 if not status and not reservation.is_failed():
                     fail_message = f"Insufficient resources for specified start time, Failing reservation: " \
                                    f"{reservation.get_reservation_id()}"

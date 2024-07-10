@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from fabric_cf.actor.core.common.constants import Constants
