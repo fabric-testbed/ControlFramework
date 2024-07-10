@@ -588,8 +588,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                                        end=term.get_end_time())
 
                 existing_components = self.get_existing_components(node_id=node_id, start=term.get_start_time(),
-                                                                   end=term.get_end_time(),
-                                                                   excludes=[str(reservation.get_reservation_id())])
+                                                                   end=term.get_end_time())
 
                 delegation_id, sliver = inv.allocate(rid=reservation.get_reservation_id(),
                                                      requested_sliver=sliver,
