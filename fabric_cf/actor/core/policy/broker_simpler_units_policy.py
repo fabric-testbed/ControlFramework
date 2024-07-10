@@ -823,6 +823,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             bqm_graph_id, bqm_node_id = sliver.get_node_map()
             owner_ns, owner_switch = self.get_network_service_from_graph(node_id=bqm_node_id,
                                                                          parent=True)
+            owner_ns_id = owner_ns_id.node_id
             owner_mpls_ns = None
             if owner_switch:
                 for ns in owner_switch.network_service_info.network_services.values():
