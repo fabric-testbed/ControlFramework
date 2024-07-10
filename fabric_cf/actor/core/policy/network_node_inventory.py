@@ -435,16 +435,22 @@ class NetworkNodeInventory(InventoryForType):
         for name, requested_component in requested_components.devices.items():
             if not is_create and requested_component.get_node_map() is not None:
                 bqm_id, node_id = requested_component.get_node_map()
-                allocated_bdfs = existing_components.get(node_id)
-                if allocated_bdfs and requested_component.labels and requested_component.labels.bdf:
-                    bdfs = requested_component.labels.bdf
-                    if isinstance(requested_component.labels.bdf, str):
-                        bdfs = [requested_component.labels.bdf]
-                    for x in bdfs:
-                        if x in allocated_bdfs:
-                            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                                  msg=f"Renew failed: Component of type: {requested_component.get_model()} "
-                                                      f"not available in graph node: {graph_node.node_id}")
+                if requested_component.get_type() == ComponentType.SharedNIC:
+                    allocated_bdfs = existing_components.get(node_id)
+                    if allocated_bdfs and requested_component.labels and requested_component.labels.bdf:
+                        bdfs = requested_component.labels.bdf
+                        if isinstance(requested_component.labels.bdf, str):
+                            bdfs = [requested_component.labels.bdf]
+                        for x in bdfs:
+                            if x in allocated_bdfs:
+                                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                                      msg=f"Renew failed: Component of type: {requested_component.get_model()} "
+                                                          f"not available in graph node: {graph_node.node_id}")
+                else:
+                    if node_id in existing_components.keys():
+                        raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                              msg=f"Renew failed: Component of type: {requested_component.get_model()} "
+                                                  f"not available in graph node: {graph_node.node_id}")
 
                 self.logger.debug(f"==========Ignoring Allocated component: {requested_component} for modify")
                 continue

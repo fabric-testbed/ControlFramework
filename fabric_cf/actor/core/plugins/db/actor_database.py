@@ -306,7 +306,6 @@ class ActorDatabase(ABCDatabase):
                             bdf = ":".join(split_string[3:]) if len(split_string) > 3 else None
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
-                '''
                 elif isinstance(sliver, NodeSliver) and sliver.attached_components_info:
                     node_id = reservation.get_graph_node_id()
                     if node_id:
@@ -320,7 +319,6 @@ class ActorDatabase(ABCDatabase):
                                         bdf = [c.labels.bdf]
                                     for x in bdf:
                                         components.append((node_id, comp_id, x))
-                '''
 
             term = reservation.get_term()
 
@@ -375,7 +373,6 @@ class ActorDatabase(ABCDatabase):
                             bdf = ":".join(split_string[3:]) if len(split_string) > 3 else None
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
-                '''
                 elif isinstance(sliver, NodeSliver) and sliver.attached_components_info:
                     node_id = reservation.get_graph_node_id()
                     if node_id:
@@ -389,7 +386,6 @@ class ActorDatabase(ABCDatabase):
                                         bdf = [c.labels.bdf]
                                     for x in bdf:
                                         components.append((node_id, comp_id, x))
-                '''
 
             term = reservation.get_term()
             begin = time.time()

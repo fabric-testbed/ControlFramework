@@ -588,7 +588,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                                        end=term.get_end_time())
 
                 existing_components = self.get_existing_components(node_id=node_id, start=term.get_start_time(),
-                                                                   end=term.get_end_time())
+                                                                   end=term.get_end_time(),
+                                                                   excludes=[str(reservation.get_reservation_id())])
 
                 delegation_id, sliver = inv.allocate(rid=reservation.get_reservation_id(),
                                                      requested_sliver=sliver,
@@ -1513,10 +1514,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         for x in ServiceType:
             res_type.append(str(x))
 
-        '''
         for x in NodeType:
             res_type.append(str(x))
-        '''
 
         # Only get Active or Ticketing reservations
         return self.actor.get_plugin().get_database().get_components(node_id=node_id, rsv_type=res_type, states=states,
