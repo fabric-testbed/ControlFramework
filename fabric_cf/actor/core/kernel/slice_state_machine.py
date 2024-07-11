@@ -199,8 +199,8 @@ class SliceStateMachine:
     MODIFY = SliceOperation(SliceCommand.Modify, SliceState.StableOK, SliceState.StableError, SliceState.Configuring,
                             SliceState.AllocatedOK, SliceState.AllocatedError)
 
-    RENEW = SliceOperation(SliceCommand.Renew, SliceState.StableOK, SliceState.StableError, SliceState.Configuring,
-                           SliceState.AllocatedOK, SliceState.AllocatedError)
+    RENEW = SliceOperation(SliceCommand.Renew, SliceState.StableOK, SliceState.StableError, SliceState.AllocatedOK,
+                           SliceState.ModifyOK, SliceState.ModifyError, SliceState.AllocatedError)
 
     MODIFY_ACCEPT = SliceOperation(SliceCommand.ModifyAccept, SliceState.ModifyOK, SliceState.ModifyError,
                                    SliceState.Modifying, SliceState.AllocatedOK, SliceState.AllocatedError)
