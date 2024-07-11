@@ -643,7 +643,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         # no candidate nodes found
         if len(node_id_list) == 0:
-            error_msg = f'Insufficient resources: No candidates nodes found to serve {reservation}'
+            error_msg = f'Insufficient resources: No hosts available to provision the {reservation}'
             self.logger.error(error_msg)
             return delegation_id, sliver, error_msg
 
