@@ -76,7 +76,7 @@ class ReservationStates(Enum):
         elif state_name.lower() == ReservationStates.Failed.name.lower():
             return ReservationStates.Failed
         elif state_name.lower() == ReservationStates.CloseFail.name.lower():
-            return ReservationStates.Failed
+            return ReservationStates.CloseFail
         else:
             return ReservationStates.Unknown
 

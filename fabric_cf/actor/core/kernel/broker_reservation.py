@@ -319,6 +319,7 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
                 self.transition(prefix="Recover from Extend Failure", state=ReservationStates.Ticketed,
                                 pending=ReservationPendingStates.None_)
                 self.extend_failure = False
+                self.update_data.clear(clear_fail=True)
         else:
             if self.pending_state == ReservationPendingStates.Ticketing:
                 # Check for a pending ticket operation that may have completed
