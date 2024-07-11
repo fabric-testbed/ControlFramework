@@ -514,7 +514,7 @@ class OrchestratorHandler:
             config_props[Constants.TAGS] = ','.join(tags)
             config_props[Constants.TOKEN_HASH] = fabric_token.token_hash
             slice_obj.set_config_properties(value=config_props)
-            slice_object.state = SliceState.Modifying
+            slice_object.state = SliceState.Modifying.value
 
             if not controller.update_slice(slice_obj=slice_obj, modify_state=modify_state):
                 self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")
@@ -792,7 +792,7 @@ class OrchestratorHandler:
                 raise OrchestratorException(f"Failed to extend reservation# {failed_to_extend_rid_list}")
 
             if len(extend_rid_list):
-                slice_object.state = SliceState.Configuring
+                slice_object.state = SliceState.Configuring.value
                 if not controller.update_slice(slice_obj=slice_object, modify_state=True):
                     self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")
 
