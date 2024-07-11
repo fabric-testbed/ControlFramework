@@ -498,161 +498,20 @@ class NetworkServiceInventory(InventoryForType):
             allocated_subnet = ipaddress.IPv4Network(requested_ns.gateway.subnet)
             if allocated_subnet not in subnet_list:
                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                      msg=f"Subnet {requested_ns.gateway.subnet} for Network Service : "
+                                      msg=f"Renew failed: Subnet {requested_ns.gateway.subnet} for Network Service : "
                                           f"{requested_ns.get_type()} already in use by another reservation")
         elif requested_ns.get_type() == ServiceType.FABNetv4Ext:
             if requested_ns.gateway.gateway in subnet_list:
                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                      msg=f"Subnet {requested_ns.gateway.subnet} for Network Service : "
+                                      msg=f"Renew failed: Subnet {requested_ns.gateway.subnet} for Network Service : "
                                           f"{requested_ns.get_type()} already in use by another reservation")
 
         elif requested_ns.get_type() in Constants.L3_FABNETv6_SERVICES:
             allocated_subnet = ipaddress.IPv6Network(requested_ns.gateway.subnet)
             if allocated_subnet not in subnet_list:
                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                      msg=f"Subnet {requested_ns.gateway.subnet} for Network Service : "
+                                      msg=f"Renew failed: Subnet {requested_ns.gateway.subnet} for Network Service : "
                                           f"{requested_ns.get_type()} already in use by another reservation")
-
-    '''
-    def allocate(self, *, rid: ID, requested_ns: NetworkServiceSliver, owner_ns: NetworkServiceSliver,
-                 existing_reservations: List[ABCReservationMixin]) -> NetworkServiceSliver:
-        """
-        Allocate Network Service Sliver (Only for L3 Service)
-            - grab the /17 or /48 from BQM Site specific NetworkService
-            - divide it into /24 or /64 subnets
-            - exclude the 1st subnet (reserved for control plane)
-            - exclude the last subnet for V6 as the last subnet will be used for the FABRIC STAR Bastion Host Allocation
-            - exclude the subnets already assigned to other V4/V6 NetworkService on the same owner switch
-            - allocate the first available subnet to the NetworkService
-        :param rid: Reservation ID
-        :param requested_ns: Requested NetworkService
-        :param owner_ns: BQM Network Service identified to serve the NetworkService
-        :param existing_reservations: Existing Reservations which also are served by the owner switch
-        :return NetworkService updated with the allocated subnet for FABNetv4 and FABNetv6 services
-        Return the sliver updated with the subnet
-        """
-        try:
-            if requested_ns.get_type() not in Constants.L3_SERVICES:
-                return requested_ns
-
-            # Grab Label Delegations
-            delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
-
-            # HACK to use FabNetv6 for FabNetv6Ext as both have the same range
-            # Needs to be removed if FabNetv6/FabNetv6Ext are configured with different ranges
-            requested_ns_type = requested_ns.get_type()
-            if requested_ns_type == ServiceType.FABNetv6Ext:
-                requested_ns_type = ServiceType.FABNetv6
-            # Hack End
-
-            if requested_ns_type == ServiceType.L3VPN:
-                if requested_ns.labels is not None:
-                    requested_ns.labels = Labels.update(requested_ns.labels, asn=delegated_label.asn)
-                else:
-                    requested_ns.labels = Labels(asn=delegated_label.asn)
-                return requested_ns
-
-            subnet_list = None
-
-            # Get Subnet
-            if owner_ns.get_type() in Constants.L3_FABNETv6_SERVICES:
-                ip_network = IPv6Network(delegated_label.ipv6_subnet)
-                subnet_list = list(ip_network.subnets(new_prefix=64))
-                # Exclude the 1st subnet as it is reserved for control plane
-                subnet_list.pop(0)
-                # https://github.com/fabric-testbed/ControlFramework/issues/376
-                # Exclude the last subnet as the last subnet will be used for the FABRIC STAR Bastion Host Allocation
-                subnet_list.pop(-1)
-
-            elif owner_ns.get_type() == ServiceType.FABNetv4:
-                ip_network = IPv4Network(delegated_label.ipv4_subnet)
-                subnet_list = list(ip_network.subnets(new_prefix=24))
-                # Exclude the 1st subnet as it is reserved for control plane
-                subnet_list.pop(0)
-
-            elif owner_ns.get_type() == ServiceType.FABNetv4Ext:
-                ip_network = IPv4Network(delegated_label.ipv4_subnet)
-                subnet_list = list(ip_network.hosts())
-
-            # Exclude the already allocated subnets
-            for reservation in existing_reservations:
-                if rid == reservation.get_reservation_id():
-                    continue
-                # For Active or Ticketed or Ticketing reservations; reduce the counts from available
-                allocated_sliver = None
-                if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
-                    allocated_sliver = reservation.get_approved_resources().get_sliver()
-
-                if (reservation.is_active() or reservation.is_ticketed()) and \
-                        reservation.get_resources() is not None:
-                    allocated_sliver = reservation.get_resources().get_sliver()
-
-                self.logger.debug(f"Existing res# {reservation.get_reservation_id()} "
-                                  f"allocated: {allocated_sliver}")
-
-                if allocated_sliver is None:
-                    continue
-
-                # HACK to use FabNetv6 for FabNetv6Ext as both have the same range
-                # Needs to be removed if FabNetv6/FabNetv6Ext are configured with different ranges
-                allocated_sliver_type = allocated_sliver.get_type()
-                if allocated_sliver_type == ServiceType.FABNetv6Ext:
-                    allocated_sliver_type = ServiceType.FABNetv6
-                # HACK End
-
-                if allocated_sliver_type != requested_ns_type:
-                    continue
-
-                if allocated_sliver.get_type() == ServiceType.FABNetv4:
-                    subnet_to_remove = IPv4Network(allocated_sliver.get_gateway().lab.ipv4_subnet)
-                    subnet_list.remove(subnet_to_remove)
-                    self.logger.debug(
-                        f"Excluding already allocated IP4Subnet: "
-                        f"{allocated_sliver.get_gateway().lab.ipv4_subnet}"
-                        f" to res# {reservation.get_reservation_id()}")
-
-                elif allocated_sliver.get_type() == ServiceType.FABNetv4Ext:
-                    if allocated_sliver.labels is not None and allocated_sliver.labels.ipv4 is not None:
-                        for x in allocated_sliver.labels.ipv4:
-                            subnet_to_remove = ipaddress.IPv4Address(x)
-                            subnet_list.remove(subnet_to_remove)
-                            self.logger.debug(
-                                f"Excluding already allocated IPv4: {x}"
-                                f" to res# {reservation.get_reservation_id()}")
-
-                elif allocated_sliver.get_type() in Constants.L3_FABNETv6_SERVICES:
-                    subnet_to_remove = IPv6Network(allocated_sliver.get_gateway().lab.ipv6_subnet)
-                    subnet_list.remove(subnet_to_remove)
-                    self.logger.debug(
-                        f"Excluding already allocated IPv6Subnet: "
-                        f"{allocated_sliver.get_gateway().lab.ipv6_subnet}"
-                        f" to res# {reservation.get_reservation_id()}")
-
-            gateway_labels = Labels()
-            if requested_ns.get_type() == ServiceType.FABNetv4:
-                gateway_labels.ipv4_subnet = subnet_list[0].with_prefixlen
-                gateway_labels.ipv4 = str(list(subnet_list[0].hosts())[0])
-
-            elif requested_ns.get_type() == ServiceType.FABNetv4Ext:
-                gateway_labels.ipv4_subnet = ip_network.with_prefixlen
-                gateway_labels.ipv4 = str(subnet_list[0])
-
-            elif requested_ns.get_type() in Constants.L3_FABNETv6_SERVICES:
-                gateway_labels.ipv6_subnet = subnet_list[0].with_prefixlen
-                gateway_labels.ipv6 = str(next(subnet_list[0].hosts()))
-
-            self.logger.debug(f"Gateway Labels: {gateway_labels}")
-
-            requested_ns.gateway = Gateway(lab=gateway_labels)
-
-            # Allocate the IP Addresses for the requested NS
-            requested_ns = self.__allocate_ip_address_to_ifs(requested_ns=requested_ns)
-        except Exception as e:
-            self.logger.error(f"Error in allocate_gateway_for_ns: {e}")
-            self.logger.error(traceback.format_exc())
-            raise BrokerException(msg=f"Allocation failure for Requested Network Service: {e}")
-        return requested_ns
-    '''
 
     def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:
         pass
@@ -687,7 +546,7 @@ class NetworkServiceInventory(InventoryForType):
             if requested_ifs.get_node_map() and requested_ifs.labels and requested_ifs.labels.vlan:
                 if int(requested_ifs.labels.vlan) in available_vlans:
                     raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                          msg=f"VLAN {requested_ifs.labels.vlan} for Interface : "
+                                          msg=f"Renew failed: VLAN {requested_ifs.labels.vlan} for Interface : "
                                               f"{requested_ifs.get_name()} already in use by another reservation")
 
             vlan = str(random.choice(available_vlans))

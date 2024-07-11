@@ -456,13 +456,13 @@ class NetworkNodeInventory(InventoryForType):
                         for x in bdfs:
                             if x in allocated_bdfs:
                                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                                      msg=f"Renew failed: Component of type: {requested_component.get_model()} "
-                                                          f"not available in graph node: {graph_node.node_id}")
+                                                      msg=f"Renew failed: Component of type: {requested_component.get_model()} with PCI Address: {x}"
+                                                          f"already in use by another reservation for node: {graph_node.node_id}")
                 else:
                     if node_id in existing_components.keys():
                         raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
                                               msg=f"Renew failed: Component of type: {requested_component.get_model()} "
-                                                  f"not available in graph node: {graph_node.node_id}")
+                                                  f"already in use by another reservation for node: {graph_node.node_id}")
 
                 self.logger.debug(f"Renew: Component {requested_component} still available")
                 continue
