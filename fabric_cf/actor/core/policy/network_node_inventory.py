@@ -404,7 +404,7 @@ class NetworkNodeInventory(InventoryForType):
         :return: Components updated with the corresponding BQM node ids
         :raises: BrokerException in case the request cannot be satisfied
         """
-        self.logger.debug(f"available_components after excluding allocated components: {graph_node.attached_components_info.devices.keys()}")
+        self.logger.debug(f"Available on {graph_node.node_id} components: {graph_node.attached_components_info.devices.keys()}")
 
         self.__exclude_components_for_existing_reservations(rid=rid, graph_node=graph_node,
                                                             existing_reservations=existing_reservations)
@@ -432,22 +432,27 @@ class NetworkNodeInventory(InventoryForType):
                     comps_to_remove.append(av)
 
             for c in comps_to_remove:
+                self.logger.debug(f"Excluding component: {c.get_name()}")
+                print(f"Excluding component: {c.get_name()}")
                 graph_node.attached_components_info.remove_device(name=c.get_name())
 
         self.logger.debug(f"requested_components: {requested_components.devices.values()} for reservation# {rid}")
         for name, requested_component in requested_components.devices.items():
             if operation == ReservationOperation.Modify and requested_component.get_node_map() is not None:
-                self.logger.debug(f"==========Ignoring Allocated component: {requested_component} for modify")
+                self.logger.debug(f"Modify: Ignoring Allocated component: {requested_component}")
                 continue
 
             if operation == ReservationOperation.Extend and requested_component.get_node_map() is not None:
                 bqm_id, node_id = requested_component.get_node_map()
+
                 if requested_component.get_type() == ComponentType.SharedNIC:
                     allocated_bdfs = existing_components.get(node_id)
                     if allocated_bdfs and requested_component.labels and requested_component.labels.bdf:
                         bdfs = requested_component.labels.bdf
                         if isinstance(requested_component.labels.bdf, str):
                             bdfs = [requested_component.labels.bdf]
+
+                        self.logger.debug(f"Allocated BDFs: {allocated_bdfs}")
                         for x in bdfs:
                             if x in allocated_bdfs:
                                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
@@ -459,10 +464,10 @@ class NetworkNodeInventory(InventoryForType):
                                               msg=f"Renew failed: Component of type: {requested_component.get_model()} "
                                                   f"not available in graph node: {graph_node.node_id}")
 
-                self.logger.debug(f"==========Ignoring Allocated component: {requested_component} for renew")
+                self.logger.debug(f"Renew: Component {requested_component} still available")
                 continue
 
-            self.logger.debug(f"==========Allocating component: {requested_component}")
+            self.logger.debug(f"Create: Allocating component: {requested_component}")
             resource_type = requested_component.get_type()
             resource_model = requested_component.get_model()
             if resource_type == ComponentType.Storage:
@@ -471,7 +476,8 @@ class NetworkNodeInventory(InventoryForType):
                 requested_component.label_allocations = Labels.update(lab=requested_component.get_labels())
                 continue
             available_components = graph_node.attached_components_info.get_devices_by_type(resource_type=resource_type)
-            self.logger.debug(f"available_components after excluding allocated components: {available_components}")
+            self.logger.debug(f"Available components of type: {resource_type} after excluding "
+                              f"allocated components: {available_components}")
 
             if available_components is None or len(available_components) == 0:
                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
