@@ -268,7 +268,18 @@ class Slice(ABCSlice):
         return self.dirty
 
     def transition_slice(self, *, operation: SliceOperation) -> Tuple[bool, SliceState]:
-        return self.state_machine.transition_slice(operation=operation, reservations=self.reservations)
+        status, new_state = self.state_machine.transition_slice(operation=operation, reservations=self.reservations)
+        if status and new_state in [SliceState.StableOK, SliceState.StableError]:
+            new_end = None
+            for r in self.reservations.values():
+                term = r.get_term()
+                if not new_end or (term and term.get_end_time() > new_end):
+                    new_end = term.get_end_time()
+
+            if new_end:
+                self.lease_end = new_end
+
+        return status, new_state
 
     def is_stable_ok(self) -> bool:
         state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)

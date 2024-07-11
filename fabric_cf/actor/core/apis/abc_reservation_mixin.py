@@ -29,6 +29,8 @@ from abc import abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from fabric_cf.actor.core.time.term import Term
+
 from fabric_cf.actor.core.apis.abc_reservation_resources import ABCReservationResources
 from fabric_cf.actor.core.apis.abc_reservation_status import ABCReservationStatus
 
@@ -540,6 +542,14 @@ class ABCReservationMixin(ABCReservationResources, ABCReservationStatus):
     def poa_info(self, *, incoming: Poa):
         """
         Process POA response
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def get_term(self) -> Term:
+        """
+        Return Tem
 
         @throws Exception in case of error
         """
