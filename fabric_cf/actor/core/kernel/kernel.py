@@ -872,10 +872,11 @@ class Kernel:
             finally:
                 reservation.unlock()
 
-    def modify_slice(self, *, slice_object: ABCSlice):
+    def modify_slice(self, *, slice_object: ABCSlice, new_state: SliceState):
         """
         Modify the specified slice with the kernel.
         @param slice_object slice_object
+        @param new_state new_state
         @throws Exception in case of failure
         """
         if slice_object is None:
@@ -891,7 +892,7 @@ class Kernel:
                 if not real.is_dead_or_closing():
                     real.set_config_properties(value=slice_object.get_config_properties())
                     # Transition slice to Configuring state
-                    if slice_object.get_state() == SliceState.Modifying:
+                    if new_state == SliceState.Modifying:
                         operation = SliceStateMachine.MODIFY
                     else:
                         operation = SliceStateMachine.RENEW

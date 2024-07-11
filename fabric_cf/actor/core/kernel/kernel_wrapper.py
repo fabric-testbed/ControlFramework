@@ -28,6 +28,7 @@ import traceback
 from datetime import datetime
 from typing import List, Dict
 
+from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
 from fim.slivers.base_sliver import BaseSliver
 
@@ -769,16 +770,17 @@ class KernelWrapper:
 
         self.kernel.register_delegation(delegation=delegation)
 
-    def modify_slice(self, *, slice_object: ABCSlice):
+    def modify_slice(self, *, slice_object: ABCSlice, new_state: SliceState):
         """
         Modify the slice registered with the kernel
         @param slice_object slice_object
+        @param new_state new_state
         @throws Exception in case of error
         """
         if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, ABCSlice):
             raise KernelException("Invalid argument {}".format(slice_object))
 
-        self.kernel.modify_slice(slice_object=slice_object)
+        self.kernel.modify_slice(slice_object=slice_object, new_state=new_state)
 
     def delete_slice(self, *, slice_id: ID):
         """

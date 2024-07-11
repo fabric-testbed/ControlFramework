@@ -658,8 +658,8 @@ class ActorMixin(ABCActorMixin):
     def register_slice(self, *, slice_object: ABCSlice):
         self.wrapper.register_slice(slice_object=slice_object)
 
-    def modify_slice(self, *, slice_object: ABCSlice):
-        self.wrapper.modify_slice(slice_object=slice_object)
+    def modify_slice(self, *, slice_object: ABCSlice, new_state: SliceState):
+        self.wrapper.modify_slice(slice_object=slice_object, new_state=new_state)
 
     def delete_slice(self, *, slice_id: ID):
         self.wrapper.delete_slice(slice_id=slice_id)

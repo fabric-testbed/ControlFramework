@@ -38,6 +38,7 @@ from fabric_cf.actor.core.apis.abc_actor_identity import ABCActorIdentity
 from fabric_cf.actor.core.apis.abc_tick import ABCTick
 
 if TYPE_CHECKING:
+    from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
     from fabric_cf.actor.core.apis.abc_actor_event import ABCActorEvent
     from fabric_cf.actor.core.apis.abc_actor_proxy import ABCActorProxy
     from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
@@ -431,12 +432,13 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         """
 
     @abstractmethod
-    def modify_slice(self, *, slice_object: ABCSlice):
+    def modify_slice(self, *, slice_object: ABCSlice, new_state: SliceState):
         """
         Modify the slice registered with the actor. Moves the slice into Modifying State
 
         Args:
             slice_object: slice_object
+            new_state: new_state
         Raises:
             Exception in case of error
         """
