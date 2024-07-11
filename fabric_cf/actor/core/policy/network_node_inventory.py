@@ -343,7 +343,8 @@ class NetworkNodeInventory(InventoryForType):
             graph_node.attached_components_info.remove_device(name=available_component.get_name())
 
     def __exclude_components_for_existing_reservations(self, *, rid: ID, graph_node: NodeSliver,
-                                                       existing_reservations: List[ABCReservationMixin]) -> NodeSliver:
+                                                       existing_reservations: List[ABCReservationMixin],
+                                                       operation: ReservationOperation = ReservationOperation.Create) -> NodeSliver:
         """
         Remove already assigned components to existing reservations from the candidate node
         @param rid reservation ID
@@ -353,7 +354,8 @@ class NetworkNodeInventory(InventoryForType):
         """
         for reservation in existing_reservations:
             # Requested reservation should be skipped only when new i.e. not ticketed
-            if rid == reservation.get_reservation_id() and not reservation.is_ticketed():
+            if rid == reservation.get_reservation_id() and \
+                    (operation == ReservationOperation.Extend or not reservation.is_ticketed()):
                 continue
             # For Active or Ticketed or Ticketing reservations; reduce the counts from available
             allocated_sliver = None
