@@ -353,6 +353,8 @@ class NetworkServiceInventory(InventoryForType):
 
             # Allocate the IP Addresses for the requested NS
             requested_ns = self.__allocate_ip_address_to_ifs(requested_ns=requested_ns)
+        except BrokerException as e:
+            raise e
         except Exception as e:
             self.logger.error(f"Error in allocate_gateway_for_ns: {e}")
             self.logger.error(traceback.format_exc())
