@@ -33,7 +33,6 @@ from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.get_delegations_avro import GetDelegationsAvro
 from fabric_mb.message_bus.messages.get_sites_request_avro import GetSitesRequestAvro
 from fabric_mb.message_bus.messages.maintenance_request_avro import MaintenanceRequestAvro
-from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
 from fabric_mb.message_bus.messages.remove_delegation_avro import RemoveDelegationAvro
 from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro

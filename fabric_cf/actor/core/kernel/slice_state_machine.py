@@ -139,6 +139,7 @@ class SliceState(Enum):
 class SliceCommand(Enum):
     Create = enum.auto()
     Modify = enum.auto()
+    Renew = enum.auto()
     Delete = enum.auto()
     Reevaluate = enum.auto()
     ModifyAccept = enum.auto()
@@ -198,6 +199,9 @@ class SliceStateMachine:
     MODIFY = SliceOperation(SliceCommand.Modify, SliceState.StableOK, SliceState.StableError, SliceState.Configuring,
                             SliceState.AllocatedOK, SliceState.AllocatedError)
 
+    RENEW = SliceOperation(SliceCommand.Renew, SliceState.StableOK, SliceState.StableError, SliceState.Configuring,
+                           SliceState.AllocatedOK, SliceState.AllocatedError)
+
     MODIFY_ACCEPT = SliceOperation(SliceCommand.ModifyAccept, SliceState.ModifyOK, SliceState.ModifyError,
                                    SliceState.Modifying, SliceState.AllocatedOK, SliceState.AllocatedError)
 
@@ -245,6 +249,9 @@ class SliceStateMachine:
             raise SliceException(f"Operation: {operation} cannot transition from state {self.state}")
 
         if operation.command == SliceCommand.Create:
+            self.state = SliceState.Configuring
+
+        elif operation.command == SliceCommand.Renew:
             self.state = SliceState.Configuring
 
         elif operation.command == SliceCommand.Modify:

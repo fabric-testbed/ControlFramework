@@ -891,7 +891,11 @@ class Kernel:
                 if not real.is_dead_or_closing():
                     real.set_config_properties(value=slice_object.get_config_properties())
                     # Transition slice to Configuring state
-                    real.transition_slice(operation=SliceStateMachine.MODIFY)
+                    if slice_object.get_state() == SliceState.Modifying:
+                        operation = SliceStateMachine.MODIFY
+                    else:
+                        operation = SliceStateMachine.RENEW
+                    real.transition_slice(operation=operation)
                     real.set_graph_id(graph_id=slice_object.get_graph_id())
                     real.set_dirty()
                     self.plugin.get_database().update_slice(slice_object=real)
