@@ -588,9 +588,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                                        start=term.get_start_time(),
                                                                        end=term.get_end_time())
 
+                include_ns = False if operation == ReservationOperation.Extend else True
                 existing_components = self.get_existing_components(node_id=node_id, start=term.get_start_time(),
                                                                    end=term.get_end_time(),
-                                                                   excludes=[str(reservation.get_reservation_id())])
+                                                                   excludes=[str(reservation.get_reservation_id())],
+                                                                   include_ns=include_ns)
 
                 delegation_id, sliver = inv.allocate(rid=reservation.get_reservation_id(),
                                                      requested_sliver=sliver,
@@ -1503,13 +1505,16 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return existing_reservations
 
     def get_existing_components(self, node_id: str, start: datetime = None, end: datetime = None,
-                                excludes: List[str] = None) -> Dict[str, List[str]]:
+                                excludes: List[str] = None, include_ns: bool = True,
+                                include_node: bool = True) -> Dict[str, List[str]]:
         """
         Get existing components attached to Active/Ticketed Network Service Slivers
         :param node_id:
         :param start:
         :param end:
         :param excludes:
+        :param include_node:
+        :param include_ns:
         :return: list of components
         """
         states = [ReservationStates.Active.value,
@@ -1519,11 +1524,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                   ReservationStates.CloseFail.value]
 
         res_type = []
-        for x in ServiceType:
-            res_type.append(str(x))
+        if include_ns:
+            for x in ServiceType:
+                res_type.append(str(x))
 
-        for x in NodeType:
-            res_type.append(str(x))
+        if include_node:
+            for x in NodeType:
+                res_type.append(str(x))
 
         # Only get Active or Ticketing reservations
         return self.actor.get_plugin().get_database().get_components(node_id=node_id, rsv_type=res_type, states=states,

@@ -414,7 +414,7 @@ class NetworkNodeInventory(InventoryForType):
 
         self.logger.debug(f"Excluding components connected to Network Services: {existing_components}")
 
-        if existing_components and len(existing_components) and operation != ReservationOperation.Extend:
+        if existing_components and len(existing_components):
             comps_to_remove = []
             for av in graph_node.attached_components_info.devices.values():
                 # Skip if not in allocated comps attached to Network Services
