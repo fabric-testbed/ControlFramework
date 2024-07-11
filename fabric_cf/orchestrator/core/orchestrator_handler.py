@@ -514,7 +514,7 @@ class OrchestratorHandler:
             config_props[Constants.TAGS] = ','.join(tags)
             config_props[Constants.TOKEN_HASH] = fabric_token.token_hash
             slice_obj.set_config_properties(value=config_props)
-            slice_object.state = SliceState.Modifying.value
+            slice_obj.state = SliceState.Modifying.value
 
             if not controller.update_slice(slice_obj=slice_obj, modify_state=modify_state):
                 self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")
