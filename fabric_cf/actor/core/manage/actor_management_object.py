@@ -347,7 +347,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     try:
                         if modify_state:
                             slice_object = Translate.translate_slice(slice_avro=slice_mng)
-                            self.actor.modify_slice(slice_object=slice_object)
+                            from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
+                            self.actor.modify_slice(slice_object=slice_object, new_state=SliceState(slice_mng.get_state()))
                         else:
                             slice_obj = self.actor.get_slice(slice_id=slice_id)
                             if slice_obj is None:
