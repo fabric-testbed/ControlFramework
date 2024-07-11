@@ -409,7 +409,8 @@ class NetworkNodeInventory(InventoryForType):
         self.logger.debug(f"Available on {graph_node.node_id} components: {graph_node.attached_components_info.devices.keys()}")
 
         self.__exclude_components_for_existing_reservations(rid=rid, graph_node=graph_node,
-                                                            existing_reservations=existing_reservations)
+                                                            existing_reservations=existing_reservations,
+                                                            operation=operation)
 
         self.logger.debug(f"Excluding components connected to Network Services: {existing_components}")
 
