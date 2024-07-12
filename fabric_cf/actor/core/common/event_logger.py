@@ -29,6 +29,7 @@ import traceback
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.logging.log_collector import LogCollector
 from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.network_node import NodeSliver
 from fim.user.topology import ExperimentTopology
 
 from fabric_cf.actor.core.common.constants import Constants
@@ -109,6 +110,9 @@ class EventLogger:
 
             if ssh_foot_print is not None:
                 log_message += f" keys{ssh_foot_print}"
+
+            if isinstance(sliver, NodeSliver):
+                log_message += f"name: {sliver.get_name()} image: {sliver.get_image_ref()}"
 
             log_message += f" {str(lc)}"
 
