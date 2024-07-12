@@ -295,6 +295,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
         self.logger.debug(f"Authority {self.authority} Site Authority {site_authority}")
         assert self.authority.get_name() == site_authority.get_name()
+        # Clear error message from previous Extend operations
+        self.error_message = ""
 
         # Remember the current term and ticket term and absorb the incoming term
         self.previous_term = self.term
