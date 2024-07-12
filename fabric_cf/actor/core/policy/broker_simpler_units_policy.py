@@ -899,6 +899,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                     self.logger.info(f"Allocated ERO: {sliver.ero}")
 
         except BrokerException as e:
+            delegation_id = None
             if e.error_code == ExceptionErrorCode.INSUFFICIENT_RESOURCES:
                 self.logger.error(f"Exception occurred: {e}")
                 error_msg = e.msg
