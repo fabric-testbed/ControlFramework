@@ -114,7 +114,7 @@ class EventLogger:
             log_message += f" {str(lc)}"
 
             if isinstance(sliver, NodeSliver):
-                log_message += f" image: {sliver.get_image_ref()}"
+                log_message += f" image:{sliver.get_image_ref()}"
 
             self.logger.info(log_message)
         except Exception as e:
