@@ -295,8 +295,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
         self.logger.debug(f"Authority {self.authority} Site Authority {site_authority}")
         assert self.authority.get_name() == site_authority.get_name()
-        # Clear error message from previous Extend operations
-        self.error_message = ""
 
         # Remember the current term and ticket term and absorb the incoming term
         self.previous_term = self.term
@@ -306,6 +304,12 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
         self.resources.update(reservation=self, resource_set=incoming.get_resources())
         self.logger.debug("absorb_update: {}".format(incoming))
+
+        # Clear error message from previous Extend operations
+        self.error_message = ""
+
+        #if self.resources.get_sliver().reservation_info:
+        #    self.resources.get_sliver().reservation_info.error_message = self.error_message
 
         self.policy.update_ticket_complete(reservation=self)
 
@@ -625,9 +629,9 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
         return self.last_ticket_update.successful()
 
-    def clear_notice(self, clear_fail: bool=False):
-        self.last_ticket_update.clear()
-        self.last_lease_update.clear()
+    def clear_notice(self, clear_fail: bool = False):
+        self.last_ticket_update.clear(clear_fail=clear_fail)
+        self.last_lease_update.clear(clear_fail=clear_fail)
 
     def do_relinquish(self):
         """
@@ -882,9 +886,11 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if self.last_ticket_update is not None:
             if self.last_ticket_update.get_message() is not None and self.last_ticket_update.get_message() != "":
                 result += f"{self.last_ticket_update.get_message()}, "
-            ev = self.last_ticket_update.get_events()
-            if ev is not None and ev != "":
-                result += f"events: {ev}, "
+            # Include events only in case of failure
+            if self.last_ticket_update.is_failed():
+                ev = self.last_ticket_update.get_events()
+                if ev is not None and ev != "":
+                    result += f"events: {ev}, "
             result = result[:-2]
         return result
 
@@ -893,9 +899,11 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if self.last_lease_update is not None:
             if self.last_lease_update.get_message() is not None and self.last_lease_update.get_message() != "":
                 result += f"{self.last_lease_update.get_message()}, "
-            ev = self.last_lease_update.get_events()
-            if ev is not None and ev != "":
-                result += f"events: {ev}, "
+            # Include events only in case of failure
+            if self.last_lease_update.is_failed():
+                ev = self.last_lease_update.get_events()
+                if ev is not None and ev != "":
+                    result += f"events: {ev}, "
             result = result[:-2]
         return result
 

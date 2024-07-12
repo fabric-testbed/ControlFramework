@@ -905,7 +905,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 error_msg = e.msg
             else:
                 raise e
-
+        self.logger.debug(f"Allocate Services returning: {delegation_id} {sliver} {error_msg}")
         return delegation_id, sliver, error_msg
 
     def __allocate_peered_interfaces(self, *, rid: ID, peered_interfaces: List[InterfaceSliver], owner_switch: NodeSliver,
@@ -1022,11 +1022,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 if node_id_to_reservations.get(node_id, None) is None:
                     node_id_to_reservations[node_id] = ReservationSet()
                 node_id_to_reservations[node_id].add(reservation=reservation)
+                self.logger.debug(f"Ticket Inventory returning: True {error_msg}")
                 return True, node_id_to_reservations, error_msg
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(e)
             reservation.fail(message=str(e))
+        self.logger.debug(f"Ticket Inventory returning: False {error_msg}")
         return False, node_id_to_reservations, error_msg
 
     def __is_modify_on_openstack_vnic(self, *, sliver: BaseSliver) -> bool:
