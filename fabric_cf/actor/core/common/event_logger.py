@@ -99,7 +99,7 @@ class EventLogger:
 
             owner = slice_object.get_owner()
             log_message = f"CFEL Sliver event slc:{slice_object.get_slice_id()} " \
-                          f"slvr:{sliver.get_reservation_info().reservation_id} of " \
+                          f"slvr:{sliver.get_reservation_info().reservation_id}/{sliver.get_name()} of " \
                           f"type {sliver.get_type()} {verb} " \
                           f"by prj:{slice_object.get_project_id()} usr:{owner.get_oidc_sub_claim()}" \
                           f":{owner.get_email()}"
@@ -111,10 +111,10 @@ class EventLogger:
             if ssh_foot_print is not None:
                 log_message += f" keys{ssh_foot_print}"
 
-            if isinstance(sliver, NodeSliver):
-                log_message += f"name: {sliver.get_name()} image: {sliver.get_image_ref()}"
-
             log_message += f" {str(lc)}"
+
+            if isinstance(sliver, NodeSliver):
+                log_message += f" image: {sliver.get_image_ref()}"
 
             self.logger.info(log_message)
         except Exception as e:
