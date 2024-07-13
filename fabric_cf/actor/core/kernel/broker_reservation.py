@@ -561,7 +561,9 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
         super().handle_failed_rpc(failed=failed)
 
     def fail_extend(self, *, message: str, exception: Exception = None):
+        self.logger.debug(f"Failed Extend: {message}")
         self.extend_failure = True
+        self.notified_failed = False
         super().fail(message=message, exception=exception)
 
 
