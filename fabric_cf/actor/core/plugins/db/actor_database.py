@@ -285,6 +285,8 @@ class ActorDatabase(ABCDatabase):
             site = None
             rsv_type = None
             components = None
+            host = None
+            ip_subnet = None
             if reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
                 sliver = reservation.get_resources().get_sliver()
                 site = sliver.get_site()
@@ -293,6 +295,9 @@ class ActorDatabase(ABCDatabase):
                 from fim.slivers.network_node import NodeSliver
 
                 if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
+                    if sliver.get_gateway():
+                        ip_subnet = sliver.get_gateway().subnet
+
                     components = []
                     for interface in sliver.interface_info.interfaces.values():
                         graph_id_node_id_component_id, bqm_if_name = interface.get_node_map()
@@ -307,6 +312,12 @@ class ActorDatabase(ABCDatabase):
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
                 elif isinstance(sliver, NodeSliver) and sliver.attached_components_info:
+                    if sliver.get_labels() and sliver.get_labels().instance_parent:
+                        host = sliver.get_labels().instance_parent
+                    if sliver.get_label_allocations() and sliver.get_label_allocations().instance_parent:
+                        host = sliver.get_label_allocations().instance_parent
+                    ip_subnet = sliver.get_management_ip()
+
                     node_id = reservation.get_graph_node_id()
                     if node_id:
                         components = []
@@ -333,7 +344,8 @@ class ActorDatabase(ABCDatabase):
                                     oidc_claim_sub=oidc_claim_sub, email=email, site=site, rsv_type=rsv_type,
                                     components=components,
                                     lease_start=term.get_start_time() if term else None,
-                                    lease_end=term.get_end_time() if term else None)
+                                    lease_end=term.get_end_time() if term else None,
+                                    host=host, ip_subnet=ip_subnet)
             self.logger.debug(
                 "Reservation {} added to slice {}".format(reservation.get_reservation_id(), reservation.get_slice()))
         finally:
@@ -353,6 +365,9 @@ class ActorDatabase(ABCDatabase):
             site = None
             rsv_type = None
             components = None
+            ip_subnet = None
+            host = None
+
             if reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
                 sliver = reservation.get_resources().get_sliver()
                 site = sliver.get_site()
@@ -360,6 +375,9 @@ class ActorDatabase(ABCDatabase):
                 from fim.slivers.network_service import NetworkServiceSliver
                 from fim.slivers.network_node import NodeSliver
                 if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
+                    if sliver.get_gateway():
+                        ip_subnet = sliver.get_gateway().subnet
+
                     components = []
                     for interface in sliver.interface_info.interfaces.values():
                         graph_id_node_id_component_id, bqm_if_name = interface.get_node_map()
@@ -374,6 +392,11 @@ class ActorDatabase(ABCDatabase):
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
                 elif isinstance(sliver, NodeSliver) and sliver.attached_components_info:
+                    if sliver.get_labels() and sliver.get_labels().instance_parent:
+                        host = sliver.get_labels().instance_parent
+                    if sliver.get_label_allocations() and sliver.get_label_allocations().instance_parent:
+                        host = sliver.get_label_allocations().instance_parent
+                    ip_subnet = sliver.get_management_ip()
                     node_id = reservation.get_graph_node_id()
                     if node_id:
                         components = []
@@ -404,7 +427,8 @@ class ActorDatabase(ABCDatabase):
                                        rsv_graph_node_id=reservation.get_graph_node_id(),
                                        site=site, rsv_type=rsv_type, components=components,
                                        lease_start=term.get_start_time() if term else None,
-                                       lease_end=term.get_end_time() if term else None)
+                                       lease_end=term.get_end_time() if term else None,
+                                       ip_subnet=ip_subnet, host=host)
             diff = int(time.time() - begin)
             if diff > 0:
                 self.logger.info(f"DB TIME: {diff}")

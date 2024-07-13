@@ -125,6 +125,8 @@ class Reservations(Base):
     rsv_slc_id = Column(Integer, ForeignKey(FOREIGN_KEY_SLICE_ID), index=True)
     rsv_resid = Column(String, nullable=False, index=True)
     oidc_claim_sub = Column(String, nullable=True, index=True)
+    host = Column(String, nullable=True, index=True)
+    ip_subnet = Column(String, nullable=True, index=True)
     email = Column(String, nullable=True, index=True)
     project_id = Column(String, nullable=True, index=True)
     site = Column(String, nullable=True, index=True)

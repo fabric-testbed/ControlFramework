@@ -131,11 +131,12 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
     def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
-                         type: str = None, site: str = None, node_id: str = None) -> List[ReservationMng]:
+                         type: str = None, site: str = None, node_id: str = None,
+                         host: str = None, ip_subnet: str = None) -> List[ReservationMng]:
         request = GetReservationsRequestAvro()
         request = self.fill_request_by_id_message(request=request, slice_id=slice_id,
                                                   states=states, email=email, rid=rid,
-                                                  type=type, site=site)
+                                                  type=type, site=site, host=host, ip_subnet=ip_subnet)
         status, response = self.send_request(request)
 
         if status.code == 0:
