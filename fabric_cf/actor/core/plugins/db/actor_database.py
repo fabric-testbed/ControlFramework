@@ -579,13 +579,13 @@ class ActorDatabase(ABCDatabase):
     def get_reservations(self, *, slice_id: ID = None, graph_node_id: str = None, project_id: str = None,
                          email: str = None, oidc_sub: str = None, rid: ID = None, states: list[int] = None,
                          site: str = None, rsv_type: list[str] = None, start: datetime = None,
-                         end: datetime = None) -> List[ABCReservationMixin]:
+                         end: datetime = None, ip_subnet: str = None, host: str = None) -> List[ABCReservationMixin]:
         result = []
         try:
             #self.lock.acquire()
             sid = str(slice_id) if slice_id is not None else None
             res_id = str(rid) if rid is not None else None
-            res_dict_list = self.db.get_reservations(slice_id=sid, graph_node_id=graph_node_id,
+            res_dict_list = self.db.get_reservations(slice_id=sid, graph_node_id=graph_node_id, host=host, ip_subnet=ip_subnet,
                                                      project_id=project_id, email=email, oidc_sub=oidc_sub, rid=res_id,
                                                      states=states, site=site, rsv_type=rsv_type, start=start, end=end)
             if self.lock.locked():
