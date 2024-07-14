@@ -69,6 +69,7 @@ from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
+from fim.slivers.interface_info import InterfaceSliver
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
@@ -654,14 +655,55 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                      inv=inv, reservation=reservation, term=term, sliver=sliver,
                                      operation=operation)
 
+    def __can_extend_interface_sliver(self, rid: ID, inv: NetworkServiceInventory,
+                                      ifs: InterfaceSliver, sliver: NetworkServiceSliver,
+                                      node_id_to_reservations: dict, term: Term):
+        """
+        Checks if VLAN attached to an interface are assigned to any advanced reservations in this case
+        @param rid
+        @param inv
+        @param ifs
+        @param sliver
+        @param node_id_to_reservations
+        @param term
+
+        @raises BrokerException in case VLAN is already assigned to any future sliver
+        """
+        node_id, bqm_node_id = ifs.get_node_map()
+        bqm_cp = self.get_interface_sliver_from_graph(node_id=bqm_node_id)
+        owner_switch, owner_mpls, owner_ns = self.get_owners(node_id=bqm_node_id, ns_type=sliver.get_type())
+
+        # Handle IPV6Ext services
+        owner_ns_id = owner_ns.node_id.replace('ipv6ext-ns',
+                                               'ipv6-ns') if 'ipv6ext-ns' in owner_ns.node_id else owner_ns.node_id
+
+        existing_reservations = self.get_existing_reservations(
+            node_id=owner_ns_id,
+            node_id_to_reservations=node_id_to_reservations,
+            start=term.get_start_time(),
+            end=term.get_end_time(),
+        )
+
+        inv.allocate_ifs(
+            rid=rid,
+            requested_ns=sliver,
+            requested_ifs=ifs,
+            owner_ns=owner_ns,
+            bqm_ifs=bqm_cp,
+            existing_reservations=existing_reservations,
+            operation=ReservationOperation.Extend
+        )
+
     def __allocate_services(self, *, rid: ID, inv: NetworkServiceInventory, sliver: NetworkServiceSliver,
-                            node_id_to_reservations: dict, term: Term) -> Tuple[str, BaseSliver, Any]:
+                            node_id_to_reservations: dict, term: Term,
+                            operation: ReservationOperation = ReservationOperation.Create) -> Tuple[str, BaseSliver, Any]:
         """
         Allocate Network Service Slivers
         @param rid Reservation Id
         @param inv Inventory
         @param sliver Requested sliver
         @param node_id_to_reservations
+        @param operation
         @return tuple containing delegation id, sliver, error message if any
         """
         delegation_id = None
@@ -687,6 +729,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
                 # Skipping the already allocated interface on a modify
                 if self.combined_broker_model_graph_id in node_id:
+
+                    if operation == ReservationOperation.Extend:
+                        self.__can_extend_interface_sliver(rid=rid, inv=inv, ifs=ifs, sliver=sliver,
+                                                           node_id_to_reservations=node_id_to_reservations, term=term)
                     continue
 
                 if node_id == str(NodeType.Facility):
@@ -1006,7 +1052,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 delegation_id, sliver, error_msg = self.__allocate_services(rid=reservation.get_reservation_id(),
                                                                             inv=inv, sliver=res_sliver,
                                                                             node_id_to_reservations=node_id_to_reservations,
-                                                                            term=term)
+                                                                            term=term, operation=operation)
             else:
                 self.logger.error(f'Reservation {reservation} sliver type is neither Node, nor NetworkServiceSliver')
                 raise BrokerException(msg=f"Reservation sliver type is neither Node "
@@ -1437,6 +1483,20 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         try:
             self.lock.acquire()
             return FimHelper.get_owners(bqm=self.combined_broker_model, node_id=node_id, ns_type=ns_type)
+        finally:
+            self.lock.release()
+
+    def get_interface_sliver_from_graph(self, *, node_id: str) -> InterfaceSliver or None:
+        """
+        Get InterfaceSliver from CBM
+        :param node_id:
+        :return:
+        """
+        try:
+            self.lock.acquire()
+            if self.combined_broker_model is None:
+                return None
+            return self.combined_broker_model.build_deep_interface_sliver(node_id=node_id)
         finally:
             self.lock.release()
 

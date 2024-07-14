@@ -38,6 +38,7 @@ from fim.slivers.network_service import NetworkServiceSliver, NSLayer, ServiceTy
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
+from fabric_cf.actor.core.kernel.reservation_states import ReservationOperation
 from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
 from fabric_cf.actor.core.util.id import ID
 
@@ -115,7 +116,8 @@ class NetworkServiceInventory(InventoryForType):
 
     def allocate_ifs(self, *, rid: ID, requested_ns: NetworkServiceSliver, requested_ifs: InterfaceSliver,
                      owner_ns: NetworkServiceSliver, bqm_ifs: InterfaceSliver,
-                     existing_reservations: List[ABCReservationMixin]) -> InterfaceSliver:
+                     existing_reservations: List[ABCReservationMixin],
+                     operation: ReservationOperation = ReservationOperation.Create) -> InterfaceSliver:
         """
         Allocate Interface Sliver
         - For L2 services, validate the VLAN tag specified is within the allowed range
@@ -129,13 +131,13 @@ class NetworkServiceInventory(InventoryForType):
         :param owner_ns: BQM NetworkService identified to serve the InterfaceSliver
         :param bqm_ifs: BQM InterfaceSliver identified to serve the InterfaceSliver
         :param existing_reservations: Existing Reservations which also are served by the owner switch
+        :param operation: Extend/Create/Modify Operation
         :return Interface Sliver updated with the allocated VLAN tag for FABNetv4 and FABNetv6 services
         :raises Exception if vlan tag range is not in the valid range for L2 services
-        Return the sliver updated with the VLAN
         """
+        requested_vlan = None
         if requested_ns.get_layer() == NSLayer.L2:
-            requested_vlan = None
-            if requested_ifs.labels is not None and requested_ifs.labels.vlan is not None:
+            if requested_ifs.labels and requested_ifs.labels.vlan:
                 requested_vlan = int(requested_ifs.labels.vlan)
 
             # Validate the requested VLAN is in range specified on MPLS Network Service in BQM
@@ -145,69 +147,78 @@ class NetworkServiceInventory(InventoryForType):
                     return requested_ifs
 
                 if owner_ns.get_label_delegations() is None:
-                    if 1 > requested_vlan > 4095:
-                        raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
-                                              msg=f"Vlan for L2 service {requested_vlan} "
-                                                  f"is outside the allowed range 1-4095")
-                    else:
-                        return requested_ifs
+                    if not (1 <= requested_vlan <= 4095):
+                        raise BrokerException(
+                            error_code=ExceptionErrorCode.FAILURE,
+                            msg=f"Vlan for L2 service {requested_vlan} is outside the allowed range 1-4095"
+                        )
+                    return requested_ifs
 
                 delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
                 vlan_range = self.__extract_vlan_range(labels=delegated_label)
 
-                if vlan_range is not None and requested_vlan not in vlan_range:
-                    raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
-                                          msg=f"Vlan for L2 service {requested_vlan} is outside the available range "
-                                              f"{vlan_range}")
+                if vlan_range and requested_vlan not in vlan_range:
+                    raise BrokerException(
+                        error_code=ExceptionErrorCode.FAILURE,
+                        msg=f"Vlan for L2 service {requested_vlan} is outside the available range {vlan_range}"
+                    )
 
-            # Validate the VLANs
             vlan_range = self.__extract_vlan_range(labels=bqm_ifs.labels)
-            if vlan_range is not None:
-                vlan_range = self.__exclude_allocated_vlans(rid=rid, available_vlan_range=vlan_range, bqm_ifs=bqm_ifs,
+            if vlan_range:
+                vlan_range = self.__exclude_allocated_vlans(rid=rid, available_vlan_range=vlan_range,
+                                                            bqm_ifs=bqm_ifs,
                                                             existing_reservations=existing_reservations)
+
+                if operation == ReservationOperation.Extend and requested_vlan not in vlan_range:
+                    raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                          msg=f"Renew failed: VLAN {requested_vlan} for Interface : "
+                                              f"{requested_ifs.get_name()/bqm_ifs.node_id} already in "
+                                              f"use by another reservation")
 
                 if requested_vlan is None:
                     requested_ifs.labels.vlan = str(random.choice(vlan_range))
-                    #requested_ifs.labels.vlan = str(vlan_range[0])
                     return requested_ifs
 
                 if requested_vlan not in vlan_range:
-                    raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
-                                          msg=f"Vlan for L2 service {requested_vlan} is outside the available range "
-                                              f"{vlan_range}")
-
+                    raise BrokerException(
+                        error_code=ExceptionErrorCode.FAILURE,
+                        msg=f"Vlan for L2 service {requested_vlan} is outside the available range {vlan_range}"
+                    )
         else:
-            # Grab Label Delegations
-            delegation_id, delegated_label = self.get_delegations(
-                lab_cap_delegations=owner_ns.get_label_delegations())
+            delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
 
-            # Get the VLAN range
             if bqm_ifs.get_type() != InterfaceType.FacilityPort:
                 vlan_range = self.__extract_vlan_range(labels=delegated_label)
             else:
                 vlan_range = self.__extract_vlan_range(labels=bqm_ifs.labels)
 
-            if vlan_range is not None:
-                vlan_range = self.__exclude_allocated_vlans(rid=rid, available_vlan_range=vlan_range, bqm_ifs=bqm_ifs,
+            if vlan_range:
+                vlan_range = self.__exclude_allocated_vlans(rid=rid, available_vlan_range=vlan_range,
+                                                            bqm_ifs=bqm_ifs,
                                                             existing_reservations=existing_reservations)
+
+                if operation == ReservationOperation.Extend and requested_vlan not in vlan_range:
+                    raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                          msg=f"Renew failed: VLAN {requested_vlan} for Interface : "
+                                              f"{requested_ifs.get_name()/bqm_ifs.node_id} already in "
+                                              f"use by another reservation")
+
                 if bqm_ifs.get_type() != InterfaceType.FacilityPort:
-                    # Allocate the first available VLAN
                     requested_ifs.labels.vlan = str(random.choice(vlan_range))
-                    #requested_ifs.labels.vlan = str(vlan_range[0])
                     requested_ifs.label_allocations = Labels(vlan=requested_ifs.labels.vlan)
                 else:
-                    if requested_ifs.labels is None:
+                    if not requested_ifs.labels:
                         return requested_ifs
 
                     if requested_ifs.labels.vlan is None:
                         requested_ifs.labels.vlan = str(random.choice(vlan_range))
-                        #requested_ifs.labels.vlan = str(vlan_range[0])
 
                     if int(requested_ifs.labels.vlan) not in vlan_range:
-                        raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
-                                              msg=f"Vlan for L3 service {requested_ifs.labels.vlan} "
-                                                  f"is outside the available range "
-                                                  f"{vlan_range}")
+                        raise BrokerException(
+                            error_code=ExceptionErrorCode.FAILURE,
+                            msg=f"Vlan for L3 service {requested_ifs.labels.vlan} is outside the "
+                                f"available range {vlan_range}"
+                        )
 
         return requested_ifs
 
