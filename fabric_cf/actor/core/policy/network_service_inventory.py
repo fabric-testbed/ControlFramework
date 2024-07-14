@@ -185,9 +185,9 @@ class NetworkServiceInventory(InventoryForType):
                         msg=f"Vlan for L2 service {requested_vlan} is outside the available range {vlan_range}"
                     )
         else:
-            delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
-
             if bqm_ifs.get_type() != InterfaceType.FacilityPort:
+                delegation_id, delegated_label = self.get_delegations(
+                    lab_cap_delegations=owner_ns.get_label_delegations())
                 vlan_range = self.__extract_vlan_range(labels=delegated_label)
             else:
                 vlan_range = self.__extract_vlan_range(labels=bqm_ifs.labels)

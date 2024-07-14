@@ -669,16 +669,21 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         @raises BrokerException in case VLAN is already assigned to any future sliver
         """
+        ns_node_id, ns_bqm_node_id = sliver.get_node_map()
         node_id, bqm_node_id = ifs.get_node_map()
         bqm_cp = self.get_interface_sliver_from_graph(node_id=bqm_node_id)
+        self.logger.debug(f"BQM IFS: {bqm_cp}")
         owner_switch, owner_mpls, owner_ns = self.get_owners(node_id=bqm_node_id, ns_type=sliver.get_type())
+        self.logger.debug(f"Owner SWITCH: {owner_switch}")
+        self.logger.debug(f"Owner MPLS: {owner_mpls}")
+        self.logger.debug(f"Owner NS: {owner_ns}")
 
         # Handle IPV6Ext services
-        owner_ns_id = owner_ns.node_id.replace('ipv6ext-ns',
-                                               'ipv6-ns') if 'ipv6ext-ns' in owner_ns.node_id else owner_ns.node_id
+        ns_bqm_node_id = ns_bqm_node_id.node_id.replace('ipv6ext-ns',
+                                                        'ipv6-ns') if 'ipv6ext-ns' in ns_bqm_node_id else ns_bqm_node_id
 
         existing_reservations = self.get_existing_reservations(
-            node_id=owner_ns_id,
+            node_id=ns_bqm_node_id,
             node_id_to_reservations=node_id_to_reservations,
             start=term.get_start_time(),
             end=term.get_end_time(),
