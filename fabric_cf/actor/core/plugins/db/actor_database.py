@@ -316,7 +316,8 @@ class ActorDatabase(ABCDatabase):
                         host = sliver.get_labels().instance_parent
                     if sliver.get_label_allocations() and sliver.get_label_allocations().instance_parent:
                         host = sliver.get_label_allocations().instance_parent
-                    ip_subnet = sliver.get_management_ip()
+                    if sliver.get_management_ip():
+                        ip_subnet = sliver.get_management_ip()
 
                     node_id = reservation.get_graph_node_id()
                     if node_id:
