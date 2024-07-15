@@ -319,6 +319,8 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
                 self.transition(prefix="Recover from Extend Failure", state=ReservationStates.Ticketed,
                                 pending=ReservationPendingStates.None_)
                 self.extend_failure = False
+                self.update_data.clear(clear_fail=True)
+                self.error_message = ""
         else:
             if self.pending_state == ReservationPendingStates.Ticketing:
                 # Check for a pending ticket operation that may have completed
@@ -559,7 +561,9 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
         super().handle_failed_rpc(failed=failed)
 
     def fail_extend(self, *, message: str, exception: Exception = None):
+        self.logger.debug(f"Failed Extend: {message}")
         self.extend_failure = True
+        self.notified_failed = False
         super().fail(message=message, exception=exception)
 
 

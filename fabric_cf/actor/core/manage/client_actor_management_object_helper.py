@@ -462,13 +462,16 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                                       dependencies=redeem_dep_res_list)
 
                     return result
-
+            '''
             # Process Extend for Renew synchronously
             if new_end_time is not None:
                 result = self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client))
             # Process Extend for Modify asynchronously
             else:
                 self.client.execute_on_actor_thread(runnable=Runner(actor=self.client))
+            '''
+            # Always Process Extend asynchronously
+            self.client.execute_on_actor_thread(runnable=Runner(actor=self.client))
 
         except Exception as e:
             self.logger.error("extend_reservation {}".format(e))

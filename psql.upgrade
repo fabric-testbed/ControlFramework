@@ -79,3 +79,9 @@ CREATE TABLE IF NOT EXISTS "Metrics" (
   project_id VARCHAR NOT NULL,
   slice_count INTEGER NOT NULL,
 );
+
+ALTER TABLE "Reservations" ADD COLUMN host VARCHAR(255) NULL;
+ALTER TABLE "Reservations" ADD COLUMN ip_subnet VARCHAR(255) NULL;
+
+CREATE INDEX idx_host ON "Reservations"(host);
+CREATE INDEX idx_ip_subnet ON "Reservations"(ip_subnet);

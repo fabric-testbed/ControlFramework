@@ -514,6 +514,7 @@ class OrchestratorHandler:
             config_props[Constants.TAGS] = ','.join(tags)
             config_props[Constants.TOKEN_HASH] = fabric_token.token_hash
             slice_obj.set_config_properties(value=config_props)
+            slice_obj.state = SliceState.Modifying.value
 
             if not controller.update_slice(slice_obj=slice_obj, modify_state=modify_state):
                 self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")
@@ -711,6 +712,7 @@ class OrchestratorHandler:
         :return:
         """
         failed_to_extend_rid_list = []
+        extend_rid_list = []
         try:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"renew_slice invoked for Controller: {controller}")
@@ -765,6 +767,9 @@ class OrchestratorHandler:
                 if new_end_time < current_end_time:
                     raise OrchestratorException(f"Attempted new term end time is shorter than current slice end time")
 
+                if new_end_time == current_end_time:
+                    continue
+
                 self.logger.debug(f"Extending reservation with reservation# {r.get_reservation_id()}")
                 result = controller.extend_reservation(reservation=ID(uid=r.get_reservation_id()),
                                                        new_end_time=new_end_time,
@@ -772,15 +777,24 @@ class OrchestratorHandler:
                 if not result:
                     self.logger.error(f"Error: {controller.get_last_error()}")
                     failed_to_extend_rid_list.append(r.get_reservation_id())
+                else:
+                    extend_rid_list.append(r.get_reservation_id())
 
+            '''
             if len(failed_to_extend_rid_list) == 0:
                 slice_object.set_lease_end(lease_end=new_end_time)
                 if not controller.update_slice(slice_obj=slice_object):
                     self.logger.error(f"Failed to update lease end time: {new_end_time} in Slice: {slice_object}")
                     self.logger.error(controller.get_last_error())
+            '''
 
             if len(failed_to_extend_rid_list) > 0:
                 raise OrchestratorException(f"Failed to extend reservation# {failed_to_extend_rid_list}")
+
+            if len(extend_rid_list):
+                slice_object.state = SliceState.Configuring.value
+                if not controller.update_slice(slice_obj=slice_object, modify_state=True):
+                    self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")
 
             EventLoggerSingleton.get().log_slice_event(slice_object=slice_object, action=ActionId.renew)
         except Exception as e:

@@ -29,7 +29,6 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, List, Tuple, Dict
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
-from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
 from fabric_mb.message_bus.messages.site_avro import SiteAvro
 
@@ -151,7 +150,8 @@ class ABCMgmtActor(ABCComponent):
     @abstractmethod
     def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
-                         type: str = None, site: str = None, node_id: str = None) -> List[ReservationMng]:
+                         type: str = None, site: str = None, node_id: str = None,
+                         host: str = None, ip_subnet: str = None) -> List[ReservationMng]:
         """
         Get Reservations
         @param states states
@@ -163,6 +163,8 @@ class ABCMgmtActor(ABCComponent):
         @param type type of reservations like NodeSliver/NetworkServiceSliver
         @param site site
         @param node_id node id
+        @param ip_subnet ip subnet
+        @param host host
         Obtains all reservations
         @return returns list of the reservations
         """

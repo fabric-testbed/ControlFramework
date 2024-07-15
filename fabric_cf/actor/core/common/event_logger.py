@@ -29,6 +29,7 @@ import traceback
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.logging.log_collector import LogCollector
 from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.network_node import NodeSliver
 from fim.user.topology import ExperimentTopology
 
 from fabric_cf.actor.core.common.constants import Constants
@@ -98,7 +99,7 @@ class EventLogger:
 
             owner = slice_object.get_owner()
             log_message = f"CFEL Sliver event slc:{slice_object.get_slice_id()} " \
-                          f"slvr:{sliver.get_reservation_info().reservation_id} of " \
+                          f"slvr:{sliver.get_reservation_info().reservation_id}/{sliver.get_name()} of " \
                           f"type {sliver.get_type()} {verb} " \
                           f"by prj:{slice_object.get_project_id()} usr:{owner.get_oidc_sub_claim()}" \
                           f":{owner.get_email()}"
@@ -111,6 +112,9 @@ class EventLogger:
                 log_message += f" keys{ssh_foot_print}"
 
             log_message += f" {str(lc)}"
+
+            if isinstance(sliver, NodeSliver) and sliver.get_image_ref():
+                log_message += f" image:{sliver.get_image_ref()}"
 
             self.logger.info(log_message)
         except Exception as e:

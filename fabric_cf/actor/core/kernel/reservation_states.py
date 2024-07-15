@@ -23,7 +23,20 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import enum
 from enum import Enum
+
+
+class ReservationOperation(enum.Enum):
+    Create = enum.auto(),
+    Modify = enum.auto(),
+    Extend = enum.auto()
+
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
 
 
 class ReservationStates(Enum):
@@ -63,7 +76,7 @@ class ReservationStates(Enum):
         elif state_name.lower() == ReservationStates.Failed.name.lower():
             return ReservationStates.Failed
         elif state_name.lower() == ReservationStates.CloseFail.name.lower():
-            return ReservationStates.Failed
+            return ReservationStates.CloseFail
         else:
             return ReservationStates.Unknown
 

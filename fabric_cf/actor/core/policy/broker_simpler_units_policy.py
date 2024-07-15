@@ -52,7 +52,7 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.container.maintenance import Maintenance
 from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicketFactory
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
-from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationOperation
 from fabric_cf.actor.core.policy.broker_calendar_policy import BrokerCalendarPolicy
 from fabric_cf.actor.core.policy.fifo_queue import FIFOQueue
 from fabric_cf.actor.core.policy.network_node_inventory import NetworkNodeInventory
@@ -69,6 +69,7 @@ from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
+from fim.slivers.interface_info import InterfaceSliver
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
@@ -477,7 +478,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.logger.debug(f"Inventory type: {type(inv)}")
                 term = Term(start=start, end=end)
                 return self.ticket_inventory(reservation=reservation, inv=inv, term=term,
-                                             node_id_to_reservations=node_id_to_reservations)
+                                             node_id_to_reservations=node_id_to_reservations,
+                                             operation=ReservationOperation.Create)
             else:
                 reservation.fail(message=Constants.NO_POOL)
         else:
@@ -557,7 +559,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return node_id_list
 
     def __find_first_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: NetworkNodeInventory,
-                         reservation: ABCBrokerReservation, term: Term) -> Tuple[str, BaseSliver, Any]:
+                         reservation: ABCBrokerReservation, term: Term, sliver: NodeSliver,
+                         operation: ReservationOperation = ReservationOperation.Create) -> Tuple[str, BaseSliver, Any]:
         """
         Find First Available Node which can serve the reservation
         @param node_id_list: Candidate Nodes
@@ -567,20 +570,17 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         @return tuple containing delegation id, sliver, error message if any
         """
         delegation_id = None
-        sliver = None
         error_msg = None
         self.logger.debug(f"Possible candidates to serve {reservation} candidates# {node_id_list}")
-        requested_sliver = reservation.get_requested_resources().get_sliver()
-        is_create = requested_sliver.get_node_map() is None
         for node_id in node_id_list:
             try:
                 self.logger.debug(f"Attempting to allocate {reservation} via graph_node# {node_id}")
                 graph_node = self.get_network_node_from_graph(node_id=node_id)
 
-                if requested_sliver.labels is not None and requested_sliver.labels.instance_parent is not None:
-                    self.logger.info(f"Sliver {requested_sliver} is requested on worker: "
-                                     f"{requested_sliver.labels.instance_parent}")
-                    if graph_node.get_name() != requested_sliver.labels.instance_parent:
+                if sliver.labels is not None and sliver.labels.instance_parent is not None:
+                    self.logger.info(f"Sliver {sliver} is requested on worker: "
+                                     f"{sliver.labels.instance_parent}")
+                    if graph_node.get_name() != sliver.labels.instance_parent:
                         self.logger.info(f"Skipping candidate node: {graph_node}")
                         continue
 
@@ -589,16 +589,19 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                                        start=term.get_start_time(),
                                                                        end=term.get_end_time())
 
+                include_ns = False if operation == ReservationOperation.Extend else True
                 existing_components = self.get_existing_components(node_id=node_id, start=term.get_start_time(),
-                                                                   end=term.get_end_time())
+                                                                   end=term.get_end_time(),
+                                                                   excludes=[str(reservation.get_reservation_id())],
+                                                                   include_ns=include_ns)
 
                 delegation_id, sliver = inv.allocate(rid=reservation.get_reservation_id(),
-                                                     requested_sliver=requested_sliver,
+                                                     requested_sliver=sliver,
                                                      graph_id=self.combined_broker_model_graph_id,
                                                      graph_node=graph_node,
                                                      existing_reservations=existing_reservations,
                                                      existing_components=existing_components,
-                                                     is_create=is_create)
+                                                     operation=operation)
 
                 if delegation_id is not None and sliver is not None:
                     break
@@ -609,15 +612,16 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 else:
                     raise e
 
-        if delegation_id is None and requested_sliver.labels is not None and \
-                requested_sliver.labels.instance_parent is not None:
-            error_msg = f"Insufficient Resources: {requested_sliver.labels.instance_parent} " \
+        if delegation_id is None and sliver.labels is not None and \
+                sliver.labels.instance_parent is not None:
+            error_msg = f"Insufficient Resources: {sliver.labels.instance_parent} " \
                         f"cannot serve the requested sliver - {error_msg}"
 
         return delegation_id, sliver, error_msg
 
     def __allocate_nodes(self, *, reservation: ABCBrokerReservation, inv: NetworkNodeInventory, sliver: NodeSliver,
-                         node_id_to_reservations: dict, term: Term) -> Tuple[str or None, BaseSliver, Any]:
+                         node_id_to_reservations: dict, term: Term,
+                         operation: ReservationOperation = ReservationOperation.Create) -> Tuple[str or None, BaseSliver, Any]:
         """
         Allocate Network Node Slivers
         @param reservation Reservation
@@ -642,255 +646,320 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         # no candidate nodes found
         if len(node_id_list) == 0:
-            error_msg = f'Insufficient resources: No candidates nodes found to serve {reservation}'
+            error_msg = f'Insufficient resources: No hosts available to provision the {reservation}'
             self.logger.error(error_msg)
             return delegation_id, sliver, error_msg
 
         return self.__find_first_fit(node_id_list=node_id_list,
                                      node_id_to_reservations=node_id_to_reservations,
-                                     inv=inv, reservation=reservation, term=term)
+                                     inv=inv, reservation=reservation, term=term, sliver=sliver,
+                                     operation=operation)
+
+    def __can_extend_interface_sliver(self, rid: ID, inv: NetworkServiceInventory,
+                                      ifs: InterfaceSliver, sliver: NetworkServiceSliver,
+                                      node_id_to_reservations: dict, term: Term):
+        """
+        Checks if VLAN attached to an interface are assigned to any advanced reservations in this case
+        @param rid
+        @param inv
+        @param ifs
+        @param sliver
+        @param node_id_to_reservations
+        @param term
+
+        @raises BrokerException in case VLAN is already assigned to any future sliver
+        """
+        ns_node_id, ns_bqm_node_id = sliver.get_node_map()
+        node_id, bqm_node_id = ifs.get_node_map()
+        bqm_cp = self.get_interface_sliver_from_graph(node_id=bqm_node_id)
+        self.logger.debug(f"BQM IFS: {bqm_cp}")
+        owner_switch, owner_mpls, owner_ns = self.get_owners(node_id=bqm_node_id, ns_type=sliver.get_type())
+        self.logger.debug(f"Owner SWITCH: {owner_switch}")
+        self.logger.debug(f"Owner MPLS: {owner_mpls}")
+        self.logger.debug(f"Owner NS: {owner_ns}")
+
+        # Handle IPV6Ext services
+        ns_bqm_node_id = ns_bqm_node_id.node_id.replace('ipv6ext-ns',
+                                                        'ipv6-ns') if 'ipv6ext-ns' in ns_bqm_node_id else ns_bqm_node_id
+
+        existing_reservations = self.get_existing_reservations(
+            node_id=ns_bqm_node_id,
+            node_id_to_reservations=node_id_to_reservations,
+            start=term.get_start_time(),
+            end=term.get_end_time(),
+        )
+
+        inv.allocate_ifs(
+            rid=rid,
+            requested_ns=sliver,
+            requested_ifs=ifs,
+            owner_ns=owner_ns,
+            bqm_ifs=bqm_cp,
+            existing_reservations=existing_reservations,
+            operation=ReservationOperation.Extend
+        )
 
     def __allocate_services(self, *, rid: ID, inv: NetworkServiceInventory, sliver: NetworkServiceSliver,
-                            node_id_to_reservations: dict, term: Term) -> Tuple[str, BaseSliver, Any]:
+                            node_id_to_reservations: dict, term: Term,
+                            operation: ReservationOperation = ReservationOperation.Create) -> Tuple[str, BaseSliver, Any]:
         """
         Allocate Network Service Slivers
         @param rid Reservation Id
         @param inv Inventory
         @param sliver Requested sliver
         @param node_id_to_reservations
+        @param operation
         @return tuple containing delegation id, sliver, error message if any
         """
-        self.logger.debug(f"Processing Network Service sliver: {sliver}")
         delegation_id = None
         error_msg = None
-        owner_ns = None
-        owner_ns_id = None
-        bqm_node = None
-        is_vnic = False
-        owner_mpls_ns = None
-        owner_switch = None
-
-        peered_ns_interfaces = []
-        ero_source_end_info = []
-
-        # For each Interface Sliver;
-        for ifs in sliver.interface_info.interfaces.values():
-            node_map_id = self.combined_broker_model_graph_id
-
-            # Fetch Network Node Id and BQM Component Id
-            node_id, bqm_node_id = ifs.get_node_map()
-
-            # Skipping the already allocated interface on a modify
-            if self.combined_broker_model_graph_id in node_id:
-                continue
-
-            if node_id == str(NodeType.Facility):
-                bqm_node = self.get_facility_sliver(node_name=bqm_node_id)
-            # Peered Interfaces are handled at the end
-            elif node_id == str(Constants.PEERED):
-                peered_ns_interfaces.append(ifs)
-                continue
-            elif node_id == str(NodeType.Switch):
-                bqm_node = self.get_network_node_from_graph(node_id=bqm_node_id)
-                node_map_id = f"{node_map_id}#{bqm_node.get_name()}#{bqm_node_id}#{ifs.get_labels().local_name}"
-            else:
-                # For VM interfaces
-                bqm_node = self.get_component_sliver(node_id=bqm_node_id)
-                node_map_id = f"{node_map_id}:{node_id}:{bqm_node_id}:{ifs.get_labels().bdf}"
-
-            if bqm_node is None:
-                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES)
-
-            # Get BQM Connection Point in Site Delegation (c)
-            site_cp = FimHelper.get_site_interface_sliver(component=bqm_node,
-                                                          local_name=ifs.get_labels().local_name,
-                                                          region=ifs.get_labels().region,
-                                                          device_name=ifs.get_labels().device_name)
-            self.logger.debug(f"Interface Sliver [Site Delegation] (C): {site_cp}")
-
-            # Get BQM Peer Connection Point in Site Delegation (a)
-            net_cp = self.get_peer_interface_sliver(site_ifs_id=site_cp.node_id,
-                                                    interface_type=InterfaceType.TrunkPort)
-
-            if net_cp is None:
-                error_msg = "Peer Connection Point not found from Network AM"
-                raise BrokerException(msg=error_msg)
-
-            self.logger.debug(f"Peer Interface Sliver [Network Delegation] (A): {net_cp}")
-
-            # need to find the owner switch of the network service in CBM and take it's name or labels.local_name
-            owner_switch, owner_mpls_ns, owner_ns = self.get_owners(node_id=net_cp.node_id,
-                                                                    ns_type=sliver.get_type())
-
-            # Hack for IPV6Ext services
-            owner_ns_id = owner_ns.node_id
-            if 'ipv6ext-ns' in owner_ns_id:
-                owner_ns_id = owner_ns_id.replace('ipv6ext-ns', 'ipv6-ns')
-
-            bqm_cp = net_cp
-            if bqm_node.get_type() == NodeType.Facility or \
-                    (sliver.get_type() == ServiceType.L2Bridge and
-                     bqm_node.get_model() == Constants.OPENSTACK_VNIC_MODEL):
-                bqm_cp = site_cp
-
-            if bqm_node.get_type() == ComponentType.SharedNIC:
-                if bqm_node.get_model() == Constants.OPENSTACK_VNIC_MODEL:
-                    is_vnic = True
-
-                # VLAN is already set by the Orchestrator using the information from the Node Sliver Parent Reservation
-                if ifs.get_labels().vlan is None and not is_vnic:
-                    message = "Shared NIC VLAN cannot be None"
-                    self.logger.error(message)
-                    raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
-                                          msg=f"{message}")
-            else:
-                existing_reservations = self.get_existing_reservations(node_id=owner_ns_id,
-                                                                       node_id_to_reservations=node_id_to_reservations,
-                                                                       start=term.get_start_time(),
-                                                                       end=term.get_end_time())
-                # Set vlan - source: (c) - only for dedicated NICs
-                ifs = inv.allocate_ifs(requested_ns=sliver, requested_ifs=ifs, owner_ns=owner_ns,
-                                       bqm_ifs=bqm_cp, existing_reservations=existing_reservations)
-
-            local_name = net_cp.get_name()
-            device_name = owner_switch.get_name()
-
-            if device_name == Constants.AL2S:
-                delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
-                                                                                   net_cp.get_label_delegations())
-                device_name = delegated_label.device_name
-                local_name = delegated_label.local_name
-
-            # local_name source: (a)
-            ifs_labels = ifs.get_labels()
-            ifs_labels = Labels.update(ifs_labels, local_name=local_name)
-
-            # NSO device name source: (a) - need to find the owner switch of the network service in CBM
-            # and take its name or labels.local_name
-            # Set the NSO device-name
-            ifs_labels = Labels.update(ifs_labels, device_name=device_name)
-            adm_ids = owner_switch.get_structural_info().adm_graph_ids
-            site_adm_ids = bqm_node.get_structural_info().adm_graph_ids
-
-            self.logger.debug(f"Owner Network Service: {owner_ns}")
-            self.logger.debug(f"Owner Switch: {owner_switch}")
-            if owner_switch.network_service_info is not None:
-                self.logger.debug(f"Owner Switch NS: {owner_switch.network_service_info.network_services.values()}")
-
-            net_adm_ids = site_adm_ids
-            if bqm_node.get_type() != NodeType.Facility and not is_vnic:
-                net_adm_ids = [x for x in adm_ids if not x in site_adm_ids or site_adm_ids.remove(x)]
-                # For sites like EDC which share switch with other sites like NCSA,
-                # the net_adm_ids also includes delegation id from the other side,
-                # this results in this list having more than one entry and no way for
-                # the code to know which delegation is from Network AM
-                # Using a hack here to pick the delegation id from one of the
-                # layer 3 network services in the owner switch
-                if len(net_adm_ids) > 1:
-                    for x in owner_switch.network_service_info.network_services.values():
-                        if x.get_layer() == NSLayer.L2:
-                            continue
-                        net_adm_ids = x.get_structural_info().adm_graph_ids
-                        break
-            else:
-                if bqm_cp.labels is not None and bqm_cp.labels.ipv4_subnet is not None:
-                    ifs_labels = Labels.update(ifs_labels, ipv4_subnet=bqm_cp.labels.ipv4_subnet)
-                if bqm_cp.labels is not None and bqm_cp.labels.ipv6_subnet is not None:
-                    ifs_labels = Labels.update(ifs_labels, ipv6_subnet=bqm_cp.labels.ipv6_subnet)
-            if len(net_adm_ids) != 1:
-                error_msg = f"More than 1 or 0 Network Delegations found! net_adm_ids: {net_adm_ids}"
-                self.logger.error(error_msg)
-                raise BrokerException(msg=error_msg)
-
-            if bqm_node.get_type() == NodeType.Facility:
-                node_map_id = f"{node_map_id}#{bqm_node.get_name()}#{bqm_cp.node_id}#{ifs_labels.vlan}"
-
-            # Update the Interface Sliver Node Map to map to (a)
-            ifs.set_node_map(node_map=(node_map_id, bqm_cp.node_id))
-            #ifs.set_node_map(node_map=(self.combined_broker_model_graph_id, bqm_cp.node_id))
-
-            delegation_id = net_adm_ids[0]
-
-            ifs.labels = ifs_labels
-            ifs.label_allocations = Labels.update(lab=ifs_labels)
-
-            self.logger.info(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
-
-            owner_v4_service = self.get_ns_from_switch(switch=owner_switch, ns_type=ServiceType.FABNetv4)
-            if owner_v4_service and owner_v4_service.get_labels():
-                ero_source_end_info.append((owner_switch.node_id, owner_v4_service.get_labels().ipv4))
-
-        if not owner_ns:
-            bqm_graph_id, bqm_node_id = sliver.get_node_map()
-            owner_ns, owner_switch = self.get_network_service_from_graph(node_id=bqm_node_id,
-                                                                         parent=True)
+        try:
+            self.logger.debug(f"Processing Network Service sliver: {sliver}")
+            owner_ns = None
+            owner_ns_id = None
+            bqm_node = None
+            is_vnic = False
             owner_mpls_ns = None
-            if owner_switch:
-                for ns in owner_switch.network_service_info.network_services.values():
-                    if ServiceType.MPLS == ns.get_type():
-                        owner_mpls_ns = ns
-                        break
-            delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
-                                                                              owner_ns.get_label_delegations())
+            owner_switch = None
 
-        # Update the Network Service Sliver Node Map to map to parent of (a)
-        sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns_id))
+            peered_ns_interfaces = []
+            ero_source_end_info = []
 
-        # Set the Subnet and gateway from the Owner Switch (a)
-        existing_reservations = self.get_existing_reservations(node_id=owner_ns_id,
-                                                               node_id_to_reservations=node_id_to_reservations,
-                                                               start=term.get_start_time(), end=term.get_end_time())
+            # For each Interface Sliver;
+            for ifs in sliver.interface_info.interfaces.values():
+                node_map_id = self.combined_broker_model_graph_id
 
-        # Allocate VLAN for the Network Service
-        if is_vnic:
-            site_adm_ids = bqm_node.get_structural_info().adm_graph_ids
-            delegation_id = site_adm_ids[0]
-            inv.allocate_vnic(rid=rid, requested_ns=sliver, owner_ns=owner_ns,
-                              existing_reservations=existing_reservations)
-        else:
-            sliver = inv.allocate(rid=rid, requested_ns=sliver, owner_ns=owner_ns,
+                # Fetch Network Node Id and BQM Component Id
+                node_id, bqm_node_id = ifs.get_node_map()
+
+                # Skipping the already allocated interface on a modify
+                if self.combined_broker_model_graph_id in node_id:
+
+                    if operation == ReservationOperation.Extend:
+                        self.__can_extend_interface_sliver(rid=rid, inv=inv, ifs=ifs, sliver=sliver,
+                                                           node_id_to_reservations=node_id_to_reservations, term=term)
+                    continue
+
+                if node_id == str(NodeType.Facility):
+                    bqm_node = self.get_facility_sliver(node_name=bqm_node_id)
+                # Peered Interfaces are handled at the end
+                elif node_id == str(Constants.PEERED):
+                    peered_ns_interfaces.append(ifs)
+                    continue
+                elif node_id == str(NodeType.Switch):
+                    bqm_node = self.get_network_node_from_graph(node_id=bqm_node_id)
+                    node_map_id = f"{node_map_id}#{bqm_node.get_name()}#{bqm_node_id}#{ifs.get_labels().local_name}"
+                else:
+                    # For VM interfaces
+                    bqm_node = self.get_component_sliver(node_id=bqm_node_id)
+                    node_map_id = f"{node_map_id}:{node_id}:{bqm_node_id}:{ifs.get_labels().bdf}"
+
+                if bqm_node is None:
+                    raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES)
+
+                # Get BQM Connection Point in Site Delegation (c)
+                site_cp = FimHelper.get_site_interface_sliver(component=bqm_node,
+                                                              local_name=ifs.get_labels().local_name,
+                                                              region=ifs.get_labels().region,
+                                                              device_name=ifs.get_labels().device_name)
+                self.logger.debug(f"Interface Sliver [Site Delegation] (C): {site_cp}")
+
+                # Get BQM Peer Connection Point in Site Delegation (a)
+                net_cp = self.get_peer_interface_sliver(site_ifs_id=site_cp.node_id,
+                                                        interface_type=InterfaceType.TrunkPort)
+
+                if net_cp is None:
+                    error_msg = "Peer Connection Point not found from Network AM"
+                    raise BrokerException(msg=error_msg)
+
+                self.logger.debug(f"Peer Interface Sliver [Network Delegation] (A): {net_cp}")
+
+                # need to find the owner switch of the network service in CBM and take it's name or labels.local_name
+                owner_switch, owner_mpls_ns, owner_ns = self.get_owners(node_id=net_cp.node_id,
+                                                                        ns_type=sliver.get_type())
+
+                # Hack for IPV6Ext services
+                owner_ns_id = owner_ns.node_id
+                if 'ipv6ext-ns' in owner_ns_id:
+                    owner_ns_id = owner_ns_id.replace('ipv6ext-ns', 'ipv6-ns')
+
+                bqm_cp = net_cp
+                if bqm_node.get_type() == NodeType.Facility or \
+                        (sliver.get_type() == ServiceType.L2Bridge and
+                         bqm_node.get_model() == Constants.OPENSTACK_VNIC_MODEL):
+                    bqm_cp = site_cp
+
+                if bqm_node.get_type() == ComponentType.SharedNIC:
+                    if bqm_node.get_model() == Constants.OPENSTACK_VNIC_MODEL:
+                        is_vnic = True
+
+                    # VLAN is already set by the Orchestrator using the information from the Node Sliver Parent Reservation
+                    if ifs.get_labels().vlan is None and not is_vnic:
+                        message = "Shared NIC VLAN cannot be None"
+                        self.logger.error(message)
+                        raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
+                                              msg=f"{message}")
+                else:
+                    existing_reservations = self.get_existing_reservations(node_id=owner_ns_id,
+                                                                           node_id_to_reservations=node_id_to_reservations,
+                                                                           start=term.get_start_time(),
+                                                                           end=term.get_end_time())
+                    # Set vlan - source: (c) - only for dedicated NICs
+                    ifs = inv.allocate_ifs(rid=rid, requested_ns=sliver, requested_ifs=ifs, owner_ns=owner_ns,
+                                           bqm_ifs=bqm_cp, existing_reservations=existing_reservations)
+
+                local_name = net_cp.get_name()
+                device_name = owner_switch.get_name()
+
+                if device_name == Constants.AL2S:
+                    delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
+                                                                                       net_cp.get_label_delegations())
+                    device_name = delegated_label.device_name
+                    local_name = delegated_label.local_name
+
+                # local_name source: (a)
+                ifs_labels = ifs.get_labels()
+                ifs_labels = Labels.update(ifs_labels, local_name=local_name)
+
+                # NSO device name source: (a) - need to find the owner switch of the network service in CBM
+                # and take its name or labels.local_name
+                # Set the NSO device-name
+                ifs_labels = Labels.update(ifs_labels, device_name=device_name)
+                adm_ids = owner_switch.get_structural_info().adm_graph_ids
+                site_adm_ids = bqm_node.get_structural_info().adm_graph_ids
+
+                self.logger.debug(f"Owner Network Service: {owner_ns}")
+                self.logger.debug(f"Owner Switch: {owner_switch}")
+                if owner_switch.network_service_info is not None:
+                    self.logger.debug(f"Owner Switch NS: {owner_switch.network_service_info.network_services.values()}")
+
+                net_adm_ids = site_adm_ids
+                if bqm_node.get_type() != NodeType.Facility and not is_vnic:
+                    net_adm_ids = [x for x in adm_ids if not x in site_adm_ids or site_adm_ids.remove(x)]
+                    # For sites like EDC which share switch with other sites like NCSA,
+                    # the net_adm_ids also includes delegation id from the other side,
+                    # this results in this list having more than one entry and no way for
+                    # the code to know which delegation is from Network AM
+                    # Using a hack here to pick the delegation id from one of the
+                    # layer 3 network services in the owner switch
+                    if len(net_adm_ids) > 1:
+                        for x in owner_switch.network_service_info.network_services.values():
+                            if x.get_layer() == NSLayer.L2:
+                                continue
+                            net_adm_ids = x.get_structural_info().adm_graph_ids
+                            break
+                else:
+                    if bqm_cp.labels is not None and bqm_cp.labels.ipv4_subnet is not None:
+                        ifs_labels = Labels.update(ifs_labels, ipv4_subnet=bqm_cp.labels.ipv4_subnet)
+                    if bqm_cp.labels is not None and bqm_cp.labels.ipv6_subnet is not None:
+                        ifs_labels = Labels.update(ifs_labels, ipv6_subnet=bqm_cp.labels.ipv6_subnet)
+                if len(net_adm_ids) != 1:
+                    error_msg = f"More than 1 or 0 Network Delegations found! net_adm_ids: {net_adm_ids}"
+                    self.logger.error(error_msg)
+                    raise BrokerException(msg=error_msg)
+
+                if bqm_node.get_type() == NodeType.Facility:
+                    node_map_id = f"{node_map_id}#{bqm_node.get_name()}#{bqm_cp.node_id}#{ifs_labels.vlan}"
+
+                # Update the Interface Sliver Node Map to map to (a)
+                ifs.set_node_map(node_map=(node_map_id, bqm_cp.node_id))
+                #ifs.set_node_map(node_map=(self.combined_broker_model_graph_id, bqm_cp.node_id))
+
+                delegation_id = net_adm_ids[0]
+
+                ifs.labels = ifs_labels
+                ifs.label_allocations = Labels.update(lab=ifs_labels)
+
+                self.logger.info(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
+
+                owner_v4_service = self.get_ns_from_switch(switch=owner_switch, ns_type=ServiceType.FABNetv4)
+                if owner_v4_service and owner_v4_service.get_labels():
+                    ero_source_end_info.append((owner_switch.node_id, owner_v4_service.get_labels().ipv4))
+
+            if not owner_ns:
+                bqm_graph_id, bqm_node_id = sliver.get_node_map()
+                owner_ns, owner_switch = self.get_network_service_from_graph(node_id=bqm_node_id,
+                                                                             parent=True)
+                # Hack for IPV6Ext services
+                owner_ns_id = owner_ns.node_id
+                if 'ipv6ext-ns' in owner_ns_id:
+                    owner_ns_id = owner_ns_id.replace('ipv6ext-ns', 'ipv6-ns')
+
+                owner_mpls_ns = None
+                if owner_switch:
+                    for ns in owner_switch.network_service_info.network_services.values():
+                        if ServiceType.MPLS == ns.get_type():
+                            owner_mpls_ns = ns
+                            break
+                delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
+                                                                                  owner_ns.get_label_delegations())
+
+            # Set the Subnet and gateway from the Owner Switch (a)
+            existing_reservations = self.get_existing_reservations(node_id=owner_ns_id,
+                                                                   node_id_to_reservations=node_id_to_reservations,
+                                                                   start=term.get_start_time(), end=term.get_end_time())
+
+            # Allocate VLAN for the Network Service
+            if is_vnic:
+                site_adm_ids = bqm_node.get_structural_info().adm_graph_ids
+                delegation_id = site_adm_ids[0]
+                inv.allocate_vnic(rid=rid, requested_ns=sliver, owner_ns=owner_ns,
                                   existing_reservations=existing_reservations)
+            else:
+                sliver = inv.allocate(rid=rid, requested_ns=sliver, owner_ns=owner_ns,
+                                      existing_reservations=existing_reservations)
 
-        self.__allocate_peered_interfaces(peered_interfaces=peered_ns_interfaces, owner_switch=owner_switch,
-                                          owner_mpls=owner_mpls_ns, inv=inv, sliver=sliver, owner_ns=owner_ns,
-                                          node_id_to_reservations=node_id_to_reservations, term=term)
+            # Update the Network Service Sliver Node Map to map to parent of (a)
+            sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns_id))
 
-        if sliver.ero and len(sliver.ero.get()) and len(ero_source_end_info) == 2:
-            self.logger.info(f"Requested ERO: {sliver.ero}")
-            ero_hops = []
-            new_path = [ero_source_end_info[0][1]]
-            type, path = sliver.ero.get()
-            for hop in path.get()[0]:
-                # User passes the site names; Broker maps the sites names to the respective switch IP
-                hop_switch = self.get_switch_sliver(site=hop)
-                self.logger.debug(f"Switch information for {hop}: {hop_switch}")
-                if not hop_switch:
-                    self.logger.error(f"Requested hop: {hop} in the ERO does not exist")
-                    raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
-                                          msg=f"Requested hop: {hop} in the ERO does not exist ")
+            self.__allocate_peered_interfaces(rid=rid, peered_interfaces=peered_ns_interfaces, owner_switch=owner_switch,
+                                              owner_mpls=owner_mpls_ns, inv=inv, sliver=sliver, owner_ns=owner_ns,
+                                              node_id_to_reservations=node_id_to_reservations, term=term)
 
-                hop_v4_service = self.get_ns_from_switch(switch=hop_switch, ns_type=ServiceType.FABNetv4)
-                if hop_v4_service and hop_v4_service.get_labels() and hop_v4_service.get_labels().ipv4:
-                    self.logger.debug(f"Fabnetv4 information for {hop}: {hop_v4_service}")
-                    ero_hops.append(f"{hop_switch.node_id}-ns")
-                    new_path.append(hop_v4_service.get_labels().ipv4)
+            if sliver.ero and len(sliver.ero.get()) and len(ero_source_end_info) == 2:
+                self.logger.info(f"Requested ERO: {sliver.ero}")
+                ero_hops = []
+                new_path = [ero_source_end_info[0][1]]
+                type, path = sliver.ero.get()
+                for hop in path.get()[0]:
+                    # User passes the site names; Broker maps the sites names to the respective switch IP
+                    hop_switch = self.get_switch_sliver(site=hop)
+                    self.logger.debug(f"Switch information for {hop}: {hop_switch}")
+                    if not hop_switch:
+                        self.logger.error(f"Requested hop: {hop} in the ERO does not exist")
+                        raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                              msg=f"Requested hop: {hop} in the ERO does not exist ")
 
-            new_path.append(ero_source_end_info[1][1])
+                    hop_v4_service = self.get_ns_from_switch(switch=hop_switch, ns_type=ServiceType.FABNetv4)
+                    if hop_v4_service and hop_v4_service.get_labels() and hop_v4_service.get_labels().ipv4:
+                        self.logger.debug(f"Fabnetv4 information for {hop}: {hop_v4_service}")
+                        ero_hops.append(f"{hop_switch.node_id}-ns")
+                        new_path.append(hop_v4_service.get_labels().ipv4)
 
-            if len(new_path):
-                if not self.validate_requested_ero_path(source_node=ero_source_end_info[0][0],
-                                                        end_node=ero_source_end_info[1][0],
-                                                        hops=ero_hops):
-                    raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
-                                          msg=f"Requested ERO path: {sliver.ero} is invalid!")
-                ero_path = Path()
-                ero_path.set_symmetric(new_path)
-                sliver.ero.set(ero_path)
-                self.logger.info(f"Allocated ERO: {sliver.ero}")
+                new_path.append(ero_source_end_info[1][1])
 
+                if len(new_path):
+                    if not self.validate_requested_ero_path(source_node=ero_source_end_info[0][0],
+                                                            end_node=ero_source_end_info[1][0],
+                                                            hops=ero_hops):
+                        raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                              msg=f"Requested ERO path: {sliver.ero} is invalid!")
+                    ero_path = Path()
+                    ero_path.set_symmetric(new_path)
+                    sliver.ero.set(ero_path)
+                    self.logger.info(f"Allocated ERO: {sliver.ero}")
+
+        except BrokerException as e:
+            delegation_id = None
+            if e.error_code == ExceptionErrorCode.INSUFFICIENT_RESOURCES:
+                self.logger.error(f"Exception occurred: {e}")
+                error_msg = e.msg
+            else:
+                raise e
+        self.logger.debug(f"Allocate Services returning: {delegation_id} {sliver} {error_msg}")
         return delegation_id, sliver, error_msg
 
-    def __allocate_peered_interfaces(self, *, peered_interfaces: List[InterfaceSliver], owner_switch: NodeSliver,
+    def __allocate_peered_interfaces(self, *, rid: ID, peered_interfaces: List[InterfaceSliver], owner_switch: NodeSliver,
                                      inv: NetworkServiceInventory, sliver: NetworkServiceSliver,
                                      owner_mpls: NetworkServiceSliver, owner_ns: NetworkServiceSliver,
                                      node_id_to_reservations: dict, term: Term):
@@ -944,7 +1013,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                                    start=term.get_start_time(),
                                                                    end=term.get_end_time())
 
-            pfs = inv.allocate_peered_ifs(owner_switch=owner_switch, requested_ifs=pfs,
+            pfs = inv.allocate_peered_ifs(rid=rid, owner_switch=owner_switch, requested_ifs=pfs,
                                           bqm_interface=bqm_interface,
                                           existing_reservations=existing_reservations)
 
@@ -958,10 +1027,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns.node_id))
 
     def ticket_inventory(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term,
-                         node_id_to_reservations: dict) -> Tuple[bool, dict, Any]:
+                         node_id_to_reservations: dict,
+                         operation: ReservationOperation = ReservationOperation.Create) -> Tuple[bool, dict, Any]:
         error_msg = None
         try:
-            rset = reservation.get_requested_resources()
+            if operation == ReservationOperation.Extend:
+                rset = reservation.get_resources()
+            else:
+                rset = reservation.get_requested_resources()
             needed = rset.get_units()
 
             # for network node slivers
@@ -977,13 +1050,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 delegation_id, sliver, error_msg = self.__allocate_nodes(reservation=reservation, inv=inv,
                                                                          sliver=res_sliver,
                                                                          node_id_to_reservations=node_id_to_reservations,
-                                                                         term=term)
+                                                                         term=term,
+                                                                         operation=operation)
 
             elif isinstance(res_sliver, NetworkServiceSliver):
                 delegation_id, sliver, error_msg = self.__allocate_services(rid=reservation.get_reservation_id(),
                                                                             inv=inv, sliver=res_sliver,
                                                                             node_id_to_reservations=node_id_to_reservations,
-                                                                            term=term)
+                                                                            term=term, operation=operation)
             else:
                 self.logger.error(f'Reservation {reservation} sliver type is neither Node, nor NetworkServiceSliver')
                 raise BrokerException(msg=f"Reservation sliver type is neither Node "
@@ -999,11 +1073,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 if node_id_to_reservations.get(node_id, None) is None:
                     node_id_to_reservations[node_id] = ReservationSet()
                 node_id_to_reservations[node_id].add(reservation=reservation)
+                self.logger.debug(f"Ticket Inventory returning: True {error_msg}")
                 return True, node_id_to_reservations, error_msg
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(e)
             reservation.fail(message=str(e))
+        self.logger.debug(f"Ticket Inventory returning: False {error_msg}")
         return False, node_id_to_reservations, error_msg
 
     def __is_modify_on_openstack_vnic(self, *, sliver: BaseSliver) -> bool:
@@ -1031,18 +1107,23 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             sliver = current_resources.get_sliver()
             diff = sliver.diff(other_sliver=requested_resources.get_sliver())
 
+            operation = ReservationOperation.Extend
             if diff is not None:
                 sliver = requested_resources.get_sliver()
+                operation = ReservationOperation.Modify
 
-            if diff is None or diff.added is None or \
-                    (len(diff.added.components) == 0 and len(diff.added.interfaces) == 0) or \
-                    self.__is_modify_on_openstack_vnic(sliver=sliver):
+            #if diff is None or diff.added is None or \
+            #        (len(diff.added.components) == 0 and len(diff.added.interfaces) == 0) or \
+            #        self.__is_modify_on_openstack_vnic(sliver=sliver):
+
+            if self.__is_modify_on_openstack_vnic(sliver=sliver):
                 self.issue_ticket(reservation=reservation, units=needed, rtype=requested_resources.get_type(),
                                   term=term, source=reservation.get_source(), sliver=sliver)
             else:
                 status, node_id_to_reservations, error_msg = self.ticket_inventory(reservation=reservation,
                                                                                    inv=inv, term=term,
-                                                                                   node_id_to_reservations=node_id_to_reservations)
+                                                                                   node_id_to_reservations=node_id_to_reservations,
+                                                                                   operation=operation)
                 if not status and not reservation.is_failed():
                     fail_message = f"Insufficient resources for specified start time, Failing reservation: " \
                                    f"{reservation.get_reservation_id()}"
@@ -1410,6 +1491,20 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
+    def get_interface_sliver_from_graph(self, *, node_id: str) -> InterfaceSliver or None:
+        """
+        Get InterfaceSliver from CBM
+        :param node_id:
+        :return:
+        """
+        try:
+            self.lock.acquire()
+            if self.combined_broker_model is None:
+                return None
+            return self.combined_broker_model.build_deep_interface_sliver(node_id=node_id)
+        finally:
+            self.lock.release()
+
     def get_network_node_from_graph(self, *, node_id: str) -> NodeSliver or None:
         """
         Get Node from CBM
@@ -1485,12 +1580,17 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return existing_reservations
 
-    def get_existing_components(self, node_id: str, start: datetime = None, end: datetime = None) -> Dict[str, List[str]]:
+    def get_existing_components(self, node_id: str, start: datetime = None, end: datetime = None,
+                                excludes: List[str] = None, include_ns: bool = True,
+                                include_node: bool = True) -> Dict[str, List[str]]:
         """
         Get existing components attached to Active/Ticketed Network Service Slivers
         :param node_id:
         :param start:
         :param end:
+        :param excludes:
+        :param include_node:
+        :param include_ns:
         :return: list of components
         """
         states = [ReservationStates.Active.value,
@@ -1500,12 +1600,17 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                   ReservationStates.CloseFail.value]
 
         res_type = []
-        for x in ServiceType:
-            res_type.append(str(x))
+        if include_ns:
+            for x in ServiceType:
+                res_type.append(str(x))
+
+        if include_node:
+            for x in NodeType:
+                res_type.append(str(x))
 
         # Only get Active or Ticketing reservations
         return self.actor.get_plugin().get_database().get_components(node_id=node_id, rsv_type=res_type, states=states,
-                                                                     start=start, end=end)
+                                                                     start=start, end=end, excludes=excludes)
 
     def set_logger(self, logger):
         """

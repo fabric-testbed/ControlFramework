@@ -161,7 +161,7 @@ class ABCDatabase(ABC):
     def get_reservations(self, *, slice_id: ID = None, graph_node_id: str = None, project_id: str = None,
                          email: str = None, oidc_sub: str = None, rid: ID = None, states: list[int] = None,
                          site: str = None, rsv_type: list[str] = None, start: datetime = None,
-                         end: datetime = None) -> List[ABCReservationMixin]:
+                         end: datetime = None, ip_subnet: str = None, host: str = None) -> List[ABCReservationMixin]:
         """
         Retrieves the reservations.
 
@@ -172,7 +172,8 @@ class ABCDatabase(ABC):
 
     @abstractmethod
     def get_components(self, *, node_id: str, states: list[int], rsv_type: list[str], component: str = None,
-                       bdf: str = None, start: datetime = None, end: datetime = None) -> Dict[str, List[str]]:
+                       bdf: str = None, start: datetime = None, end: datetime = None,
+                       excludes: List[str] = None) -> Dict[str, List[str]]:
         """
         Returns components matching the search criteria
         @param node_id: Worker Node ID to which components belong
@@ -182,6 +183,7 @@ class ABCDatabase(ABC):
         @param bdf: Component's PCI address
         @param start: start time
         @param end: end time
+        @param excludes: Excludes the list of reservations
 
         NOTE# For P4 switches; node_id=node+renc-p4-sw  component=ip+192.168.11.8 bdf=p1
 

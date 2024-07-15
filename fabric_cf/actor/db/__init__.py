@@ -125,6 +125,8 @@ class Reservations(Base):
     rsv_slc_id = Column(Integer, ForeignKey(FOREIGN_KEY_SLICE_ID), index=True)
     rsv_resid = Column(String, nullable=False, index=True)
     oidc_claim_sub = Column(String, nullable=True, index=True)
+    host = Column(String, nullable=True, index=True)
+    ip_subnet = Column(String, nullable=True, index=True)
     email = Column(String, nullable=True, index=True)
     project_id = Column(String, nullable=True, index=True)
     site = Column(String, nullable=True, index=True)
@@ -143,6 +145,8 @@ class Reservations(Base):
     Index('idx_resid_state', rsv_resid, rsv_state)
     Index('idx_slcid_state', rsv_slc_id, rsv_state)
     Index('idx_graph_id_res_id', rsv_graph_node_id, rsv_resid)
+    Index('idx_host', host)
+    Index('idx_ip_subnet', ip_subnet)
 
 
 class Slices(Base):
