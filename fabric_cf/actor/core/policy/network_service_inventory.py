@@ -136,10 +136,10 @@ class NetworkServiceInventory(InventoryForType):
         :raises Exception if vlan tag range is not in the valid range for L2 services
         """
         requested_vlan = None
-        if requested_ns.get_layer() == NSLayer.L2:
-            if requested_ifs.labels and requested_ifs.labels.vlan:
-                requested_vlan = int(requested_ifs.labels.vlan)
+        if requested_ifs.labels and requested_ifs.labels.vlan:
+            requested_vlan = int(requested_ifs.labels.vlan)
 
+        if requested_ns.get_layer() == NSLayer.L2:
             # Validate the requested VLAN is in range specified on MPLS Network Service in BQM
             # Only do this for Non FacilityPorts
             if bqm_ifs.get_type() != InterfaceType.FacilityPort:
@@ -169,11 +169,13 @@ class NetworkServiceInventory(InventoryForType):
                                                             bqm_ifs=bqm_ifs,
                                                             existing_reservations=existing_reservations)
 
-                if operation == ReservationOperation.Extend and requested_vlan not in vlan_range:
-                    raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                          msg=f"Renew failed: VLAN {requested_vlan} for Interface : "
-                                              f"{requested_ifs.get_name()/bqm_ifs.node_id} already in "
-                                              f"use by another reservation")
+                if operation == ReservationOperation.Extend:
+                    if requested_vlan and requested_vlan not in vlan_range:
+                        raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                              msg=f"Renew failed: VLAN {requested_vlan} for Interface : "
+                                                  f"{requested_ifs.get_name()/bqm_ifs.node_id} already in "
+                                                  f"use by another reservation")
+                    return requested_ifs
 
                 if requested_vlan is None:
                     requested_ifs.labels.vlan = str(random.choice(vlan_range))
@@ -197,11 +199,13 @@ class NetworkServiceInventory(InventoryForType):
                                                             bqm_ifs=bqm_ifs,
                                                             existing_reservations=existing_reservations)
 
-                if operation == ReservationOperation.Extend and requested_vlan not in vlan_range:
-                    raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                          msg=f"Renew failed: VLAN {requested_vlan} for Interface : "
-                                              f"{requested_ifs.get_name()}/{bqm_ifs.node_id} already in "
-                                              f"use by another reservation")
+                if operation == ReservationOperation.Extend:
+                    if requested_vlan and requested_vlan not in vlan_range:
+                        raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                              msg=f"Renew failed: VLAN {requested_vlan} for Interface : "
+                                                  f"{requested_ifs.get_name()}/{bqm_ifs.node_id} already in "
+                                                  f"use by another reservation")
+                    return requested_ifs
 
                 if bqm_ifs.get_type() != InterfaceType.FacilityPort:
                     requested_ifs.labels.vlan = str(random.choice(vlan_range))
