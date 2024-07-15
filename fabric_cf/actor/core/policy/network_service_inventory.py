@@ -200,7 +200,7 @@ class NetworkServiceInventory(InventoryForType):
                 if operation == ReservationOperation.Extend and requested_vlan not in vlan_range:
                     raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
                                           msg=f"Renew failed: VLAN {requested_vlan} for Interface : "
-                                              f"{requested_ifs.get_name()/bqm_ifs.node_id} already in "
+                                              f"{requested_ifs.get_name()}/{bqm_ifs.node_id} already in "
                                               f"use by another reservation")
 
                 if bqm_ifs.get_type() != InterfaceType.FacilityPort:
