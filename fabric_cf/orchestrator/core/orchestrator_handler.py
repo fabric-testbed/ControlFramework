@@ -900,7 +900,7 @@ class OrchestratorHandler:
 
             rid = ID(uid=sliver_id) if sliver_id is not None else None
 
-            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.modify)
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.POA)
             user_id = fabric_token.uuid
             project, tags, project_name = fabric_token.first_project
 
