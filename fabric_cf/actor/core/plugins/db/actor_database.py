@@ -311,7 +311,7 @@ class ActorDatabase(ABCDatabase):
                             bdf = ":".join(split_string[3:]) if len(split_string) > 3 else None
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
-                elif isinstance(sliver, NodeSliver) and sliver.attached_components_info:
+                elif isinstance(sliver, NodeSliver):
                     if sliver.get_labels() and sliver.get_labels().instance_parent:
                         host = sliver.get_labels().instance_parent
                     if sliver.get_label_allocations() and sliver.get_label_allocations().instance_parent:
@@ -320,7 +320,7 @@ class ActorDatabase(ABCDatabase):
                         ip_subnet = str(sliver.get_management_ip())
 
                     node_id = reservation.get_graph_node_id()
-                    if node_id:
+                    if node_id and sliver.attached_components_info:
                         components = []
                         for c in sliver.attached_components_info.devices.values():
                             if c.get_node_map():
@@ -392,7 +392,7 @@ class ActorDatabase(ABCDatabase):
                             bdf = ":".join(split_string[3:]) if len(split_string) > 3 else None
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
-                elif isinstance(sliver, NodeSliver) and sliver.attached_components_info:
+                elif isinstance(sliver, NodeSliver):
                     if sliver.get_labels() and sliver.get_labels().instance_parent:
                         host = sliver.get_labels().instance_parent
                     if sliver.get_label_allocations() and sliver.get_label_allocations().instance_parent:
@@ -400,7 +400,7 @@ class ActorDatabase(ABCDatabase):
                     if sliver.get_management_ip():
                         ip_subnet = str(sliver.get_management_ip())
                     node_id = reservation.get_graph_node_id()
-                    if node_id:
+                    if node_id and sliver.attached_components_info:
                         components = []
                         for c in sliver.attached_components_info.devices.values():
                             if c.get_node_map():
