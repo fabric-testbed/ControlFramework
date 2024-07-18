@@ -287,14 +287,21 @@ class ActorDatabase(ABCDatabase):
             components = None
             host = None
             ip_subnet = None
-            if reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
+            sliver = None
+            from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
+            if isinstance(reservation, ReservationClient) and reservation.get_leased_resources() and \
+                    reservation.get_leased_resources().get_sliver():
+                sliver = reservation.get_leased_resources().get_sliver()
+            if not sliver and reservation.get_resources() and reservation.get_resources().get_sliver():
                 sliver = reservation.get_resources().get_sliver()
-                site = sliver.get_site()
+
+            if sliver:
                 rsv_type = sliver.get_type().name
                 from fim.slivers.network_service import NetworkServiceSliver
                 from fim.slivers.network_node import NodeSliver
 
                 if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
+                    site = sliver.get_site()
                     if sliver.get_gateway():
                         ip_subnet = sliver.get_gateway().subnet
 
@@ -311,7 +318,9 @@ class ActorDatabase(ABCDatabase):
                             bdf = ":".join(split_string[3:]) if len(split_string) > 3 else None
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
+
                 elif isinstance(sliver, NodeSliver):
+                    site = sliver.get_site()
                     if sliver.get_labels() and sliver.get_labels().instance_parent:
                         host = sliver.get_labels().instance_parent
                     if sliver.get_label_allocations() and sliver.get_label_allocations().instance_parent:
@@ -368,14 +377,21 @@ class ActorDatabase(ABCDatabase):
             components = None
             ip_subnet = None
             host = None
-
-            if reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
+            sliver = None
+            from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
+            if isinstance(reservation, ReservationClient) and reservation.get_leased_resources() and \
+                    reservation.get_leased_resources().get_sliver():
+                sliver = reservation.get_leased_resources().get_sliver()
+            if not sliver and reservation.get_resources() and reservation.get_resources().get_sliver():
                 sliver = reservation.get_resources().get_sliver()
-                site = sliver.get_site()
+
+            if sliver:
                 rsv_type = sliver.get_type().name
                 from fim.slivers.network_service import NetworkServiceSliver
                 from fim.slivers.network_node import NodeSliver
                 if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
+                    site = sliver.get_site()
+
                     if sliver.get_gateway():
                         ip_subnet = sliver.get_gateway().subnet
 
@@ -393,6 +409,8 @@ class ActorDatabase(ABCDatabase):
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
                 elif isinstance(sliver, NodeSliver):
+                    site = sliver.get_site()
+
                     if sliver.get_labels() and sliver.get_labels().instance_parent:
                         host = sliver.get_labels().instance_parent
                     if sliver.get_label_allocations() and sliver.get_label_allocations().instance_parent:
