@@ -30,13 +30,13 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import List, Tuple, Dict
 
-from sqlalchemy import create_engine, desc
+from sqlalchemy import create_engine, desc, func, and_, or_
 from sqlalchemy.orm import scoped_session, sessionmaker, joinedload
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
 from fabric_cf.actor.db import Base, Clients, ConfigMappings, Proxies, Units, Reservations, Slices, ManagerObjects, \
-    Miscellaneous, Actors, Delegations, Sites, Poas, Components
+    Miscellaneous, Actors, Delegations, Sites, Poas, Components, Metrics
 
 
 @contextmanager
@@ -99,6 +99,7 @@ class PsqlDatabase:
             session.query(Proxies).delete()
             session.query(Units).delete()
             session.query(Delegations).delete()
+            session.query(Components).delete()
             session.query(Reservations).delete()
             session.query(Slices).delete()
             session.query(ManagerObjects).delete()
@@ -106,6 +107,7 @@ class PsqlDatabase:
             session.query(Actors).delete()
             session.query(Sites).delete()
             session.query(Poas).delete()
+            session.query(Metrics).delete()
             session.commit()
         except Exception as e:
             session.rollback()
@@ -538,9 +540,44 @@ class PsqlDatabase:
             filter_dict['oidc_claim_sub'] = oidc_sub
         return filter_dict
 
+    def get_slice_count(self, *, project_id: str = None, email: str = None, states: List[int] = None,
+                        oidc_sub: str = None, slc_type: List[int] = None, excluded_projects: List[str]) -> int:
+        """
+        Get slices count for an actor
+        @param project_id project id
+        @param email email
+        @param states states
+        @param oidc_sub oidc claim sub
+        @param slc_type slice type
+        @param excluded_projects excluded_projects
+        @return list of slices
+        """
+        session = self.get_session()
+        try:
+            filter_dict = self.create_slices_filter(project_id=project_id, email=email, oidc_sub=oidc_sub)
+
+            rows = session.query(Slices).filter_by(**filter_dict)
+
+            rows = rows.order_by(desc(Slices.lease_end))
+
+            if states is not None:
+                rows = rows.filter(Slices.slc_state.in_(states))
+
+            if slc_type is not None:
+                rows = rows.filter(Slices.slc_type.in_(slc_type))
+
+            if excluded_projects is not None:
+                rows = rows.filter(Slices.project_id.notin_(excluded_projects))
+
+            return rows.count()
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+
     def get_slices(self, *, slice_id: str = None, slice_name: str = None, project_id: str = None, email: str = None,
                    states: list[int] = None, oidc_sub: str = None, slc_type: list[int] = None, limit: int = None,
-                   offset: int = None, lease_end: datetime = None) -> List[dict]:
+                   offset: int = None, lease_end: datetime = None, search: str = None,
+                   exact_match: bool = False) -> List[dict]:
         """
         Get slices for an actor
         @param slice_id actor id
@@ -553,6 +590,8 @@ class PsqlDatabase:
         @param limit limit
         @param offset offset
         @param lease_end lease_end
+        @param search: search term applied
+        @param exact_match: Exact Match for Search term
         @return list of slices
         """
         result = []
@@ -562,6 +601,16 @@ class PsqlDatabase:
                                                     email=email, oidc_sub=oidc_sub)
 
             rows = session.query(Slices).filter_by(**filter_dict)
+
+            if search:
+                if exact_match:
+                    search_term = func.lower(search)
+                    rows = rows.filter(((func.lower(Slices.email) == search_term) |
+                                        (func.lower(Slices.oidc_claim_sub) == search_term)))
+                else:
+                    rows = rows.filter(
+                        ((Slices.email.ilike("%" + search + "%")) |
+                         (Slices.oidc_claim_sub.ilike("%" + search + "%"))))
 
             if lease_end is not None:
                 rows = rows.filter(Slices.lease_end < lease_end)
@@ -607,7 +656,7 @@ class PsqlDatabase:
                         rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
                         lease_end: datetime = None, rsv_graph_node_id: str = None, oidc_claim_sub: str = None,
                         email: str = None, project_id: str = None, site: str = None, rsv_type: str = None,
-                        components: List[Tuple[str, str, str]] = None):
+                        components: List[Tuple[str, str, str]] = None, host: str = None, ip_subnet: str = None):
         """
         Add a reservation
         @param slc_guid slice guid
@@ -626,6 +675,8 @@ class PsqlDatabase:
         @param site site
         @param rsv_type reservation type
         @param components list of components
+        @param host host
+        @param ip_subnet ip_subnet
         """
         session = self.get_session()
         try:
@@ -634,7 +685,7 @@ class PsqlDatabase:
                                    rsv_state=rsv_state, rsv_pending=rsv_pending, rsv_joining=rsv_joining,
                                    lease_start=lease_start, lease_end=lease_end,
                                    properties=properties, oidc_claim_sub=oidc_claim_sub, email=email,
-                                   project_id=project_id, site=site, rsv_type=rsv_type)
+                                   project_id=project_id, site=site, rsv_type=rsv_type, host=host, ip_subnet=ip_subnet)
             if rsv_graph_node_id is not None:
                 rsv_obj.rsv_graph_node_id = rsv_graph_node_id
 
@@ -655,7 +706,8 @@ class PsqlDatabase:
     def update_reservation(self, *, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
                            rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
                            lease_end: datetime = None, rsv_graph_node_id: str = None, site: str = None,
-                           rsv_type: str = None, components: List[Tuple[str, str, str]] = None):
+                           rsv_type: str = None, components: List[Tuple[str, str, str]] = None,
+                           host: str = None, ip_subnet: str = None):
         """
         Update a reservation
         @param slc_guid slice guid
@@ -671,6 +723,8 @@ class PsqlDatabase:
         @param site site
         @param rsv_type reservation type
         @param components list of components
+        @param ip_subnet ip subnet
+        @param host host
         """
         session = self.get_session()
         try:
@@ -683,6 +737,10 @@ class PsqlDatabase:
                 rsv_obj.properties = properties
                 rsv_obj.lease_end = lease_end
                 rsv_obj.lease_start = lease_start
+                if host:
+                    rsv_obj.host = host
+                if ip_subnet:
+                    rsv_obj.ip_subnet = ip_subnet
                 if site is not None:
                     rsv_obj.site = site
                 if rsv_graph_node_id is not None:
@@ -748,7 +806,8 @@ class PsqlDatabase:
             raise e
 
     def create_reservation_filter(self, *, slice_id: str = None, graph_node_id: str = None, project_id: str = None,
-                                  email: str = None, oidc_sub: str = None, rid: str = None, site: str = None) -> dict:
+                                  email: str = None, oidc_sub: str = None, rid: str = None, site: str = None,
+                                  ip_subnet: str = None, host: str = None) -> dict:
 
         filter_dict = {}
         if slice_id is not None:
@@ -766,11 +825,18 @@ class PsqlDatabase:
             filter_dict['rsv_resid'] = rid
         if site is not None:
             filter_dict['site'] = site
+        if ip_subnet:
+            filter_dict['ip_subnet'] = ip_subnet
+        if host:
+            filter_dict['host'] = host
+
         return filter_dict
 
     def get_reservations(self, *, slice_id: str = None, graph_node_id: str = None, project_id: str = None,
                          email: str = None, oidc_sub: str = None, rid: str = None, states: list[int] = None,
-                         category: list[int] = None, site: str = None, rsv_type: list[str] = None) -> List[dict]:
+                         category: list[int] = None, site: str = None, rsv_type: list[str] = None,
+                         start: datetime = None, end: datetime = None, ip_subnet: str = None,
+                         host: str = None) -> List[dict]:
         """
         Get Reservations for an actor
         @param slice_id slice id
@@ -783,6 +849,10 @@ class PsqlDatabase:
         @param category reservation category
         @param site site name
         @param rsv_type rsv_type
+        @param start search for slivers with lease_end_time after start
+        @param end search for slivers with lease_end_time before end
+        @param ip_subnet ip subnet
+        @param host host
 
         @return list of reservations
         """
@@ -791,7 +861,7 @@ class PsqlDatabase:
         try:
             filter_dict = self.create_reservation_filter(slice_id=slice_id, graph_node_id=graph_node_id,
                                                          project_id=project_id, email=email, oidc_sub=oidc_sub,
-                                                         rid=rid, site=site)
+                                                         rid=rid, site=site, ip_subnet=ip_subnet, host=host)
             rows = session.query(Reservations).filter_by(**filter_dict)
 
             if rsv_type is not None:
@@ -803,6 +873,28 @@ class PsqlDatabase:
             if category is not None:
                 rows = rows.filter(Reservations.rsv_category.in_(category))
 
+            # Ensure start and end are datetime objects
+            if start and isinstance(start, str):
+                start = datetime.fromisoformat(start)
+            if end and isinstance(end, str):
+                end = datetime.fromisoformat(end)
+
+            # Construct filter condition for lease_end within the given time range
+            if start is not None or end is not None:
+                lease_end_filter = True  # Initialize with True to avoid NoneType comparison
+                if start is not None and end is not None:
+                    lease_end_filter = or_(
+                        and_(start <= Reservations.lease_end, Reservations.lease_end <= end),
+                        and_(start <= Reservations.lease_start, Reservations.lease_start <= end),
+                        and_(Reservations.lease_start <= start, Reservations.lease_end >= end)
+                    )
+                elif start is not None:
+                    lease_end_filter = start <= Reservations.lease_end
+                elif end is not None:
+                    lease_end_filter = Reservations.lease_end <= end
+
+                rows = rows.filter(lease_end_filter)
+
             for row in rows.all():
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
@@ -811,25 +903,58 @@ class PsqlDatabase:
         return result
 
     def get_components(self, *, node_id: str, states: list[int], rsv_type: list[str], component: str = None,
-                       bdf: str = None) -> Dict[str, List[str]]:
+                       bdf: str = None, start: datetime = None, end: datetime = None,
+                       excludes: List[str] = None) -> Dict[str, List[str]]:
+        """
+        Returns components matching the search criteria
+        @param node_id: Worker Node ID to which components belong
+        @param states: list of states used to find reservations
+        @param rsv_type: type of reservations
+        @param component: component name
+        @param bdf: Component's PCI address
+        @param start: start time
+        @param end: end time
+        @param excludes: list of the reservations ids to exclude
+
+        NOTE# For P4 switches; node_id=node+renc-p4-sw  component=ip+192.168.11.8 bdf=p1
+
+        @return Dictionary with component name as the key and value as list of associated PCI addresses in use.
+        """
         result = {}
         session = self.get_session()
         try:
+            lease_end_filter = True  # Initialize with True to avoid NoneType comparison
+            # Construct filter condition for lease_end within the given time range
+            if start is not None or end is not None:
+                if start is not None and end is not None:
+                    lease_end_filter = or_(
+                        and_(start <= Reservations.lease_end, Reservations.lease_end <= end),
+                        and_(start <= Reservations.lease_start, Reservations.lease_start <= end),
+                        and_(Reservations.lease_start <= start, Reservations.lease_end >= end)
+                    )
+                elif start is not None:
+                    lease_end_filter = start <= Reservations.lease_end
+                elif end is not None:
+                    lease_end_filter = Reservations.lease_end <= end
+
             # Query to retrieve Components based on specific Reservation types and states
             rows = (
                 session.query(Components)
                     .join(Reservations, Components.reservation_id == Reservations.rsv_id)
                     .filter(Reservations.rsv_type.in_(rsv_type))
                     .filter(Reservations.rsv_state.in_(states))
+                    .filter(lease_end_filter)
                     .filter(Components.node_id == node_id)
                     .options(joinedload(Components.reservation))
-                    # Use joinedload to efficiently load the associated Reservation
             )
+
+            # Add excludes filter if excludes list is not None and not empty
+            if excludes:
+                rows = rows.filter(Reservations.rsv_resid.notin_(excludes))
 
             # Query Component records for reservations in the specified state and owner with the target string
             if component is not None and bdf is not None:
-                rows = rows.filter(Components.component == component,
-                                               Components.bdf == bdf)
+                rows = rows.filter(Components.component == component, Components.bdf == bdf)
             elif component is not None:
                 rows = rows.filter(Components.component == component)
             elif bdf is not None:
@@ -1537,6 +1662,59 @@ class PsqlDatabase:
             raise e
         return result
 
+    def increment_metrics(self, *, project_id: str, user_id: str, slice_count: int = 1):
+        """
+        Add or Update Metrics
+        @param project_id: project_id
+        @param user_id: user_id
+        @param slice_count: slice_count
+        """
+        session = self.get_session()
+        try:
+            metric_obj = session.query(Metrics).filter_by(project_id=project_id, user_id=user_id).one_or_none()
+            if not metric_obj:
+                metric_obj = Metrics(project_id=project_id, user_id=user_id, slice_count=slice_count)
+                session.add(metric_obj)
+            else:
+                metric_obj.slice_count += slice_count
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+
+    def get_metrics(self, *, project_id: str = None, user_id: str = None, excluded_projects: List[str] = None) -> list:
+        """
+        Get Metric count
+        @param project_id: project_id
+        @param user_id: user_id
+        @param excluded_projects: excluded_projects
+        @return list of metrics
+        """
+        result = []
+        session = self.get_session()
+        try:
+            filter_criteria = True
+            # Construct filter condition
+            if project_id and user_id:
+                filter_criteria = and_(Metrics.project_id == project_id, Metrics.user_id == user_id)
+            elif project_id is not None:
+                filter_criteria = and_(Metrics.project_id == project_id)
+            elif user_id is not None:
+                filter_criteria = and_(Metrics.user_id == user_id)
+
+            if excluded_projects:
+                filter_criteria = and_(Metrics.project_id.notin_(excluded_projects))
+
+            rows = session.query(Metrics).filter(filter_criteria).all()
+
+            for r in rows:
+                result.append(self.generate_dict_from_row(row=r))
+            return result
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+
 
 def test():
     logger = logging.getLogger('PsqlDatabase')
@@ -1722,3 +1900,8 @@ if __name__ == '__main__':
     test2()
     #test()
     #test3()
+
+    logger = logging.getLogger('PsqlDatabase')
+    db = PsqlDatabase(user='fabric', password='fabric', database='orchestrator', db_host='127.0.0.1:5432',
+                      logger=logger)
+    comps = db.get_components(node_id="HX7LQ53")

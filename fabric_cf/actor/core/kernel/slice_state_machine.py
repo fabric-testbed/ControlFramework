@@ -44,6 +44,8 @@ class SliceState(Enum):
     Modifying = enum.auto()
     ModifyError = enum.auto()
     ModifyOK = enum.auto()
+    AllocatedError = enum.auto()
+    AllocatedOK = enum.auto()
     All = enum.auto()   # used only for querying
 
     def __str__(self):
@@ -102,6 +104,10 @@ class SliceState(Enum):
             return SliceState.Closing
         elif state_name.lower() == SliceState.Dead.name.lower():
             return SliceState.Dead
+        elif state_name.lower() == SliceState.AllocatedOK.name.lower():
+            return SliceState.Closing
+        elif state_name.lower() == SliceState.AllocatedError.name.lower():
+            return SliceState.Dead
         else:
             return SliceState.All
 
@@ -118,6 +124,12 @@ class SliceState(Enum):
         return False
 
     @staticmethod
+    def is_allocated(*, state) -> bool:
+        if state == SliceState.AllocatedOK or state == SliceState.AllocatedError:
+            return True
+        return False
+
+    @staticmethod
     def is_modified(*, state) -> bool:
         if state == SliceState.ModifyOK or state == SliceState.ModifyError:
             return True
@@ -127,6 +139,7 @@ class SliceState(Enum):
 class SliceCommand(Enum):
     Create = enum.auto()
     Modify = enum.auto()
+    Renew = enum.auto()
     Delete = enum.auto()
     Reevaluate = enum.auto()
     ModifyAccept = enum.auto()
@@ -183,18 +196,23 @@ class StateBins:
 class SliceStateMachine:
     CREATE = SliceOperation(SliceCommand.Create, SliceState.Nascent)
 
-    MODIFY = SliceOperation(SliceCommand.Modify, SliceState.StableOK, SliceState.StableError, SliceState.Configuring)
+    MODIFY = SliceOperation(SliceCommand.Modify, SliceState.StableOK, SliceState.StableError, SliceState.Configuring,
+                            SliceState.AllocatedOK, SliceState.AllocatedError)
+
+    RENEW = SliceOperation(SliceCommand.Renew, SliceState.StableOK, SliceState.StableError, SliceState.AllocatedOK,
+                           SliceState.ModifyOK, SliceState.ModifyError, SliceState.AllocatedError)
 
     MODIFY_ACCEPT = SliceOperation(SliceCommand.ModifyAccept, SliceState.ModifyOK, SliceState.ModifyError,
-                                   SliceState.Modifying)
+                                   SliceState.Modifying, SliceState.AllocatedOK, SliceState.AllocatedError)
 
     DELETE = SliceOperation(SliceCommand.Delete, SliceState.Nascent, SliceState.StableOK, SliceState.StableError,
                             SliceState.Configuring, SliceState.Modifying, SliceState.ModifyOK, SliceState.ModifyError,
-                            SliceState.Dead)
+                            SliceState.Dead, SliceState.AllocatedOK, SliceState.AllocatedError)
 
     REEVALUATE = SliceOperation(SliceCommand.Reevaluate, SliceState.Nascent, SliceState.StableOK,
                                 SliceState.StableError, SliceState.Configuring, SliceState.Dead, SliceState.Closing,
-                                SliceState.Modifying, SliceState.ModifyError, SliceState.ModifyOK)
+                                SliceState.Modifying, SliceState.ModifyError, SliceState.ModifyOK,
+                                SliceState.AllocatedError, SliceState.AllocatedOK)
 
     def __init__(self, *, slice_id: ID):
         self.slice_guid = slice_id
@@ -233,14 +251,24 @@ class SliceStateMachine:
         if operation.command == SliceCommand.Create:
             self.state = SliceState.Configuring
 
+        elif operation.command == SliceCommand.Renew:
+            self.state = SliceState.Configuring
+
         elif operation.command == SliceCommand.Modify:
             self.state = SliceState.Modifying
 
         elif operation.command == SliceCommand.ModifyAccept:
             if self.state == SliceState.ModifyError:
-                self.state = SliceState.StableError
+                if self.last_state in [SliceState.AllocatedOK, SliceState.AllocatedError]:
+                    self.state = SliceState.AllocatedError
+                else:
+                    self.state = SliceState.StableError
+                
             elif self.state == SliceState.ModifyOK:
-                self.state = SliceState.StableOK
+                if self.last_state in [SliceState.AllocatedOK, SliceState.AllocatedError]:
+                    self.state = SliceState.AllocatedOK
+                else:
+                    self.state = SliceState.StableOK
 
         elif operation.command == SliceCommand.Delete:
             if self.state != SliceState.Dead:
@@ -266,7 +294,36 @@ class SliceStateMachine:
                 if not has_error and r.get_error_message() is not None and len(r.get_error_message()) > 0:
                     has_error = True
 
-            if self.state == SliceState.Nascent or self.state == SliceState.Configuring:
+            if self.state in [SliceState.Nascent, SliceState.Configuring]:
+                if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed,
+                                                 ReservationStates.CloseFail):
+                    if not has_error:
+                        self.state = SliceState.StableOK
+                    else:
+                        self.state = SliceState.StableError
+
+                if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
+                                                  ReservationStates.Closed, ReservationStates.CloseFail)) and \
+                        bins.has_state(s=ReservationStates.Failed):
+                    self.state = SliceState.StableError
+
+                if not bins.has_state_other_than(ReservationStates.Ticketed, ReservationStates.Closed,
+                                                 ReservationStates.CloseFail):
+                    if not has_error:
+                        self.state = SliceState.AllocatedOK
+                    else:
+                        self.state = SliceState.AllocatedError
+
+                if (not bins.has_state_other_than(ReservationStates.Ticketed, ReservationStates.Failed,
+                                                  ReservationStates.Closed, ReservationStates.CloseFail)) and \
+                        bins.has_state(s=ReservationStates.Failed):
+                    self.state = SliceState.AllocatedError
+
+                if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
+                                                 ReservationStates.Failed, ReservationStates.CloseFail):
+                    self.state = SliceState.Closing
+
+            if self.state in [SliceState.AllocatedOK, SliceState.AllocatedError]:
                 if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed,
                                                  ReservationStates.CloseFail):
                     if not has_error:
@@ -296,12 +353,24 @@ class SliceStateMachine:
                         bins.has_state(s=ReservationStates.Failed):
                     self.state = SliceState.ModifyError
 
+                if not bins.has_state_other_than(ReservationStates.Ticketed, ReservationStates.Closed,
+                                                 ReservationStates.CloseFail):
+                    if has_error:
+                        self.state = SliceState.ModifyError
+                    else:
+                        self.state = SliceState.ModifyOK
+
+                if (not bins.has_state_other_than(ReservationStates.Ticketed, ReservationStates.Failed,
+                                                  ReservationStates.Closed, ReservationStates.CloseFail)) and \
+                        bins.has_state(s=ReservationStates.Failed):
+                    self.state = SliceState.ModifyError
+
                 if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
                                                  ReservationStates.Failed, ReservationStates.CloseFail):
                     self.state = SliceState.Closing
 
-            elif self.state == SliceState.StableError or self.state == SliceState.StableOK or \
-                    self.state == SliceState.ModifyError or self.state == SliceState.ModifyOK:
+            elif self.state in [SliceState.StableError, SliceState.StableOK, SliceState.ModifyError,
+                                SliceState.ModifyOK, SliceState.AllocatedError, SliceState.AllocatedOK]:
                 if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
                                                  ReservationStates.Failed, ReservationStates.CloseFail):
                     self.state = SliceState.Dead

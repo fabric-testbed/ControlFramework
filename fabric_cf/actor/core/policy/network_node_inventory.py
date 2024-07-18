@@ -31,12 +31,13 @@ from fim.slivers.capacities_labels import Capacities, Labels
 from fim.slivers.delegations import Delegations
 from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.interface_info import InterfaceSliver
-from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NSLayer
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
+from fabric_cf.actor.core.kernel.reservation_states import ReservationOperation
 from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
 from fabric_cf.actor.core.util.id import ID
 
@@ -230,13 +231,13 @@ class NetworkNodeInventory(InventoryForType):
 
     def __check_component_labels_and_capacities(self, *, available_component: ComponentSliver, graph_id: str,
                                                 requested_component: ComponentSliver,
-                                                is_create: bool = False) -> ComponentSliver:
+                                                operation: ReservationOperation = ReservationOperation.Create) -> ComponentSliver:
         """
         Check if available component capacities, labels to match requested component
         :param available_component: available component
         :param graph_id: BQM graph id
         :param requested_component: requested component
-        :param is_create: is_create
+        :param operation: operation
         :return: requested component annotated with properties in case of success, None otherwise
         """
         if requested_component.get_model() is not None and \
@@ -271,7 +272,7 @@ class NetworkNodeInventory(InventoryForType):
 
         node_map = tuple([graph_id, available_component.node_id])
         requested_component.set_node_map(node_map=node_map)
-        if requested_component.labels is None or is_create:
+        if requested_component.labels is None or operation == ReservationOperation.Create:
             requested_component.labels = Labels.update(lab=requested_component.get_label_allocations())
 
         return requested_component
@@ -342,7 +343,8 @@ class NetworkNodeInventory(InventoryForType):
             graph_node.attached_components_info.remove_device(name=available_component.get_name())
 
     def __exclude_components_for_existing_reservations(self, *, rid: ID, graph_node: NodeSliver,
-                                                       existing_reservations: List[ABCReservationMixin]) -> NodeSliver:
+                                                       existing_reservations: List[ABCReservationMixin],
+                                                       operation: ReservationOperation = ReservationOperation.Create) -> NodeSliver:
         """
         Remove already assigned components to existing reservations from the candidate node
         @param rid reservation ID
@@ -352,7 +354,8 @@ class NetworkNodeInventory(InventoryForType):
         """
         for reservation in existing_reservations:
             # Requested reservation should be skipped only when new i.e. not ticketed
-            if rid == reservation.get_reservation_id() and not reservation.is_ticketed():
+            if rid == reservation.get_reservation_id() and \
+                    (operation == ReservationOperation.Extend or not reservation.is_ticketed()):
                 continue
             # For Active or Ticketed or Ticketing reservations; reduce the counts from available
             allocated_sliver = None
@@ -391,7 +394,7 @@ class NetworkNodeInventory(InventoryForType):
     def __check_components(self, *, rid: ID, requested_components: AttachedComponentsInfo, graph_id: str,
                            graph_node: NodeSliver, existing_reservations: List[ABCReservationMixin],
                            existing_components: Dict[str, List[str]],
-                           is_create: bool = False) -> AttachedComponentsInfo:
+                           operation: ReservationOperation = ReservationOperation.Create) -> AttachedComponentsInfo:
         """
         Check if the requested capacities can be satisfied with the available capacities
         :param rid: reservation id of the reservation being served
@@ -399,12 +402,15 @@ class NetworkNodeInventory(InventoryForType):
         :param graph_id: BQM graph id
         :param graph_node: BQM graph node identified to serve the reservation
         :param existing_reservations: Existing Reservations served by the same BQM node
-        :param is_create: Flag indicating if this is create or modify
+        :param operation: Flag indicating if this is create or modify
         :return: Components updated with the corresponding BQM node ids
         :raises: BrokerException in case the request cannot be satisfied
         """
+        self.logger.debug(f"Available on {graph_node.node_id} components: {graph_node.attached_components_info.devices.keys()}")
+
         self.__exclude_components_for_existing_reservations(rid=rid, graph_node=graph_node,
-                                                            existing_reservations=existing_reservations)
+                                                            existing_reservations=existing_reservations,
+                                                            operation=operation)
 
         self.logger.debug(f"Excluding components connected to Network Services: {existing_components}")
 
@@ -429,15 +435,42 @@ class NetworkNodeInventory(InventoryForType):
                     comps_to_remove.append(av)
 
             for c in comps_to_remove:
+                self.logger.debug(f"Excluding component: {c.get_name()}")
+                print(f"Excluding component: {c.get_name()}")
                 graph_node.attached_components_info.remove_device(name=c.get_name())
 
         self.logger.debug(f"requested_components: {requested_components.devices.values()} for reservation# {rid}")
         for name, requested_component in requested_components.devices.items():
-            if not is_create and requested_component.get_node_map() is not None:
-                self.logger.debug(f"==========Ignoring Allocated component: {requested_component} for modify")
-                # TODO exclude already allocated component to the same reservation
+            if operation == ReservationOperation.Modify and requested_component.get_node_map() is not None:
+                self.logger.debug(f"Modify: Ignoring Allocated component: {requested_component}")
                 continue
-            self.logger.debug(f"==========Allocating component: {requested_component}")
+
+            if operation == ReservationOperation.Extend and requested_component.get_node_map() is not None:
+                bqm_id, node_id = requested_component.get_node_map()
+
+                if requested_component.get_type() == ComponentType.SharedNIC:
+                    allocated_bdfs = existing_components.get(node_id)
+                    if allocated_bdfs and requested_component.labels and requested_component.labels.bdf:
+                        bdfs = requested_component.labels.bdf
+                        if isinstance(requested_component.labels.bdf, str):
+                            bdfs = [requested_component.labels.bdf]
+
+                        self.logger.debug(f"Allocated BDFs: {allocated_bdfs}")
+                        for x in bdfs:
+                            if x in allocated_bdfs:
+                                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                                      msg=f"Renew failed: Component of type: {requested_component.get_model()} with PCI Address: {x}"
+                                                          f"already in use by another reservation for node: {graph_node.node_id}")
+                else:
+                    if node_id in existing_components.keys():
+                        raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                              msg=f"Renew failed: Component of type: {requested_component.get_model()} "
+                                                  f"already in use by another reservation for node: {graph_node.node_id}")
+
+                self.logger.debug(f"Renew: Component {requested_component} still available")
+                continue
+
+            self.logger.debug(f"Create: Allocating component: {requested_component}")
             resource_type = requested_component.get_type()
             resource_model = requested_component.get_model()
             if resource_type == ComponentType.Storage:
@@ -446,7 +479,8 @@ class NetworkNodeInventory(InventoryForType):
                 requested_component.label_allocations = Labels.update(lab=requested_component.get_labels())
                 continue
             available_components = graph_node.attached_components_info.get_devices_by_type(resource_type=resource_type)
-            self.logger.debug(f"available_components after excluding allocated components: {available_components}")
+            self.logger.debug(f"Available components of type: {resource_type} after excluding "
+                              f"allocated components: {available_components}")
 
             if available_components is None or len(available_components) == 0:
                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
@@ -458,7 +492,7 @@ class NetworkNodeInventory(InventoryForType):
                 requested_component = self.__check_component_labels_and_capacities(
                     available_component=component, graph_id=graph_id,
                     requested_component=requested_component,
-                    is_create=is_create)
+                    operation=operation)
 
                 if requested_component.get_node_map() is not None:
                     self.logger.info(f"Assigning {component.node_id} to component# "
@@ -476,9 +510,60 @@ class NetworkNodeInventory(InventoryForType):
 
         return requested_components
 
+    def __allocate_p4_switch(self, *, rid: ID, requested_sliver: NodeSliver, graph_id: str, graph_node: NodeSliver,
+                             existing_reservations: List[ABCReservationMixin], existing_components: Dict[str, List[str]],
+                             operation: ReservationOperation = ReservationOperation.Create) -> Tuple[str, BaseSliver]:
+        """
+        Allocate an extending or ticketing reservation for a P4 switch
+
+        :param rid: reservation id of the reservation to be allocated
+        :param requested_sliver: requested sliver
+        :param graph_id: BQM graph id
+        :param graph_node: BQM graph node identified to serve the reservation
+        :param existing_components: Existing Components
+        :param existing_reservations: Existing Reservations served by the same BQM node
+        :param operation: Indicates if this is create or modify
+
+        :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
+        :raises: BrokerException in case the request cannot be satisfied
+        """
+        delegation_id = None
+
+        if operation == ReservationOperation.Create:
+            # In case of modify, directly get delegation_id
+            if len(graph_node.get_capacity_delegations().get_delegation_ids()) > 0:
+                delegation_id = next(iter(graph_node.get_capacity_delegations().get_delegation_ids()))
+
+        # Handle allocation to account for leaked Network Services
+        for n in existing_components.keys():
+            if n in graph_node.node_id:
+                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                      msg=f"Node of type: {graph_node.get_type()} not available on site: "
+                                          f"{graph_node.get_site()}, already in use by another reservation")
+
+        # For create, we need to allocate the P4
+        requested_capacities = requested_sliver.get_capacities()
+
+        # Check if Capacities can be satisfied
+        delegation_id = self.__check_capacities(rid=rid,
+                                                requested_capacities=requested_capacities,
+                                                delegated_capacities=graph_node.get_capacity_delegations(),
+                                                existing_reservations=existing_reservations)
+        requested_sliver.capacity_allocations = Capacities()
+        requested_sliver.capacity_allocations = Capacities.update(lab=requested_capacities)
+        requested_sliver.label_allocations = Labels(local_name=graph_node.get_name())
+
+        requested_sliver.set_node_map(node_map=(graph_id, graph_node.node_id))
+        requested_sliver.management_ip = graph_node.management_ip
+
+        self.logger.info(f"Reservation# {rid} is being served by delegation# {delegation_id} "
+                         f"node# [{graph_id}/{graph_node.node_id}]")
+
+        return delegation_id, requested_sliver
+
     def allocate(self, *, rid: ID, requested_sliver: BaseSliver, graph_id: str, graph_node: BaseSliver,
                  existing_reservations: List[ABCReservationMixin], existing_components: Dict[str, List[str]],
-                 is_create: bool = False) -> Tuple[str, BaseSliver]:
+                 operation: ReservationOperation = ReservationOperation.Create) -> Tuple[str, BaseSliver]:
         """
         Allocate an extending or ticketing reservation
         :param rid: reservation id of the reservation to be allocated
@@ -487,40 +572,50 @@ class NetworkNodeInventory(InventoryForType):
         :param graph_node: BQM graph node identified to serve the reservation
         :param existing_components: Existing Components
         :param existing_reservations: Existing Reservations served by the same BQM node
-        :param is_create: Indicates if this is create or modify
+        :param operation: Indicates if this is create or modify
         :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
         :raises: BrokerException in case the request cannot be satisfied
         """
         if graph_node.get_capacity_delegations() is None or rid is None:
-            raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
+            raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                   msg=f"capacity_delegations is missing or reservation is None")
 
         if not isinstance(requested_sliver, NodeSliver):
-            raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
+            raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                   msg=f"resource type: {requested_sliver.get_type()}")
 
         if not isinstance(graph_node, NodeSliver):
-            raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
+            raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                   msg=f"resource type: {graph_node.get_type()}")
+
+        if requested_sliver.get_type() not in [NodeType.VM, NodeType.Switch]:
+            raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                  msg=f"Unsupported resource type: {graph_node.get_type()}")
+
+        if requested_sliver.get_type() == NodeType.Switch:
+            return self.__allocate_p4_switch(rid=rid, requested_sliver=requested_sliver, graph_id=graph_id,
+                                             graph_node=graph_node, existing_reservations=existing_reservations,
+                                             existing_components=existing_components, operation=operation)
 
         delegation_id = None
         requested_capacities = None
         # For create, we need to allocate the VM
-        if is_create:
+        if operation == ReservationOperation.Create:
             # Always use requested capacities to be mapped from flavor i.e. capacity hints
             requested_capacity_hints = requested_sliver.get_capacity_hints()
             catalog = InstanceCatalog()
             requested_capacities = catalog.get_instance_capacities(instance_type=requested_capacity_hints.instance_type)
-
-            # Check if Capacities can be satisfied
-            delegation_id = self.__check_capacities(rid=rid,
-                                                    requested_capacities=requested_capacities,
-                                                    delegated_capacities=graph_node.get_capacity_delegations(),
-                                                    existing_reservations=existing_reservations)
         else:
+            requested_capacities = requested_sliver.get_capacity_allocations()
             # In case of modify, directly get delegation_id
             if len(graph_node.get_capacity_delegations().get_delegation_ids()) > 0:
                 delegation_id = next(iter(graph_node.get_capacity_delegations().get_delegation_ids()))
+
+        # Check if Capacities can be satisfied
+        delegation_id = self.__check_capacities(rid=rid,
+                                                requested_capacities=requested_capacities,
+                                                delegated_capacities=graph_node.get_capacity_delegations(),
+                                                existing_reservations=existing_reservations)
 
         # Check if Components can be allocated
         if requested_sliver.attached_components_info is not None:
@@ -531,10 +626,10 @@ class NetworkNodeInventory(InventoryForType):
                 graph_node=graph_node,
                 existing_reservations=existing_reservations,
                 existing_components=existing_components,
-                is_create=is_create)
+                operation=operation)
 
         # Do this only for create
-        if is_create:
+        if operation == ReservationOperation.Create:
             requested_sliver.capacity_allocations = Capacities()
             requested_sliver.capacity_allocations = Capacities.update(lab=requested_capacities)
             requested_sliver.label_allocations = Labels(instance_parent=graph_node.get_name())
@@ -547,4 +642,4 @@ class NetworkNodeInventory(InventoryForType):
         return delegation_id, requested_sliver
 
     def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:
-        return
+        pass

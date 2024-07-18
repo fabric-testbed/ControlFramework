@@ -26,9 +26,9 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from datetime import datetime
 from typing import TYPE_CHECKING, Tuple, Dict, List
 
-from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_poa_avro import ResultPoaAvro
@@ -38,6 +38,7 @@ from fabric_mb.message_bus.messages.result_sites_avro import ResultSitesAvro
 from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+from fim.user import GraphFormat
 
 from fabric_cf.actor.core.apis.abc_management_object import ABCManagementObject
 from fabric_cf.actor.core.container.maintenance import Site
@@ -237,7 +238,8 @@ class ABCActorManagementObject(ABCManagementObject):
     def get_reservations(self, *, caller: AuthToken, states: List[int] = None,
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
                          email: str = None, rid_list: List[str] = None, type: str = None,
-                         site: str = None, node_id: str = None) -> ResultReservationAvro:
+                         site: str = None, node_id: str = None,
+                         host: str = None, ip_subnet: str = None) -> ResultReservationAvro:
         """
         Get Reservations
         @param states states
@@ -251,12 +253,16 @@ class ABCActorManagementObject(ABCManagementObject):
         @param node_id node id
         Obtains all reservations with error information in case of failure
         @param caller caller
+        @param host host
+        @param ip_subnet ip subnet
+
         @return returns list of the reservations
         """
 
     def get_slices(self, *, slice_id: ID, caller: AuthToken, slice_name: str = None, email: str = None,
                    states: List[int] = None, project: str = None, limit: int = None,
-                   offset: int = None, user_id: str = None) -> ResultSliceAvro:
+                   offset: int = None, user_id: str = None, search: str = None,
+                   exact_match: bool = False) -> ResultSliceAvro:
         """
         Obtains all slices.
         @param slice_id slice id
@@ -268,7 +274,51 @@ class ABCActorManagementObject(ABCManagementObject):
         @param offset offset
         @param caller caller
         @param user_id user_id
+        @param search: search term applied
+        @param exact_match: Exact Match for Search term
         @return returns list of slices
+        """
+
+    @abstractmethod
+    def increment_metrics(self, *, project_id: str, oidc_sub: str, slice_count: int = 1) -> bool:
+        """
+        Add or update metrics
+
+        @param project_id project id
+        @param oidc_sub oidc sub
+        @param slice_count slice_count
+
+        @return true or false
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def get_metrics(self, *, project_id: str, oidc_sub: str, excluded_projects: List[str] = None) -> list:
+        """
+        Get metrics
+
+        @param project_id project id
+        @param oidc_sub oidc sub
+        @param excluded_projects excluded_projects
+
+        @return list of metric information
+
+        @throws Exception in case of error
+        """
+
+    def get_slice_count(self, *, caller: AuthToken, email: str = None, states: List[int] = None,
+                        project: str = None, user_id: str = None, excluded_projects: List[str] = None) -> int:
+        """
+        Obtains Slice count matching the filter criteria.
+
+        @param email email
+        @param project project id
+        @param states slice states
+        @param caller caller
+        @param user_id user_id
+        @param excluded_projects excluded_projects
+        @return returns number of slices
         """
 
     def remove_slice(self, *, slice_id: ID, caller: AuthToken) -> ResultAvro:
@@ -277,4 +327,20 @@ class ABCActorManagementObject(ABCManagementObject):
         @param slice_id slice id
         @param caller caller
         @return true for success; false otherwise
+        """
+
+    def build_broker_query_model(self, level_0_broker_query_model: str, level: int,
+                                 graph_format: GraphFormat = GraphFormat.GRAPHML,
+                                 start: datetime = None, end: datetime = None, includes: str = None,
+                                 excludes: str = None) -> str:
+        """
+        Build the BQM Model using current usage
+        @param level_0_broker_query_model Capacity Model
+        @param level: level of details
+        @param graph_format: Graph Format
+        @param start: start time
+        @param end: end time
+        @param includes: comma separated lists of sites to include
+        @param excludes: comma separated lists of sites to exclude
+        @return BQM
         """

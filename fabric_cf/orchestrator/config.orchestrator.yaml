@@ -49,6 +49,7 @@ runtime:
   rpc.request.timeout.seconds: 1200
   maint.project.id: 990d8a8b-7e50-4d13-a3be-0f133ffa8653
   infrastructure.project.id: 4604cab7-41ff-4c1a-a935-0ca6f20cceeb
+  total_slice_count_seed: 0
   message.max.bytes: 1048588
   rpc.retries: 5
   commit.batch.size: 1
@@ -107,6 +108,7 @@ container:
 bqm:
   # in seconds (default set to 300 seconds)
   refresh-interval: 300
+  local: True
 
 time:
   # This section controls settings, which are generally useful

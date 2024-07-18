@@ -1,7 +1,7 @@
 FROM python:3.11.0
 MAINTAINER Komal Thareja<komal.thareja@gmail.com>
 
-ARG HANDLERS_VER=1.6.3
+ARG HANDLERS_VER=1.7.1
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
@@ -11,6 +11,7 @@ EXPOSE 11000
 
 RUN apt-get update
 RUN apt-get install cron -y
+RUN apt-get install sshpass -y
 
 COPY docker-entrypoint.sh /usr/src/app/
 COPY fabric_cf /usr/src/app/fabric_cf

@@ -123,6 +123,7 @@ class Constants:
     PUBLISH_INTERVAL = "publish-interval"
     REFRESH_INTERVAL = "refresh-interval"
     DELEGATION = "delegation"
+    LOCAL_BQM = "local"
 
     PROPERTY_CLASS_NAME = "ObjectClassName"
     PROPERTY_MODULE_NAME = "ModuleName"
@@ -198,6 +199,7 @@ class Constants:
     STATE_FILE_LOCATION = '/tmp/fabric_actor.tmp'
     MAINT_PROJECT_ID = 'maint.project.id'
     INFRASTRUCTURE_PROJECT_ID = "infrastructure.project.id"
+    TOTAL_SLICE_COUNT_SEED = "total_slice_count_seed"
 
     ELASTIC_TIME = "request.elasticTime"
     ELASTIC_SIZE = "request.elasticSize"
@@ -210,7 +212,11 @@ class Constants:
     QUERY_DETAIL_LEVEL = "query.detail.level"
     BROKER_QUERY_MODEL = "bqm"
     BROKER_QUERY_MODEL_FORMAT = "bqm.format"
+    START = "start"
+    END = "end"
     POOL_TYPE = "neo4j"
+    INCLUDES = "includes"
+    EXCLUDES = "excludes"
 
     UNIT_MODIFY_PROP_MESSAGE_SUFFIX = ".message"
     UNIT_MODIFY_PROP_CODE_SUFFIX = ".code"

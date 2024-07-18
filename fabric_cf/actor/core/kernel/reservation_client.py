@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import datetime
 import json
 import re
 import threading
@@ -304,6 +305,12 @@ class ReservationClient(Reservation, ABCControllerReservation):
         self.resources.update(reservation=self, resource_set=incoming.get_resources())
         self.logger.debug("absorb_update: {}".format(incoming))
 
+        # Clear error message from previous Extend operations
+        self.error_message = ""
+
+        #if self.resources.get_sliver().reservation_info:
+        #    self.resources.get_sliver().reservation_info.error_message = self.error_message
+
         self.policy.update_ticket_complete(reservation=self)
 
     def accept_lease_update(self, *, incoming: ABCReservationMixin, update_data: UpdateData) -> bool:
@@ -422,6 +429,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
         @return true if approved; false otherwise
         """
         approved = True
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if self.requested_term and self.requested_term.get_start_time() > now:
+            self.logger.debug(f"Future Reservation : {self}!")
+            return False
 
         for pred_state in self.redeem_predecessors.values():
             if pred_state.get_reservation() is None or \
@@ -500,34 +511,45 @@ class ReservationClient(Reservation, ABCControllerReservation):
             parent_res = pred_state.get_reservation()
 
             if Constants.PEERED in value1:
+                self.logger.debug(f"KOMAL --- Node MAP:{ifs.get_node_map()} Result: {result}")
                 if parent_res is not None:
                     ns_sliver = parent_res.get_resources().get_sliver()
                     # component_name contains =>  Peered:<peered ns id>:<peer ifs name>
                     al2s_ifs = ns_sliver.interface_info.interfaces.get(result[2])
-                    ifs.labels = Labels.update(ifs.labels, vlan=al2s_ifs.labels.vlan)
-                    ifs.set_node_map(node_map=(Constants.PEERED, value2))
+                    if al2s_ifs:
+                        ifs.labels = Labels.update(ifs.labels, vlan=al2s_ifs.labels.vlan)
+                        ifs.set_node_map(node_map=(Constants.PEERED, value2))
+                    else:
+                        msg = f"Could not determine al2s_ifs: {al2s_ifs} result: {result}"
+                        self.logger.error(msg)
+                        self.fail(message=msg)
                 continue
 
             if parent_res is not None and (parent_res.is_ticketed() or parent_res.is_active()):
                 node_sliver = parent_res.get_resources().get_sliver()
-                component = node_sliver.attached_components_info.get_device(name=value1)
-                graph_id, bqm_component_id = component.get_node_map()
-                graph_id, node_id = node_sliver.get_node_map()
-                ifs.set_node_map(node_map=(node_id, bqm_component_id))
+                # P4 Switch
+                if node_sliver.get_type() == NodeType.Switch:
+                    graph_id, node_id = node_sliver.get_node_map()
+                    ifs.set_node_map(node_map=(str(NodeType.Switch), node_id))
+                else:
+                    component = node_sliver.attached_components_info.get_device(name=value1)
+                    graph_id, bqm_component_id = component.get_node_map()
+                    graph_id, node_id = node_sliver.get_node_map()
+                    ifs.set_node_map(node_map=(node_id, bqm_component_id))
 
-                # For shared NICs grab the MAC & VLAN from corresponding Interface Sliver
-                # maintained in the Parent Reservation Sliver
-                if component.get_type() == ComponentType.SharedNIC:
-                    parent_res_ifs_sliver = FimHelper.get_site_interface_sliver(component=component,
-                                                                                local_name=ifs.get_labels().local_name)
-                    parent_labs = parent_res_ifs_sliver.get_label_allocations()
+                    # For shared NICs grab the MAC & VLAN from corresponding Interface Sliver
+                    # maintained in the Parent Reservation Sliver
+                    if component.get_type() == ComponentType.SharedNIC:
+                        parent_res_ifs_sliver = FimHelper.get_site_interface_sliver(component=component,
+                                                                                    local_name=ifs.get_labels().local_name)
+                        parent_labs = parent_res_ifs_sliver.get_label_allocations()
 
-                    if component.get_model() == Constants.OPENSTACK_VNIC_MODEL:
-                        ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, bdf=parent_labs.bdf,
-                                                   instance_parent=f"{parent_res.get_reservation_id()}-{node_sliver.get_name()}")
-                    else:
-                        ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan,
-                                                   bdf=parent_labs.bdf)
+                        if component.get_model() == Constants.OPENSTACK_VNIC_MODEL:
+                            ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, bdf=parent_labs.bdf,
+                                                       instance_parent=f"{parent_res.get_reservation_id()}-{node_sliver.get_name()}")
+                        else:
+                            ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan,
+                                                       bdf=parent_labs.bdf)
 
             self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {sliver}")
 
@@ -607,9 +629,9 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
         return self.last_ticket_update.successful()
 
-    def clear_notice(self, clear_fail: bool=False):
-        self.last_ticket_update.clear()
-        self.last_lease_update.clear()
+    def clear_notice(self, clear_fail: bool = False):
+        self.last_ticket_update.clear(clear_fail=clear_fail)
+        self.last_lease_update.clear(clear_fail=clear_fail)
 
     def do_relinquish(self):
         """
@@ -864,9 +886,11 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if self.last_ticket_update is not None:
             if self.last_ticket_update.get_message() is not None and self.last_ticket_update.get_message() != "":
                 result += f"{self.last_ticket_update.get_message()}, "
-            ev = self.last_ticket_update.get_events()
-            if ev is not None and ev != "":
-                result += f"events: {ev}, "
+            # Include events only in case of failure
+            if self.last_ticket_update.is_failed():
+                ev = self.last_ticket_update.get_events()
+                if ev is not None and ev != "":
+                    result += f"events: {ev}, "
             result = result[:-2]
         return result
 
@@ -875,9 +899,11 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if self.last_lease_update is not None:
             if self.last_lease_update.get_message() is not None and self.last_lease_update.get_message() != "":
                 result += f"{self.last_lease_update.get_message()}, "
-            ev = self.last_lease_update.get_events()
-            if ev is not None and ev != "":
-                result += f"events: {ev}, "
+            # Include events only in case of failure
+            if self.last_lease_update.is_failed():
+                ev = self.last_lease_update.get_events()
+                if ev is not None and ev != "":
+                    result += f"events: {ev}, "
             result = result[:-2]
         return result
 

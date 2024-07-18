@@ -34,7 +34,7 @@ class TestSlicesController(BaseTestCase):
             '//slices/create',
             method='POST',
             data=json.dumps(body),
-            content_type='text/plain',
+            content_type='application/json',
             query_string=query_string)
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
@@ -46,6 +46,7 @@ class TestSlicesController(BaseTestCase):
         """
         body = SlicesPost()
         query_string = [('name', 'name_example'),
+                        ('lease_start_time', 'lease_start_time_example'),
                         ('lease_end_time', 'lease_end_time_example')]
         response = self.client.open(
             '//slices/creates',
@@ -84,6 +85,8 @@ class TestSlicesController(BaseTestCase):
         Retrieve a listing of user slices
         """
         query_string = [('name', 'name_example'),
+                        ('search', 'search_example'),
+                        ('exact_match', false),
                         ('as_self', true),
                         ('states', 'states_example'),
                         ('limit', 200),

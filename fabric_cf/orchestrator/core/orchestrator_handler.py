@@ -27,7 +27,7 @@ import time
 import traceback
 from datetime import datetime, timedelta, timezone
 from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.poa_avro import PoaAvro
@@ -64,7 +64,11 @@ class OrchestratorHandler:
         self.logger = self.globals.get_logger()
         self.jwks_url = self.globals.get_config().get_oauth_config().get(Constants.PROPERTY_CONF_O_AUTH_JWKS_URL, None)
         self.pdp_config = self.globals.get_config().get_global_config().get_pdp_config()
-        self.infrastructure_project_id = self.globals.get_config().get_runtime_config().get(Constants.INFRASTRUCTURE_PROJECT_ID, None)
+        self.config = self.globals.get_config()
+        self.infrastructure_project_id = self.config.get_runtime_config().get(Constants.INFRASTRUCTURE_PROJECT_ID, None)
+        self.total_slice_count_seed = self.config.get_runtime_config().get(Constants.TOTAL_SLICE_COUNT_SEED, 0)
+        self.local_bqm = self.globals.get_config().get_global_config().get_bqm_config().get(
+                    Constants.LOCAL_BQM, False)
 
     def get_logger(self):
         """
@@ -114,7 +118,8 @@ class OrchestratorHandler:
 
     def discover_broker_query_model(self, *, controller: ABCMgmtControllerMixin, token: str = None,
                                     level: int = 10, graph_format: GraphFormat = GraphFormat.GRAPHML,
-                                    force_refresh: bool = False) -> str or None:
+                                    force_refresh: bool = False, start: datetime = None,
+                                    end: datetime = None, includes: str = None, excludes: str = None) -> str or None:
         """
         Discover all the available resources by querying Broker
         :param controller Management Controller Object
@@ -122,39 +127,68 @@ class OrchestratorHandler:
         :param level: level of details
         :param graph_format: Graph format
         :param force_refresh: Force fetching a fresh model from Broker
+        :param start: start time
+        :param end: end time
+        :param includes: comma separated lists of sites to include
+        :param excludes: comma separated lists of sites to exclude
         :return str or None
         """
         broker_query_model = None
-        saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format, level=level)
-        if saved_bqm is not None:
-            if not force_refresh and not saved_bqm.can_refresh() and not saved_bqm.refresh_in_progress:
-                broker_query_model = saved_bqm.get_bqm()
-            else:
-                saved_bqm.start_refresh()
+        # Always get Fresh copy for advanced resource requests
+        if not start and not end and not includes and not excludes and \
+                (level <= 1 or graph_format == GraphFormat.JSON_NODELINK):
+            saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format, level=level)
+            if saved_bqm is not None:
+                if not force_refresh and not saved_bqm.can_refresh() and not saved_bqm.refresh_in_progress:
+                    broker_query_model = saved_bqm.get_bqm()
+                else:
+                    saved_bqm.start_refresh()
 
         if broker_query_model is None:
-            broker = self.get_broker(controller=controller)
-            if broker is None:
-                raise OrchestratorException("Unable to determine broker proxy for this controller. "
-                                            "Please check Orchestrator container configuration and logs.")
+            if self.local_bqm and level == 2 and not force_refresh:
+                saved_bqm = self.controller_state.get_saved_bqm(graph_format=GraphFormat.GRAPHML, level=0)
+                if saved_bqm and saved_bqm.get_bqm() and len(saved_bqm.get_bqm()):
+                    broker_query_model = controller.build_broker_query_model(level_0_broker_query_model=saved_bqm.get_bqm(),
+                                                                             level=level, graph_format=graph_format,
+                                                                             start=start, end=end, includes=includes,
+                                                                             excludes=excludes)
+            # Request the model from Broker as a fallback
+            if not broker_query_model:
+                broker = self.get_broker(controller=controller)
+                if broker is None:
+                    raise OrchestratorException("Unable to determine broker proxy for this controller. "
+                                                "Please check Orchestrator container configuration and logs.")
 
-            model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
-                                                      graph_format=graph_format)
-            if model is None or model.get_model() is None or model.get_model() == '':
-                raise OrchestratorException(http_error_code=NOT_FOUND, message=f"Resource(s) not found for "
-                                                                               f"level: {level} format: {graph_format}!")
-            broker_query_model = model.get_model()
+                model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
+                                                          graph_format=graph_format, start=start, end=end,
+                                                          includes=includes, excludes=excludes)
+                if model is None or model.get_model() is None or model.get_model() == '':
+                    raise OrchestratorException(http_error_code=NOT_FOUND, message=f"Resource(s) not found for "
+                                                                                   f"level: {level} format: {graph_format}!")
 
-            self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format, level=level)
+                broker_query_model = model.get_model()
+
+            # Do not update cache for advance requests
+            if not start and not end and not includes and not excludes and \
+                    (level <= 1 or graph_format == GraphFormat.JSON_NODELINK):
+                self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format, level=level)
 
         return broker_query_model
 
-    def list_resources(self, *, token: str, level: int, force_refresh: bool = False) -> dict:
+    def list_resources(self, *, level: int, force_refresh: bool = False, start: datetime = None,
+                       end: datetime, includes: str = None, excludes: str = None, graph_format_str: str = None,
+                       token: str = None, authorize: bool = True) -> str:
         """
         List Resources
         :param token Fabric Identity Token
         :param level: level of details (default set to 1)
         :param force_refresh: force fetching bqm from broker and override the cached model
+        :param start: start time
+        :param end: end time
+        :param includes: comma separated lists of sites to include
+        :param excludes: comma separated lists of sites to exclude
+        :param graph_format_str: Graph format
+        :param authorize: Authorize the request; Not authorized for Portal requests
         :raises Raises an exception in case of failure
         :returns Broker Query Model on success
         """
@@ -162,48 +196,30 @@ class OrchestratorHandler:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"list_resources invoked controller:{controller}")
 
-            self.__authorize_request(id_token=token, action_id=ActionId.query)
-            
-            broker_query_model = self.discover_broker_query_model(controller=controller, token=token, level=level,
-                                                                  force_refresh=force_refresh)
+            graph_format = self.__translate_graph_format(graph_format=graph_format_str) if graph_format_str else GraphFormat.GRAPHML
 
-            return ResponseBuilder.get_broker_query_model_summary(bqm=broker_query_model)
+            if authorize:
+                self.__authorize_request(id_token=token, action_id=ActionId.query)
+            broker_query_model = self.discover_broker_query_model(controller=controller, token=token, level=level,
+                                                                  force_refresh=force_refresh, start=start,
+                                                                  end=end, includes=includes, excludes=excludes,
+                                                                  graph_format=graph_format)
+            return broker_query_model
 
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing list_resources e: {e}")
             raise e
 
-    def portal_list_resources(self, *, graph_format_str: str) -> dict:
-        """
-        List Resources
-        :param graph_format_str: Graph format
-        :raises Raises an exception in case of failure
-        :returns Broker Query Model on success
-        """
-        try:
-            controller = self.controller_state.get_management_actor()
-            self.logger.debug(f"portal_list_resources invoked controller:{controller}")
-
-            broker_query_model = None
-            graph_format = self.__translate_graph_format(graph_format=graph_format_str)
-            broker_query_model = self.discover_broker_query_model(controller=controller, level=1,
-                                                                  graph_format=graph_format)
-            return ResponseBuilder.get_broker_query_model_summary(bqm=broker_query_model)
-
-        except Exception as e:
-            self.logger.error(traceback.format_exc())
-            self.logger.error(f"Exception occurred processing portal_list_resources e: {e}")
-            raise e
-
     def create_slice(self, *, token: str, slice_name: str, slice_graph: str, ssh_key: str,
-                     lease_end_time: str) -> List[dict]:
+                     lease_start_time: datetime = None, lease_end_time: datetime = None) -> List[dict]:
         """
         Create a slice
         :param token Fabric Identity Token
         :param slice_name Slice Name
         :param slice_graph Slice Graph Model
         :param ssh_key: User ssh key
+        :param lease_start_time: Lease Start Time (UTC)
         :param lease_end_time: Lease End Time (UTC)
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
@@ -219,8 +235,9 @@ class OrchestratorHandler:
             fabric_token = AccessChecker.validate_and_decode_token(token=token)
             project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
-            end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time, allow_long_lived=allow_long_lived,
-                                                      project_id=project)
+            start_time, end_time = self.__compute_lease_end_time(lease_end_time=lease_end_time,
+                                                                 allow_long_lived=allow_long_lived,
+                                                                 project_id=project, lease_start_time=lease_start_time)
 
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
@@ -238,7 +255,7 @@ class OrchestratorHandler:
             # Authorize the slice
             create_ts = time.time()
             self.__authorize_request(id_token=token, action_id=ActionId.create, resource=topology,
-                                                    lease_end_time=end_time)
+                                     lease_end_time=end_time)
             self.logger.info(f"PDP authorize: TIME= {time.time() - create_ts:.0f}")
 
             # Check if an Active slice exists already with the same name for the user
@@ -270,6 +287,7 @@ class OrchestratorHandler:
                                                    Constants.TAGS: tags,
                                                    Constants.CLAIMS_EMAIL: fabric_token.email,
                                                    Constants.TOKEN_HASH: fabric_token.token_hash})
+            slice_obj.set_lease_start(lease_start=start_time)
             slice_obj.set_lease_end(lease_end=end_time)
             auth = AuthAvro()
             auth.name = self.controller_state.get_management_actor().get_name()
@@ -319,6 +337,7 @@ class OrchestratorHandler:
             EventLoggerSingleton.get().log_slice_event(slice_object=slice_obj, action=ActionId.create,
                                                        topology=topology)
 
+            controller.increment_metrics(project_id=project, oidc_sub=fabric_token.uuid)
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
             if slice_id is not None and controller is not None and asm_graph is not None:
@@ -379,7 +398,7 @@ class OrchestratorHandler:
             raise e
 
     def get_slices(self, *, token: str, states: List[str], name: str, limit: int, offset: int,
-                   as_self: bool = True) -> List[dict]:
+                   as_self: bool = True, search: str = None, exact_match: bool = False) -> List[dict]:
         """
         Get User Slices
         :param token Fabric Identity Token
@@ -388,6 +407,8 @@ class OrchestratorHandler:
         :param limit Number of slices to return
         :param offset Offset
         :param as_self flag; True - return calling user's slices otherwise, return all slices in the project
+        :param search: search term applied
+        :param exact_match: Exact Match for Search term
         :raises Raises an exception in case of failure
         :returns List of Slices on success
         """
@@ -484,20 +505,28 @@ class OrchestratorHandler:
 
             FimHelper.delete_graph(graph_id=slice_obj.get_graph_id())
 
+            # Slice has sliver modifications - add/remove/update for slivers requiring AM updates
+            modify_state = slice_object.has_sliver_updates_at_authority()
+
             slice_obj.graph_id = asm_graph.get_graph_id()
             config_props = slice_obj.get_config_properties()
             config_props[Constants.PROJECT_ID] = project
             config_props[Constants.TAGS] = ','.join(tags)
             config_props[Constants.TOKEN_HASH] = fabric_token.token_hash
             slice_obj.set_config_properties(value=config_props)
+            slice_obj.state = SliceState.Modifying.value
 
-            if not controller.update_slice(slice_obj=slice_obj, modify_state=True):
+            if not controller.update_slice(slice_obj=slice_obj, modify_state=modify_state):
                 self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")
 
-            # Enqueue the slice on the demand thread
-            # Demand thread is responsible for demanding the reservations
-            # Helps improve the create response time
-            self.controller_state.get_defer_thread().queue_slice(controller_slice=slice_object)
+            if modify_state:
+                # Enqueue the slice on the demand thread
+                # Demand thread is responsible for demanding the reservations
+                # Helps improve the create response time
+                self.controller_state.get_defer_thread().queue_slice(controller_slice=slice_object)
+            # Sliver has meta data update
+            else:
+                self.logger.debug("Slice only has UserData updates")
 
             EventLoggerSingleton.get().log_slice_event(slice_object=slice_obj, action=ActionId.modify,
                                                        topology=topology)
@@ -536,7 +565,9 @@ class OrchestratorHandler:
                           SliceState.StableError.value,
                           SliceState.StableOK.value,
                           SliceState.ModifyOK.value,
-                          SliceState.ModifyError.value]
+                          SliceState.ModifyError.value,
+                          SliceState.AllocatedError.value,
+                          SliceState.AllocatedOK.value]
             slice_list = controller.get_slices(slice_id=slice_guid, user_id=fabric_token.uuid,
                                                project=project, states=states)
 
@@ -553,7 +584,8 @@ class OrchestratorHandler:
                     self.logger.debug(f"Slice# {slice_object.get_slice_id()} already closed")
                     continue
 
-                if not SliceState.is_stable(state=slice_state) and not SliceState.is_modified(state=slice_state):
+                if not SliceState.is_stable(state=slice_state) and not SliceState.is_modified(state=slice_state) and \
+                        not SliceState.is_allocated(state=slice_state):
                     self.logger.info(f"Unable to delete Slice# {slice_object.get_slice_id()} that is not yet stable, "
                                      f"try again later")
                     failed_to_delete_slice_ids.append(slice_object.get_slice_id())
@@ -594,16 +626,22 @@ class OrchestratorHandler:
 
             slice_obj = next(iter(slice_list))
             slice_state = SliceState(slice_obj.get_state())
-            if not SliceState.is_modified(state=slice_state):
-                self.logger.info(f"Unable to accept modify Slice# {slice_guid} that was not modified")
-                raise OrchestratorException(f"Unable to accept modify Slice# {slice_guid} that was not modified")
+            # Do not throw error if modify accept is received for a stable slice
+            # Just return the success with slice topology
+            #if not SliceState.is_modified(state=slice_state):
+            #    self.logger.info(f"Unable to accept modify Slice# {slice_guid} that was not modified")
+            #    raise OrchestratorException(f"Unable to accept modify Slice# {slice_guid} that was not modified")
 
             if slice_obj.get_graph_id() is None:
                 raise OrchestratorException(f"Slice# {slice_obj} does not have graph id")
 
-            slice_topology = FimHelper.prune_graph(graph_id=slice_obj.get_graph_id())
+            if not SliceState.is_modified(state=slice_state):
+                slice_topology = FimHelper.get_graph(graph_id=slice_obj.get_graph_id())
+            # Prune the slice topology only if slice was modified
+            else:
+                slice_topology = FimHelper.prune_graph(graph_id=slice_obj.get_graph_id())
 
-            controller.accept_update_slice(slice_id=ID(uid=slice_id))
+                controller.accept_update_slice(slice_id=ID(uid=slice_id))
 
             slice_model_str = slice_topology.serialize()
             return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_model=slice_model_str)[0]
@@ -664,7 +702,7 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")
             raise e
 
-    def renew_slice(self, *, token: str, slice_id: str, new_lease_end_time: str):
+    def renew_slice(self, *, token: str, slice_id: str, new_lease_end_time: datetime):
         """
         Renew a slice
         :param token Fabric Identity Token
@@ -674,6 +712,7 @@ class OrchestratorHandler:
         :return:
         """
         failed_to_extend_rid_list = []
+        extend_rid_list = []
         try:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"renew_slice invoked for Controller: {controller}")
@@ -702,9 +741,9 @@ class OrchestratorHandler:
             fabric_token = AccessChecker.validate_and_decode_token(token=token)
             project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
-            new_end_time = self.__validate_lease_end_time(lease_end_time=new_lease_end_time,
-                                                          allow_long_lived=allow_long_lived,
-                                                          project_id=project)
+            start_time, new_end_time = self.__compute_lease_end_time(lease_end_time=new_lease_end_time,
+                                                                     allow_long_lived=allow_long_lived,
+                                                                     project_id=project)
 
             reservations = controller.get_reservations(slice_id=slice_id)
             if reservations is None or len(reservations) < 1:
@@ -728,6 +767,9 @@ class OrchestratorHandler:
                 if new_end_time < current_end_time:
                     raise OrchestratorException(f"Attempted new term end time is shorter than current slice end time")
 
+                if new_end_time == current_end_time:
+                    continue
+
                 self.logger.debug(f"Extending reservation with reservation# {r.get_reservation_id()}")
                 result = controller.extend_reservation(reservation=ID(uid=r.get_reservation_id()),
                                                        new_end_time=new_end_time,
@@ -735,15 +777,24 @@ class OrchestratorHandler:
                 if not result:
                     self.logger.error(f"Error: {controller.get_last_error()}")
                     failed_to_extend_rid_list.append(r.get_reservation_id())
+                else:
+                    extend_rid_list.append(r.get_reservation_id())
 
+            '''
             if len(failed_to_extend_rid_list) == 0:
                 slice_object.set_lease_end(lease_end=new_end_time)
                 if not controller.update_slice(slice_obj=slice_object):
                     self.logger.error(f"Failed to update lease end time: {new_end_time} in Slice: {slice_object}")
                     self.logger.error(controller.get_last_error())
+            '''
 
             if len(failed_to_extend_rid_list) > 0:
                 raise OrchestratorException(f"Failed to extend reservation# {failed_to_extend_rid_list}")
+
+            if len(extend_rid_list):
+                slice_object.state = SliceState.Configuring.value
+                if not controller.update_slice(slice_obj=slice_object, modify_state=True):
+                    self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")
 
             EventLoggerSingleton.get().log_slice_event(slice_object=slice_object, action=ActionId.renew)
         except Exception as e:
@@ -751,41 +802,60 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing renew e: {e}")
             raise e
 
-    def __validate_lease_end_time(self, lease_end_time: str, allow_long_lived: bool = False,
-                                  project_id: str = None) -> datetime:
+    @staticmethod
+    def validate_lease_time(lease_time: str) -> Union[datetime, None]:
+        """
+        Validate Lease Time
+        :param lease_time: Lease Time
+        :return Lease Time
+        :raises Exception if new lease time is in past
+        """
+        if lease_time is None:
+            return lease_time
+        try:
+            new_time = datetime.strptime(lease_time, Constants.LEASE_TIME_FORMAT)
+        except Exception as e:
+            raise OrchestratorException(f"Lease Time is not in format {Constants.LEASE_TIME_FORMAT}",
+                                        http_error_code=BAD_REQUEST)
+
+        now = datetime.now(timezone.utc)
+        if new_time <= now:
+            raise OrchestratorException(f"New lease time {new_time} is in the past! ",
+                                        http_error_code=BAD_REQUEST)
+
+        return new_time
+
+    def __compute_lease_end_time(self, lease_end_time: datetime, allow_long_lived: bool = False,
+                                 project_id: str = None, lease_start_time: datetime = None) -> Tuple[datetime, datetime]:
         """
         Validate Lease End Time
         :param lease_end_time: New End Time
         :param allow_long_lived: Allow long lived tokens
         :param project_id: Project Id
+        :param lease_start_time: New Start Time
         :return End Time
         :raises Exception if new end time is in past
         """
+        base_time = datetime.now(timezone.utc)
+        if lease_start_time and lease_start_time > base_time:
+            base_time = lease_start_time
         if lease_end_time is None:
-            new_end_time = datetime.now(timezone.utc) + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
-            return new_end_time
-        try:
-            new_end_time = datetime.strptime(lease_end_time, Constants.LEASE_TIME_FORMAT)
-        except Exception as e:
-            raise OrchestratorException(f"Lease End Time is not in format {Constants.LEASE_TIME_FORMAT}",
-                                        http_error_code=BAD_REQUEST)
+            new_end_time = base_time + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
+            return base_time, new_end_time
 
-        now = datetime.now(timezone.utc)
-        if new_end_time <= now:
-            raise OrchestratorException(f"New term end time {new_end_time} is in the past! ",
-                                        http_error_code=BAD_REQUEST)
+        new_end_time = lease_end_time
 
         if allow_long_lived:
             default_long_lived_duration = Constants.LONG_LIVED_SLICE_TIME_WEEKS
         else:
             default_long_lived_duration = Constants.DEFAULT_MAX_DURATION
-        if project_id not in self.infrastructure_project_id and (new_end_time - now) > default_long_lived_duration:
+        if project_id not in self.infrastructure_project_id and (new_end_time - base_time) > default_long_lived_duration:
             self.logger.info(f"New term end time {new_end_time} exceeds system default "
                              f"{default_long_lived_duration}, setting to system default: ")
 
-            new_end_time = now + default_long_lived_duration
+            new_end_time = base_time + default_long_lived_duration
 
-        return new_end_time
+        return base_time, new_end_time
 
     @staticmethod
     def __translate_graph_format(*, graph_format: str) -> GraphFormat:
@@ -830,7 +900,7 @@ class OrchestratorHandler:
 
             rid = ID(uid=sliver_id) if sliver_id is not None else None
 
-            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.modify)
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.POA)
             user_id = fabric_token.uuid
             project, tags, project_name = fabric_token.first_project
 
@@ -903,4 +973,45 @@ class OrchestratorHandler:
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing poa e: {e}")
+            raise e
+
+    def get_metrics_overview(self, *, token: str = None, excluded_projects: List[str] = None):
+        """
+        Get metrics overview
+        """
+        try:
+            controller = self.controller_state.get_management_actor()
+            self.logger.debug(f"get_metrics_overview invoked for Controller: {controller}")
+
+            project = None
+            user_id = None
+            # Filter based on project_id and user_id when token is provided
+            if token:
+                fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
+                projects = fabric_token.projects
+                if len(projects) == 1:
+                    project, tags, project_name = fabric_token.first_project
+                user_id = fabric_token.uuid
+
+            active_states = SliceState.list_values_ex_closing_dead()
+            active_slice_count = controller.get_slice_count(states=active_states, user_id=user_id, project=project,
+                                                            excluded_projects=excluded_projects)
+            non_active_metrics = controller.get_metrics(oidc_sub=user_id, project_id=project,
+                                                        excluded_projects=excluded_projects)
+            total_slices = 0
+            for m in non_active_metrics:
+                total_slices += m.get("slice_count", 0)
+            if not user_id and not project:
+                # Get Seed value from config
+                total_slices += self.total_slice_count_seed
+            result = {
+                "slices": {
+                    "active_cumulative": active_slice_count,
+                    "non_active_cumulative": total_slices
+                }
+            }
+            return result
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing get_metrics_overview e: {e}")
             raise e

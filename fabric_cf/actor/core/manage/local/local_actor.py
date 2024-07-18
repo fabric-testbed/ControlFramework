@@ -57,7 +57,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
                    states: List[int] = None, limit: int = None, offset: int = None,
-                   user_id: str = None) -> List[SliceAvro] or None:
+                   user_id: str = None, search: str = None, exact_match: bool = False) -> List[SliceAvro] or None:
         self.clear_last()
         try:
             result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, states=states,
@@ -71,6 +71,30 @@ class LocalActor(LocalProxy, ABCMgmtActor):
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
+
+    def increment_metrics(self, *, project_id: str, oidc_sub: str, slice_count: int = 1) -> bool:
+        try:
+            return self.manager.increment_metrics(project_id=project_id, oidc_sub=oidc_sub, slice_count=slice_count)
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+        return False
+
+    def get_metrics(self, *, project_id: str, oidc_sub: str, excluded_projects: List[str] = None) -> list:
+        try:
+            return self.manager.get_metrics(project_id=project_id, oidc_sub=oidc_sub,
+                                            excluded_projects=excluded_projects)
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+    def get_slice_count(self, *, email: str = None, project: str = None, states: List[int] = None,
+                        user_id: str = None, excluded_projects: List[str] = None) -> int:
+        try:
+            return self.manager.get_slice_count(caller=self.auth, states=states, email=email, project=project,
+                                                user_id=user_id, excluded_projects=excluded_projects)
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+        return -1
 
     def remove_slice(self, *, slice_id: ID) -> bool:
         self.clear_last()
@@ -86,12 +110,14 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
     def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
-                         type: str = None, site: str = None, node_id: str = None) -> List[ReservationMng]:
+                         type: str = None, site: str = None, node_id: str = None,
+                         host: str = None, ip_subnet: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
             result = self.manager.get_reservations(caller=self.auth, states=states, slice_id=slice_id, rid=rid,
                                                    oidc_claim_sub=oidc_claim_sub, email=email, rid_list=rid_list,
-                                                   type=type, site=site, node_id=node_id)
+                                                   type=type, site=site, node_id=node_id, host=host,
+                                                   ip_subnet=ip_subnet)
             self.last_status = result.status
 
             if result.status.get_code() == 0:

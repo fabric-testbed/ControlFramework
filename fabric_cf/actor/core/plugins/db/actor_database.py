@@ -201,7 +201,8 @@ class ActorDatabase(ABCDatabase):
 
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, project_id: str = None, email: str = None,
                    states: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
-                   limit: int = None, offset: int = None, lease_end: datetime = None) -> List[ABCSlice] or None:
+                   limit: int = None, offset: int = None, lease_end: datetime = None,
+                   search: str = None, exact_match: bool = False) -> List[ABCSlice] or None:
         result = []
         try:
             try:
@@ -212,7 +213,7 @@ class ActorDatabase(ABCDatabase):
                 sid = str(slice_id) if slice_id is not None else None
                 slices = self.db.get_slices(slice_id=sid, slice_name=slice_name, project_id=project_id, email=email,
                                             states=states, oidc_sub=oidc_sub, slc_type=slice_type, limit=limit,
-                                            offset=offset, lease_end=lease_end)
+                                            offset=offset, lease_end=lease_end, search=search, exact_match=exact_match)
             finally:
                 if self.lock.locked():
                     self.lock.release()
@@ -229,6 +230,46 @@ class ActorDatabase(ABCDatabase):
                 self.lock.release()
         return result
 
+    def increment_metrics(self, *, project_id: str, oidc_sub: str, slice_count: int = 1) -> bool:
+        try:
+            self.lock.acquire()
+            self.db.increment_metrics(project_id=project_id, user_id=oidc_sub, slice_count=slice_count)
+            return True
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error(traceback.format_exc())
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+        return False
+
+    def get_metrics(self, *, project_id: str, oidc_sub: str, excluded_projects: List[str] = None) -> list:
+        try:
+            return self.db.get_metrics(project_id=project_id, user_id=oidc_sub, excluded_projects=excluded_projects)
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error(traceback.format_exc())
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+
+    def get_slice_count(self, *, project_id: str = None, email: str = None, states: list[int] = None,
+                        oidc_sub: str = None, slc_type: List[SliceTypes] = None,
+                        excluded_projects: List[str] = None) -> int:
+        try:
+            slice_type = [SliceTypes.ClientSlice.value]
+            if slc_type is not None:
+                slice_type = [x.value for x in slc_type]
+            return self.db.get_slice_count(project_id=project_id, email=email, states=states, oidc_sub=oidc_sub,
+                                           slc_type=slice_type, excluded_projects=excluded_projects)
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error(traceback.format_exc())
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+        return -1
+
     def add_reservation(self, *, reservation: ABCReservationMixin):
         try:
             #self.lock.acquire()
@@ -244,22 +285,63 @@ class ActorDatabase(ABCDatabase):
             site = None
             rsv_type = None
             components = None
-            if reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
+            host = None
+            ip_subnet = None
+            sliver = None
+            from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
+            if isinstance(reservation, ReservationClient) and reservation.get_leased_resources() and \
+                    reservation.get_leased_resources().get_sliver():
+                sliver = reservation.get_leased_resources().get_sliver()
+            if not sliver and reservation.get_resources() and reservation.get_resources().get_sliver():
                 sliver = reservation.get_resources().get_sliver()
-                site = sliver.get_site()
+
+            if sliver:
                 rsv_type = sliver.get_type().name
                 from fim.slivers.network_service import NetworkServiceSliver
+                from fim.slivers.network_node import NodeSliver
+
                 if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
+                    site = sliver.get_site()
+                    if sliver.get_gateway():
+                        ip_subnet = sliver.get_gateway().subnet
+
                     components = []
                     for interface in sliver.interface_info.interfaces.values():
                         graph_id_node_id_component_id, bqm_if_name = interface.get_node_map()
-                        if ":" in graph_id_node_id_component_id:
-                            split_string = graph_id_node_id_component_id.split(":")
+                        if ":" in graph_id_node_id_component_id or "#" in graph_id_node_id_component_id:
+                            if "#" in graph_id_node_id_component_id:
+                                split_string = graph_id_node_id_component_id.split("#")
+                            else:
+                                split_string = graph_id_node_id_component_id.split(":")
                             node_id = split_string[1] if len(split_string) > 1 else None
                             comp_id = split_string[2] if len(split_string) > 2 else None
                             bdf = ":".join(split_string[3:]) if len(split_string) > 3 else None
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
+
+                elif isinstance(sliver, NodeSliver):
+                    site = sliver.get_site()
+                    if sliver.get_labels() and sliver.get_labels().instance_parent:
+                        host = sliver.get_labels().instance_parent
+                    if sliver.get_label_allocations() and sliver.get_label_allocations().instance_parent:
+                        host = sliver.get_label_allocations().instance_parent
+                    if sliver.get_management_ip():
+                        ip_subnet = str(sliver.get_management_ip())
+
+                    node_id = reservation.get_graph_node_id()
+                    if node_id and sliver.attached_components_info:
+                        components = []
+                        for c in sliver.attached_components_info.devices.values():
+                            if c.get_node_map():
+                                bqm_id, comp_id = c.get_node_map()
+                                if c.labels and c.labels.bdf:
+                                    bdf = c.labels.bdf
+                                    if isinstance(c.labels.bdf, str):
+                                        bdf = [c.labels.bdf]
+                                    for x in bdf:
+                                        components.append((node_id, comp_id, x))
+
+            term = reservation.get_term()
 
             self.db.add_reservation(slc_guid=str(reservation.get_slice_id()),
                                     rsv_resid=str(reservation.get_reservation_id()),
@@ -270,7 +352,10 @@ class ActorDatabase(ABCDatabase):
                                     properties=properties,
                                     rsv_graph_node_id=reservation.get_graph_node_id(),
                                     oidc_claim_sub=oidc_claim_sub, email=email, site=site, rsv_type=rsv_type,
-                                    components=components)
+                                    components=components,
+                                    lease_start=term.get_start_time() if term else None,
+                                    lease_end=term.get_end_time() if term else None,
+                                    host=host, ip_subnet=ip_subnet)
             self.logger.debug(
                 "Reservation {} added to slice {}".format(reservation.get_reservation_id(), reservation.get_slice()))
         finally:
@@ -290,23 +375,62 @@ class ActorDatabase(ABCDatabase):
             site = None
             rsv_type = None
             components = None
-            if reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
+            ip_subnet = None
+            host = None
+            sliver = None
+            from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
+            if isinstance(reservation, ReservationClient) and reservation.get_leased_resources() and \
+                    reservation.get_leased_resources().get_sliver():
+                sliver = reservation.get_leased_resources().get_sliver()
+            if not sliver and reservation.get_resources() and reservation.get_resources().get_sliver():
                 sliver = reservation.get_resources().get_sliver()
-                site = sliver.get_site()
+
+            if sliver:
                 rsv_type = sliver.get_type().name
                 from fim.slivers.network_service import NetworkServiceSliver
+                from fim.slivers.network_node import NodeSliver
                 if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
+                    site = sliver.get_site()
+
+                    if sliver.get_gateway():
+                        ip_subnet = sliver.get_gateway().subnet
+
                     components = []
                     for interface in sliver.interface_info.interfaces.values():
                         graph_id_node_id_component_id, bqm_if_name = interface.get_node_map()
-                        if ":" in graph_id_node_id_component_id:
-                            split_string = graph_id_node_id_component_id.split(":")
+                        if ":" in graph_id_node_id_component_id or "#" in graph_id_node_id_component_id:
+                            if "#" in graph_id_node_id_component_id:
+                                split_string = graph_id_node_id_component_id.split("#")
+                            else:
+                                split_string = graph_id_node_id_component_id.split(":")
                             node_id = split_string[1] if len(split_string) > 1 else None
                             comp_id = split_string[2] if len(split_string) > 2 else None
                             bdf = ":".join(split_string[3:]) if len(split_string) > 3 else None
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
+                elif isinstance(sliver, NodeSliver):
+                    site = sliver.get_site()
 
+                    if sliver.get_labels() and sliver.get_labels().instance_parent:
+                        host = sliver.get_labels().instance_parent
+                    if sliver.get_label_allocations() and sliver.get_label_allocations().instance_parent:
+                        host = sliver.get_label_allocations().instance_parent
+                    if sliver.get_management_ip():
+                        ip_subnet = str(sliver.get_management_ip())
+                    node_id = reservation.get_graph_node_id()
+                    if node_id and sliver.attached_components_info:
+                        components = []
+                        for c in sliver.attached_components_info.devices.values():
+                            if c.get_node_map():
+                                bqm_id, comp_id = c.get_node_map()
+                                if c.labels and c.labels.bdf:
+                                    bdf = c.labels.bdf
+                                    if isinstance(c.labels.bdf, str):
+                                        bdf = [c.labels.bdf]
+                                    for x in bdf:
+                                        components.append((node_id, comp_id, x))
+
+            term = reservation.get_term()
             begin = time.time()
             properties = pickle.dumps(reservation)
             diff = int(time.time() - begin)
@@ -321,7 +445,10 @@ class ActorDatabase(ABCDatabase):
                                        rsv_joining=reservation.get_join_state().value,
                                        properties=properties,
                                        rsv_graph_node_id=reservation.get_graph_node_id(),
-                                       site=site, rsv_type=rsv_type, components=components)
+                                       site=site, rsv_type=rsv_type, components=components,
+                                       lease_start=term.get_start_time() if term else None,
+                                       lease_end=term.get_end_time() if term else None,
+                                       ip_subnet=ip_subnet, host=host)
             diff = int(time.time() - begin)
             if diff > 0:
                 self.logger.info(f"DB TIME: {diff}")
@@ -458,10 +585,11 @@ class ActorDatabase(ABCDatabase):
         return result
 
     def get_components(self, *, node_id: str, states: list[int], rsv_type: list[str], component: str = None,
-                       bdf: str = None) -> Dict[str, List[str]]:
+                       bdf: str = None, start: datetime = None, end: datetime = None,
+                       excludes: List[str] = None) -> Dict[str, List[str]]:
         try:
             return self.db.get_components(node_id=node_id, states=states, component=component, bdf=bdf,
-                                          rsv_type=rsv_type)
+                                          rsv_type=rsv_type, start=start, end=end, excludes=excludes)
         except Exception as e:
             self.logger.error(e)
         finally:
@@ -469,17 +597,17 @@ class ActorDatabase(ABCDatabase):
                 self.lock.release()
 
     def get_reservations(self, *, slice_id: ID = None, graph_node_id: str = None, project_id: str = None,
-                         email: str = None, oidc_sub: str = None, rid: ID = None,
-                         states: list[int] = None, site: str = None,
-                         rsv_type: list[str] = None) -> List[ABCReservationMixin]:
+                         email: str = None, oidc_sub: str = None, rid: ID = None, states: list[int] = None,
+                         site: str = None, rsv_type: list[str] = None, start: datetime = None,
+                         end: datetime = None, ip_subnet: str = None, host: str = None) -> List[ABCReservationMixin]:
         result = []
         try:
             #self.lock.acquire()
             sid = str(slice_id) if slice_id is not None else None
             res_id = str(rid) if rid is not None else None
-            res_dict_list = self.db.get_reservations(slice_id=sid, graph_node_id=graph_node_id,
+            res_dict_list = self.db.get_reservations(slice_id=sid, graph_node_id=graph_node_id, host=host, ip_subnet=ip_subnet,
                                                      project_id=project_id, email=email, oidc_sub=oidc_sub, rid=res_id,
-                                                     states=states, site=site, rsv_type=rsv_type)
+                                                     states=states, site=site, rsv_type=rsv_type, start=start, end=end)
             if self.lock.locked():
                self.lock.release()
             result = self._load_reservations_from_db(res_dict_list=res_dict_list)

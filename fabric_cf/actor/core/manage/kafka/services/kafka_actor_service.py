@@ -283,7 +283,8 @@ class KafkaActorService(KafkaService):
 
             result = mo.get_reservations(caller=auth, states=request.get_states(), slice_id=slice_id,
                                          rid=rid, email=request.get_email(), type=request.get_type(),
-                                         site=request.get_site())
+                                         site=request.get_site(), ip_subnet=request.get_ip_subnet(),
+                                         host=request.get_host())
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

@@ -29,7 +29,6 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, List, Tuple, Dict
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
-from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.poa_info_avro import PoaInfoAvro
 from fabric_mb.message_bus.messages.site_avro import SiteAvro
 
@@ -47,7 +46,7 @@ class ABCMgmtActor(ABCComponent):
     @abstractmethod
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
                    states: List[int] = None, limit: int = None, offset: int = None,
-                   user_id: str = None) -> List[SliceAvro] or None:
+                   user_id: str = None, search: str = None, exact_match: bool = False) -> List[SliceAvro] or None:
         """
         Obtains all slices.
         @param slice_id slice id
@@ -58,8 +57,51 @@ class ABCMgmtActor(ABCComponent):
         @param limit limit
         @param offset offset
         @param user_id user_id
+        @param search: search term applied
+        @param exact_match: Exact Match for Search term
         @return returns list of slices
         """
+
+    def increment_metrics(self, *, project_id: str, oidc_sub: str, slice_count: int = 1) -> bool:
+        """
+        Add or update metrics
+
+        @param project_id project id
+        @param oidc_sub oidc sub
+        @param slice_count slice_count
+
+        @return true or false
+
+        @throws Exception in case of error
+        """
+        raise NotImplementedError
+
+    def get_metrics(self, *, project_id: str, oidc_sub: str, excluded_projects: List[str] = None) -> list:
+        """
+        Get metrics
+
+        @param project_id project id
+        @param oidc_sub oidc sub
+        @param excluded_projects excluded_projects
+
+        @return list of metric information
+
+        @throws Exception in case of error
+        """
+        raise NotImplementedError
+
+    def get_slice_count(self, *, email: str = None, project: str = None, states: List[int] = None,
+                        user_id: str = None, excluded_projects: List[str] = None) -> int:
+        """
+        Obtains slice count.
+        @param email email
+        @param project project id
+        @param states slice states
+        @param user_id user_id
+        @param excluded_projects excluded_projects
+        @return returns list of slices
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def add_slice(self, *, slice_obj: SliceAvro) -> ID:
@@ -108,7 +150,8 @@ class ABCMgmtActor(ABCComponent):
     @abstractmethod
     def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
-                         type: str = None, site: str = None, node_id: str = None) -> List[ReservationMng]:
+                         type: str = None, site: str = None, node_id: str = None,
+                         host: str = None, ip_subnet: str = None) -> List[ReservationMng]:
         """
         Get Reservations
         @param states states
@@ -120,6 +163,8 @@ class ABCMgmtActor(ABCComponent):
         @param type type of reservations like NodeSliver/NetworkServiceSliver
         @param site site
         @param node_id node id
+        @param ip_subnet ip subnet
+        @param host host
         Obtains all reservations
         @return returns list of the reservations
         """

@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import os
 import time
 import traceback
 
@@ -32,6 +33,8 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.util.graceful_interrupt_handler import GracefulInterruptHandler
 from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
 from fabric_cf.broker.core.broker_kernel import BrokerKernelSingleton
+
+DEBUG_MODE = False
 
 
 def main():
@@ -50,6 +53,42 @@ def main():
             # prometheus server
             prometheus_port = int(runtime_config.get(Constants.PROPERTY_CONF_PROMETHEUS_REST_PORT, None))
             prometheus_client.start_http_server(prometheus_port)
+
+            actor = GlobalsSingleton.get().get_container().get_actor()
+            policy = actor.get_policy()
+
+            if DEBUG_MODE:
+                site_ads = ['../../../neo4j/Network-dev.graphml',
+                            '../../../neo4j/LBNL.graphml',
+                            '../../../neo4j/RENC.graphml',
+                            '../../../neo4j/UKY.graphml',
+                            '../../../neo4j/AL2S.graphml']
+
+                adm_ids = dict()
+                for ad in site_ads:
+                    from fabric_cf.actor.fim.fim_helper import FimHelper
+                    n4j_imp = FimHelper.get_neo4j_importer()
+                    plain_neo4j = n4j_imp.import_graph_from_file_direct(graph_file=ad)
+                    print(f"Validating ARM graph {ad}")
+                    plain_neo4j.validate_graph()
+
+                    from fim.graph.resources.neo4j_arm import Neo4jARMGraph
+                    from fim.graph.neo4j_property_graph import Neo4jPropertyGraph
+                    site_arm = Neo4jARMGraph(graph=Neo4jPropertyGraph(graph_id=plain_neo4j.graph_id,
+                                                                      importer=n4j_imp))
+                    # generate a dict of ADMs from site graph ARM
+                    site_adms = site_arm.generate_adms()
+                    print('ADMS' + str(site_adms.keys()))
+
+                    # desired ADM is under 'primary'
+                    site_adm = site_adms['primary']
+                    policy.combined_broker_model.merge_adm(adm=site_adm)
+
+                    print('Deleting ADM and ARM graphs')
+                    for adm in site_adms.values():
+                        adm_ids[ad] = adm.graph_id
+                        adm.delete_graph()
+                    site_arm.delete_graph()
 
             while True:
                 time.sleep(0.0001)

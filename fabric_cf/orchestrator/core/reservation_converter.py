@@ -45,13 +45,14 @@ class ReservationConverter:
         self.controller = controller
         self.broker = broker
 
-    def generate_reservation(self, *, sliver: BaseSliver, slice_id: str, end_time: datetime,
+    def generate_reservation(self, *, sliver: BaseSliver, slice_id: str, end_time: datetime, start_time: datetime = None,
                              pred_list: List[str] = None) -> LeaseReservationAvro:
         """
         Responsible to generate reservation from the sliver
         :param sliver Network Service or Network Node Sliver
         :param slice_id Slice Id
         :param end_time End Time
+        :param start_time Start Time
         :param pred_list Predecessor Reservation Id List
         :returns list of tickets
         """
@@ -67,6 +68,9 @@ class ReservationConverter:
         ticket.set_units(1)
         ticket.set_resource_type(str(sliver.get_type()))
         start = datetime.now(timezone.utc)
+        if start_time and start_time > start:
+            start = start_time
+
         end = start + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
         if end_time is not None:
             end = end_time

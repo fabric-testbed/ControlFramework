@@ -93,7 +93,7 @@ class KafkaProxy(ABCComponent):
     def fill_request_by_id_message(self, request: RequestByIdRecord, id_token: str = None, email: str = None,
                                    slice_id: ID = None, slice_name: str = None, states: List[int] = None,
                                    rid: ID = None, delegation_id: str = None, broker_id: ID = None, type: str = None,
-                                   site: str = None):
+                                   site: str = None, host: str = None, ip_subnet: str = None):
         request.guid = str(self.management_id)
         request.auth = self.auth
         request.callback_topic = self.callback_topic
@@ -104,6 +104,8 @@ class KafkaProxy(ABCComponent):
         request.delegation_id = delegation_id
         request.site = site
         request.type = type
+        request.ip_subnet = ip_subnet
+        request.host = host
         if slice_id is not None:
             request.slice_id = str(slice_id)
         if rid is not None:

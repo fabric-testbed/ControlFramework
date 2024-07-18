@@ -16,6 +16,8 @@ servers:
 - url: https://virtserver.swaggerhub.com/kthare10/orchestrator/1.0.1
   description: SwaggerHub API Auto Mocking
 tags:
+- name: metrics
+  description: Control Framework Metrics
 - name: slices
   description: Slices in FABRIC
 - name: slivers
@@ -46,6 +48,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/status_500_internal_server_error'
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.version_controller
+  /metrics/overview:
+    get:
+      tags:
+      - metrics
+      summary: Control Framework metrics overview
+      description: Control Framework metrics overview
+      operationId: metrics_overview_get
+      parameters:
+      - name: excluded_projects
+        in: query
+        description: List of projects to exclude from the metrics overview
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/metrics'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_400_bad_request'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_401_unauthorized'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_403_forbidden'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_404_not_found'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_500_internal_server_error'
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.metrics_controller
   /resources:
     get:
       tags:
@@ -76,6 +134,42 @@ paths:
         schema:
           type: boolean
           default: false
+      - name: start_date
+        in: query
+        description: starting date to check availability from
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: 2023-01-01 16:20:15 +00:00
+      - name: end_date
+        in: query
+        description: end date to check availability until
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: 2023-01-01 16:20:15 +00:00
+      - name: includes
+        in: query
+        description: comma separated lists of sites to include
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "RENC,UKY"
+      - name: excludes
+        in: query
+        description: comma separated lists of sites to exclude
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "SRI,LBNL"
       responses:
         "200":
           description: OK
@@ -137,6 +231,60 @@ paths:
           - JSON_NODELINK
           - CYTOSCAPE
           default: GRAPHML
+      - name: level
+        in: query
+        description: Level of details
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          default: 1
+      - name: force_refresh
+        in: query
+        description: Force to retrieve current available resource information.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: start_date
+        in: query
+        description: starting date to check availability from
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: 2023-01-01 16:20:15 +00:00
+      - name: end_date
+        in: query
+        description: end date to check availability until
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: 2023-01-01 16:20:15 +00:00
+      - name: includes
+        in: query
+        description: comma separated lists of sites to include
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "RENC,UKY"
+      - name: excludes
+        in: query
+        description: comma separated lists of sites to exclude
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "SRI,LBNL"
       responses:
         "200":
           description: OK
@@ -194,6 +342,23 @@ paths:
         schema:
           minLength: 3
           type: string
+      - name: search
+        in: query
+        description: search term applied
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: exact_match
+        in: query
+        description: Exact Match for Search term
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
       - name: as_self
         in: query
         description: GET object as Self
@@ -223,6 +388,8 @@ paths:
             - Modifying
             - ModifyOK
             - ModifyError
+            - AllocatedOK
+            - AllocatedError
             - All
       - name: limit
         in: query
@@ -474,6 +641,15 @@ paths:
         schema:
           minLength: 3
           type: string
+      - name: lease_start_time
+        in: query
+        description: Lease End Time for the Slice
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: 2023-01-01 16:20:15 +00:00
       - name: lease_end_time
         in: query
         description: Lease End Time for the Slice
@@ -482,6 +658,7 @@ paths:
         explode: true
         schema:
           type: string
+          example: 2023-01-01 16:20:15 +00:00
       requestBody:
         $ref: '#/components/requestBodies/payload_slices_create'
       responses:
@@ -1388,6 +1565,16 @@ components:
           default: Internal Server Error
         details:
           type: string
+    metrics:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/status_200_ok_single'
+      - type: object
+        properties:
+          results:
+            type: array
+            items:
+              type: object
     slices:
       type: object
       allOf:
@@ -1433,6 +1620,10 @@ components:
           type: string
         slice_id:
           type: string
+        owner_user_id:
+          type: string
+        owner_email:
+          type: string
     slivers:
       type: object
       allOf:
@@ -1471,6 +1662,10 @@ components:
         slice_id:
           type: string
         sliver_id:
+          type: string
+        owner_user_id:
+          type: string
+        owner_email:
           type: string
     version:
       type: object
@@ -1575,7 +1770,7 @@ components:
   requestBodies:
     Request:
       content:
-        text/plain:
+        application/json:
           schema:
             type: string
       required: true

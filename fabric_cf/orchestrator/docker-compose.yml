@@ -68,7 +68,7 @@ services:
     build:
       context: ../../../
       dockerfile: Dockerfile-orchestrator
-    image: orchestrator:1.6.2
+    image: orchestrator:1.7.0
     container_name: orchestrator
     restart: always
     depends_on:

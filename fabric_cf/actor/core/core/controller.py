@@ -30,6 +30,8 @@ import time
 import traceback
 from typing import TYPE_CHECKING
 
+from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
+from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.base_sliver import BaseSliver
 
 from fabric_cf.actor.boot.configuration import ActorConfig
@@ -83,6 +85,7 @@ class Controller(ActorMixin, ABCController):
         self.asm_update_thread = AsmUpdateThread(name=f"{self.get_name()}-asm-thread", logger=self.logger)
         self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=2,
                                                                  thread_name_prefix=self.__class__.__name__)
+        self.pluggable_registry = PluggableRegistry()
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -107,6 +110,9 @@ class Controller(ActorMixin, ABCController):
         del state['asm_update_thread']
         del state['event_processors']
         del state['thread_pool']
+        if hasattr(self, 'pluggable_registry'):
+            del state['pluggable_registry']
+
         return state
 
     def __setstate__(self, state):
@@ -132,12 +138,15 @@ class Controller(ActorMixin, ABCController):
         self.event_processors = {}
         self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=2,
                                                                  thread_name_prefix=self.__class__.__name__)
+        self.pluggable_registry = PluggableRegistry()
 
     def set_logger(self, logger):
         super(Controller, self).set_logger(logger=logger)
         self.asm_update_thread.set_logger(logger=logger)
 
     def start(self):
+        self.pluggable_registry.register_pluggable(t=PluggableType.Broker, p=AggregatedBQMPlugin, actor=self,
+                                                   logger=self.logger)
         self.asm_update_thread.set_logger(logger=self.logger)
         self.asm_update_thread.start()
         super(Controller, self).start()

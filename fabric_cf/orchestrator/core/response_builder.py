@@ -42,6 +42,8 @@ class ResponseBuilder:
     PROP_NAME = "name"
     PROP_STATE = "state"
     PROP_ERROR = "error"
+    PROP_OWNER_EMAIL = "owner_email"
+    PROP_OWNER_USER_ID = "owner_user_id"
     PROP_PROJECT_ID = "project_id"
     PROP_PROJECT_NAME = "project_name"
     PROP_MODEL = "model"
@@ -121,6 +123,8 @@ class ResponseBuilder:
                       ResponseBuilder.PROP_NAME: s.get_slice_name(),
                       ResponseBuilder.PROP_GRAPH_ID: s.get_graph_id(),
                       ResponseBuilder.PROP_STATE: SliceState(s.get_state()).name,
+                      ResponseBuilder.PROP_OWNER_EMAIL: s.get_owner().get_email(),
+                      ResponseBuilder.PROP_OWNER_USER_ID: s.get_owner().get_oidc_sub_claim()
                       }
             end_time = s.get_lease_end()
             if end_time is not None:

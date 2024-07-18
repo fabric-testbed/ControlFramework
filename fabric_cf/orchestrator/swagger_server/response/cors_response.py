@@ -8,7 +8,7 @@ from flask import request, Response
 from fabric_cf.orchestrator.swagger_server.models import Resources, Slices, Slivers, Version, Status200OkNoContent, \
     SliceDetails, Status200OkNoContentData, Status400BadRequestErrors, Status400BadRequest, Status401UnauthorizedErrors, \
     Status401Unauthorized, Status403ForbiddenErrors, Status403Forbidden, Status404NotFoundErrors, Status404NotFound, \
-    Status500InternalServerErrorErrors, Status500InternalServerError
+    Status500InternalServerErrorErrors, Status500InternalServerError, Metrics
 
 _INDENT = int(os.getenv('OC_API_JSON_RESPONSE_INDENT', '4'))
 
@@ -51,7 +51,7 @@ def cors_response(req: request, status_code: int = 200, body: object = None, x_e
 
 
 def cors_200(response_body: Union[Resources, Slices, SliceDetails, Slivers, Version,
-                                  Status200OkNoContent] = None) -> cors_response:
+                                  Status200OkNoContent, Metrics] = None) -> cors_response:
     """
     Return 200 - OK
     """

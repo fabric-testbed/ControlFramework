@@ -26,6 +26,7 @@
 import threading
 import time
 import traceback
+
 from typing import List, Dict
 
 from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
@@ -583,7 +584,7 @@ class Kernel:
             state_changed, slice_state = slice_obj.transition_slice(operation=SliceStateMachine.REEVALUATE)
             if state_changed:
                 slice_obj.set_dirty()
-                if slice_state == SliceState.Closing:
+                if slice_state in [SliceState.Dead, SliceState.Closing]:
                     slice_avro = Translate.translate_slice_to_avro(slice_obj=slice_obj)
                     EventLoggerSingleton.get().log_slice_event(slice_object=slice_avro, action=ActionId.delete)
             self.plugin.get_database().update_slice(slice_object=slice_obj)
@@ -871,10 +872,11 @@ class Kernel:
             finally:
                 reservation.unlock()
 
-    def modify_slice(self, *, slice_object: ABCSlice):
+    def modify_slice(self, *, slice_object: ABCSlice, new_state: SliceState):
         """
         Modify the specified slice with the kernel.
         @param slice_object slice_object
+        @param new_state new_state
         @throws Exception in case of failure
         """
         if slice_object is None:
@@ -890,7 +892,11 @@ class Kernel:
                 if not real.is_dead_or_closing():
                     real.set_config_properties(value=slice_object.get_config_properties())
                     # Transition slice to Configuring state
-                    real.transition_slice(operation=SliceStateMachine.MODIFY)
+                    if new_state == SliceState.Modifying:
+                        operation = SliceStateMachine.MODIFY
+                    else:
+                        operation = SliceStateMachine.RENEW
+                    real.transition_slice(operation=operation)
                     real.set_graph_id(graph_id=slice_object.get_graph_id())
                     real.set_dirty()
                     self.plugin.get_database().update_slice(slice_object=real)
