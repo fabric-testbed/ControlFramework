@@ -139,7 +139,8 @@ class Poa:
         """
         self.reservation = reservation
         self.actor = actor
-        self.logger = self.actor.get_logger()
+        if actor:
+            self.logger = self.actor.get_logger()
 
         # Update slice/sliver info if available
         if reservation is not None:

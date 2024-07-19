@@ -185,7 +185,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
     def get_slice_count(self, *, caller: AuthToken, email: str = None, states: List[int] = None,
                         project: str = None, user_id: str = None, excluded_projects: List[str] = None) -> int:
         try:
-            return self.db.get_slice_count(email=email, states=states, project_id=project, oidc_sub=user_id)
+            return self.db.get_slice_count(email=email, states=states, project_id=project, oidc_sub=user_id,
+                                           excluded_projects=excluded_projects)
         except Exception as e:
             self.logger.error("get_slice_count {}".format(e))
             return -1
