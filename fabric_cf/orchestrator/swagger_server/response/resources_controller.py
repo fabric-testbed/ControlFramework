@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from datetime import timedelta
+from http.client import BAD_REQUEST
 
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
@@ -62,6 +64,11 @@ def portalresources_get(graph_format: str, level: int = 1, force_refresh: bool =
     try:
         start = handler.validate_lease_time(lease_time=start_date)
         end = handler.validate_lease_time(lease_time=end_date)
+
+        if start and end and (end - start) < timedelta(minutes=60):
+            raise OrchestratorException(http_error_code=BAD_REQUEST,
+                                        message="Time range should be at least 60 minutes long!")
+
         model = handler.list_resources(graph_format_str=graph_format, level=level, force_refresh=force_refresh,
                                        start=start, end=end, includes=includes, excludes=excludes, authorize=False)
         response = Resources()
@@ -108,6 +115,11 @@ def resources_get(level: int = 1, force_refresh: bool = False, start_date: str =
         token = get_token()
         start = handler.validate_lease_time(lease_time=start_date)
         end = handler.validate_lease_time(lease_time=end_date)
+
+        if start and end and (end - start) < timedelta(minutes=60):
+            raise OrchestratorException(http_error_code=BAD_REQUEST,
+                                        message="Time range should be at least 60 minutes long!")
+
         model = handler.list_resources(token=token, level=level, force_refresh=force_refresh,
                                        start=start, end=end, includes=includes, excludes=excludes)
         response = Resources()
