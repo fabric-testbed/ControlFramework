@@ -891,7 +891,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                         if ServiceType.MPLS == ns.get_type():
                             owner_mpls_ns = ns
                             break
-                delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
+                if owner_ns and ServiceType.MPLS == owner_ns.get_type():
+                    delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
+                                                                                      owner_switch.get_label_delegations())
+                else:
+                    delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
                                                                                   owner_ns.get_label_delegations())
 
             # Set the Subnet and gateway from the Owner Switch (a)
