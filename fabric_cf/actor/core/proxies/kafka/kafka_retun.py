@@ -130,8 +130,7 @@ class KafkaReturn(KafkaProxy, ABCControllerCallbackProxy):
         request.caller = caller
         return request
 
-    @staticmethod
-    def pass_reservation(reservation: ABCServerReservation, auth: AuthToken) -> ReservationAvro:
+    def pass_reservation(self, reservation: ABCServerReservation, auth: AuthToken) -> ReservationAvro:
         avro_reservation = ReservationAvro()
         avro_reservation.slice = Translate.translate_slice_to_avro(slice_obj=reservation.get_slice())
         if reservation.get_term() is None:
@@ -158,6 +157,8 @@ class KafkaReturn(KafkaProxy, ABCControllerCallbackProxy):
                 rset.unit_set = Translate.translate_unit_set(unit_set=cset)
 
         avro_reservation.resource_set = rset
+        if self.logger:
+            self.logger.info(f"Outgoing Resource Set: {rset}")
         return avro_reservation
 
     @staticmethod
