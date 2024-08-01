@@ -28,7 +28,7 @@ from typing import List
 from fim.slivers.attached_components import AttachedComponentsInfo
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
-from fim.user import Capacities, ComponentType
+from fim.user import Capacities, ComponentType, Labels
 
 from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -219,12 +219,18 @@ class NetworkNodeControl(ResourceControl):
                         properties=reservation.get_slice().get_config_properties())
             gained = UnitSet(plugin=self.authority.get_plugin(), units={unit.reservation_id: unit})
         else:
-            self.logger.info(f"Extend Lease for now, no modify supported res# {reservation}")
             current_sliver = current.get_sliver()
             diff = current_sliver.diff(other_sliver=requested)
             if diff is not None:
+                if requested.get_label_allocations() and current_sliver.get_label_allocations():
+                    requested.label_allocations = Labels.update(current_sliver.label_allocations)
+                else:
+                    requested.set_label_allocations(current_sliver.get_label_allocations())
+                requested.set_management_ip(current_sliver.get_management_ip())
+
                 # Modify MVP - only handle add components for now
                 if len(diff.added.components) > 0:
+                    self.logger.info(f"Extend Lease - modify add res# {reservation}")
                     self.__check_components(rid=reservation.get_reservation_id(),
                                             requested_components=requested.attached_components_info,
                                             graph_node=graph_node,
@@ -235,13 +241,16 @@ class NetworkNodeControl(ResourceControl):
                                 properties=reservation.get_slice().get_config_properties())
                     modified = UnitSet(plugin=self.authority.get_plugin(), units={unit.reservation_id: unit})
                 elif len(diff.removed.components) > 0 or len(diff.modified.components):
+                    self.logger.info(f"Extend Lease - modify rem/modify res# {reservation}")
                     unit = Unit(rid=reservation.get_reservation_id(), slice_id=reservation.get_slice_id(),
                                 actor_id=self.authority.get_guid(), sliver=requested, rtype=resource_type,
                                 properties=reservation.get_slice().get_config_properties())
                     modified = UnitSet(plugin=self.authority.get_plugin(), units={unit.reservation_id: unit})
                 else:
+                    self.logger.info(f"Extend Lease res# {reservation}")
                     return current
             else:
+                self.logger.info(f"Extend Lease res# {reservation}")
                 return current
 
         result = ResourceSet(gained=gained, modified=modified, lost=lost, rtype=resource_type)
