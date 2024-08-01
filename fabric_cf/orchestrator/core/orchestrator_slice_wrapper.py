@@ -715,5 +715,5 @@ class OrchestratorSliceWrapper:
                                     capacities=sliver.capacities)
 
     def has_sliver_updates_at_authority(self):
-        return len(self.computed_reservations) and len(self.computed_remove_reservations) or \
+        return len(self.computed_reservations) or len(self.computed_remove_reservations) or \
                len(self.computed_modify_reservations) or len(self.computed_modify_properties_reservations)
