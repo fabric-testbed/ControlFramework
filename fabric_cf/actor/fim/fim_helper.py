@@ -316,7 +316,7 @@ class FimHelper:
         return delegation.get_details() if delegation is not None else None
 
     @staticmethod
-    def update_node(*, graph_id: str, sliver: BaseSliver):
+    def update_node(*, graph_id: str, sliver: BaseSliver, res_info: ReservationInfo):
         """
         Update Sliver Node in ASM
         :param graph_id:
@@ -336,7 +336,7 @@ class FimHelper:
             node.set_properties(labels=sliver.labels,
                                 label_allocations=sliver.label_allocations,
                                 capacity_allocations=sliver.capacity_allocations,
-                                reservation_info=sliver.reservation_info,
+                                reservation_info=res_info,
                                 node_map=sliver.node_map,
                                 management_ip=sliver.management_ip,
                                 capacity_hints=sliver.capacity_hints)
@@ -379,7 +379,7 @@ class FimHelper:
             node.set_properties(labels=sliver.labels,
                                 label_allocations=sliver.label_allocations,
                                 capacity_allocations=sliver.capacity_allocations,
-                                reservation_info=sliver.reservation_info,
+                                reservation_info=res_info,
                                 node_map=sliver.node_map,
                                 gateway=sliver.gateway)
             if sliver.interface_info is not None:
