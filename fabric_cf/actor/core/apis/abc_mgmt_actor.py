@@ -151,7 +151,7 @@ class ABCMgmtActor(ABCComponent):
     def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
                          type: str = None, site: str = None, node_id: str = None,
-                         host: str = None, ip_subnet: str = None) -> List[ReservationMng]:
+                         host: str = None, ip_subnet: str = None, full: bool = False) -> List[ReservationMng]:
         """
         Get Reservations
         @param states states
@@ -165,6 +165,7 @@ class ABCMgmtActor(ABCComponent):
         @param node_id node id
         @param ip_subnet ip subnet
         @param host host
+        @param full
         Obtains all reservations
         @return returns list of the reservations
         """

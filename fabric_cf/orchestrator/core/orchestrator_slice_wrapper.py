@@ -640,7 +640,8 @@ class OrchestratorSliceWrapper:
         if req_sliver.labels is not None and req_sliver.labels.ipv4 is not None and len(req_sliver.labels.ipv4) > 0:
             bqm_graph_id, owner_mpls_node_id = req_sliver.get_node_map()
 
-            existing_reservations = self.controller.get_reservations(node_id=owner_mpls_node_id, states=states)
+            existing_reservations = self.controller.get_reservations(node_id=owner_mpls_node_id, states=states,
+                                                                     full=True)
             ip_network = IPv4Network(req_sliver.gateway.lab.ipv4_subnet)
             ipaddress_list = list(ip_network.hosts())
             ipaddress_list.pop(0)
@@ -651,7 +652,7 @@ class OrchestratorSliceWrapper:
                     continue
 
                 if not reservation.get_sliver():
-                    self.logger.warning(f"No sliver found, Skipping reservation: {reservation}")
+                    self.logger.warning(f"No sliver found, Skipping reservation: {reservation.get_reservation_id()}")
                     continue
 
                 if reservation.get_sliver().get_type() != req_sliver.get_type():
