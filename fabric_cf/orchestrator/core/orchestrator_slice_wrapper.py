@@ -650,6 +650,10 @@ class OrchestratorSliceWrapper:
                 if rid == reservation.get_reservation_id():
                     continue
 
+                if not reservation.get_sliver():
+                    self.logger.warning(f"No sliver found, Skipping reservation: {reservation}")
+                    continue
+
                 if reservation.get_sliver().get_type() != req_sliver.get_type():
                     continue
 
