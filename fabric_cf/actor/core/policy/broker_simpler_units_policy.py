@@ -873,6 +873,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.logger.info(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
 
                 owner_v4_service = self.get_ns_from_switch(switch=owner_switch, ns_type=ServiceType.FABNetv4)
+                self.logger.info(f"owner_v4_service: {owner_v4_service}")
                 if owner_v4_service and owner_v4_service.get_labels():
                     ero_source_end_info.append((owner_switch.node_id, owner_v4_service.get_labels().ipv4))
 
@@ -943,11 +944,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 new_path.append(ero_source_end_info[1][1])
 
                 if len(new_path):
+                    '''
                     if not self.validate_requested_ero_path(source_node=ero_source_end_info[0][0],
                                                             end_node=ero_source_end_info[1][0],
                                                             hops=ero_hops):
                         raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                               msg=f"Requested ERO path: {sliver.ero} is invalid!")
+                    '''
                     ero_path = Path()
                     ero_path.set_symmetric(new_path)
                     sliver.ero.set(ero_path)
