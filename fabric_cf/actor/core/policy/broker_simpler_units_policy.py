@@ -922,7 +922,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                               node_id_to_reservations=node_id_to_reservations, term=term)
 
             if sliver.ero and len(sliver.ero.get()) and len(ero_source_end_info) == 2:
-                self.logger.info(f"Requested ERO: {sliver.ero}")
+                self.logger.info(f"Requested ERO: {sliver.ero} {ero_source_end_info}")
                 ero_hops = []
                 new_path = [ero_source_end_info[0][1]]
                 type, path = sliver.ero.get()
