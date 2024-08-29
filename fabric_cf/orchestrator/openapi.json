@@ -704,7 +704,8 @@
               "enum": [
                 "GRAPHML",
                 "JSON_NODELINK",
-                "CYTOSCAPE"
+                "CYTOSCAPE",
+                "NONE"
               ]
             }
           }

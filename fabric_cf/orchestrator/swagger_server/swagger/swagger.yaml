@@ -230,6 +230,7 @@ paths:
           - GRAPHML
           - JSON_NODELINK
           - CYTOSCAPE
+          - NONE
           default: GRAPHML
       - name: level
         in: query
@@ -492,6 +493,7 @@ paths:
           - GRAPHML
           - JSON_NODELINK
           - CYTOSCAPE
+          - NONE
           default: GRAPHML
       responses:
         "200":

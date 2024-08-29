@@ -682,20 +682,22 @@ class OrchestratorHandler:
 
             slice_obj = next(iter(slice_list))
 
-            if slice_obj.get_graph_id() is None:
-                raise OrchestratorException(f"Slice# {slice_obj} does not have graph id")
+            slice_model_str = None
+            if graph_format_str != "NONE":
+                if slice_obj.get_graph_id() is None:
+                    raise OrchestratorException(f"Slice# {slice_obj} does not have graph id")
 
-            slice_model = FimHelper.get_graph(graph_id=slice_obj.get_graph_id())
+                slice_model = FimHelper.get_graph(graph_id=slice_obj.get_graph_id())
 
-            graph_format = self.__translate_graph_format(graph_format=graph_format_str)
-            if graph_format == GraphFormat.JSON_NODELINK:
-                slice_model_str = slice_model.serialize_graph()
-                slice_model = FimHelper.get_networkx_graph_from_string(graph_str=slice_model_str)
+                graph_format = self.__translate_graph_format(graph_format=graph_format_str)
+                if graph_format == GraphFormat.JSON_NODELINK:
+                    slice_model_str = slice_model.serialize_graph()
+                    slice_model = FimHelper.get_networkx_graph_from_string(graph_str=slice_model_str)
 
-            if slice_model is None:
-                raise OrchestratorException(f"Slice# {slice_obj} graph could not be loaded")
+                if slice_model is None:
+                    raise OrchestratorException(f"Slice# {slice_obj} graph could not be loaded")
 
-            slice_model_str = slice_model.serialize_graph(format=graph_format)
+                slice_model_str = slice_model.serialize_graph(format=graph_format)
             return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_model=slice_model_str)[0]
         except Exception as e:
             self.logger.error(traceback.format_exc())
