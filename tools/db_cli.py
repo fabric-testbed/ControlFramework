@@ -94,6 +94,10 @@ class MainClass:
                                                       logger=self.logger)
 
             slice_model = Neo4jPropertyGraph(graph_id=graph_id, importer=neo4j_graph_importer)
+            slice_model_str = slice_model.serialize_graph()
+
+            with open("slice_model_str.txt", "w") as file:
+                file.write(slice_model_str)
 
             print(f"Slice Model: {slice_model}")
         except Exception as e:

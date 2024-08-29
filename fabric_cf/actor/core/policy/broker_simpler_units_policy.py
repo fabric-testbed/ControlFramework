@@ -1004,7 +1004,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                                      ns_type=sliver.get_type())
                 peer_mpls, peer_sw = self.get_network_service_from_graph(node_id=peer_ns_id, parent=True)
 
-            peer_mpls, peer_ns = self.get_ns(switch=peer_sw, ns_type=sliver.get_type())
+            peer_ns = self.get_ns_from_switch(switch=peer_sw, ns_type=sliver.get_type())
 
             bqm_interface = None
             for bifs in owner_mpls.interface_info.interfaces.values():
@@ -1027,7 +1027,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             pfs.set_node_map(node_map=(self.combined_broker_model_graph_id, bqm_interface.node_id))
             if pfs.peer_labels is None:
                 pfs.peer_labels = Labels()
-            pfs.peer_labels = Labels.update(pfs.peer_labels, asn=peer_ns.labels.asn)
+            if peer_ns and peer_ns.labels:
+                pfs.peer_labels = Labels.update(pfs.peer_labels, asn=peer_ns.labels.asn)
             self.logger.info(f"Allocated Peered Interface Sliver: {pfs}")
 
         # Update the Network Service Sliver Node Map
@@ -1386,16 +1387,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             return node_list
         finally:
             self.lock.release()
-
-    def get_ns(self, *, switch: NodeSliver, ns_type: ServiceType) -> Tuple[NetworkServiceSliver, NetworkServiceSliver]:
-        peer_mpls = peer_ns = None
-        for ns in switch.network_service_info.network_services.values():
-            if ServiceType.MPLS == ns.get_type():
-                peer_mpls = ns
-            if ns.get_type() == ns_type:
-                peer_ns = ns
-
-        return peer_mpls, peer_ns
 
     def get_peer_node(self, *, site: str, node_type: str, node_name: str) -> NodeSliver:
         if node_type == str(NodeType.Facility):
