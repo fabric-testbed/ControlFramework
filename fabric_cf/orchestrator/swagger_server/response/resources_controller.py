@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 from http.client import BAD_REQUEST
 
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
@@ -64,6 +64,15 @@ def portalresources_get(graph_format: str, level: int = 1, force_refresh: bool =
     try:
         start = handler.validate_lease_time(lease_time=start_date)
         end = handler.validate_lease_time(lease_time=end_date)
+
+        # Check if 'start' is defined but 'end' is not
+        if start and not end:
+            now = datetime.now(timezone.utc)
+
+            # Check if the current time is within 10 minutes from 'start'
+            if now - start < timedelta(minutes=10):
+                # Reset start to None so as the cache is used
+                start = None
 
         if start and end and (end - start) < timedelta(minutes=60):
             raise OrchestratorException(http_error_code=BAD_REQUEST,
@@ -115,6 +124,15 @@ def resources_get(level: int = 1, force_refresh: bool = False, start_date: str =
         token = get_token()
         start = handler.validate_lease_time(lease_time=start_date)
         end = handler.validate_lease_time(lease_time=end_date)
+
+        # Check if 'start' is defined but 'end' is not
+        if start and not end:
+            now = datetime.now(timezone.utc)
+
+            # Check if the current time is within 10 minutes from 'start'
+            if now - start < timedelta(minutes=10):
+                # Reset start to None so as the cache is used
+                start = None
 
         if start and end and (end - start) < timedelta(minutes=60):
             raise OrchestratorException(http_error_code=BAD_REQUEST,
