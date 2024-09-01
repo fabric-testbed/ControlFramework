@@ -119,7 +119,8 @@ class OrchestratorHandler:
     def discover_broker_query_model(self, *, controller: ABCMgmtControllerMixin, token: str = None,
                                     level: int = 10, graph_format: GraphFormat = GraphFormat.GRAPHML,
                                     force_refresh: bool = False, start: datetime = None,
-                                    end: datetime = None, includes: str = None, excludes: str = None) -> str or None:
+                                    end: datetime = None, includes: str = None, excludes: str = None,
+                                    email: str = None) -> str or None:
         """
         Discover all the available resources by querying Broker
         :param controller Management Controller Object
@@ -158,6 +159,9 @@ class OrchestratorHandler:
                 if broker is None:
                     raise OrchestratorException("Unable to determine broker proxy for this controller. "
                                                 "Please check Orchestrator container configuration and logs.")
+
+                self.logger.info(f"Sending Query to broker on behalf of {email} Start: {start}, End: {end}, "
+                                 f"Force: {force_refresh}, Level: {level}")
 
                 model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
                                                           graph_format=graph_format, start=start, end=end,
@@ -199,11 +203,14 @@ class OrchestratorHandler:
             graph_format = self.__translate_graph_format(graph_format=graph_format_str) if graph_format_str else GraphFormat.GRAPHML
 
             if authorize:
-                self.__authorize_request(id_token=token, action_id=ActionId.query)
+                fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
+                email = fabric_token.email
+            else:
+                email = None
             broker_query_model = self.discover_broker_query_model(controller=controller, token=token, level=level,
                                                                   force_refresh=force_refresh, start=start,
                                                                   end=end, includes=includes, excludes=excludes,
-                                                                  graph_format=graph_format)
+                                                                  graph_format=graph_format, email=email)
             return broker_query_model
 
         except Exception as e:
