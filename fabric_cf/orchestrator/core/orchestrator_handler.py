@@ -173,8 +173,7 @@ class OrchestratorHandler:
                 broker_query_model = model.get_model()
 
             # Do not update cache for advance requests
-            if not start and not end and not includes and not excludes and \
-                    (level <= 1 or graph_format == GraphFormat.JSON_NODELINK):
+            if not start and not end and not includes and not excludes:
                 self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format, level=level)
 
         return broker_query_model
