@@ -136,8 +136,7 @@ class OrchestratorHandler:
         """
         broker_query_model = None
         # Always get Fresh copy for advanced resource requests
-        if not start and not end and not includes and not excludes and \
-                (level <= 1 or graph_format == GraphFormat.JSON_NODELINK):
+        if not start and not end and not includes and not excludes:
             saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format, level=level)
             if saved_bqm is not None:
                 if not force_refresh and not saved_bqm.can_refresh() and not saved_bqm.refresh_in_progress:
@@ -145,6 +144,7 @@ class OrchestratorHandler:
                 else:
                     saved_bqm.start_refresh()
 
+        '''
         if broker_query_model is None:
             if self.local_bqm and level == 2 and not force_refresh:
                 saved_bqm = self.controller_state.get_saved_bqm(graph_format=GraphFormat.GRAPHML, level=0)
@@ -153,24 +153,25 @@ class OrchestratorHandler:
                                                                              level=level, graph_format=graph_format,
                                                                              start=start, end=end, includes=includes,
                                                                              excludes=excludes)
-            # Request the model from Broker as a fallback
-            if not broker_query_model:
-                broker = self.get_broker(controller=controller)
-                if broker is None:
-                    raise OrchestratorException("Unable to determine broker proxy for this controller. "
-                                                "Please check Orchestrator container configuration and logs.")
+        '''
+        # Request the model from Broker as a fallback
+        if not broker_query_model:
+            broker = self.get_broker(controller=controller)
+            if broker is None:
+                raise OrchestratorException("Unable to determine broker proxy for this controller. "
+                                            "Please check Orchestrator container configuration and logs.")
 
-                self.logger.info(f"Sending Query to broker on behalf of {email} Start: {start}, End: {end}, "
-                                 f"Force: {force_refresh}, Level: {level}")
+            self.logger.info(f"Sending Query to broker on behalf of {email} Start: {start}, End: {end}, "
+                             f"Force: {force_refresh}, Level: {level}")
 
-                model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
-                                                          graph_format=graph_format, start=start, end=end,
-                                                          includes=includes, excludes=excludes)
-                if model is None or model.get_model() is None or model.get_model() == '':
-                    raise OrchestratorException(http_error_code=NOT_FOUND, message=f"Resource(s) not found for "
-                                                                                   f"level: {level} format: {graph_format}!")
+            model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
+                                                      graph_format=graph_format, start=start, end=end,
+                                                      includes=includes, excludes=excludes)
+            if model is None or model.get_model() is None or model.get_model() == '':
+                raise OrchestratorException(http_error_code=NOT_FOUND, message=f"Resource(s) not found for "
+                                                                               f"level: {level} format: {graph_format}!")
 
-                broker_query_model = model.get_model()
+            broker_query_model = model.get_model()
 
             # Do not update cache for advance requests
             if not start and not end and not includes and not excludes:
