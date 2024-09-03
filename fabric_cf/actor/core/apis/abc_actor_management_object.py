@@ -239,7 +239,7 @@ class ABCActorManagementObject(ABCManagementObject):
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
                          email: str = None, rid_list: List[str] = None, type: str = None,
                          site: str = None, node_id: str = None,
-                         host: str = None, ip_subnet: str = None) -> ResultReservationAvro:
+                         host: str = None, ip_subnet: str = None, full: bool = False) -> ResultReservationAvro:
         """
         Get Reservations
         @param states states
@@ -255,6 +255,7 @@ class ABCActorManagementObject(ABCManagementObject):
         @param caller caller
         @param host host
         @param ip_subnet ip subnet
+        @param full
 
         @return returns list of the reservations
         """

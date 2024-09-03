@@ -873,6 +873,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.logger.info(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
 
                 owner_v4_service = self.get_ns_from_switch(switch=owner_switch, ns_type=ServiceType.FABNetv4)
+                self.logger.info(f"owner_v4_service: {owner_v4_service}")
                 if owner_v4_service and owner_v4_service.get_labels():
                     ero_source_end_info.append((owner_switch.node_id, owner_v4_service.get_labels().ipv4))
 
@@ -891,8 +892,12 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                         if ServiceType.MPLS == ns.get_type():
                             owner_mpls_ns = ns
                             break
-                delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
-                                                                                  owner_ns.get_label_delegations())
+                if owner_ns and ServiceType.MPLS == owner_ns.get_type():
+                    delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
+                                                                                      owner_switch.get_label_delegations())
+                else:
+                    delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
+                                                                                      owner_ns.get_label_delegations())
 
             # Set the Subnet and gateway from the Owner Switch (a)
             existing_reservations = self.get_existing_reservations(node_id=owner_ns_id,
@@ -917,7 +922,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                               node_id_to_reservations=node_id_to_reservations, term=term)
 
             if sliver.ero and len(sliver.ero.get()) and len(ero_source_end_info) == 2:
-                self.logger.info(f"Requested ERO: {sliver.ero}")
+                self.logger.info(f"Requested ERO: {sliver.ero} {ero_source_end_info}")
                 ero_hops = []
                 new_path = [ero_source_end_info[0][1]]
                 type, path = sliver.ero.get()
@@ -939,11 +944,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 new_path.append(ero_source_end_info[1][1])
 
                 if len(new_path):
+                    '''
                     if not self.validate_requested_ero_path(source_node=ero_source_end_info[0][0],
                                                             end_node=ero_source_end_info[1][0],
                                                             hops=ero_hops):
                         raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                               msg=f"Requested ERO path: {sliver.ero} is invalid!")
+                    '''
                     ero_path = Path()
                     ero_path.set_symmetric(new_path)
                     sliver.ero.set(ero_path)
@@ -997,7 +1004,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                                      ns_type=sliver.get_type())
                 peer_mpls, peer_sw = self.get_network_service_from_graph(node_id=peer_ns_id, parent=True)
 
-            peer_mpls, peer_ns = self.get_ns(switch=peer_sw, ns_type=sliver.get_type())
+            peer_ns = self.get_ns_from_switch(switch=peer_sw, ns_type=sliver.get_type())
 
             bqm_interface = None
             for bifs in owner_mpls.interface_info.interfaces.values():
@@ -1020,7 +1027,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             pfs.set_node_map(node_map=(self.combined_broker_model_graph_id, bqm_interface.node_id))
             if pfs.peer_labels is None:
                 pfs.peer_labels = Labels()
-            pfs.peer_labels = Labels.update(pfs.peer_labels, asn=peer_ns.labels.asn)
+            if peer_ns and peer_ns.labels:
+                pfs.peer_labels = Labels.update(pfs.peer_labels, asn=peer_ns.labels.asn)
             self.logger.info(f"Allocated Peered Interface Sliver: {pfs}")
 
         # Update the Network Service Sliver Node Map
@@ -1379,16 +1387,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             return node_list
         finally:
             self.lock.release()
-
-    def get_ns(self, *, switch: NodeSliver, ns_type: ServiceType) -> Tuple[NetworkServiceSliver, NetworkServiceSliver]:
-        peer_mpls = peer_ns = None
-        for ns in switch.network_service_info.network_services.values():
-            if ServiceType.MPLS == ns.get_type():
-                peer_mpls = ns
-            if ns.get_type() == ns_type:
-                peer_ns = ns
-
-        return peer_mpls, peer_ns
 
     def get_peer_node(self, *, site: str, node_type: str, node_name: str) -> NodeSliver:
         if node_type == str(NodeType.Facility):

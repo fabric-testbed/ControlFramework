@@ -55,6 +55,7 @@ runtime:
   commit.batch.size: 1
   enable.auto.commit: False
   consumer.poll.timeout: 250
+  excluded.projects: 990d8a8b-7e50-4d13-a3be-0f133ffa8653, 4604cab7-41ff-4c1a-a935-0ca6f20cceeb, 990d8a8b-7e50-4d13-a3be-0f133ffa8653
 
 logging:
   ## The directory in which actor should create log files.

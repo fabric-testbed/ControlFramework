@@ -185,7 +185,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
     def get_slice_count(self, *, caller: AuthToken, email: str = None, states: List[int] = None,
                         project: str = None, user_id: str = None, excluded_projects: List[str] = None) -> int:
         try:
-            return self.db.get_slice_count(email=email, states=states, project_id=project, oidc_sub=user_id)
+            return self.db.get_slice_count(email=email, states=states, project_id=project, oidc_sub=user_id,
+                                           excluded_projects=excluded_projects)
         except Exception as e:
             self.logger.error("get_slice_count {}".format(e))
             return -1
@@ -431,7 +432,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
                          email: str = None, rid_list: List[str] = None, type: str = None,
                          site: str = None, node_id: str = None, host: str = None,
-                         ip_subnet: str = None) -> ResultReservationAvro:
+                         ip_subnet: str = None, full: bool = False) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -464,7 +465,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     r_slice_id = r.get_slice_id()
                     slice_obj = self.get_slice_by_guid(guid=r_slice_id)
                     r.restore(actor=self.actor, slice_obj=slice_obj)
-                    full = True if slice_id or rid else False
+                    if not full:
+                        full = True if slice_id or rid else False
                     rr = Converter.fill_reservation(reservation=r, full=full)
                     result.reservations.append(rr)
         except ReservationNotFoundException as e:

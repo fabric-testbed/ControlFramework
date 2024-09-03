@@ -1837,9 +1837,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
             if asm_thread is not None:
                 asm_thread.enqueue(graph_id=self.slice.get_graph_id(),
                                    sliver=sliver, rid=str(self.rid),
-                                   reservation_state=self.state.name,
+                                   reservation_state=str(self.state),
                                    error_message=error_message)
-            self.logger.debug(f"Update ASM completed for  Reservation# {self.rid} State# {self.get_reservation_state()} "
+            self.logger.debug(f"Update ASM completed for  Reservation# {self.rid} "
+                              f"State# {self.get_reservation_state()} "
                               f"Slice Graph# {self.slice.get_graph_id()}")
 
         except Exception as e:

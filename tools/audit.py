@@ -240,6 +240,30 @@ class MainClass:
         ansible_helper.run_playbook(playbook_path=playbook_path, private_key_file=private_key_file, user=user)
         return ansible_helper.get_result_callback()
 
+    def clean_sliver_close_fail(self):
+        try:
+            actor_type = self.actor_config[Constants.TYPE]
+            if actor_type.lower() != ActorType.Broker.name.lower():
+                return
+            actor_db = ActorDatabase(user=self.database_config[Constants.PROPERTY_CONF_DB_USER],
+                                     password=self.database_config[Constants.PROPERTY_CONF_DB_PASSWORD],
+                                     database=self.database_config[Constants.PROPERTY_CONF_DB_NAME],
+                                     db_host=self.database_config[Constants.PROPERTY_CONF_DB_HOST],
+                                     logger=self.logger)
+
+            states = [ReservationStates.CloseFail.value]
+            slivers = actor_db.get_reservations(states=states)
+            for s in slivers:
+                term = s.get_term()
+                end = term.get_end_time() if term else None
+                now = datetime.now(timezone.utc)
+                if end and end <= now:
+                    actor_db.remove_reservation(rid=s.get_reservation_id())
+
+        except Exception as e:
+            self.logger.error(f"Failed to cleanup inconsistencies: {e}")
+            self.logger.error(traceback.format_exc())
+
     def clean_sliver_inconsistencies(self):
         try:
             actor_type = self.actor_config[Constants.TYPE]
@@ -371,6 +395,7 @@ class MainClass:
             # Close operation
             if args.operation is not None and args.operation == "audit":
                 self.delete_dead_closing_slice(days=args.days)
+                self.clean_sliver_close_fail()
                 self.clean_sliver_inconsistencies()
             else:
                 print(f"Unsupported operation: {args.operation}")

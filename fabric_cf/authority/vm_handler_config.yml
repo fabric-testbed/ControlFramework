@@ -52,7 +52,6 @@ runtime:
     docker_rocky_9: rocky
     docker_ubuntu_20: ubuntu
     docker_ubuntu_22: ubuntu
-    attestable_bmv2_v1_ubuntu_20: ubuntu
     attestable_bmv2_v2_ubuntu_20: ubuntu
 playbooks:
   location: /etc/fabric/actor/playbooks

@@ -42,12 +42,17 @@ class AsmUpdateException(Exception):
 
 
 class AsmEvent:
-    def __init__(self, *, graph_id: str, sliver: BaseSliver):
+    def __init__(self, *, graph_id: str, sliver: BaseSliver, reservation_id: str,
+                 state: str, error_message: str):
         self.graph_id = graph_id
         self.sliver = sliver
+        self.reservation_id = reservation_id
+        self.state = state
+        self.error_message = error_message
 
     def process(self):
-        FimHelper.update_node(graph_id=self.graph_id, sliver=self.sliver)
+        FimHelper.update_node(graph_id=self.graph_id, sliver=self.sliver, reservation_id=self.reservation_id,
+                              state=self.state, error_message=self.error_message)
 
 
 class AsmUpdateThread:
@@ -118,13 +123,8 @@ class AsmUpdateThread:
     def enqueue(self, *, graph_id: str, sliver: BaseSliver, rid: str, reservation_state: str,
                 error_message: str):
         try:
-            if sliver.reservation_info is None:
-                sliver.reservation_info = ReservationInfo()
-            sliver.reservation_info.reservation_id = rid
-            sliver.reservation_info.reservation_state = reservation_state
-            sliver.reservation_info.error_message = error_message
-
-            event = AsmEvent(graph_id=graph_id, sliver=sliver)
+            event = AsmEvent(graph_id=graph_id, sliver=sliver, reservation_id=rid,
+                             state=reservation_state, error_message=error_message)
             self.event_queue.put_nowait(event)
             with self.condition:
                 self.condition.notify_all()

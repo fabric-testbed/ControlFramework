@@ -316,11 +316,15 @@ class FimHelper:
         return delegation.get_details() if delegation is not None else None
 
     @staticmethod
-    def update_node(*, graph_id: str, sliver: BaseSliver):
+    def update_node(*, graph_id: str, sliver: BaseSliver, reservation_id: str,
+                 state: str, error_message: str):
         """
         Update Sliver Node in ASM
         :param graph_id:
         :param sliver:
+        :param reservation_id:
+        :param state:
+        :param error_message:
         :return:
         """
         if sliver is None:
@@ -330,13 +334,18 @@ class FimHelper:
         neo4j_topo = ExperimentTopology()
         neo4j_topo.cast(asm_graph=asm_graph)
 
+        res_info = ReservationInfo()
+        res_info.reservation_id = reservation_id
+        res_info.reservation_state = state
+        res_info.error_message = error_message
+
         node_name = sliver.get_name()
         if isinstance(sliver, NodeSliver) and node_name in neo4j_topo.nodes:
             node = neo4j_topo.nodes[node_name]
             node.set_properties(labels=sliver.labels,
                                 label_allocations=sliver.label_allocations,
                                 capacity_allocations=sliver.capacity_allocations,
-                                reservation_info=sliver.reservation_info,
+                                reservation_info=res_info,
                                 node_map=sliver.node_map,
                                 management_ip=sliver.management_ip,
                                 capacity_hints=sliver.capacity_hints)
@@ -346,6 +355,7 @@ class FimHelper:
                 if diff is not None:
                     for cname in diff.removed.components:
                         reservation_info = ReservationInfo()
+                        reservation_info.reservation_id = reservation_id
                         reservation_info.reservation_state = ReservationStates.Failed.name
                         node.components[cname].set_properties(reservation_info=reservation_info)
 
@@ -379,7 +389,7 @@ class FimHelper:
             node.set_properties(labels=sliver.labels,
                                 label_allocations=sliver.label_allocations,
                                 capacity_allocations=sliver.capacity_allocations,
-                                reservation_info=sliver.reservation_info,
+                                reservation_info=res_info,
                                 node_map=sliver.node_map,
                                 gateway=sliver.gateway)
             if sliver.interface_info is not None:

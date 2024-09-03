@@ -133,8 +133,7 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, ABCAuthorityProxy):
                       caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    @staticmethod
-    def pass_authority_reservation(reservation: ABCReservationMixin, caller: AuthToken) -> ReservationAvro:
+    def pass_authority_reservation(self, reservation: ABCReservationMixin, caller: AuthToken) -> ReservationAvro:
         concrete = reservation.get_resources().get_resources()
         if concrete is None:
             raise ProxyException(Constants.NOT_SPECIFIED_PREFIX.format("ticket"))
@@ -154,5 +153,6 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, ABCAuthorityProxy):
             rset.unit_set = Translate.translate_unit_set(unit_set=concrete)
 
         avro_reservation.resource_set = rset
-
+        if self.logger:
+            self.logger.debug(f"Resource Set: {rset}")
         return avro_reservation

@@ -94,6 +94,10 @@ class MainClass:
                                                       logger=self.logger)
 
             slice_model = Neo4jPropertyGraph(graph_id=graph_id, importer=neo4j_graph_importer)
+            slice_model_str = slice_model.serialize_graph()
+
+            with open("slice_model_str.txt", "w") as file:
+                file.write(slice_model_str)
 
             print(f"Slice Model: {slice_model}")
         except Exception as e:
@@ -151,9 +155,13 @@ class MainClass:
             if res_list is not None and len(res_list) > 0:
                 for r in res_list:
                     print(r)
+                    print(type(r))
                     print(f"RES Sliver: {r.get_resources().get_sliver()}")
                     print(f"REQ RES Sliver: {r.get_requested_resources()} {r.get_requested_resources().get_sliver()}")
                     print(f"APPR RES Sliver: {r.get_approved_resources()} {r.get_approved_resources().get_sliver()}")
+                    from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
+                    if isinstance(r, ReservationClient):
+                        print(r.get_leased_resources().get_sliver())
                     print()
             else:
                 print(f"No reservations found: {res_list}")
