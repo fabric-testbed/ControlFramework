@@ -897,7 +897,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                                                       owner_switch.get_label_delegations())
                 else:
                     delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
-                                                                                  owner_ns.get_label_delegations())
+                                                                                      owner_ns.get_label_delegations())
 
             # Set the Subnet and gateway from the Owner Switch (a)
             existing_reservations = self.get_existing_reservations(node_id=owner_ns_id,

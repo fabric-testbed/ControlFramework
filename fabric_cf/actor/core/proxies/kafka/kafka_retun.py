@@ -158,7 +158,7 @@ class KafkaReturn(KafkaProxy, ABCControllerCallbackProxy):
 
         avro_reservation.resource_set = rset
         if self.logger:
-            self.logger.info(f"Outgoing Resource Set: {rset}")
+            self.logger.info(f"Resource Set: {rset}")
         return avro_reservation
 
     @staticmethod

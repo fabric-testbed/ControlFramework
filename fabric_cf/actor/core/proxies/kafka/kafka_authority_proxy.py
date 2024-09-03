@@ -154,5 +154,5 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, ABCAuthorityProxy):
 
         avro_reservation.resource_set = rset
         if self.logger:
-            self.logger.info(f"Outgoing Resource Set: {rset}")
+            self.logger.debug(f"Resource Set: {rset}")
         return avro_reservation

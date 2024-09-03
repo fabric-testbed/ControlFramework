@@ -360,7 +360,7 @@ class NetworkServiceInventory(InventoryForType):
                 return requested_ns
 
             gateway_labels = self._assign_gateway_labels(ip_network=ip_network, subnet_list=subnet_list,
-                                                         requested_ns_type=requested_ns.get_type())
+                                                         requested_ns=requested_ns)
 
             self.logger.debug(f"Gateway Labels: {gateway_labels}")
 
@@ -487,25 +487,41 @@ class NetworkServiceInventory(InventoryForType):
         self.logger.error("Could not find the allocated Sliver - should not reach here!")
 
     def _assign_gateway_labels(self, *, ip_network: Union[IPv4Network, IPv6Network], subnet_list: List,
-                               requested_ns_type: str) -> Labels:
+                               requested_ns: NetworkServiceSliver) -> Labels:
         """
         Assign gateway labels based on the requested network service type.
 
         :param ip_network: The IP network from which subnets are derived, either IPv4Network or IPv6Network.
         :param subnet_list: A list of subnets derived from the ip_network.
-        :param requested_ns_type: The type of the requested network service.
+        :param requested_ns: Network Service sliver.
         :return: Gateway labels populated with the appropriate subnet and IP address.
         """
         gateway_labels = Labels()
-        if requested_ns_type == ServiceType.FABNetv4:
+        if requested_ns.get_type() == ServiceType.FABNetv4:
+            # Allocate the requested network if available else allocate new network
+            if requested_ns.gateway and requested_ns.gateway.lab and requested_ns.gateway.lab.ipv4_subnet:
+                requested_subnet = IPv4Network(requested_ns.gateway.lab.ipv4_subnet)
+                if requested_subnet in subnet_list:
+                    gateway_labels.ipv4_subnet = requested_subnet.with_prefixlen
+                    gateway_labels.ipv4 = str(next(requested_subnet.hosts()))
+                    return gateway_labels
+
             gateway_labels.ipv4_subnet = subnet_list[0].with_prefixlen
             gateway_labels.ipv4 = str(list(subnet_list[0].hosts())[0])
 
-        elif requested_ns_type == ServiceType.FABNetv4Ext:
+        elif requested_ns.get_type() == ServiceType.FABNetv4Ext:
             gateway_labels.ipv4_subnet = ip_network.with_prefixlen
             gateway_labels.ipv4 = str(subnet_list[0])
 
-        elif requested_ns_type in Constants.L3_FABNETv6_SERVICES:
+        elif requested_ns.get_type() in Constants.L3_FABNETv6_SERVICES:
+            # Allocate the requested network if available else allocate new network
+            if requested_ns.gateway and requested_ns.gateway.lab and requested_ns.gateway.lab.ipv6_subnet:
+                requested_subnet = IPv6Network(requested_ns.gateway.lab.ipv6_subnet)
+                if requested_subnet in subnet_list:
+                    gateway_labels.ipv6_subnet = requested_subnet.with_prefixlen
+                    gateway_labels.ipv6 = str(next(requested_subnet.hosts()))
+                    return gateway_labels
+
             gateway_labels.ipv6_subnet = subnet_list[0].with_prefixlen
             gateway_labels.ipv6 = str(next(subnet_list[0].hosts()))
 
