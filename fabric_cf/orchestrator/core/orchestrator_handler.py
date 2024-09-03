@@ -69,6 +69,8 @@ class OrchestratorHandler:
         self.total_slice_count_seed = self.config.get_runtime_config().get(Constants.TOTAL_SLICE_COUNT_SEED, 0)
         self.local_bqm = self.globals.get_config().get_global_config().get_bqm_config().get(
                     Constants.LOCAL_BQM, False)
+        excluded_projects = self.config.get_runtime_config().get(Constants.EXCLUDED_PROJECTS, "")
+        self.excluded_projects = [e.strip() for e in excluded_projects.split(",") if e.strip()]
 
     def get_logger(self):
         """
@@ -987,6 +989,8 @@ class OrchestratorHandler:
     def get_metrics_overview(self, *, token: str = None, excluded_projects: List[str] = None):
         """
         Get metrics overview
+        :param token: token
+        :param excluded_projects: list of projects to exclude
         """
         try:
             controller = self.controller_state.get_management_actor()
@@ -1001,6 +1005,11 @@ class OrchestratorHandler:
                 if len(projects) == 1:
                     project, tags, project_name = fabric_token.first_project
                 user_id = fabric_token.uuid
+
+            if excluded_projects:
+                excluded_projects.extend(self.excluded_projects)
+            else:
+                excluded_projects = self.excluded_projects
 
             active_states = SliceState.list_values_ex_closing_dead()
             active_slice_count = controller.get_slice_count(states=active_states, user_id=user_id, project=project,
