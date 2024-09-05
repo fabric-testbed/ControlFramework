@@ -333,7 +333,7 @@ class OrchestratorSliceWrapper:
                         if sliver.labels is None:
                             sliver.labels = Labels()
                         sliver.labels = Labels.update(sliver.labels,
-                                                      local_name=f"{self.slice_obj.get_slice_name()}-{ifs.peer_labels.account_id}")
+                                                      local_name=f"{self.slice_obj.get_slice_name()}")
 
                 # Generate reservation for the sliver
                 reservation = self.reservation_converter.generate_reservation(sliver=sliver,
