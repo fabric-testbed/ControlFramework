@@ -120,9 +120,6 @@ class NetworkNodeInventory(InventoryForType):
             raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
                                   msg=f"{message}")
 
-        # Assign the first PCI Id from the list of available PCI slots
-        requested_component.label_allocations = Labels(bdf=delegated_label.bdf[0], numa=delegated_label.numa[0])
-
         # Find the VLAN from the BQM Component
         if available_component.network_service_info is None or \
                 len(available_component.network_service_info.network_services) != 1:
@@ -145,14 +142,25 @@ class NetworkNodeInventory(InventoryForType):
 
         delegation_id, ifs_delegated_labels = self.get_delegations(lab_cap_delegations=ifs.get_label_delegations())
 
-        # Determine the index which points to the same PCI id as assigned above
-        # This index points to the other relevant information such as MAC Address,
-        # VLAN tag for that PCI device
-        i = 0
-        for pci_id in ifs_delegated_labels.bdf:
-            if pci_id == delegated_label.bdf[0]:
-                break
-            i += 1
+        assigned_bdf = delegated_label.bdf[0]
+        assigned_numa = delegated_label.numa[0]
+
+        # Check if the requested component's VLAN exists in the delegated labels
+        if requested_component.labels and requested_component.labels.vlan and \
+                requested_component.labels.vlan in ifs_delegated_labels.vlan:
+            vlan_index = ifs_delegated_labels.vlan.index(requested_component.labels.vlan)
+            bdf_for_requested_vlan = ifs_delegated_labels.bdf[vlan_index]
+            
+            if bdf_for_requested_vlan in delegated_label.bdf:
+                bdf_index = delegated_label.bdf.index(bdf_for_requested_vlan)
+                assigned_bdf = bdf_for_requested_vlan
+                assigned_numa = delegated_label.numa[bdf_index]
+
+        # Assign the first PCI Id from the list of available PCI slots
+        requested_component.label_allocations = Labels(bdf=assigned_bdf, numa=assigned_numa)
+
+        # Find index of assigned BDF in the interface delegated labels
+        assigned_index = ifs_delegated_labels.bdf.index(assigned_bdf)
 
         # Updated the Requested component with VLAN, BDF, MAC
         req_ns_name = next(iter(requested_component.network_service_info.network_services))
@@ -162,11 +170,12 @@ class NetworkNodeInventory(InventoryForType):
 
         # Do not copy VLAN for OpenStack-vNIC
         if requested_component.get_model() == Constants.OPENSTACK_VNIC_MODEL:
-            lab = Labels(bdf=ifs_delegated_labels.bdf[i], mac=ifs_delegated_labels.mac[i],
-                         local_name=ifs_delegated_labels.local_name[i])
+            lab = Labels(bdf=ifs_delegated_labels.bdf[assigned_index], mac=ifs_delegated_labels.mac[assigned_index],
+                         local_name=ifs_delegated_labels.local_name[assigned_index])
         else:
-            lab = Labels(bdf=ifs_delegated_labels.bdf[i], mac=ifs_delegated_labels.mac[i],
-                         vlan=ifs_delegated_labels.vlan[i], local_name=ifs_delegated_labels.local_name[i])
+            lab = Labels(bdf=ifs_delegated_labels.bdf[assigned_index], mac=ifs_delegated_labels.mac[assigned_index],
+                         vlan=ifs_delegated_labels.vlan[assigned_index],
+                         local_name=ifs_delegated_labels.local_name[assigned_index])
 
         # For the Layer 2 copying the IP address to the label allocations
         # This is to be used by AM Handler to configure Network Interface
