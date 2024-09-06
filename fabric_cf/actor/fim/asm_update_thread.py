@@ -43,14 +43,17 @@ class AsmUpdateException(Exception):
 
 class AsmEvent:
     def __init__(self, *, graph_id: str, sliver: BaseSliver, reservation_id: str,
-                 state: str, error_message: str):
+                 state: str, error_message: str, logger: logging.Logger = None):
         self.graph_id = graph_id
         self.sliver = sliver
         self.reservation_id = reservation_id
         self.state = state
         self.error_message = error_message
+        self.logger = logger
 
     def process(self):
+        if self.logger:
+            self.logger.info(f"AsmEvent for Res# {self.reservation_id} State: {self.state} Graph: {self.graph_id}")
         FimHelper.update_node(graph_id=self.graph_id, sliver=self.sliver, reservation_id=self.reservation_id,
                               state=self.state, error_message=self.error_message)
 
@@ -124,7 +127,7 @@ class AsmUpdateThread:
                 error_message: str):
         try:
             event = AsmEvent(graph_id=graph_id, sliver=sliver, reservation_id=rid,
-                             state=reservation_state, error_message=error_message)
+                             state=reservation_state, error_message=error_message, logger=self.logger)
             self.event_queue.put_nowait(event)
             with self.condition:
                 self.condition.notify_all()
