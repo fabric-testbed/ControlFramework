@@ -53,7 +53,7 @@ class AsmEvent:
 
     def process(self):
         if self.logger:
-            self.logger.info(f"AsmEvent for Res# {self.reservation_id} State: {self.state} Graph: {self.graph_id}")
+            self.logger.debug(f"AsmEvent for Res# {self.reservation_id} State: {self.state} Graph: {self.graph_id}")
         FimHelper.update_node(graph_id=self.graph_id, sliver=self.sliver, reservation_id=self.reservation_id,
                               state=self.state, error_message=self.error_message)
 
