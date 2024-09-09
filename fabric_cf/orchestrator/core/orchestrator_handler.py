@@ -513,14 +513,9 @@ class OrchestratorHandler:
             slice_object.add_reservations()
 
             # Slice has sliver modifications - add/remove/update for slivers requiring AM updates
-            graph_id = slice_obj.get_graph_id()
             modify_state = slice_object.has_sliver_updates_at_authority()
-            if modify_state or slice_object.has_topology_diffs(topology_diff=topology_diff):
-                FimHelper.delete_graph(graph_id=slice_obj.get_graph_id())
-                graph_id = asm_graph.get_graph_id()
-            else:
-                if asm_graph:
-                    asm_graph.delete_graph()
+            FimHelper.delete_graph(graph_id=slice_obj.get_graph_id())
+            graph_id = asm_graph.get_graph_id()
 
             slice_obj.graph_id = graph_id
             config_props = slice_obj.get_config_properties()
