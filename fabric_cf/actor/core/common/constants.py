@@ -173,6 +173,8 @@ class Constants:
     PROPERTY_CONF_O_AUTH_TRL_REFRESH = "trl-refresh"
     PROPERTY_CONF_O_AUTH_VERIFY_EXP = "verify-exp"
 
+    CONFIG_SECTION_SMTP = "smtp"
+
     CONFIG_SECTION_DATABASE = "database"
     PROPERTY_CONF_DB_USER = "db-user"
     PROPERTY_CONF_DB_PASSWORD = "db-password"

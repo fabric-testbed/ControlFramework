@@ -45,6 +45,10 @@ class GlobalConfig:
         if Constants.CONFIG_SECTION_O_AUTH in config:
             self.oauth = config.get(Constants.CONFIG_SECTION_O_AUTH)
 
+        self.smtp = {}
+        if Constants.CONFIG_SECTION_SMTP in config:
+            self.smtp = config.get(Constants.CONFIG_SECTION_SMTP)
+
         self.database = {}
         if Constants.CONFIG_SECTION_DATABASE in config:
             self.database = config.get(Constants.CONFIG_SECTION_DATABASE)
@@ -86,6 +90,12 @@ class GlobalConfig:
         Return oauth config
         """
         return self.oauth
+
+    def get_smtp(self) -> dict:
+        """
+        Return smtp config
+        """
+        return self.smtp
 
     def get_database(self) -> dict:
         """
@@ -424,6 +434,10 @@ class Configuration:
         if self.global_config is not None:
             return self.global_config.get_oauth()
         return None
+
+    def get_smtp_config(self) -> dict:
+        if self.global_config:
+            return self.global_config.get_smtp()
 
     def get_actor_config(self) -> ActorConfig:
         """

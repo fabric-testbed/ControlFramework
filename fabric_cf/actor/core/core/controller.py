@@ -87,6 +87,9 @@ class Controller(ActorMixin, ABCController):
                                                                  thread_name_prefix=self.__class__.__name__)
         self.pluggable_registry = PluggableRegistry()
 
+        self.combined_broker_model = None
+        self.combined_broker_model_graph_id = None
+
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['recovered']
@@ -112,6 +115,8 @@ class Controller(ActorMixin, ABCController):
         del state['thread_pool']
         if hasattr(self, 'pluggable_registry'):
             del state['pluggable_registry']
+
+        del state['combined_broker_model']
 
         return state
 

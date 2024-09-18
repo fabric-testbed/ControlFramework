@@ -27,11 +27,15 @@ import argparse
 import logging
 import os
 import re
+import smtplib
 import traceback
 from datetime import datetime, timezone, timedelta
 from logging.handlers import RotatingFileHandler
 
 import yaml
+from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+
+from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fim.slivers.network_service import ServiceType
 
@@ -43,6 +47,7 @@ from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor
 from fabric_cf.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.util.smtp import send_email
 from fabric_cf.actor.fim.fim_helper import FimHelper
 
 
@@ -81,6 +86,8 @@ class MainClass:
 
         # Actor Config
         self.actor_config = config_dict[Constants.CONFIG_SECTION_ACTOR]
+
+        self.smtp_config = config_dict.get(Constants.CONFIG_SECTION_SMTP)
 
         # Load config in the GlobalsSingleton
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
@@ -264,6 +271,39 @@ class MainClass:
             self.logger.error(f"Failed to cleanup inconsistencies: {e}")
             self.logger.error(traceback.format_exc())
 
+    def send_slice_expiry_email_warnings(self):
+        actor_type = self.actor_config[Constants.TYPE]
+        if actor_type.lower() != ActorType.Orchestrator.name.lower():
+            return
+
+        actor_db = ActorDatabase(user=self.database_config[Constants.PROPERTY_CONF_DB_USER],
+                                 password=self.database_config[Constants.PROPERTY_CONF_DB_PASSWORD],
+                                 database=self.database_config[Constants.PROPERTY_CONF_DB_NAME],
+                                 db_host=self.database_config[Constants.PROPERTY_CONF_DB_HOST],
+                                 logger=self.logger)
+
+        # Get the currently active slices
+        slices = actor_db.get_slices(states=SliceState.list_values_ex_closing_dead(),
+                                     slc_type=[SliceTypes.ClientSlice])
+
+        now = datetime.now(timezone.utc)
+
+        subject = "Test Email from Fabric Testbed"
+        body = "This is a test email."
+
+        for s in slices:
+            s.get_owner().get_email()
+            if s.get_lease_end():
+                diff = s.get_lease_end() - now
+                if diff > timedelta(hours=24) or diff > timedelta(hours=12) or diff > timedelta(hours=6):
+                    try:
+                        send_email(smtp_config=self.smtp_config, to_email=s.get_owner().get_email(),
+                                   subject=subject, body=body)
+                    except smtplib.SMTPAuthenticationError as e:
+                        self.logger.error(f"Failed to send email: Error: {e.smtp_code} Message: {e.smtp_error}")
+                    except Exception as e:
+                        self.logger.error(f"Failed to send email: Error: {e}")
+
     def clean_sliver_inconsistencies(self):
         try:
             actor_type = self.actor_config[Constants.TYPE]
@@ -397,6 +437,7 @@ class MainClass:
                 self.delete_dead_closing_slice(days=args.days)
                 self.clean_sliver_close_fail()
                 self.clean_sliver_inconsistencies()
+                self.send_slice_expiry_email_warnings()
             else:
                 print(f"Unsupported operation: {args.operation}")
         else:
