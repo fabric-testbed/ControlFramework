@@ -28,6 +28,34 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 
+# Function to load the email template from a file and replace placeholders
+from typing import Tuple
+
+
+def load_and_update_template(*, template_path: str, user: str, slice_name: str, hours_left: float) -> Tuple[str, str]:
+    """
+    Load the Email body from the template
+    @param template_path: location of the template
+    @param user: user name
+    @param slice_name: slice name
+    @param hours_left: hours left
+    @return: Subject and Body
+    """
+    with open(template_path, 'r') as template_file:
+        email_template = template_file.read()
+
+    # Replace placeholders with actual values
+    email_content = email_template.replace('<User>', user) \
+        .replace('<slice_name>', slice_name) \
+        .replace('<hours_left>', str(hours_left))
+
+    # Extract the subject and the body from the email content
+    subject_line = email_content.split('\n')[0].replace("Subject: ", "")
+    email_body = "\n".join(email_content.split('\n')[1:])
+
+    return subject_line, email_body
+
+
 def send_email(*, smtp_config: dict, to_email: str, subject: str, body: str):
     """
     Send Email to a user

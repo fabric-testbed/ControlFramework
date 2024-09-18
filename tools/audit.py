@@ -47,7 +47,7 @@ from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor
 from fabric_cf.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.smtp import send_email
+from fabric_cf.actor.core.util.smtp import send_email, load_and_update_template
 from fabric_cf.actor.fim.fim_helper import FimHelper
 
 
@@ -288,15 +288,16 @@ class MainClass:
 
         now = datetime.now(timezone.utc)
 
-        subject = "Test Email from Fabric Testbed"
-        body = "This is a test email."
-
         for s in slices:
             s.get_owner().get_email()
             if s.get_lease_end():
                 diff = s.get_lease_end() - now
-                if diff > timedelta(hours=24) or diff > timedelta(hours=12) or diff > timedelta(hours=6):
+                if diff < timedelta(hours=12):
                     try:
+                        subject, body = load_and_update_template(template_path=self.smtp_config.get("template_path"),
+                                                                 user=s.get_owner().get_name(),
+                                                                 slice_name=f"{s.get_slice_name()}/{s.get_slice_id()}",
+                                                                 hours_left=diff.total_seconds()/60)
                         send_email(smtp_config=self.smtp_config, to_email=s.get_owner().get_email(),
                                    subject=subject, body=body)
                     except smtplib.SMTPAuthenticationError as e:

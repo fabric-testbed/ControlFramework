@@ -93,6 +93,7 @@ smtp:
   smtp_password:
   from_email: fabric_cf
   reply_to_email: no-reply@fabric-testbed.net
+  template_path: ./slice_expiration_template.txt
 
 database:
   db-user: fabric
