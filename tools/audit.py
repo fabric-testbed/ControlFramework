@@ -289,17 +289,39 @@ class MainClass:
         now = datetime.now(timezone.utc)
 
         for s in slices:
-            s.get_owner().get_email()
+            email = s.get_owner().get_email()
             if s.get_lease_end():
                 diff = s.get_lease_end() - now
-                if diff < timedelta(hours=12):
+                hours_left = diff.total_seconds() // 3600
+
+                # Check if it's 12 hours or 6 hours before expiration
+                if 6 < hours_left <= 12:
+                    # Send a 12-hour prior warning email
                     try:
-                        subject, body = load_and_update_template(template_path=self.smtp_config.get("template_path"),
-                                                                 user=s.get_owner().get_name(),
-                                                                 slice_name=f"{s.get_slice_name()}/{s.get_slice_id()}",
-                                                                 hours_left=diff.total_seconds()/60)
-                        send_email(smtp_config=self.smtp_config, to_email=s.get_owner().get_email(),
-                                   subject=subject, body=body)
+                        subject, body = load_and_update_template(
+                            template_path=self.smtp_config.get("template_path"),
+                            user=email,
+                            slice_name=f"{s.get_name()}/{s.get_slice_id()}",
+                            hours_left=12
+                        )
+                        send_email(smtp_config=self.smtp_config, to_email=email, subject=subject, body=body)
+                        self.logger.info(f"Sent 12-hour prior warning to {email} for slice {s.get_name()}")
+                    except smtplib.SMTPAuthenticationError as e:
+                        self.logger.error(f"Failed to send email: Error: {e.smtp_code} Message: {e.smtp_error}")
+                    except Exception as e:
+                        self.logger.error(f"Failed to send email: Error: {e}")
+
+                elif 1 < hours_left <= 6:
+                    # Send a 6-hour prior warning email
+                    try:
+                        subject, body = load_and_update_template(
+                            template_path=self.smtp_config.get("template_path"),
+                            user=email,
+                            slice_name=f"{s.get_name()}/{s.get_slice_id()}",
+                            hours_left=6
+                        )
+                        send_email(smtp_config=self.smtp_config, to_email=email, subject=subject, body=body)
+                        self.logger.info(f"Sent 6-hour prior warning to {email} for slice {s.get_name()}")
                     except smtplib.SMTPAuthenticationError as e:
                         self.logger.error(f"Failed to send email: Error: {e.smtp_code} Message: {e.smtp_error}")
                     except Exception as e:

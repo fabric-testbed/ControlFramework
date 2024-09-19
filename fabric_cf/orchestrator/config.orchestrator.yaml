@@ -91,9 +91,9 @@ smtp:
   smtp_port: 587
   smtp_user: fabric_cf@fabric-testbed.net
   smtp_password:
-  from_email: fabric_cf
+  from_email: fabric_cf@fabric-testbed.net
   reply_to_email: no-reply@fabric-testbed.net
-  template_path: ./slice_expiration_template.txt
+  template_path: /etc/fabric/actor/config/slice_expiration_template.txt
 
 database:
   db-user: fabric
