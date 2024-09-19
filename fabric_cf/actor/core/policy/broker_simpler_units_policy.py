@@ -582,6 +582,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                               node_id_to_reservations=node_id_to_reservations,
                                                               term=term)
             if total and allocated:
+                self.logger.debug(f"Allocated: {allocated} Total: {total}")
                 cpu_usage_percent = int(((allocated.cpu * 100)/ total.cpu))
                 self.logger.debug(f"CPU Usage for {node.get_name()}: {cpu_usage_percent}; "
                                   f"threshold: {threshold}")
