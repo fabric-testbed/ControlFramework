@@ -248,6 +248,10 @@ class MainClass:
         return ansible_helper.get_result_callback()
 
     def clean_sliver_close_fail(self):
+        """
+        Clean the slivers in Close Fail state
+        @return:
+        """
         try:
             actor_type = self.actor_config[Constants.TYPE]
             if actor_type.lower() != ActorType.Broker.name.lower():
@@ -264,7 +268,7 @@ class MainClass:
                 term = s.get_term()
                 end = term.get_end_time() if term else None
                 now = datetime.now(timezone.utc)
-                if end and end <= now:
+                if end and end < now:
                     actor_db.remove_reservation(rid=s.get_reservation_id())
 
         except Exception as e:
@@ -272,6 +276,15 @@ class MainClass:
             self.logger.error(traceback.format_exc())
 
     def send_slice_expiry_email_warnings(self):
+        """
+        Sends warning emails to users whose slices are about to expire within 12 hours or 6 hours.
+
+        This function checks the expiration times of active slices and sends warning emails to the
+        slice owners if the slice is set to expire in less than 12 hours or 6 hours. The function is
+        intended to run periodically (e.g., once an hour) and uses a template for email content.
+
+        @return: None: This function does not return any value but sends out emails and logs the process.
+        """
         actor_type = self.actor_config[Constants.TYPE]
         if actor_type.lower() != ActorType.Orchestrator.name.lower():
             return
@@ -328,6 +341,10 @@ class MainClass:
                         self.logger.error(f"Failed to send email: Error: {e}")
 
     def clean_sliver_inconsistencies(self):
+        """
+        Clean up any sliver inconsistencies between CF, Libvirt and Openstack
+        @return:
+        """
         try:
             actor_type = self.actor_config[Constants.TYPE]
             if actor_type.lower() != ActorType.Authority.name.lower() or self.am_config_dict is None:
