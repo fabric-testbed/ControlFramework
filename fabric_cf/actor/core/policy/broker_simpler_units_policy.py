@@ -578,11 +578,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         below_threshold = []
 
         for node_id in node_id_list:
-            total, allocated = self.get_node_capacities(node_id=node_id,
-                                                        node_id_to_reservations=node_id_to_reservations,
-                                                        term=term)
+            node, total, allocated = self.get_node_capacities(node_id=node_id,
+                                                              node_id_to_reservations=node_id_to_reservations,
+                                                              term=term)
             if total and allocated:
                 cpu_usage_percent = int(((allocated.cpu * 100)/ total.cpu))
+                self.logger.debug(f"CPU Usage for {node.get_name()}: {cpu_usage_percent}; "
+                                  f"threshold: {threshold}")
                 if cpu_usage_percent < threshold:
                     below_threshold.append(node_id)
                 else:
@@ -1735,13 +1737,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return False, 0
 
     def get_node_capacities(self, node_id: str, node_id_to_reservations: dict,
-                            term: Term) -> Tuple[Capacities, Capacities]:
+                            term: Term) -> Tuple[NodeSliver, Capacities, Capacities]:
         """
         Get Node capacities - total as well as allocated capacities
         @param node_id: Node Id
         @param node_id_to_reservations: Reservations assigned as part of this bid
         @param term: Term
-        @return: Tuple containing total and allocated capacity
+        @return: Tuple containing node, total and allocated capacity
         """
         try:
             graph_node = self.get_network_node_from_graph(node_id=node_id)
@@ -1769,7 +1771,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                     if resource_sliver is not None and isinstance(resource_sliver, NodeSliver):
                         allocated_capacity += resource_sliver.get_capacity_allocations()
 
-            return delegated_capacity, allocated_capacity
+            return graph_node, delegated_capacity, allocated_capacity
         except Exception as e:
             self.logger.error(f"Failed to determine node capacities: {node_id}, error: {e}")
 
