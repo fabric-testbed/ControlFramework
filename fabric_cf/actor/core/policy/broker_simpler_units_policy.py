@@ -516,7 +516,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             props=node_props,
             comps=sliver.attached_components_info)
 
-        # Skip nodes without any delegations which would be data-switch in this case
         if sliver.get_type() == NodeType.Switch:
             exclude = []
             for n in result:
@@ -1684,6 +1683,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             if first_fit_algo and first_fit_algo.get('enabled'):
                 return BrokerAllocationAlgorithm.FirstFit
         return BrokerAllocationAlgorithm.FirstFit
+
+    def get_core_capacity_threshold(self) -> Tuple[bool, int]:
+        if self.properties is not None:
+            core_capacity_threshold = self.properties.get(Constants.CORE_CAPACITY_THRESHOLD, None)
+            if core_capacity_threshold and core_capacity_threshold.get('enabled'):
+                core_usage_threshold_percent = core_capacity_threshold.get('core_usage_threshold_percent', 75)
+                return True, core_usage_threshold_percent
+        return False, 0
 
 
 if __name__ == '__main__':
