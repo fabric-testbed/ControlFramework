@@ -308,7 +308,7 @@ class MainClass:
                 hours_left = diff.total_seconds() // 3600
 
                 # Check if it's 12 hours or 6 hours before expiration
-                if 6 < hours_left <= 12:
+                if 11 < hours_left <= 12:
                     # Send a 12-hour prior warning email
                     try:
                         subject, body = load_and_update_template(
@@ -324,7 +324,7 @@ class MainClass:
                     except Exception as e:
                         self.logger.error(f"Failed to send email: Error: {e}")
 
-                elif 1 < hours_left <= 6:
+                elif 5 < hours_left <= 6:
                     # Send a 6-hour prior warning email
                     try:
                         subject, body = load_and_update_template(
