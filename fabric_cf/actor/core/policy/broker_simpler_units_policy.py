@@ -673,7 +673,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             random.shuffle(node_id_list)
         else:
             # Reshuffle Nodes based on CPU Threshold only for VMs when no specific host is specified
-            if sliver.get_type() == NodeType.VM and sliver.labels.instance_parent is None:
+            if sliver.get_type() == NodeType.VM and (sliver.labels is None or
+                                                     (sliver.labels and sliver.labels.instance_parent is None)):
                 node_id_list = self.__reshuffle_nodes(node_id_list=node_id_list,
                                                       node_id_to_reservations=node_id_to_reservations,
                                                       term=term)
