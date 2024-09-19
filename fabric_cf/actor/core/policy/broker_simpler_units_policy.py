@@ -583,7 +583,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                               term=term)
             if total and allocated:
                 self.logger.debug(f"Allocated: {allocated} Total: {total}")
-                cpu_usage_percent = int(((allocated.cpu * 100)/ total.cpu))
+                cpu_usage_percent = int(((allocated.core * 100)/ total.core))
                 self.logger.debug(f"CPU Usage for {node.get_name()}: {cpu_usage_percent}; "
                                   f"threshold: {threshold}")
                 if cpu_usage_percent < threshold:
