@@ -38,7 +38,7 @@ from fim.graph.resources.abc_adm import ABCADMPropertyGraph
 from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.attached_components import ComponentSliver, ComponentType
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.capacities_labels import Labels
+from fim.slivers.capacities_labels import Labels, Capacities
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver, ServiceType, NSLayer
@@ -557,6 +557,42 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return node_id_list
 
+    def __reshuffle_nodes(self, node_id_list: List[str], node_id_to_reservations: dict,
+                          term: Term) -> List[str]:
+        """
+        Reshuffles nodes based on their usage compared to a given threshold.
+
+        @param: node_id_list (list): List of node_ids
+
+        @return:  list: Reshuffled list of nodes, with nodes exceeding the threshold shuffled separately.
+        """
+        if len(node_id_list) == 1:
+            return node_id_list
+
+        enabled, threshold = self.get_core_capacity_threshold()
+        if not enabled:
+            return node_id_list
+
+        # Separate nodes based on whether their usage exceeds the threshold
+        above_threshold = []
+        below_threshold = []
+
+        for node_id in node_id_list:
+            total, allocated = self.get_node_capacities(node_id=node_id,
+                                                        node_id_to_reservations=node_id_to_reservations,
+                                                        term=term)
+            if total and allocated:
+                cpu_usage_percent = int(((allocated.cpu * 100)/ total.cpu))
+                if cpu_usage_percent < threshold:
+                    below_threshold.append(node_id)
+                else:
+                    above_threshold.append(node_id)
+
+        # Combine both shuffled lists (you can choose the order of combining)
+        reshuffled_nodes = below_threshold + above_threshold
+
+        return reshuffled_nodes
+
     def __find_first_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: NetworkNodeInventory,
                          reservation: ABCBrokerReservation, term: Term, sliver: NodeSliver,
                          operation: ReservationOperation = ReservationOperation.Create) -> Tuple[str, BaseSliver, Any]:
@@ -633,6 +669,12 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         node_id_list = self.__candidate_nodes(sliver=sliver)
         if self.get_algorithm_type(site=sliver.site) == BrokerAllocationAlgorithm.Random:
             random.shuffle(node_id_list)
+        else:
+            # Reshuffle Nodes based on CPU Threshold only for VMs when no specific host is specified
+            if sliver.get_type() == NodeType.VM and sliver.labels.instance_parent is None:
+                node_id_list = self.__reshuffle_nodes(node_id_list=node_id_list,
+                                                      node_id_to_reservations=node_id_to_reservations,
+                                                      term=term)
 
         if len(node_id_list) == 0 and sliver.site not in self.combined_broker_model.get_sites():
             error_msg = f'Unknown site {sliver.site} requested for {reservation}'
@@ -1692,6 +1734,44 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 return True, core_usage_threshold_percent
         return False, 0
 
+    def get_node_capacities(self, node_id: str, node_id_to_reservations: dict,
+                            term: Term) -> Tuple[Capacities, Capacities]:
+        """
+        Get Node capacities - total as well as allocated capacities
+        @param node_id: Node Id
+        @param node_id_to_reservations: Reservations assigned as part of this bid
+        @param term: Term
+        @return: Tuple containing total and allocated capacity
+        """
+        try:
+            graph_node = self.get_network_node_from_graph(node_id=node_id)
+            existing_reservations = self.get_existing_reservations(node_id=node_id,
+                                                                   node_id_to_reservations=node_id_to_reservations,
+                                                                   start=term.get_start_time(),
+                                                                   end=term.get_end_time())
+
+            delegation_id, delegated_capacity = NetworkNodeInventory.get_delegations(
+                lab_cap_delegations=graph_node.get_capacity_delegations())
+
+            allocated_capacity = Capacities()
+
+            if existing_reservations:
+                for reservation in existing_reservations:
+                    # For Active or Ticketed or Ticketing reservations; reduce the counts from available
+                    resource_sliver = None
+                    if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
+                        resource_sliver = reservation.get_approved_resources().get_sliver()
+
+                    if (reservation.is_active() or reservation.is_ticketed()) and \
+                            reservation.get_resources() is not None:
+                        resource_sliver = reservation.get_resources().get_sliver()
+
+                    if resource_sliver is not None and isinstance(resource_sliver, NodeSliver):
+                        allocated_capacity += resource_sliver.get_capacity_allocations()
+
+            return delegated_capacity, allocated_capacity
+        except Exception as e:
+            self.logger.error(f"Failed to determine node capacities: {node_id}, error: {e}")
 
 if __name__ == '__main__':
     policy = BrokerSimplerUnitsPolicy()
