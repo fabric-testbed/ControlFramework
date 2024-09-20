@@ -31,10 +31,7 @@ import traceback
 from typing import TYPE_CHECKING
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
-from fim.graph.networkx_property_graph_disjoint import NetworkXGraphImporterDisjoint
-from fim.graph.resources.networkx_abqm import NetworkXABQMFactory
 from fim.user import GraphFormat
-from fim.user.topology import AdvertizedTopology
 
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
 from fim.pluggable import PluggableRegistry, PluggableType
@@ -160,6 +157,7 @@ class Controller(ActorMixin, ABCController):
         self.asm_update_thread.set_logger(logger=logger)
 
     def start(self):
+        self.load_combined_broker_model()
         self.pluggable_registry.register_pluggable(t=PluggableType.Broker, p=AggregatedBQMPlugin, actor=self,
                                                    logger=self.logger)
         self.asm_update_thread.set_logger(logger=self.logger)
@@ -304,9 +302,6 @@ class Controller(ActorMixin, ABCController):
 
             self.registry.set_slices_plugin(plugin=self.plugin)
             self.registry.initialize()
-
-            # Load the combined broker model with level=0
-            self.load_combined_broker_model()
 
             self.initialized = True
 
