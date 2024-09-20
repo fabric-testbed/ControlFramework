@@ -159,7 +159,13 @@ class OrchestratorKernel(ABCTick):
         """
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         GlobalsSingleton.get().get_container().register(tickable=self)
-        GlobalsSingleton.get().get_container().get_actor().load_combined_broker_model()
+        from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
+        oh = OrchestratorHandler()
+        model = oh.discover_broker_query_model(controller=oh.controller_state.controller,
+                                               graph_format=GraphFormat.GRAPHML,
+                                               force_refresh=True, level=0)
+        if model:
+            GlobalsSingleton.get().get_container().get_actor().load_model(graph_model=model)
 
         self.get_logger().debug("Starting SliceDeferThread")
         self.defer_thread = SliceDeferThread(kernel=self)

@@ -335,7 +335,7 @@ class Authority(ActorMixin, ABCAuthority):
         """
         self.policy.set_aggregate_resource_model(aggregate_resource_model=aggregate_resource_model)
 
-    def load_model(self, *, graph_id: str):
+    def load_model(self, *, graph_id: str = None, graph_model: str = None):
         self.policy.set_aggregate_resource_model_graph_id(graph_id=graph_id)
         self.policy.load_aggregate_resource_model()
 

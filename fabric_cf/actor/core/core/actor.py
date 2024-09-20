@@ -941,7 +941,7 @@ class ActorMixin(ABCActorMixin):
         if self.plugin is not None:
             self.plugin.set_logger(logger=logger)
 
-    def load_model(self, *, graph_id: str):
+    def load_model(self, *, graph_id: str = None, graph_model: str = None):
         return
 
     def update_maintenance_mode(self, *, properties: Dict[str, str], sites: List[Site] = None):

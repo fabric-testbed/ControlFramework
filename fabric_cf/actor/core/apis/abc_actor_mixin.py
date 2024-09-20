@@ -383,10 +383,11 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         """
 
     @abstractmethod
-    def load_model(self, *, graph_id: str):
+    def load_model(self, *, graph_id: str = None, graph_model: str = None):
         """
         Load any Graph Model
         :param graph_id:
+        :param graph_model
         :return:
         """
 

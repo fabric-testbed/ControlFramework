@@ -471,38 +471,21 @@ class Controller(ActorMixin, ABCController):
 
         self.wrapper.poa_info(poa=poa, caller=caller)
 
-    def load_combined_broker_model(self):
+    def load_model(self, *, graph_id: str = None, graph_model: str = None):
+        if graph_id:
+            return
         if not hasattr(self, 'combined_broker_model_graph_id'):
             self.combined_broker_model_graph_id = None
 
-        if self.combined_broker_model_graph_id is None:
-            self.logger.debug("Creating an empty Combined Broker Model Graph")
-            from fabric_cf.actor.core.manage.management_utils import ManagementUtils
-            mgmt_actor = ManagementUtils.get_local_actor()
-            brokers = self.get_brokers()
-            broker = None
-            if brokers is not None:
-                broker = ID(uid=next(iter(brokers), None).get_guid())
-            if not broker:
-                self.logger.error("Unable to determine the Broker ID")
-                return
+        if self.combined_broker_model_graph_id:
+            FimHelper.delete_graph(graph_id=self.combined_broker_model_graph_id)
 
-            level = 0
-            graph_format = GraphFormat.GRAPHML
-            model = mgmt_actor.get_broker_query_model(broker=broker, level=level, graph_format=graph_format,
-                                                      id_token=None)
-
-            if model is None or model.get_model() is None or model.get_model() == '':
-                self.logger.error(f"Resource(s) not found for level: {level} format: {graph_format}!")
-                return
-            self.combined_broker_model = FimHelper.get_neo4j_cbm_graph_from_string_direct(
-                graph_str=model.get_model(), ignore_validation=True)
-        else:
-            self.logger.debug(f"Loading an existing Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
-            self.combined_broker_model = FimHelper.get_neo4j_cbm_graph(graph_id=self.combined_broker_model_graph_id)
-            self.combined_broker_model_graph_id = self.combined_broker_model.get_graph_id()
-            self.logger.debug(
-                f"Successfully loaded an Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
+        self.logger.debug(f"Loading an existing Combined Broker Model Graph")
+        self.combined_broker_model = FimHelper.get_neo4j_cbm_graph_from_string_direct(
+            graph_str=graph_model, ignore_validation=True)
+        self.combined_broker_model_graph_id = self.combined_broker_model.get_graph_id()
+        self.logger.debug(
+            f"Successfully loaded an Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
 
     @staticmethod
     def get_management_object_class() -> str:
