@@ -157,7 +157,6 @@ class Controller(ActorMixin, ABCController):
         self.asm_update_thread.set_logger(logger=logger)
 
     def start(self):
-        self.load_combined_broker_model()
         self.pluggable_registry.register_pluggable(t=PluggableType.Broker, p=AggregatedBQMPlugin, actor=self,
                                                    logger=self.logger)
         self.asm_update_thread.set_logger(logger=self.logger)
