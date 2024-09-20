@@ -30,6 +30,12 @@ import time
 import traceback
 from typing import TYPE_CHECKING
 
+from fabric_cf.actor.fim.fim_helper import FimHelper
+from fim.graph.networkx_property_graph_disjoint import NetworkXGraphImporterDisjoint
+from fim.graph.resources.networkx_abqm import NetworkXABQMFactory
+from fim.user import GraphFormat
+from fim.user.topology import AdvertizedTopology
+
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
 from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.base_sliver import BaseSliver
@@ -86,6 +92,8 @@ class Controller(ActorMixin, ABCController):
         self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=2,
                                                                  thread_name_prefix=self.__class__.__name__)
         self.pluggable_registry = PluggableRegistry()
+        self.combined_broker_model_graph_id = None
+        self.combined_broker_model = None
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -112,6 +120,9 @@ class Controller(ActorMixin, ABCController):
         del state['thread_pool']
         if hasattr(self, 'pluggable_registry'):
             del state['pluggable_registry']
+
+        if hasattr(self, 'combined_broker_model'):
+            del state['combined_broker_model']
 
         return state
 
@@ -290,6 +301,9 @@ class Controller(ActorMixin, ABCController):
             self.registry.set_slices_plugin(plugin=self.plugin)
             self.registry.initialize()
 
+            # Load the combined broker model with level=0
+            self.load_combined_broker_model()
+
             self.initialized = True
 
     def process_redeeming(self):
@@ -458,6 +472,36 @@ class Controller(ActorMixin, ABCController):
             raise ControllerException("This actor cannot receive calls")
 
         self.wrapper.poa_info(poa=poa, caller=caller)
+
+    def load_combined_broker_model(self):
+        if self.combined_broker_model_graph_id is None:
+            self.logger.debug("Creating an empty Combined Broker Model Graph")
+            from fabric_cf.actor.core.manage.management_utils import ManagementUtils
+            mgmt_actor = ManagementUtils.get_local_actor()
+            brokers = self.get_brokers()
+            broker = None
+            if brokers is not None:
+                broker = ID(uid=next(iter(brokers), None).get_guid())
+            if not broker:
+                self.logger.error("Unable to determine the Broker ID")
+                return
+
+            level = 0
+            graph_format = GraphFormat.GRAPHML
+            model = mgmt_actor.get_broker_query_model(broker=broker, level=level, graph_format=graph_format,
+                                                      id_token=None)
+
+            if model is None or model.get_model() is None or model.get_model() == '':
+                self.logger.error(f"Resource(s) not found for level: {level} format: {graph_format}!")
+                return
+            self.combined_broker_model = FimHelper.get_neo4j_cbm_graph_from_string_direct(
+                graph_str=model.get_model(), ignore_validation=True)
+        else:
+            self.logger.debug(f"Loading an existing Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
+            self.combined_broker_model = FimHelper.get_neo4j_cbm_graph(graph_id=self.combined_broker_model_graph_id)
+            self.combined_broker_model_graph_id = self.combined_broker_model.get_graph_id()
+            self.logger.debug(
+                f"Successfully loaded an Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
 
     @staticmethod
     def get_management_object_class() -> str:

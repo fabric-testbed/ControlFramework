@@ -1004,7 +1004,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
                 # This is a regular request for modifying network resources to an upstream broker.
                 self.sequence_ticket_out += 1
-                print(f"Issuing an extend ticket {sliver_to_str(sliver=self.get_requested_resources().get_sliver())}")
+                self.logger.debug(f"Issuing an extend ticket {sliver_to_str(sliver=self.get_requested_resources().get_sliver())}")
                 RPCManagerSingleton.get().extend_ticket(reservation=self)
 
                 # Update ASM with Reservation Info
