@@ -478,6 +478,9 @@ class Controller(ActorMixin, ABCController):
         self.wrapper.poa_info(poa=poa, caller=caller)
 
     def load_combined_broker_model(self):
+        if not hasattr(self, 'combined_broker_model_graph_id'):
+            self.combined_broker_model_graph_id = None
+
         if self.combined_broker_model_graph_id is None:
             self.logger.debug("Creating an empty Combined Broker Model Graph")
             from fabric_cf.actor.core.manage.management_utils import ManagementUtils
