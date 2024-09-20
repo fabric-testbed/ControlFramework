@@ -153,6 +153,7 @@ class Controller(ActorMixin, ABCController):
         self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=2,
                                                                  thread_name_prefix=self.__class__.__name__)
         self.pluggable_registry = PluggableRegistry()
+        self.combined_broker_model = None
 
     def set_logger(self, logger):
         super(Controller, self).set_logger(logger=logger)
