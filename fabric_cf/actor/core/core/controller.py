@@ -124,6 +124,9 @@ class Controller(ActorMixin, ABCController):
         if hasattr(self, 'combined_broker_model'):
             del state['combined_broker_model']
 
+        if not hasattr(self, 'combined_broker_model_graph_id'):
+            self.combined_broker_model_graph_id = None
+
         return state
 
     def __setstate__(self, state):
