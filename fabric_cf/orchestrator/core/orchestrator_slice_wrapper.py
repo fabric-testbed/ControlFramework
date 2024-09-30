@@ -41,7 +41,7 @@ from fim.slivers.capacities_labels import CapacityHints, Labels
 from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver
-from fim.slivers.topology_diff import WhatsModifiedFlag
+from fim.slivers.topology_diff import WhatsModifiedFlag, TopologyDiff
 from fim.user import ServiceType, ExperimentTopology, InterfaceType
 
 from fabric_cf.actor.core.common.constants import ErrorCodes, Constants
@@ -333,7 +333,7 @@ class OrchestratorSliceWrapper:
                         if sliver.labels is None:
                             sliver.labels = Labels()
                         sliver.labels = Labels.update(sliver.labels,
-                                                      local_name=f"{self.slice_obj.get_slice_name()}-{ifs.peer_labels.account_id}")
+                                                      local_name=f"{self.slice_obj.get_slice_name()}")
 
                 # Generate reservation for the sliver
                 reservation = self.reservation_converter.generate_reservation(sliver=sliver,
@@ -460,7 +460,7 @@ class OrchestratorSliceWrapper:
             sliver_to_res_mapping[nn_id] = reservation.get_reservation_id()
         return reservations, sliver_to_res_mapping
 
-    def modify(self, *, new_slice_graph: ABCASMPropertyGraph) -> List[LeaseReservationAvro]:
+    def modify(self, *, new_slice_graph: ABCASMPropertyGraph) -> Tuple[TopologyDiff, List[LeaseReservationAvro]]:
         """
         Modify an existing slice
         :param new_slice_graph New Slice Graph
@@ -478,8 +478,8 @@ class OrchestratorSliceWrapper:
         ns_peered_reservations = []
         ns_mapping = {}
 
-        if topology_diff is None:
-            return reservations
+        if not topology_diff:
+            return topology_diff, reservations
 
         node_res_mapping = {}
 
@@ -624,7 +624,7 @@ class OrchestratorSliceWrapper:
         for x in modified_reservations:
             self.computed_reservations.append(x)
 
-        return self.computed_reservations
+        return topology_diff, self.computed_reservations
 
     def __check_modify_on_fabnetv4ext(self, *, rid: str, req_sliver: NetworkServiceSliver) -> NetworkServiceSliver:
         if req_sliver.get_type() != ServiceType.FABNetv4Ext:
@@ -704,21 +704,47 @@ class OrchestratorSliceWrapper:
 
         return req_sliver
 
-    def update_topology(self, *, topology: ExperimentTopology):
-        for x in self.computed_reservations:
-            sliver = x.get_sliver()
-            node_name = sliver.get_name()
-            if isinstance(sliver, NodeSliver) and node_name in topology.nodes:
-                node = topology.nodes[node_name]
-                node.set_properties(labels=sliver.labels,
-                                    label_allocations=sliver.label_allocations,
-                                    capacity_allocations=sliver.capacity_allocations,
-                                    reservation_info=sliver.reservation_info,
-                                    node_map=sliver.node_map,
-                                    management_ip=sliver.management_ip,
-                                    capacity_hints=sliver.capacity_hints,
-                                    capacities=sliver.capacities)
+    def update_topology(self, *, topology: ExperimentTopology = None,
+                        asm_graph: ABCASMPropertyGraph = None):
+        if topology:
+            for x in self.computed_reservations:
+                sliver = x.get_sliver()
+                node_name = sliver.get_name()
+                if isinstance(sliver, NodeSliver) and node_name in topology.nodes:
+                    node = topology.nodes[node_name]
+                    node.set_properties(labels=sliver.labels,
+                                        label_allocations=sliver.label_allocations,
+                                        capacity_allocations=sliver.capacity_allocations,
+                                        reservation_info=sliver.reservation_info,
+                                        node_map=sliver.node_map,
+                                        management_ip=sliver.management_ip,
+                                        capacity_hints=sliver.capacity_hints,
+                                        capacities=sliver.capacities)
 
     def has_sliver_updates_at_authority(self):
         return len(self.computed_reservations) or len(self.computed_remove_reservations) or \
                len(self.computed_modify_reservations) or len(self.computed_modify_properties_reservations)
+
+    def has_topology_diffs(self, *, topology_diff: TopologyDiff) -> bool:
+        """
+        Check if there any updates in topology
+        :param topology_diff: topology difference object
+        """
+        ret_val = False
+        if not topology_diff:
+            ret_val = False
+
+        if len(topology_diff.added.nodes) or len(topology_diff.added.components) or \
+                len(topology_diff.added.services) or len(topology_diff.added.interfaces):
+            ret_val = True
+
+        if len(topology_diff.removed.nodes) or len(topology_diff.removed.components) or \
+                len(topology_diff.removed.services) or len(topology_diff.removed.interfaces):
+            ret_val = True
+
+        if len(topology_diff.modified.nodes) or len(topology_diff.modified.components) or \
+                len(topology_diff.modified.services) or len(topology_diff.modified.interfaces):
+            ret_val = True
+
+        self.logger.debug(f"Topology diff found: {ret_val}")
+        return ret_val

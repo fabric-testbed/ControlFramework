@@ -316,8 +316,8 @@ class FimHelper:
         return delegation.get_details() if delegation is not None else None
 
     @staticmethod
-    def update_node(*, graph_id: str, sliver: BaseSliver, reservation_id: str,
-                 state: str, error_message: str):
+    def update_node(*, sliver: BaseSliver, reservation_id: str, state: str, error_message: str, graph_id: str = None,
+                    asm_graph: ABCASMPropertyGraph = None):
         """
         Update Sliver Node in ASM
         :param graph_id:
@@ -325,12 +325,17 @@ class FimHelper:
         :param reservation_id:
         :param state:
         :param error_message:
+        :param asm_graph:
         :return:
         """
         if sliver is None:
             return
-        graph = FimHelper.get_graph(graph_id=graph_id)
-        asm_graph = Neo4jASMFactory.create(graph=graph)
+        if graph_id is None and asm_graph is None:
+            return
+        if graph_id:
+            graph = FimHelper.get_graph(graph_id=graph_id)
+            asm_graph = Neo4jASMFactory.create(graph=graph)
+
         neo4j_topo = ExperimentTopology()
         neo4j_topo.cast(asm_graph=asm_graph)
 
