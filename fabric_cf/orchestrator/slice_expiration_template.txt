@@ -1,0 +1,21 @@
+Subject: FABRIC Reminders | Urgent: Your Slice <slice_name> Will Expire Soon
+
+Dear <User>,
+
+We hope your experience with FABRIC has been productive.
+
+This is a reminder that your slice <slice_name> is scheduled to expire in <hours_left> hours. Once expired, the resources associated with your slice will be automatically released, which may result in the loss of any unsaved data or unfinished experiments.
+
+If you need additional time for your work, we encourage you to extend the slice before it expires. Alternatively, please ensure that you capture all necessary results from your experiments to avoid data loss.
+
+Here are a few steps you can take:
+- **Extend the Slice**: If your experiment requires more time, you can extend your slice duration from the FABRIC portal.
+- **Save Results**: If you're finished with your experiment, please download and store any critical results before the slice expires.
+
+If you have any questions or need assistance, feel free to reach out to us. We're here to support you!
+
+Thank you for using FABRIC, and we look forward to your continued success.
+
+Best regards,
+The FABRIC Team
+https://portal.fabric-testbed.net/
