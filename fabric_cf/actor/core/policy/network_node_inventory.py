@@ -445,7 +445,6 @@ class NetworkNodeInventory(InventoryForType):
 
             for c in comps_to_remove:
                 self.logger.debug(f"Excluding component: {c.get_name()}")
-                print(f"Excluding component: {c.get_name()}")
                 graph_node.attached_components_info.remove_device(name=c.get_name())
 
         self.logger.debug(f"requested_components: {requested_components.devices.values()} for reservation# {rid}")

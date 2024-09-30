@@ -304,6 +304,7 @@ class Constants:
 
     USER_SSH_KEY = "user.ssh.key"
     ALGORITHM = 'algorithm'
+    CORE_CAPACITY_THRESHOLD = "core_capacity_threshold"
 
     # Orchestrator Lease params
     TWO_WEEKS = timedelta(days=15)
