@@ -89,8 +89,6 @@ class Controller(ActorMixin, ABCController):
         self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=2,
                                                                  thread_name_prefix=self.__class__.__name__)
         self.pluggable_registry = PluggableRegistry()
-        self.combined_broker_model_graph_id = None
-        self.combined_broker_model = None
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -117,12 +115,6 @@ class Controller(ActorMixin, ABCController):
         del state['thread_pool']
         if hasattr(self, 'pluggable_registry'):
             del state['pluggable_registry']
-
-        if hasattr(self, 'combined_broker_model'):
-            del state['combined_broker_model']
-
-        if not hasattr(self, 'combined_broker_model_graph_id'):
-            self.combined_broker_model_graph_id = None
 
         return state
 
@@ -470,22 +462,6 @@ class Controller(ActorMixin, ABCController):
             raise ControllerException("This actor cannot receive calls")
 
         self.wrapper.poa_info(poa=poa, caller=caller)
-
-    def load_model(self, *, graph_id: str = None, graph_model: str = None):
-        if graph_id:
-            return
-        if not hasattr(self, 'combined_broker_model_graph_id'):
-            self.combined_broker_model_graph_id = None
-
-        if self.combined_broker_model_graph_id:
-            FimHelper.delete_graph(graph_id=self.combined_broker_model_graph_id)
-
-        self.logger.debug(f"Loading an existing Combined Broker Model Graph")
-        self.combined_broker_model = FimHelper.get_neo4j_cbm_graph_from_string_direct(
-            graph_str=graph_model, ignore_validation=True)
-        self.combined_broker_model_graph_id = self.combined_broker_model.get_graph_id()
-        self.logger.debug(
-            f"Successfully loaded an Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
 
     @staticmethod
     def get_management_object_class() -> str:

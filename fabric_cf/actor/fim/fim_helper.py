@@ -28,6 +28,8 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
+from fim.graph.abc_property_graph_constants import ABCPropertyGraphConstants
+
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_database import ABCDatabase
 
@@ -56,7 +58,7 @@ from fim.slivers.delegations import Delegations
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver, ServiceType
-from fim.user import ExperimentTopology, NodeType, Component, ReservationInfo, Node, GraphFormat, Labels
+from fim.user import ExperimentTopology, NodeType, Component, ReservationInfo, Node, GraphFormat, Labels, ComponentType
 from fim.user.composite_node import CompositeNode
 from fim.user.interface import Interface
 from fim.user.topology import AdvertizedTopology
@@ -793,3 +795,49 @@ class FimHelper:
                             interface.set_property(pname="label_allocations", pval=label_allocations)
 
                 return topology.serialize(fmt=graph_format)
+
+    @staticmethod
+    def candidate_nodes(*, combined_broker_model: Neo4jCBMGraph, sliver: NodeSliver) -> List[str]:
+        """
+        Identify candidate worker nodes in this site that have at least
+        as many needed components as in the sliver.
+        """
+        # modify; return existing node map
+        if sliver.get_node_map() is not None:
+            graph_id, node_id = sliver.get_node_map()
+            return [node_id]
+
+        node_props = {ABCPropertyGraphConstants.PROP_SITE: sliver.site,
+                      ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Server)}
+        if sliver.get_type() == NodeType.Switch:
+            node_props[ABCPropertyGraphConstants.PROP_TYPE] = str(NodeType.Switch)
+
+        storage_components = []
+        # remove storage components before the check
+        if sliver.attached_components_info is not None:
+            for name, c in sliver.attached_components_info.devices.items():
+                if c.get_type() == ComponentType.Storage:
+                    storage_components.append(c)
+            for c in storage_components:
+                sliver.attached_components_info.remove_device(name=c.get_name())
+
+        result = combined_broker_model.get_matching_nodes_with_components(
+            label=ABCPropertyGraphConstants.CLASS_NetworkNode,
+            props=node_props,
+            comps=sliver.attached_components_info)
+
+        # Skip nodes without any delegations which would be data-switch in this case
+        if sliver.get_type() == NodeType.Switch:
+            exclude = []
+            for n in result:
+                if "p4" not in n:
+                    exclude.append(n)
+            for e in exclude:
+                result.remove(e)
+
+        # re-add storage components
+        if len(storage_components) > 0:
+            for c in storage_components:
+                sliver.attached_components_info.add_device(device_info=c)
+
+        return result

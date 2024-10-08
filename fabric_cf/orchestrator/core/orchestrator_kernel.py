@@ -25,7 +25,10 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 
-from fim.user import GraphFormat
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+
+from fabric_cf.actor.fim.fim_helper import FimHelper
+from fim.user import GraphFormat, ExperimentTopology, Node
 
 from fabric_cf.actor.core.apis.abc_actor_event import ABCActorEvent
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
@@ -49,7 +52,8 @@ class PollEvent(ABCActorEvent):
         oh = OrchestratorHandler()
         for graph_format, level in self.model_level_list:
             oh.discover_broker_query_model(controller=oh.controller_state.controller,
-                                           graph_format=graph_format, force_refresh=True, level=level)
+                                           graph_format=graph_format, force_refresh=True,
+                                           level=level)
 
 
 class OrchestratorKernel(ABCTick):
@@ -66,6 +70,8 @@ class OrchestratorKernel(ABCTick):
         self.lock = threading.Lock()
         self.bqm_cache = {}
         self.event_processor = None
+        self.combined_broker_model_graph_id = None
+        self.combined_broker_model = None
         
     def get_saved_bqm(self, *, graph_format: GraphFormat, level: int) -> BqmWrapper:
         """
@@ -93,6 +99,8 @@ class OrchestratorKernel(ABCTick):
             saved_bqm.save(bqm=bqm, graph_format=graph_format, level=level)
             self.bqm_cache[key] = saved_bqm
 
+            if level == 0:
+                self.load_model(model=bqm)
         finally:
             self.lock.release()
 
@@ -152,6 +160,17 @@ class OrchestratorKernel(ABCTick):
         #if self.sut is not None:
         #    self.sut.stop()
 
+    def load_model(self, model: str):
+        if self.combined_broker_model_graph_id:
+            FimHelper.delete_graph(graph_id=self.combined_broker_model_graph_id)
+
+        self.logger.debug(f"Loading an existing Combined Broker Model Graph")
+        self.combined_broker_model = FimHelper.get_neo4j_cbm_graph_from_string_direct(
+            graph_str=model, ignore_validation=True)
+        self.combined_broker_model_graph_id = self.combined_broker_model.get_graph_id()
+        self.logger.debug(
+            f"Successfully loaded an Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
+
     def start_threads(self):
         """
         Start threads
@@ -164,8 +183,7 @@ class OrchestratorKernel(ABCTick):
         model = oh.discover_broker_query_model(controller=self.get_management_actor(),
                                                graph_format=GraphFormat.GRAPHML,
                                                force_refresh=True, level=0)
-        if model:
-            GlobalsSingleton.get().get_container().get_actor().load_model(graph_model=model)
+        self.load_model(model=model)
 
         self.get_logger().debug("Starting SliceDeferThread")
         self.defer_thread = SliceDeferThread(kernel=self)
@@ -197,6 +215,19 @@ class OrchestratorKernel(ABCTick):
     def get_name(self) -> str:
         return self.__class__.__name__
 
+    def determine_start_time(self, topology: ExperimentTopology):
+        for node_name, node in topology.nodes.items():
+            candidate_nodes = FimHelper.candidate_nodes(combined_broker_model=self.combined_broker_model,
+                                                        sliver=node.get_sliver())
+            if not candidate_nodes or len(candidate_nodes):
+                raise Exception("Bad request!")
+
+            states = [ReservationStates.Active.value,
+                      ReservationStates.ActiveTicketed.value,
+                      ReservationStates.Ticketed.value]
+
+            for c in candidate_nodes:
+                existing = self.get_management_actor().get_reservations(node_id=c, states=states)
 
 class OrchestratorKernelSingleton:
     __instance = None
