@@ -30,9 +30,6 @@ import time
 import traceback
 from typing import TYPE_CHECKING
 
-from fabric_cf.actor.fim.fim_helper import FimHelper
-from fim.user import GraphFormat
-
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
 from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.base_sliver import BaseSliver
@@ -142,7 +139,6 @@ class Controller(ActorMixin, ABCController):
         self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=2,
                                                                  thread_name_prefix=self.__class__.__name__)
         self.pluggable_registry = PluggableRegistry()
-        self.combined_broker_model = None
 
     def set_logger(self, logger):
         super(Controller, self).set_logger(logger=logger)
