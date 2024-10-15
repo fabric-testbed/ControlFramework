@@ -50,15 +50,14 @@ class InventoryForType:
         self.logger = None
 
     @staticmethod
-    def get_delegations(*, lab_cap_delegations: Delegations) -> Tuple[str or None, Union[Labels, Capacities] or None]:
+    def get_delegations(*, delegations: Delegations) -> Tuple[str or None, Union[Labels, Capacities] or None]:
         # Grab Label Delegations
-        delegation_id, deleg = lab_cap_delegations.get_sole_delegation()
-        #self.logger.debug(f"Available label/capacity delegations: {deleg} format {deleg.get_format()}")
+        delegation_id, delegation = delegations.get_sole_delegation()
         # ignore pool definitions and references for now
-        if deleg.get_format() != DelegationFormat.SinglePool:
+        if delegation.get_format() != DelegationFormat.SinglePool:
             return None, None
         # get the Labels/Capacities object
-        delegated_label_capacity = deleg.get_details()
+        delegated_label_capacity = delegation.get_details()
         return delegation_id, delegated_label_capacity
 
     @abstractmethod

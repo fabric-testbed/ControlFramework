@@ -25,8 +25,13 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+from fabric_cf.actor.core.container.maintenance import Maintenance
+
+from fabric_cf.actor.core.core.policy import AllocationAlgorithm
+from fabric_cf.actor.core.time.term import Term
+
 
 from fim.graph.abc_property_graph_constants import ABCPropertyGraphConstants
 
@@ -64,7 +69,7 @@ from fim.user.interface import Interface
 from fim.user.topology import AdvertizedTopology
 
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationOperation
 
 
 class InterfaceSliverMapping:

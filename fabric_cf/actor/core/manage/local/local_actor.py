@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 import traceback
+from datetime import datetime
 from typing import TYPE_CHECKING, List, Tuple, Dict
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
@@ -123,6 +124,16 @@ class LocalActor(LocalProxy, ABCMgmtActor):
             if result.status.get_code() == 0:
                 return result.reservations
 
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+    def get_components(self, *, node_id: str, rsv_type: list[str], states: list[int],
+                       component: str = None, bdf: str = None, start: datetime = None,
+                       end: datetime = None, excludes: List[str] = None) -> Dict[str, List[str]]:
+        try:
+            return self.manager.get_components(node_id=node_id, rsv_type=rsv_type, states=states,
+                                               component=component, bdf=bdf, start=start,
+                                               end=end, excludes=excludes)
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 

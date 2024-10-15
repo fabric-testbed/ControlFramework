@@ -25,10 +25,14 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 
+from fabric_cf.actor.core.policy.network_node_inventory import NetworkNodeInventory
+from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
+from fim.slivers.network_node import NodeSliver
+
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
-from fim.user import GraphFormat, ExperimentTopology, Node
+from fim.user import GraphFormat, ServiceType, NodeType
 
 from fabric_cf.actor.core.apis.abc_actor_event import ABCActorEvent
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
@@ -215,10 +219,25 @@ class OrchestratorKernel(ABCTick):
     def get_name(self) -> str:
         return self.__class__.__name__
 
-    def determine_start_time(self, topology: ExperimentTopology):
-        for node_name, node in topology.nodes.items():
+    def determine_start_time(self, computed_reservations: list[LeaseReservationAvro]):
+        """
+        Given set of reservations; check if the requested resources are available
+        - if resources are not available find the next available start time for them based on the existing allocations
+        @param computed_reservations:
+        @return:
+        """
+        for r in computed_reservations:
+            requested_sliver = r.get_sliver()
+            # TODO remove
+            requested_sliver = NodeSliver()
+            # TODO remove
+
+            if not isinstance(requested_sliver, NodeSliver):
+                continue
+
             candidate_nodes = FimHelper.candidate_nodes(combined_broker_model=self.combined_broker_model,
-                                                        sliver=node.get_sliver())
+                                                        sliver=requested_sliver)
+
             if not candidate_nodes or len(candidate_nodes):
                 raise Exception("Bad request!")
 
@@ -226,8 +245,33 @@ class OrchestratorKernel(ABCTick):
                       ReservationStates.ActiveTicketed.value,
                       ReservationStates.Ticketed.value]
 
+            res_type = []
+            for x in ServiceType:
+                res_type.append(str(x))
+            for x in NodeType:
+                res_type.append(str(x))
+
             for c in candidate_nodes:
+                cbm_node = self.combined_broker_model.build_deep_node_sliver(node_id=c)
+                # TODO remove
+                cbm_node = NodeSliver()
+                # TODO remove
+                # Skip if CBM node is not the specific host that is requested
+                if requested_sliver.get_labels() and requested_sliver.get_labels().instance_parent and \
+                        requested_sliver.get_labels().instance_parent != cbm_node.get_name():
+                    continue
                 existing = self.get_management_actor().get_reservations(node_id=c, states=states)
+
+                components = self.get_management_actor().get_components(node_id=c, states=states,
+                                                                        rsv_type=res_type)
+                delegation_id = NetworkNodeInventory.check_capacities(
+                    rid=ID(uid=r.get_reservation_id()),
+                    requested_capacities=requested_sliver.get_capacities(),
+                    delegated=cbm_node.get_capacity_delegations(),
+                    existing_reservations=existing,
+                    logger=self.logger,
+                )
+
 
 class OrchestratorKernelSingleton:
     __instance = None

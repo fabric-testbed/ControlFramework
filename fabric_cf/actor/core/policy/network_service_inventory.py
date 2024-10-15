@@ -154,7 +154,7 @@ class NetworkServiceInventory(InventoryForType):
                         )
                     return requested_ifs
 
-                delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
+                delegation_id, delegated_label = self.get_delegations(delegations=owner_ns.get_label_delegations())
                 vlan_range = self.__extract_vlan_range(labels=delegated_label)
 
                 if vlan_range and requested_vlan not in vlan_range:
@@ -189,7 +189,7 @@ class NetworkServiceInventory(InventoryForType):
         else:
             if bqm_ifs.get_type() != InterfaceType.FacilityPort:
                 delegation_id, delegated_label = self.get_delegations(
-                    lab_cap_delegations=owner_ns.get_label_delegations())
+                    delegations=owner_ns.get_label_delegations())
                 vlan_range = self.__extract_vlan_range(labels=delegated_label)
             else:
                 vlan_range = self.__extract_vlan_range(labels=bqm_ifs.labels)
@@ -333,7 +333,7 @@ class NetworkServiceInventory(InventoryForType):
                 return requested_ns
 
             # Grab Label Delegations
-            delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
+            delegation_id, delegated_label = self.get_delegations(delegations=owner_ns.get_label_delegations())
 
             # HACK to use FabNetv6 for FabNetv6Ext as both have the same range
             requested_ns_type = requested_ns.get_type()
@@ -564,7 +564,7 @@ class NetworkServiceInventory(InventoryForType):
             ifs_labels = Labels()
 
         if owner_switch.get_name() == Constants.AL2S:
-            delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=bqm_interface.get_label_delegations())
+            delegation_id, delegated_label = self.get_delegations(delegations=bqm_interface.get_label_delegations())
             local_name = delegated_label.local_name
             device_name = delegated_label.device_name
         else:

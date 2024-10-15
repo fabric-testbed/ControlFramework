@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from datetime import datetime
 from typing import TYPE_CHECKING, List, Tuple, Dict
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
@@ -169,6 +170,25 @@ class ABCMgmtActor(ABCComponent):
         Obtains all reservations
         @return returns list of the reservations
         """
+
+    def get_components(self, *, node_id: str, rsv_type: list[str], states: list[int],
+                       component: str = None, bdf: str = None, start: datetime = None,
+                       end: datetime = None, excludes: List[str] = None) -> Dict[str, List[str]]:
+        """
+        Returns components matching the search criteria
+        @param node_id: Worker Node ID to which components belong
+        @param states: list of states used to find reservations
+        @param rsv_type: type of reservations
+        @param component: component name
+        @param bdf: Component's PCI address
+        @param start: start time
+        @param end: end time
+        @param excludes: Excludes the list of reservations
+        NOTE# For P4 switches; node_id=node+renc-p4-sw  component=ip+192.168.11.8 bdf=p1
+
+        @return Dictionary with component name as the key and value as list of associated PCI addresses in use.
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def get_sites(self, *, site: str) -> List[SiteAvro] or None:
