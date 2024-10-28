@@ -26,6 +26,7 @@
 import logging
 from typing import Tuple, List, Dict, Union
 
+from fabric_cf.actor.fim.fim_helper import FimHelper
 from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver, ComponentType
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities, Labels
@@ -255,7 +256,7 @@ class NetworkNodeInventory(InventoryForType):
             return requested
 
         # Checking capacity for component
-        delegation_id, delegated_capacity = NetworkNodeInventory.get_delegations(
+        delegation_id, delegated_capacity = FimHelper.get_delegations(
             delegations=available.get_capacity_delegations())
 
         # Delegated capacity would have been decremented already to exclude allocated shared NICs
@@ -268,7 +269,7 @@ class NetworkNodeInventory(InventoryForType):
         requested.capacity_allocations = Capacities(unit=1)
 
         # Check labels
-        delegation_id, delegated_label = NetworkNodeInventory.get_delegations(
+        delegation_id, delegated_label = FimHelper.get_delegations(
             delegations=available.get_label_delegations())
 
         if requested.get_type() == ComponentType.SharedNIC:
@@ -308,7 +309,7 @@ class NetworkNodeInventory(InventoryForType):
                                   msg=f"shared_nic: {shared} allocated_nic: {allocated}")
 
         # Reduce capacity for component
-        delegation_id, delegated_capacity = NetworkNodeInventory.get_delegations(
+        delegation_id, delegated_capacity = FimHelper.get_delegations(
             delegations=shared.get_capacity_delegations())
 
         logger.debug(f"Allocated NIC: {allocated} labels: {allocated.get_labels()}")
@@ -316,7 +317,7 @@ class NetworkNodeInventory(InventoryForType):
         # Get the Allocated PCI address
         allocated_labels = allocated.get_labels()
 
-        delegation_id, delegated_label = NetworkNodeInventory.get_delegations(
+        delegation_id, delegated_label = FimHelper.get_delegations(
             delegations=shared.get_label_delegations())
 
         # Remove allocated PCI address from delegations

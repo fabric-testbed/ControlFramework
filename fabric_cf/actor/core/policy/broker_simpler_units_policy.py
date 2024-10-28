@@ -801,8 +801,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 device_name = owner_switch.get_name()
 
                 if device_name == Constants.AL2S:
-                    delegation_id, delegated_label = InventoryForType.get_delegations(delegations=
-                                                                                       net_cp.get_label_delegations())
+                    delegation_id, delegated_label = FimHelper.get_delegations(delegations=
+                                                                               net_cp.get_label_delegations())
                     device_name = delegated_label.device_name
                     local_name = delegated_label.local_name
 
@@ -882,11 +882,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                             owner_mpls_ns = ns
                             break
                 if owner_ns and ServiceType.MPLS == owner_ns.get_type():
-                    delegation_id, delegated_label = InventoryForType.get_delegations(delegations=
-                                                                                      owner_switch.get_label_delegations())
+                    delegation_id, delegated_label = FimHelper.get_delegations(delegations=
+                                                                               owner_switch.get_label_delegations())
                 else:
-                    delegation_id, delegated_label = InventoryForType.get_delegations(delegations=
-                                                                                      owner_ns.get_label_delegations())
+                    delegation_id, delegated_label = FimHelper.get_delegations(delegations=
+                                                                               owner_ns.get_label_delegations())
 
             # Set the Subnet and gateway from the Owner Switch (a)
             existing_reservations = self.get_existing_reservations(node_id=owner_ns_id,

@@ -26,11 +26,6 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from ctypes import Union
-from typing import Tuple
-
-from fim.slivers.capacities_labels import Labels, Capacities
-from fim.slivers.delegations import DelegationFormat, Delegations
 
 
 class InventoryForType:
@@ -48,17 +43,6 @@ class InventoryForType:
     def __setstate__(self, state):
         self.__dict__.update(state)
         self.logger = None
-
-    @staticmethod
-    def get_delegations(*, delegations: Delegations) -> Tuple[str or None, Union[Labels, Capacities] or None]:
-        # Grab Label Delegations
-        delegation_id, delegation = delegations.get_sole_delegation()
-        # ignore pool definitions and references for now
-        if delegation.get_format() != DelegationFormat.SinglePool:
-            return None, None
-        # get the Labels/Capacities object
-        delegated_label_capacity = delegation.get_details()
-        return delegation_id, delegated_label_capacity
 
     @abstractmethod
     def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:

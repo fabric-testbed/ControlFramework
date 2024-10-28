@@ -59,7 +59,7 @@ from fim.graph.slices.networkx_asm import NetworkxASM, NetworkXASMFactory
 from fim.slivers.attached_components import ComponentSliver
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities
-from fim.slivers.delegations import Delegations
+from fim.slivers.delegations import Delegations, DelegationFormat
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver, ServiceType
@@ -870,3 +870,14 @@ class FimHelper:
             requested_capacity_hints = CapacityHints(instance_type=instance_type)
             sliver.set_capacity_hints(caphint=requested_capacity_hints)
         return sliver
+
+    @staticmethod
+    def get_delegations(*, delegations: Delegations) -> Tuple[str or None, Union[Labels, Capacities] or None]:
+        # Grab Label Delegations
+        delegation_id, delegation = delegations.get_sole_delegation()
+        # ignore pool definitions and references for now
+        if delegation.get_format() != DelegationFormat.SinglePool:
+            return None, None
+        # get the Labels/Capacities object
+        delegated_label_capacity = delegation.get_details()
+        return delegation_id, delegated_label_capacity
