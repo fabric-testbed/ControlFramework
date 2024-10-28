@@ -63,7 +63,8 @@ from fim.slivers.delegations import Delegations
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver, ServiceType
-from fim.user import ExperimentTopology, NodeType, Component, ReservationInfo, Node, GraphFormat, Labels, ComponentType
+from fim.user import ExperimentTopology, NodeType, Component, ReservationInfo, Node, GraphFormat, Labels, ComponentType, \
+    InstanceCatalog, CapacityHints
 from fim.user.composite_node import CompositeNode
 from fim.user.interface import Interface
 from fim.user.topology import AdvertizedTopology
@@ -846,3 +847,26 @@ class FimHelper:
                 sliver.attached_components_info.add_device(device_info=c)
 
         return result
+
+    @staticmethod
+    def compute_capacities(*, sliver: NodeSliver) -> NodeSliver:
+        """
+        Map requested sliver capacities or capacity hints to a flavor supported by Sites
+        @param sliver:
+        @return:
+        """
+        # Compute Requested Capacities from Capacity Hints
+        requested_capacities = sliver.get_capacities()
+        requested_capacity_hints = sliver.get_capacity_hints()
+        catalog = InstanceCatalog()
+        if requested_capacities is None and requested_capacity_hints is not None:
+            requested_capacities = catalog.get_instance_capacities(
+                instance_type=requested_capacity_hints.instance_type)
+            sliver.set_capacities(cap=requested_capacities)
+
+        # Compute Capacity Hints from Requested Capacities
+        if requested_capacity_hints is None and requested_capacities is not None:
+            instance_type = catalog.map_capacities_to_instance(cap=requested_capacities)
+            requested_capacity_hints = CapacityHints(instance_type=instance_type)
+            sliver.set_capacity_hints(caphint=requested_capacity_hints)
+        return sliver

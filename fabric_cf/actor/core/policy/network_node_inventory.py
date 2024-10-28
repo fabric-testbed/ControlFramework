@@ -24,11 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
-from datetime import datetime, timezone
 from typing import Tuple, List, Dict, Union
 
-from fabric_cf.actor.core.time.actor_clock import ActorClock
-from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver, ComponentType
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities, Labels
@@ -49,7 +46,7 @@ from fabric_cf.actor.core.util.id import ID
 class NetworkNodeInventory(InventoryForType):
     @staticmethod
     def check_capacities(*, rid: ID, requested_capacities: Capacities, delegated: Delegations,
-                         existing_reservations: List[Union[ABCReservationMixin, ReservationMng]],
+                         existing_reservations: List[ABCReservationMixin],
                          logger: logging.Logger) -> str:
         """
         Check if the requested capacities can be satisfied with the available capacities
@@ -61,7 +58,6 @@ class NetworkNodeInventory(InventoryForType):
         :return: Delegation Id of the delegation which satisfies the request
         :raises: BrokerException in case the request cannot be satisfied
         """
-        future_start = None
         logger.debug(f"requested_capacities: {requested_capacities} for reservation# {rid}")
 
         delegation_id, delegated_capacity = NetworkNodeInventory.get_delegations(delegations=delegated)
@@ -73,15 +69,12 @@ class NetworkNodeInventory(InventoryForType):
                     continue
                 # For Active or Ticketed or Ticketing reservations; reduce the counts from available
                 resource_sliver = None
-                if isinstance(reservation, ReservationMng):
-                    resource_sliver = reservation.get_sliver()
-                else:
-                    if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
-                        resource_sliver = reservation.get_approved_resources().get_sliver()
+                if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
+                    resource_sliver = reservation.get_approved_resources().get_sliver()
 
-                    if (reservation.is_active() or reservation.is_ticketed()) and \
-                            reservation.get_resources() is not None:
-                        resource_sliver = reservation.get_resources().get_sliver()
+                if (reservation.is_active() or reservation.is_ticketed()) and \
+                        reservation.get_resources() is not None:
+                    resource_sliver = reservation.get_resources().get_sliver()
 
                 if resource_sliver is not None and isinstance(resource_sliver, NodeSliver):
                     logger.debug(
@@ -368,7 +361,7 @@ class NetworkNodeInventory(InventoryForType):
 
     @staticmethod
     def __exclude_components_for_existing_reservations(*, rid: ID, graph_node: NodeSliver, logger: logging.Logger,
-                                                       existing_reservations: List[Union[ABCReservationMixin, ReservationMng]],
+                                                       existing_reservations: List[ABCReservationMixin],
                                                        operation: ReservationOperation = ReservationOperation.Create) -> NodeSliver:
         """
         Remove already assigned components to existing reservations from the candidate node
@@ -384,18 +377,15 @@ class NetworkNodeInventory(InventoryForType):
                 continue
             # For Active or Ticketed or Ticketing reservations; reduce the counts from available
             allocated_sliver = None
-            if isinstance(reservation, ReservationMng):
-                allocated_sliver = reservation.get_sliver()
-            else:
-                if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
-                    allocated_sliver = reservation.get_approved_resources().get_sliver()
+            if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
+                allocated_sliver = reservation.get_approved_resources().get_sliver()
 
-                if (reservation.is_active() or reservation.is_ticketed()) and reservation.get_resources() is not None:
-                    allocated_sliver = reservation.get_resources().get_sliver()
+            if (reservation.is_active() or reservation.is_ticketed()) and reservation.get_resources() is not None:
+                allocated_sliver = reservation.get_resources().get_sliver()
 
-                if reservation.is_extending_ticket() and reservation.get_requested_resources() is not None and \
-                        reservation.get_requested_resources().get_sliver() is not None:
-                    allocated_sliver = reservation.get_requested_resources().get_sliver()
+            if reservation.is_extending_ticket() and reservation.get_requested_resources() is not None and \
+                    reservation.get_requested_resources().get_sliver() is not None:
+                allocated_sliver = reservation.get_requested_resources().get_sliver()
 
             if allocated_sliver is None or not isinstance(allocated_sliver, NodeSliver) or \
                     allocated_sliver.attached_components_info is None:
@@ -423,7 +413,7 @@ class NetworkNodeInventory(InventoryForType):
 
     @staticmethod
     def check_components(*, rid: ID, requested_components: AttachedComponentsInfo, graph_id: str,
-                         graph_node: NodeSliver, existing_reservations: List[Union[ABCReservationMixin, ReservationMng]],
+                         graph_node: NodeSliver, existing_reservations: List[ABCReservationMixin],
                          existing_components: Dict[str, List[str]], logger: logging.Logger,
                          operation: ReservationOperation = ReservationOperation.Create) -> AttachedComponentsInfo:
         """
@@ -544,7 +534,7 @@ class NetworkNodeInventory(InventoryForType):
         return requested_components
 
     def __allocate_p4_switch(self, *, rid: ID, requested_sliver: NodeSliver, graph_id: str, graph_node: NodeSliver,
-                             existing_reservations: List[Union[ABCReservationMixin, ReservationMng]], existing_components: Dict[str, List[str]],
+                             existing_reservations: List[ABCReservationMixin], existing_components: Dict[str, List[str]],
                              operation: ReservationOperation = ReservationOperation.Create) -> Tuple[str, BaseSliver]:
         """
         Allocate an extending or ticketing reservation for a P4 switch
@@ -594,7 +584,7 @@ class NetworkNodeInventory(InventoryForType):
         return delegation_id, requested_sliver
 
     def allocate(self, *, rid: ID, requested_sliver: BaseSliver, graph_id: str, graph_node: BaseSliver,
-                 existing_reservations: List[Union[ABCReservationMixin, ReservationMng]], existing_components: Dict[str, List[str]],
+                 existing_reservations: List[ABCReservationMixin], existing_components: Dict[str, List[str]],
                  operation: ReservationOperation = ReservationOperation.Create) -> Tuple[str, BaseSliver]:
         """
         Allocate an extending or ticketing reservation

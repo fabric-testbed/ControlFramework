@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import datetime
 import threading
 
 from fabric_cf.actor.core.policy.network_node_inventory import NetworkNodeInventory
@@ -44,6 +45,7 @@ from fabric_cf.actor.core.util.id import ID
 from fabric_cf.orchestrator.core.bqm_wrapper import BqmWrapper
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.reservation_status_update_thread import ReservationStatusUpdateThread
+from fabric_cf.orchestrator.core.resource_tracker import ResourceTracker
 from fabric_cf.orchestrator.core.slice_defer_thread import SliceDeferThread
 
 
@@ -219,7 +221,8 @@ class OrchestratorKernel(ABCTick):
     def get_name(self) -> str:
         return self.__class__.__name__
 
-    def determine_start_time(self, computed_reservations: list[LeaseReservationAvro]):
+    def determine_start_time(self, computed_reservations: list[LeaseReservationAvro], start: datetime,
+                             end: datetime, duration: int):
         """
         Given set of reservations; check if the requested resources are available
         - if resources are not available find the next available start time for them based on the existing allocations
@@ -228,10 +231,6 @@ class OrchestratorKernel(ABCTick):
         """
         for r in computed_reservations:
             requested_sliver = r.get_sliver()
-            # TODO remove
-            requested_sliver = NodeSliver()
-            # TODO remove
-
             if not isinstance(requested_sliver, NodeSliver):
                 continue
 
@@ -253,24 +252,13 @@ class OrchestratorKernel(ABCTick):
 
             for c in candidate_nodes:
                 cbm_node = self.combined_broker_model.build_deep_node_sliver(node_id=c)
-                # TODO remove
-                cbm_node = NodeSliver()
-                # TODO remove
                 # Skip if CBM node is not the specific host that is requested
                 if requested_sliver.get_labels() and requested_sliver.get_labels().instance_parent and \
                         requested_sliver.get_labels().instance_parent != cbm_node.get_name():
                     continue
                 existing = self.get_management_actor().get_reservations(node_id=c, states=states)
-
-                components = self.get_management_actor().get_components(node_id=c, states=states,
-                                                                        rsv_type=res_type)
-                delegation_id = NetworkNodeInventory.check_capacities(
-                    rid=ID(uid=r.get_reservation_id()),
-                    requested_capacities=requested_sliver.get_capacities(),
-                    delegated=cbm_node.get_capacity_delegations(),
-                    existing_reservations=existing,
-                    logger=self.logger,
-                )
+                tracker = ResourceTracker(cbm_node=cbm_node)
+                tracker.find_next_available(requested_sliver=requested_sliver)
 
 
 class OrchestratorKernelSingleton:

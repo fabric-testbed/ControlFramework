@@ -37,8 +37,7 @@ from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReserva
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.slices.abc_asm import ABCASMPropertyGraph
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.capacities_labels import CapacityHints, Labels
-from fim.slivers.instance_catalog import InstanceCatalog
+from fim.slivers.capacities_labels import Labels
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver
 from fim.slivers.topology_diff import WhatsModifiedFlag
@@ -417,19 +416,7 @@ class OrchestratorSliceWrapper:
 
         if sliver.get_type() == NodeType.VM:
             # Compute Requested Capacities from Capacity Hints
-            requested_capacities = sliver.get_capacities()
-            requested_capacity_hints = sliver.get_capacity_hints()
-            catalog = InstanceCatalog()
-            if requested_capacities is None and requested_capacity_hints is not None:
-                requested_capacities = catalog.get_instance_capacities(
-                    instance_type=requested_capacity_hints.instance_type)
-                sliver.set_capacities(cap=requested_capacities)
-
-            # Compute Capacity Hints from Requested Capacities
-            if requested_capacity_hints is None and requested_capacities is not None:
-                instance_type = catalog.map_capacities_to_instance(cap=requested_capacities)
-                requested_capacity_hints = CapacityHints(instance_type=instance_type)
-                sliver.set_capacity_hints(caphint=requested_capacity_hints)
+            FimHelper.compute_capacities(sliver=sliver)
 
         # Generate reservation for the sliver
         reservation = self.reservation_converter.generate_reservation(sliver=sliver,
