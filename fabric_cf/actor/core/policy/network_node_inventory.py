@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
-from typing import Tuple, List, Dict, Union
+from typing import Tuple, List, Dict
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver, ComponentType
@@ -61,7 +61,7 @@ class NetworkNodeInventory(InventoryForType):
         """
         logger.debug(f"requested_capacities: {requested_capacities} for reservation# {rid}")
 
-        delegation_id, delegated_capacity = NetworkNodeInventory.get_delegations(delegations=delegated)
+        delegation_id, delegated_capacity = FimHelper.get_delegations(delegations=delegated)
 
         # Remove allocated capacities to the reservations
         if existing_reservations is not None:
@@ -118,7 +118,7 @@ class NetworkNodeInventory(InventoryForType):
         :return updated requested component with VLAN, MAC and IP information
         """
         # Check labels
-        delegation_id, delegated_label = NetworkNodeInventory.get_delegations(
+        delegation_id, delegated_label = FimHelper.get_delegations(
             delegations=available.get_label_delegations())
 
         if delegated_label.bdf is None or len(delegated_label.bdf) < 1:
@@ -147,15 +147,15 @@ class NetworkNodeInventory(InventoryForType):
         ifs_name = next(iter(ns.interface_info.interfaces))
         ifs = ns.interface_info.interfaces[ifs_name]
 
-        delegation_id, ifs_delegated_labels = NetworkNodeInventory.get_delegations(delegations=ifs.get_label_delegations())
+        delegation_id, ifs_delegated_labels = FimHelper.get_delegations(delegations=ifs.get_label_delegations())
 
         assigned_bdf = delegated_label.bdf[0]
         assigned_numa = delegated_label.numa[0]
 
         # Check if the requested component's VLAN exists in the delegated labels
-        if requested_component.labels and requested_component.labels.vlan and \
-                requested_component.labels.vlan in ifs_delegated_labels.vlan:
-            vlan_index = ifs_delegated_labels.vlan.index(requested_component.labels.vlan)
+        if requested.labels and requested.labels.vlan and \
+                requested.labels.vlan in ifs_delegated_labels.vlan:
+            vlan_index = ifs_delegated_labels.vlan.index(requested.labels.vlan)
             bdf_for_requested_vlan = ifs_delegated_labels.bdf[vlan_index]
             
             if bdf_for_requested_vlan in delegated_label.bdf:
@@ -164,7 +164,7 @@ class NetworkNodeInventory(InventoryForType):
                 assigned_numa = delegated_label.numa[bdf_index]
 
         # Assign the first PCI Id from the list of available PCI slots
-        requested_component.label_allocations = Labels(bdf=assigned_bdf, numa=assigned_numa)
+        requested.label_allocations = Labels(bdf=assigned_bdf, numa=assigned_numa)
 
         # Find index of assigned BDF in the interface delegated labels
         assigned_index = ifs_delegated_labels.bdf.index(assigned_bdf)
@@ -176,7 +176,7 @@ class NetworkNodeInventory(InventoryForType):
         req_ifs = req_ns.interface_info.interfaces[req_ifs_name]
 
         # Do not copy VLAN for OpenStack-vNIC
-        if requested_component.get_model() == Constants.OPENSTACK_VNIC_MODEL:
+        if requested.get_model() == Constants.OPENSTACK_VNIC_MODEL:
             lab = Labels(bdf=ifs_delegated_labels.bdf[assigned_index], mac=ifs_delegated_labels.mac[assigned_index],
                          local_name=ifs_delegated_labels.local_name[assigned_index])
         else:
@@ -225,7 +225,7 @@ class NetworkNodeInventory(InventoryForType):
                                   msg=f"{message}")
 
         for ifs in ns.interface_info.interfaces.values():
-            delegation_id, ifs_delegated_labels = NetworkNodeInventory.get_delegations(
+            delegation_id, ifs_delegated_labels = FimHelper.get_delegations(
                 delegations=ifs.get_label_delegations())
 
             for requested_ns in requested.network_service_info.network_services.values():
