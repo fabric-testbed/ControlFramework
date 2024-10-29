@@ -43,25 +43,26 @@ from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
+from datetime import datetime, timedelta, timezone
+
 def slices_creates_post(body: SlicesPost, name, lifetime=None, lease_start_time=None, lease_end_time=None):  # noqa: E501
     """Create slice
 
-    Request to create slice as described in the request. Request would be a graph ML describing the requested resources.
-    Resources may be requested to be created now or in future. On success, one or more slivers are allocated,
-    containing resources satisfying the request, and assigned to the given slice. This API returns list and description
-    of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of
-    these resources asynchronously on the appropriate sites either now or in the future as requested.
-    Experimenter can invoke get slice API to get the latest state of the requested resources.   # noqa: E501
+    Request to create a slice as described in the request, represented as a Graph ML specifying requested resources.
+    Resources may be scheduled for immediate or future provisioning. On success, the allocated resources (slivers)
+    are returned in Graph ML form and assigned to the requested slice. The orchestrator triggers asynchronous
+    provisioning on appropriate sites based on the request timing. Experimenters can invoke the 'get slice' API to
+    obtain the latest state of the requested resources.   # noqa: E501
 
-    :param body: Create new Slice
+    :param body: Contains the slice details, including requested resources.
     :type body: dict | bytes
     :param name: Slice Name
     :type name: str
-    :param lifetime: Lifetime of the slice requested in hours.
+    :param lifetime: Optional. The requested slice duration in hours.
     :type lifetime: int
-    :param lease_start_time: Lease End Time for the Slice
+    :param lease_start_time: Requested lease start time for the slice.
     :type lease_start_time: str
-    :param lease_end_time: Lease End Time for the Slice
+    :param lease_end_time: Requested lease end time for the slice.
     :type lease_end_time: str
 
     :rtype: Slivers
@@ -76,37 +77,55 @@ def slices_creates_post(body: SlicesPost, name, lifetime=None, lease_start_time=
         start = handler.validate_lease_time(lease_time=lease_start_time)
         end = handler.validate_lease_time(lease_time=lease_end_time)
         now = datetime.now(timezone.utc)
-        if start and (start - now) < timedelta(minutes=60):
-            raise OrchestratorException(http_error_code=BAD_REQUEST,
-                                        message="Requested Start Time should be at least 60 minutes from current time!")
-        if start and end and (end - start) < timedelta(minutes=60):
-            raise OrchestratorException(http_error_code=BAD_REQUEST,
-                                        message="Requested Lease should be at least 60 minutes long!")
 
-        # Always set the lifetime for future slices to 24 hours if not specified
+        # Check that start time is at least 60 minutes in the future
+        if start and (start - now) < timedelta(minutes=60):
+            raise OrchestratorException(
+                http_error_code=BAD_REQUEST,
+                message="Requested Start Time should be at least 60 minutes from the current time!"
+            )
+
+        # Check for valid lease duration between start and end times
+        if start and end:
+            diff = end - start
+            if diff < timedelta(minutes=60):
+                raise OrchestratorException(
+                    http_error_code=BAD_REQUEST,
+                    message="The requested lease duration must be at least 60 minutes."
+                )
+
+            max_duration_hours = Constants.DEFAULT_MAX_DURATION_IN_WEEKS * 168  # Convert weeks to hours
+            if diff > timedelta(hours=max_duration_hours):
+                raise OrchestratorException(
+                    http_error_code=BAD_REQUEST,
+                    message=f"Requested lease duration exceeds the maximum allowed duration of "
+                            f"{max_duration_hours} hours."
+                )
+
+        # Set the lifetime to 24 hours if not specified and calculate based on start and end times
         if start and end:
             hours = int((end - start).total_seconds() / 3600)
             if not lifetime:
-                lifetime = Constants.DEFAULT_LEASE_IN_HOURS
+                lifetime = Constants.DEFAULT_LEASE_IN_HOURS  # Default to 24 hours if unspecified
 
+            # Ensure lifetime does not exceed the specified lease duration
             if lifetime > hours:
                 raise OrchestratorException(
                     http_error_code=BAD_REQUEST,
-                    message="The specified lifetime exceeds the duration between the start and end times."
+                    message="The specified lifetime exceeds the allowable duration between the start and end times."
                 )
 
+        # Create the slice and assemble the response
         slivers_dict = handler.create_slice(token=token, slice_name=name, slice_graph=body.graph_model,
                                             lease_start_time=start, lease_end_time=end,
                                             ssh_key=ssh_key, lifetime=lifetime)
         response = Slivers()
-        response.data = []
-        for s in slivers_dict:
-            sliver = Sliver().from_dict(s)
-            response.data.append(sliver)
+        response.data = [Sliver().from_dict(s) for s in slivers_dict]
         response.size = len(response.data)
         response.type = "slivers"
         success_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
         return cors_success_response(response_body=response)
+
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()

@@ -839,36 +839,49 @@ class OrchestratorHandler:
 
         return new_time
 
-    def __compute_lease_end_time(self, lease_end_time: datetime, allow_long_lived: bool = False,
+    from datetime import datetime, timedelta, timezone
+    from typing import Tuple
+
+    def __compute_lease_end_time(self, lease_end_time: datetime = None, allow_long_lived: bool = False,
                                  project_id: str = None,
                                  lifetime: int = Constants.DEFAULT_LEASE_IN_HOURS) -> Tuple[datetime, datetime]:
         """
-        Validate Lease End Time
-        :param lease_end_time: New End Time
-        :param allow_long_lived: Allow long lived tokens
-        :param project_id: Project Id
-        :return Tuple of Start and End Time
-        :raises Exception if new end time is in past
+        Validate and compute Lease End Time.
+
+        :param lease_end_time: The requested end time for the lease.
+        :param allow_long_lived: If True, allows extended duration for leases.
+        :param project_id: Project ID to check for special duration limits.
+        :param lifetime: Requested lease duration in hours. Defaults to the system-defined lease duration.
+        :return: A tuple containing the start time (current time) and the computed end time.
+        :raises ValueError: If the lease end time is in the past.
         """
         base_time = datetime.now(timezone.utc)
 
-        if allow_long_lived:
-            default_long_lived_duration = Constants.LONG_LIVED_SLICE_TIME_WEEKS
-        else:
-            default_long_lived_duration = Constants.DEFAULT_MAX_DURATION
+        # Raise an error if lease_end_time is in the past
+        if lease_end_time and lease_end_time < base_time:
+            raise ValueError("Requested lease end time is in the past.")
 
-        if not lifetime:
+        default_max_duration = (Constants.LONG_LIVED_SLICE_TIME_WEEKS
+                                if allow_long_lived else Constants.DEFAULT_MAX_DURATION_IN_WEEKS)
+        # Convert weeks to hours
+        default_max_duration *= 168
+
+        # Calculate lifetime if not directly provided
+        if lifetime is None:
             if lease_end_time:
-                lifetime = ((lease_end_time - base_time).total_seconds()) / 3600
+                lifetime = (lease_end_time - base_time).total_seconds() / 3600
             else:
                 lifetime = Constants.DEFAULT_LEASE_IN_HOURS
 
-        if project_id not in self.infrastructure_project_id and lifetime > default_long_lived_duration:
-            self.logger.info(f"New lifetime {lifetime} exceeds system default "
-                             f"{default_long_lived_duration}, setting to system default: ")
-            lifetime = default_long_lived_duration
+        # Ensure the requested lifetime does not exceed allowed max duration for the project
+        if project_id not in self.infrastructure_project_id and lifetime > default_max_duration:
+            self.logger.info(f"Requested lifetime ({lifetime} hours) exceeds the allowed duration "
+                             f"({default_max_duration} hours). Setting to maximum allowable.")
+            lifetime = default_max_duration
 
+        # Calculate the new end time
         new_end_time = base_time + timedelta(hours=lifetime)
+
         return base_time, new_end_time
 
     @staticmethod
