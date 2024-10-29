@@ -186,6 +186,7 @@ class OrchestratorKernel(ABCTick):
         """
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         GlobalsSingleton.get().get_container().register(tickable=self)
+        self.logger = GlobalsSingleton.get().get_logger()
         from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
         oh = OrchestratorHandler()
         model = oh.discover_broker_query_model(controller=self.get_management_actor(),
