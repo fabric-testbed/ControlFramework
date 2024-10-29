@@ -211,7 +211,8 @@ class OrchestratorHandler:
             raise e
 
     def create_slice(self, *, token: str, slice_name: str, slice_graph: str, ssh_key: str,
-                     lease_start_time: datetime = None, lease_end_time: datetime = None) -> List[dict]:
+                     lease_start_time: datetime = None, lease_end_time: datetime = None,
+                     lifetime: int = 24) -> List[dict]:
         """
         Create a slice
         :param token Fabric Identity Token
@@ -220,6 +221,7 @@ class OrchestratorHandler:
         :param ssh_key: User ssh key
         :param lease_start_time: Lease Start Time (UTC)
         :param lease_end_time: Lease End Time (UTC)
+        :param lifetime: Lifetime of the slice in hours
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
         """
@@ -234,9 +236,8 @@ class OrchestratorHandler:
             fabric_token = AccessChecker.validate_and_decode_token(token=token)
             project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
-            start_time, end_time = self.__compute_lease_end_time(lease_end_time=lease_end_time,
-                                                                 allow_long_lived=allow_long_lived,
-                                                                 project_id=project, lease_start_time=lease_start_time)
+            start_time, end_time = self.__compute_lease_end_time(lease_end_time=lease_end_time, lifetime=lifetime,
+                                                                 allow_long_lived=allow_long_lived, project_id=project)
 
             controller = self.controller_state.get_management_actor()
 
@@ -320,6 +321,19 @@ class OrchestratorHandler:
 
             # Check if Testbed in Maintenance or Site in Maintenance
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
+
+            # TODO Future Slice
+            if lease_start_time and lease_end_time and lifetime:
+                future_start, future_end = self.controller_state.determine_future_lease_time(computed_reservations=computed_reservations,
+                                                                                             start=lease_start_time, end=lease_end_time,
+                                                                                             duration=lifetime)
+                slice_obj.set_lease_start(lease_start=future_start)
+                slice_obj.set_lease_end(lease_end=future_end)
+                self.logger.debug(f"Update Slice {slice_name}")
+                slice_id = controller.update_slice(slice_obj=slice_obj)
+                for r in computed_reservations:
+                    r.set_start(value=ActorClock.to_milliseconds(when=future_start))
+                    r.set_end(value=ActorClock.to_milliseconds(when=future_end))
 
             # Add Reservations to relational database;
             new_slice_object.add_reservations()
@@ -741,9 +755,9 @@ class OrchestratorHandler:
             fabric_token = AccessChecker.validate_and_decode_token(token=token)
             project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
-            start_time, new_end_time = self.__compute_lease_end_time(lease_end_time=new_lease_end_time,
-                                                                     allow_long_lived=allow_long_lived,
-                                                                     project_id=project)
+            _, new_end_time = self.__compute_lease_end_time(lease_end_time=new_lease_end_time,
+                                                            allow_long_lived=allow_long_lived,
+                                                            project_id=project)
 
             reservations = controller.get_reservations(slice_id=slice_id)
             if reservations is None or len(reservations) < 1:
@@ -826,35 +840,35 @@ class OrchestratorHandler:
         return new_time
 
     def __compute_lease_end_time(self, lease_end_time: datetime, allow_long_lived: bool = False,
-                                 project_id: str = None, lease_start_time: datetime = None) -> Tuple[datetime, datetime]:
+                                 project_id: str = None,
+                                 lifetime: int = Constants.DEFAULT_LEASE_IN_HOURS) -> Tuple[datetime, datetime]:
         """
         Validate Lease End Time
         :param lease_end_time: New End Time
         :param allow_long_lived: Allow long lived tokens
         :param project_id: Project Id
-        :param lease_start_time: New Start Time
-        :return End Time
+        :return Tuple of Start and End Time
         :raises Exception if new end time is in past
         """
         base_time = datetime.now(timezone.utc)
-        if lease_start_time and lease_start_time > base_time:
-            base_time = lease_start_time
-        if lease_end_time is None:
-            new_end_time = base_time + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
-            return base_time, new_end_time
-
-        new_end_time = lease_end_time
 
         if allow_long_lived:
             default_long_lived_duration = Constants.LONG_LIVED_SLICE_TIME_WEEKS
         else:
             default_long_lived_duration = Constants.DEFAULT_MAX_DURATION
-        if project_id not in self.infrastructure_project_id and (new_end_time - base_time) > default_long_lived_duration:
-            self.logger.info(f"New term end time {new_end_time} exceeds system default "
+
+        if not lifetime:
+            if lease_end_time:
+                lifetime = ((lease_end_time - base_time).total_seconds()) / 3600
+            else:
+                lifetime = Constants.DEFAULT_LEASE_IN_HOURS
+
+        if project_id not in self.infrastructure_project_id and lifetime > default_long_lived_duration:
+            self.logger.info(f"New lifetime {lifetime} exceeds system default "
                              f"{default_long_lived_duration}, setting to system default: ")
+            lifetime = default_long_lived_duration
 
-            new_end_time = base_time + default_long_lived_duration
-
+        new_end_time = base_time + timedelta(hours=lifetime)
         return base_time, new_end_time
 
     @staticmethod

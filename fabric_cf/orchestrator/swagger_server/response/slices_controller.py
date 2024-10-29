@@ -23,9 +23,11 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 from http.client import BAD_REQUEST
 from typing import List
+
+from fabric_cf.actor.core.common.constants import Constants
 
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
@@ -41,21 +43,22 @@ from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
-def slices_create_post(body: SlicesPost, name: str, lease_start_time: str = None,
-                       lease_end_time: str = None) -> Slivers:  # noqa: E501
+def slices_creates_post(body: SlicesPost, name, lifetime=None, lease_start_time=None, lease_end_time=None):  # noqa: E501
     """Create slice
 
     Request to create slice as described in the request. Request would be a graph ML describing the requested resources.
-    Resources may be requested to be created now or in future. On success, one or more slivers are allocated, containing
-    resources satisfying the request, and assigned to the given slice. This API returns list and description of the
-    resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of these
-    resources asynchronously on the appropriate sites either now or in the future as requested. Experimenter can
-    invoke get slice API to get the latest state of the requested resources.   # noqa: E501
+    Resources may be requested to be created now or in future. On success, one or more slivers are allocated,
+    containing resources satisfying the request, and assigned to the given slice. This API returns list and description
+    of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of
+    these resources asynchronously on the appropriate sites either now or in the future as requested.
+    Experimenter can invoke get slice API to get the latest state of the requested resources.   # noqa: E501
 
     :param body: Create new Slice
     :type body: dict | bytes
     :param name: Slice Name
     :type name: str
+    :param lifetime: Lifetime of the slice requested in hours.
+    :type lifetime: int
     :param lease_start_time: Lease End Time for the Slice
     :type lease_start_time: str
     :param lease_end_time: Lease End Time for the Slice
@@ -72,13 +75,29 @@ def slices_create_post(body: SlicesPost, name: str, lease_start_time: str = None
         ssh_key = ','.join(body.ssh_keys)
         start = handler.validate_lease_time(lease_time=lease_start_time)
         end = handler.validate_lease_time(lease_time=lease_end_time)
+        now = datetime.now(timezone.utc)
+        if start and (start - now) < timedelta(minutes=60):
+            raise OrchestratorException(http_error_code=BAD_REQUEST,
+                                        message="Requested Start Time should be at least 60 minutes from current time!")
         if start and end and (end - start) < timedelta(minutes=60):
             raise OrchestratorException(http_error_code=BAD_REQUEST,
                                         message="Requested Lease should be at least 60 minutes long!")
 
+        # Always set the lifetime for future slices to 24 hours if not specified
+        if start and end:
+            hours = int((end - start).total_seconds() / 3600)
+            if not lifetime:
+                lifetime = Constants.DEFAULT_LEASE_IN_HOURS
+
+            if lifetime > hours:
+                raise OrchestratorException(
+                    http_error_code=BAD_REQUEST,
+                    message="The specified lifetime exceeds the duration between the start and end times."
+                )
+
         slivers_dict = handler.create_slice(token=token, slice_name=name, slice_graph=body.graph_model,
                                             lease_start_time=start, lease_end_time=end,
-                                            ssh_key=ssh_key)
+                                            ssh_key=ssh_key, lifetime=lifetime)
         response = Slivers()
         response.data = []
         for s in slivers_dict:

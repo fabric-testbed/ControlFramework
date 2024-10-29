@@ -223,8 +223,8 @@ class OrchestratorKernel(ABCTick):
     def get_name(self) -> str:
         return self.__class__.__name__
 
-    def determine_start_time(self, computed_reservations: list[LeaseReservationAvro], start: datetime,
-                             end: datetime, duration: int) -> datetime:
+    def determine_future_lease_time(self, computed_reservations: list[LeaseReservationAvro], start: datetime,
+                                    end: datetime, duration: int) -> tuple[datetime, datetime]:
         """
         Given a set of reservations, check if the requested resources are available for all reservations
         to start simultaneously. If resources are not available, find the nearest start time when all
@@ -238,8 +238,8 @@ class OrchestratorKernel(ABCTick):
         :type end: datetime
         :param duration: Requested duration in hours.
         :type duration: int
-        :return: The nearest available start time when all reservations can start together.
-        :rtype: datetime
+        :return: The nearest available start time and corresponding end time when all reservations can start together.
+        :rtype: tuple of datetime, datetime
         :raises OrchestratorException: If no valid start time can satisfy the requested duration for all reservations.
         """
         states = [ReservationStates.Active.value,
@@ -296,7 +296,7 @@ class OrchestratorKernel(ABCTick):
         if final_time > end:
             raise OrchestratorException("No common start time available for the requested duration.")
 
-        return simultaneous_start_time
+        return simultaneous_start_time, final_time
 
 
 class OrchestratorKernelSingleton:
