@@ -323,7 +323,7 @@ class SliceStateMachine:
                                                  ReservationStates.Failed, ReservationStates.CloseFail):
                     self.state = SliceState.Closing
 
-            if self.state in [SliceState.AllocatedOK, SliceState.AllocatedError]:
+            elif self.state in [SliceState.AllocatedOK, SliceState.AllocatedError]:
                 if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed,
                                                  ReservationStates.CloseFail):
                     if not has_error:

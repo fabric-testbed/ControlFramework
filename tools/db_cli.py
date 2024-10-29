@@ -46,7 +46,7 @@ class MainClass:
     GlobalsSingleton.get().load_config()
     GlobalsSingleton.get().initialized = True
 
-    def __init__(self, user: str, password: str, db: str, host: str = '127.0.0.1:5432'):
+    def __init__(self, user: str, password: str, db: str, host: str = 'orchestrator-db:5432'):
         self.logger = logging.getLogger("db-cli")
         file_handler = RotatingFileHandler('./db_cli.log', backupCount=5, maxBytes=50000)
         logging.basicConfig(level=logging.DEBUG,
@@ -54,7 +54,7 @@ class MainClass:
                             handlers=[logging.StreamHandler(), file_handler])
 
         self.db = ActorDatabase(user=user, password=password, database=db, db_host=host, logger=self.logger)
-        self.neo4j_config = {"url": "neo4j://0.0.0.0:9687",
+        self.neo4j_config = {"url": "neo4j://orchestrator-neo4j:9687",
                              "user": "neo4j",
                              "pass": "password",
                              "import_host_dir": "/Users/kthare10/renci/code/fabric/ControlFramework/neo4j1/imports/",
@@ -63,10 +63,10 @@ class MainClass:
     def get_slices(self, email: str = None, slice_id: str = None, slice_name: str = None):
         try:
             if slice_id is not None:
-                slice_obj = self.db.get_slice(slice_id=ID(uid=slice_id))
+                slice_obj = self.db.get_slices(slice_id=ID(uid=slice_id))
                 slice_list = [slice_obj]
             elif email is not None:
-                slice_list = self.db.get_slice_by_email(email=email)
+                slice_list = self.db.get_slices(email=email)
             else:
                 slice_list = self.db.get_slices()
 
