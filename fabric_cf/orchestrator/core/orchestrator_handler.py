@@ -134,6 +134,7 @@ class OrchestratorHandler:
         :param end: end time
         :param includes: comma separated lists of sites to include
         :param excludes: comma separated lists of sites to exclude
+        :param email: Email of the user on whose behalf the request is initiated
         :return str or None
         """
         broker_query_model = None

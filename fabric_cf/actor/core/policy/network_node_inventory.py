@@ -176,15 +176,9 @@ class NetworkNodeInventory(InventoryForType):
         req_ifs = req_ns.interface_info.interfaces[req_ifs_name]
 
         # Do not copy VLAN for OpenStack-vNIC
-<<<<<<< HEAD
-        if requested.get_model() == Constants.OPENSTACK_VNIC_MODEL:
-            lab = Labels(bdf=ifs_delegated_labels.bdf[i], mac=ifs_delegated_labels.mac[i],
-                         local_name=ifs_delegated_labels.local_name[i])
-=======
         if requested_component.get_model() == Constants.OPENSTACK_VNIC_MODEL:
             lab = Labels(bdf=ifs_delegated_labels.bdf[assigned_index], mac=ifs_delegated_labels.mac[assigned_index],
                          local_name=ifs_delegated_labels.local_name[assigned_index])
->>>>>>> 2afc424c88263d78f903e19066d7dbd533a59339
         else:
             lab = Labels(bdf=ifs_delegated_labels.bdf[assigned_index], mac=ifs_delegated_labels.mac[assigned_index],
                          vlan=ifs_delegated_labels.vlan[assigned_index],
