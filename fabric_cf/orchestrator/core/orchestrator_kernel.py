@@ -23,17 +23,19 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import datetime
 import threading
+from datetime import datetime, timedelta
+from http.client import BAD_REQUEST
 
-from fabric_cf.actor.core.policy.network_node_inventory import NetworkNodeInventory
+from fabric_cf.actor.core.time.actor_clock import ActorClock
+
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
-from fim.user import GraphFormat, ServiceType, NodeType
+from fim.user import GraphFormat
 
 from fabric_cf.actor.core.apis.abc_actor_event import ABCActorEvent
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
@@ -222,13 +224,31 @@ class OrchestratorKernel(ABCTick):
         return self.__class__.__name__
 
     def determine_start_time(self, computed_reservations: list[LeaseReservationAvro], start: datetime,
-                             end: datetime, duration: int):
+                             end: datetime, duration: int) -> datetime:
         """
-        Given set of reservations; check if the requested resources are available
-        - if resources are not available find the next available start time for them based on the existing allocations
-        @param computed_reservations:
-        @return:
+        Given a set of reservations, check if the requested resources are available for all reservations
+        to start simultaneously. If resources are not available, find the nearest start time when all
+        reservations can begin together.
+
+        :param computed_reservations: List of LeaseReservationAvro objects representing computed reservations.
+        :type computed_reservations: list[LeaseReservationAvro]
+        :param start: Requested start datetime.
+        :type start: datetime
+        :param end: Requested end datetime.
+        :type end: datetime
+        :param duration: Requested duration in hours.
+        :type duration: int
+        :return: The nearest available start time when all reservations can start together.
+        :rtype: datetime
+        :raises OrchestratorException: If no valid start time can satisfy the requested duration for all reservations.
         """
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value]
+
+        # Dictionary to hold the future start times for each reservation's candidate nodes
+        future_start_times = []
+
         for r in computed_reservations:
             requested_sliver = r.get_sliver()
             if not isinstance(requested_sliver, NodeSliver):
@@ -237,28 +257,46 @@ class OrchestratorKernel(ABCTick):
             candidate_nodes = FimHelper.candidate_nodes(combined_broker_model=self.combined_broker_model,
                                                         sliver=requested_sliver)
 
-            if not candidate_nodes or len(candidate_nodes):
-                raise Exception("Bad request!")
+            if not candidate_nodes:
+                raise OrchestratorException(http_error_code=BAD_REQUEST,
+                                            message=f'Insufficient resources: No hosts available to '
+                                                    f'provision the {r.get_sliver()}')
 
-            states = [ReservationStates.Active.value,
-                      ReservationStates.ActiveTicketed.value,
-                      ReservationStates.Ticketed.value]
-
-            res_type = []
-            for x in ServiceType:
-                res_type.append(str(x))
-            for x in NodeType:
-                res_type.append(str(x))
-
+            # Gather the nearest available start time per candidate node for this reservation
+            reservation_times = []
             for c in candidate_nodes:
                 cbm_node = self.combined_broker_model.build_deep_node_sliver(node_id=c)
                 # Skip if CBM node is not the specific host that is requested
                 if requested_sliver.get_labels() and requested_sliver.get_labels().instance_parent and \
                         requested_sliver.get_labels().instance_parent != cbm_node.get_name():
                     continue
-                existing = self.get_management_actor().get_reservations(node_id=c, states=states)
+                existing = self.get_management_actor().get_reservations(node_id=c, states=states,
+                                                                        start=start, end=end, full=True)
                 tracker = ResourceTracker(cbm_node=cbm_node)
-                tracker.find_next_available(requested_sliver=requested_sliver)
+                # Add slivers from reservations to the tracker
+                for e in existing:
+                    tracker.add_sliver(sliver=e.get_sliver(),
+                                       end=ActorClock.from_milliseconds(milli_seconds=e.get_end()))
+
+                future_start_time = tracker.find_next_available(requested_sliver=requested_sliver, from_time=start)
+                if future_start_time:
+                    reservation_times.append(future_start_time)
+
+            if not len(reservation_times):
+                raise OrchestratorException("Sliver request cannot be satisfied in the requested duration!")
+
+            # Add the earliest start time for the reservation to future_start_times
+            future_start_times.append(min(reservation_times))
+
+        # Find the nearest start time across all reservations where they can start together
+        simultaneous_start_time = max(future_start_times)
+
+        # Verify that the simultaneous start time allows all reservations to run for the full requested duration
+        final_time = simultaneous_start_time + timedelta(hours=duration)
+        if final_time > end:
+            raise OrchestratorException("No common start time available for the requested duration.")
+
+        return simultaneous_start_time
 
 
 class OrchestratorKernelSingleton:

@@ -1,16 +1,38 @@
+#!/usr/bin/env python3
+# MIT License
+#
+# Copyright (c) 2020 FABRIC Testbed
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+# Author: Komal Thareja (kthare10@renci.org)
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-import logging
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
 
 from fim.slivers.base_sliver import BaseSliver
-
-from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
-from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fim.slivers.attached_components import ComponentSliver, ComponentType
 from fim.slivers.capacities_labels import Capacities
 from fim.slivers.network_node import NodeSliver
+
 
 class TimeSlot:
     """Represents a time slot for resource availability, tracking capacities and components."""
@@ -178,41 +200,3 @@ class ResourceTracker:
             if self.__check_components(requested_sliver, accumulated_components) and \
                     not (accumulated_capacities - requested_sliver.capacities).negative_fields():
                 return closest_time
-
-
-if __name__ == '__main__':
-    from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
-
-    Globals.config_file = '/etc/fabric/actor/config/config.yaml'
-    GlobalsSingleton.get().load_config()
-    GlobalsSingleton.get().initialized = True
-
-    # Configure logging and database connections
-    logger = logging.getLogger("db-cli")
-    logging.basicConfig(level=logging.DEBUG,
-                        format="%(asctime)s [%(filename)s:%(lineno)d] [%(levelname)s] %(message)s",
-                        handlers=[logging.StreamHandler()])
-
-    # Assuming connection to database and fetching reservations for testing purposes
-    db = ActorDatabase(user="fabric", password="fabric", database="orchestrator", db_host="orchestrator-db:5432", logger=logger)
-    states = [ReservationStates.Active.value, ReservationStates.ActiveTicketed.value, ReservationStates.Ticketed.value]
-    existing = db.get_reservations(graph_node_id="GDXYNF3", site="WASH", states=states)
-
-    tracker = ResourceTracker()
-
-    # Add slivers from reservations to the tracker
-    for e in existing:
-        resource_sliver = e.get_approved_resources().get_sliver() if e.is_ticketing() else e.get_resources().get_sliver()
-        if resource_sliver:
-            tracker.add_sliver(sliver=resource_sliver, end=e.get_term().get_end_time())
-
-    # Output time slots and search for availability
-    for k in sorted(tracker.time_slots.keys()):
-        print(f"Time: {k}, Resources: {tracker.time_slots[k]}")
-
-    sliver = NodeSliver()
-    sliver.set_capacities(cap=Capacities(core=15, ram=16, disk=10))
-    curr = datetime.now(timezone.utc) + timedelta(hours=24)
-    next_available_time = tracker.find_next_available(requested_sliver=sliver, from_time=curr)
-
-    print(f"Next available time for requested resources starting from {curr}: {next_available_time}")
