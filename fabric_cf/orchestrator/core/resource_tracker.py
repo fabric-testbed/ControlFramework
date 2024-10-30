@@ -26,8 +26,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
-from fabric_cf.actor.fim.fim_helper import FimHelper
-
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.attached_components import ComponentSliver, ComponentType
 from fim.slivers.capacities_labels import Capacities
@@ -105,7 +103,7 @@ class ResourceTracker:
         :param cbm_node: The CBM node from which to initialize capacities and components.
         :type cbm_node: NodeSliver
         """
-        _, self.total_capacities = FimHelper.get_delegations(delegations=cbm_node.get_capacity_delegations())
+        _, self.total_capacities = cbm_node.get_capacities()
         self.total_components = {}
 
         if cbm_node.attached_components_info:
