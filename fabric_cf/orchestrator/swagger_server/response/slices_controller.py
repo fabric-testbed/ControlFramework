@@ -92,7 +92,7 @@ def slices_creates_post(body: SlicesPost, name, lifetime=None, lease_start_time=
                     message="The requested lease duration must be at least 60 minutes."
                 )
 
-            max_duration_hours = Constants.DEFAULT_MAX_DURATION_IN_WEEKS * 168  # Convert weeks to hours
+            max_duration_hours = Constants.DEFAULT_MAX_DURATION_IN_WEEKS.total_seconds() / 3600  # Convert weeks to hours
             if diff > timedelta(hours=max_duration_hours):
                 raise OrchestratorException(
                     http_error_code=BAD_REQUEST,

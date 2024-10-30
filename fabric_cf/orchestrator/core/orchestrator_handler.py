@@ -863,9 +863,9 @@ class OrchestratorHandler:
             raise ValueError("Requested lease end time is in the past.")
 
         default_max_duration = (Constants.LONG_LIVED_SLICE_TIME_WEEKS
-                                if allow_long_lived else Constants.DEFAULT_MAX_DURATION_IN_WEEKS)
+                                if allow_long_lived else Constants.DEFAULT_MAX_DURATION_IN_WEEKS).total_seconds()
         # Convert weeks to hours
-        default_max_duration *= 168
+        default_max_duration /= 3600
 
         # Calculate lifetime if not directly provided
         if lifetime is None:
