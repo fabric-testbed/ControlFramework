@@ -249,6 +249,7 @@ class OrchestratorKernel(ABCTick):
 
         # Dictionary to hold the future start times for each reservation's candidate nodes
         future_start_times = []
+        resource_trackers = {}
 
         for r in computed_reservations:
             requested_sliver = r.get_sliver()
@@ -273,11 +274,14 @@ class OrchestratorKernel(ABCTick):
                     continue
                 existing = self.get_management_actor().get_reservations(node_id=c, states=states,
                                                                         start=start, end=end, full=True)
-                tracker = ResourceTracker(cbm_node=cbm_node)
+                if c not in resource_trackers:
+                    resource_trackers[c] = ResourceTracker(cbm_node=cbm_node)
+                tracker = resource_trackers[c]
                 # Add slivers from reservations to the tracker
                 for e in existing:
                     tracker.add_sliver(sliver=e.get_sliver(),
-                                       end=ActorClock.from_milliseconds(milli_seconds=e.get_end()))
+                                       end=ActorClock.from_milliseconds(milli_seconds=e.get_end()),
+                                       reservation_id=e.get_reservation_id())
 
                 future_start_time = tracker.find_next_available(requested_sliver=requested_sliver, from_time=start)
                 if future_start_time:

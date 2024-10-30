@@ -103,7 +103,7 @@ class ResourceTracker:
         :param cbm_node: The CBM node from which to initialize capacities and components.
         :type cbm_node: NodeSliver
         """
-        _, self.total_capacities = cbm_node.get_capacities()
+        self.total_capacities = cbm_node.get_capacities()
         self.total_components = {}
 
         if cbm_node.attached_components_info:
@@ -113,8 +113,9 @@ class ResourceTracker:
                 self.total_components[comp_type] += len(comps)
 
         self.time_slots = defaultdict(TimeSlot)
+        self.reservation_ids = set()
 
-    def add_sliver(self, end: datetime, sliver: BaseSliver):
+    def add_sliver(self, end: datetime, sliver: BaseSliver, reservation_id: str):
         """
         Add sliver to the nearest hour time slot and update total available resources.
 
@@ -122,7 +123,13 @@ class ResourceTracker:
         :type end: datetime
         :param sliver: The sliver containing resources to add to the time slot.
         :type sliver: BaseSliver
+        :param reservation_id: Reservation id of the reservation to which the sliver belomgs
+        :type reservation_id: str
         """
+        # Check if reservation has already been captured, if so skip it
+        if reservation_id in self.reservation_ids:
+            return
+        self.reservation_ids.add(reservation_id)
         nearest_hour = end.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
         if nearest_hour not in self.time_slots:
             self.time_slots[nearest_hour] = TimeSlot(nearest_hour)
