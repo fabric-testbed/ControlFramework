@@ -328,6 +328,7 @@ class OrchestratorHandler:
                 future_start, future_end = self.controller_state.determine_future_lease_time(computed_reservations=computed_reservations,
                                                                                              start=lease_start_time, end=lease_end_time,
                                                                                              duration=lifetime)
+                self.logger.debug(f"Advanced Scheduling: Slice: {slice_name}({slice_id}) lifetime: {future_start} to {future_end}")
                 slice_obj.set_lease_start(lease_start=future_start)
                 slice_obj.set_lease_end(lease_end=future_end)
                 self.logger.debug(f"Update Slice {slice_name}")
