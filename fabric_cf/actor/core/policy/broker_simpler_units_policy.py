@@ -1743,8 +1743,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                                    start=term.get_start_time(),
                                                                    end=term.get_end_time())
 
-            delegation_id, delegated_capacity = NetworkNodeInventory.get_delegations(
-                lab_cap_delegations=graph_node.get_capacity_delegations())
+            delegation_id, delegated_capacity = FimHelper.get_delegations(
+                delegations=graph_node.get_capacity_delegations())
 
             allocated_capacity = Capacities()
 
