@@ -43,8 +43,6 @@ from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
-from datetime import datetime, timedelta, timezone
-
 def slices_creates_post(body: SlicesPost, name, lifetime=None, lease_start_time=None, lease_end_time=None):  # noqa: E501
     """Create slice
 
