@@ -149,29 +149,41 @@ class AdvanceSchedulingThread:
 
     def process_slice(self, *, controller_slice: OrchestratorSliceWrapper):
         """
-        Determine nearest start time
+        Determine nearest start time for a slice requested in future and
+        add to deferred slice thread for further processing
         :param controller_slice:
-        :param lease_start_time: Lease Start Time (UTC)
-        :param lease_end_time: Lease End Time (UTC)
-        :param lifetime: Lifetime of the slice in hours
         """
         computed_reservations = controller_slice.get_computed_reservations()
 
         try:
             controller_slice.lock()
+
+            # Determine nearest start time in the time range requested
+            # If not found, start time specified in the request is used as start resulting in slice failing
+            # with insufficient resources error
             future_start, future_end = self.kernel.determine_future_lease_time(
                 computed_reservations=computed_reservations,
                 start=controller_slice.start, end=controller_slice.end,
                 duration=controller_slice.lifetime)
 
+            self.logger.debug(f"Slice: {controller_slice.slice_obj.slice_name}/{controller_slice.slice_obj.get_slice_id()}"
+                              f" Start Time: {future_start} End: {future_end}")
+
+            # Update slice start/end time
             controller_slice.slice_obj.set_lease_start(lease_start=future_start)
             controller_slice.slice_obj.set_lease_end(lease_end=future_end)
             self.logger.debug(f"Update Slice {controller_slice.slice_obj.slice_name}")
             self.mgmt_actor.update_slice(slice_obj=controller_slice.slice_obj)
+
+            # Update the reservations start/end time
             for r in computed_reservations:
                 r.set_start(value=ActorClock.to_milliseconds(when=future_start))
                 r.set_end(value=ActorClock.to_milliseconds(when=future_end))
-                self.mgmt_actor.update_reservation(reservation=r)
+
+            # Add Reservations to relational database;
+            controller_slice.add_reservations()
+
+            # Queue the slice to be demanded on Slice Defer Thread
             self.kernel.get_defer_thread().queue_slice(controller_slice=controller_slice)
         except Exception as e:
             self.logger.error(traceback.format_exc())

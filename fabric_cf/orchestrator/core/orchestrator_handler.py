@@ -342,20 +342,23 @@ class OrchestratorHandler:
                     r.set_end(value=ActorClock.to_milliseconds(when=future_end))
                 '''
 
-            # Add Reservations to relational database;
-            new_slice_object.add_reservations()
-
-            self.logger.info(f"OC wrapper: TIME= {time.time() - create_ts:.0f}")
-
-            # Enqueue the slice on the demand thread
-            # Demand thread is responsible for demanding the reservations
-            # Helps improve the create response time
             create_ts = time.time()
             if lease_start_time and lease_end_time and lifetime:
-                self.controller_state.get_advance_scheduling_thread().queue_slice(controller_slice=controller)
+                # Enqueue future slices on Advanced Scheduling Thread to determine possible start time
+                # Determining start time may take time so this is done asynchronously to avoid increasing response time
+                # of create slice API
+                self.controller_state.get_advance_scheduling_thread().queue_slice(controller_slice=new_slice_object)
             else:
+                # Enqueue the slice on the demand thread
+                # Demand thread is responsible for demanding the reservations
+                # Helps improve the create response time
+
+                # Add Reservations to relational database;
+                new_slice_object.add_reservations()
+                self.logger.info(f"OC wrapper: TIME= {time.time() - create_ts:.0f}")
                 self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
-            self.logger.info(f"QU queue: TIME= {time.time() - create_ts:.0f}")
+                self.logger.info(f"QU queue: TIME= {time.time() - create_ts:.0f}")
+
             EventLoggerSingleton.get().log_slice_event(slice_object=slice_obj, action=ActionId.create,
                                                        topology=topology)
 
