@@ -25,7 +25,9 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 from datetime import datetime, timedelta
+from heapq import heappush, heappop
 from http.client import BAD_REQUEST
+from typing import List, Iterator, Tuple, Optional
 
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 
@@ -44,6 +46,7 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.event_processor import EventProcessor
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.orchestrator.core.advance_scheduling_thread import AdvanceSchedulingThread
 from fabric_cf.orchestrator.core.bqm_wrapper import BqmWrapper
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.reservation_status_update_thread import ReservationStatusUpdateThread
@@ -71,6 +74,7 @@ class OrchestratorKernel(ABCTick):
 
     def __init__(self):
         self.defer_thread = None
+        self.adv_sch_thread = None
         self.sut = None
         self.broker = None
         self.logger = None
@@ -130,6 +134,9 @@ class OrchestratorKernel(ABCTick):
     def get_defer_thread(self) -> SliceDeferThread:
         return self.defer_thread
 
+    def get_advance_scheduling_thread(self) -> AdvanceSchedulingThread:
+        return self.adv_sch_thread
+
     def get_sut(self) -> ReservationStatusUpdateThread:
         """
         Get SUT thread
@@ -161,6 +168,8 @@ class OrchestratorKernel(ABCTick):
         Stop threads
         :return:
         """
+        if self.adv_sch_thread:
+            self.adv_sch_thread.stop()
         if self.defer_thread is not None:
             self.defer_thread.stop()
         if self.event_processor is not None:
@@ -199,6 +208,8 @@ class OrchestratorKernel(ABCTick):
         self.defer_thread.start()
         self.event_processor = EventProcessor(name="PeriodicProcessor", logger=self.logger)
         self.event_processor.start()
+        self.adv_sch_thread = AdvanceSchedulingThread(kernel=self)
+        self.adv_sch_thread.start()
         #self.get_logger().debug("Starting ReservationStatusUpdateThread")
         #self.sut = ReservationStatusUpdateThread()
         #self.sut.start()
@@ -224,6 +235,32 @@ class OrchestratorKernel(ABCTick):
     def get_name(self) -> str:
         return self.__class__.__name__
 
+    def find_common_start_time(self, reservation_start_times: list[list[datetime]]) -> datetime:
+        """
+        Find the earliest common start time for a group of reservations.
+
+        :param reservation_start_times: A list of lists, where each sublist contains possible start times for a reservation.
+        :type reservation_start_times: List[List[datetime]]
+        :return: The earliest common start time, or None if no common start time is found.
+        :rtype: datetime
+        """
+        if not reservation_start_times:
+            return None
+
+        # Convert the first list to a set of datetimes
+        common_times = set(reservation_start_times[0])
+
+        # Find the intersection with other reservation start times
+        for start_times in reservation_start_times[1:]:
+            common_times.intersection_update(start_times)
+
+        # If there are no common times, return None
+        if not common_times:
+            return None
+
+        # Return the earliest common start time
+        return min(common_times)
+
     def determine_future_lease_time(self, computed_reservations: list[LeaseReservationAvro], start: datetime,
                                     end: datetime, duration: int) -> tuple[datetime, datetime]:
         """
@@ -240,8 +277,9 @@ class OrchestratorKernel(ABCTick):
         :param duration: Requested duration in hours.
         :type duration: int
         :return: The nearest available start time and corresponding end time when all reservations can start together.
+        :        Given start, start + duration is returned if no future reservation time can be found resulting in
+        :        slice closure.
         :rtype: tuple of datetime, datetime
-        :raises OrchestratorException: If no valid start time can satisfy the requested duration for all reservations.
         """
         states = [ReservationStates.Active.value,
                   ReservationStates.ActiveTicketed.value,
@@ -260,12 +298,13 @@ class OrchestratorKernel(ABCTick):
                                                         sliver=requested_sliver)
 
             if not candidate_nodes:
-                raise OrchestratorException(http_error_code=BAD_REQUEST,
-                                            message=f'Insufficient resources: No hosts available to '
-                                                    f'provision the {r.get_sliver()}')
+                self.logger.error(f'Insufficient resources: No hosts available to provision the {r.get_sliver()}')
+                # Reservation will fail at the Broker with Insufficient resources
+                # Triggering Slice closure
+                return start, start + timedelta(hours=duration)
 
             # Gather the nearest available start time per candidate node for this reservation
-            reservation_times = []
+            reservation_times = set()
             for c in candidate_nodes:
                 cbm_node = self.combined_broker_model.build_deep_node_sliver(node_id=c)
                 # Skip if CBM node is not the specific host that is requested
@@ -279,27 +318,39 @@ class OrchestratorKernel(ABCTick):
                 tracker = resource_trackers[c]
                 # Add slivers from reservations to the tracker
                 for e in existing:
-                    tracker.add_sliver(sliver=e.get_sliver(),
-                                       end=ActorClock.from_milliseconds(milli_seconds=e.get_end()),
-                                       reservation_id=e.get_reservation_id())
+                    tracker.update(reservation=e, start=start, end=end)
 
-                future_start_time = tracker.find_next_available(requested_sliver=requested_sliver, from_time=start)
-                if future_start_time:
-                    reservation_times.append(future_start_time)
+                start_times = tracker.find_next_available(requested_sliver=requested_sliver, start=start,
+                                                          end=end, duration=duration)
+                if start_times:
+                    start_times = sorted(start_times)
+                    reservation_times.update(start_times)
 
             if not len(reservation_times):
-                raise OrchestratorException("Sliver request cannot be satisfied in the requested duration!")
+                self.logger.error(f"Sliver {requested_sliver} request cannot be satisfied in the requested duration!")
+                # Reservation will fail at the Broker with Insufficient resources
+                # Triggering Slice closure
+                return start, start + timedelta(hours=duration)
 
             # Add the earliest start time for the reservation to future_start_times
-            future_start_times.append(min(reservation_times))
+            future_start_times.append(list(reservation_times))
 
         # Find the nearest start time across all reservations where they can start together
-        simultaneous_start_time = max(future_start_times)
+        simultaneous_start_time = self.find_common_start_time(reservation_start_times=future_start_times)
+        if not simultaneous_start_time:
+            self.logger.error("Slice cannot be satisfied in the requested duration!")
+            # Reservation will fail at the Broker with Insufficient resources
+            # Triggering Slice closure
+            return start, start + timedelta(hours=duration)
 
-        # Verify that the simultaneous start time allows all reservations to run for the full requested duration
+        # Verify that the simultaneous start time allows all reservations to run
+        # for the full requested duration
         final_time = simultaneous_start_time + timedelta(hours=duration)
         if final_time > end:
-            raise OrchestratorException("No common start time available for the requested duration.")
+            self.logger.error("No common start time available for the requested duration.")
+            # Reservation will fail at the Broker with Insufficient resources
+            # Triggering Slice closure
+            return start, start + timedelta(hours=duration)
 
         return simultaneous_start_time, final_time
 

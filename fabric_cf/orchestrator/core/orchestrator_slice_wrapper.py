@@ -26,6 +26,7 @@
 import ipaddress
 import threading
 import time
+from datetime import datetime
 from ipaddress import IPv4Network
 from typing import List, Tuple, Dict
 from http.client import BAD_REQUEST, NOT_FOUND
@@ -79,6 +80,9 @@ class OrchestratorSliceWrapper:
         # Reservations trigger ModifyLease (AM)
         self.computed_modify_properties_reservations = []
         self.thread_lock = threading.Lock()
+        self.start = None
+        self.end = None
+        self.lifetime = None
 
     def lock(self):
         """
@@ -147,13 +151,20 @@ class OrchestratorSliceWrapper:
             self.controller.add_reservation(reservation=r)
         self.logger.info(f"ADD TIME: {time.time() - start:.0f}")
 
-    def create(self, *, slice_graph: ABCASMPropertyGraph) -> List[LeaseReservationAvro]:
+    def create(self, *, slice_graph: ABCASMPropertyGraph, lease_start_time: datetime = None,
+               lease_end_time: datetime = None, lifetime: int = None) -> List[LeaseReservationAvro]:
         """
         Create a slice
         :param slice_graph: Slice Graph
+        :param lease_start_time: Lease Start Time (UTC)
+        :param lease_end_time: Lease End Time (UTC)
+        :param lifetime: Lifetime of the slice in hours
         :return: List of computed reservations
         """
         try:
+            self.start = lease_start_time
+            self.end = lease_end_time
+            self.lifetime = lifetime
             # Build Network Node reservations
             start = time.time()
             network_node_reservations, node_res_mapping = self.__build_network_node_reservations(slice_graph=slice_graph)

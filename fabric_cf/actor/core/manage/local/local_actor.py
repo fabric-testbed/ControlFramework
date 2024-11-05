@@ -45,12 +45,11 @@ if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
     from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
     from fabric_mb.message_bus.messages.slice_avro import SliceAvro
-    from fabric_cf.actor.core.manage.management_object import ManagementObject
     from fabric_cf.actor.security.auth_token import AuthToken
 
 
 class LocalActor(LocalProxy, ABCMgmtActor):
-    def __init__(self, *, manager: ManagementObject, auth: AuthToken):
+    def __init__(self, *, manager: ActorManagementObject, auth: AuthToken):
         super().__init__(manager=manager, auth=auth)
 
         if not isinstance(manager, ActorManagementObject):

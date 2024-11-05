@@ -24,16 +24,18 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
+from fabric_cf.actor.core.time.actor_clock import ActorClock
+from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.attached_components import ComponentSliver, ComponentType
-from fim.slivers.capacities_labels import Capacities
+from fim.slivers.capacities_labels import Capacities, FreeCapacity
 from fim.slivers.network_node import NodeSliver
 
 
 class TimeSlot:
-    """Represents a time slot for resource availability, tracking capacities and components."""
+    """Represents a time slot for resources, tracking capacities and components."""
 
     def __init__(self, end: datetime):
         """
@@ -43,29 +45,34 @@ class TimeSlot:
         :type end: datetime
         """
         self.end = end
-        self.available_capacities = Capacities()
-        self.available_components = {}
+        self.capacities = Capacities()
+        self.components = {}
 
     def __update_capacities(self, capacities: Capacities):
         """
-        Update the available capacities in this time slot.
+        Update the capacities in this time slot.
 
         :param capacities: The capacities to add to this time slot.
         :type capacities: Capacities
         """
-        self.available_capacities += capacities
+        self.capacities += capacities
 
     def __update_components(self, by_type: dict[ComponentType, list[ComponentSliver]]):
         """
-        Update the available components by type in this time slot.
+        Update the components by type in this time slot.
 
         :param by_type: Dictionary with component types as keys and lists of ComponentSliver as values.
         :type by_type: dict[ComponentType, list[ComponentSliver]]
         """
         for comp_type, comps in by_type.items():
-            if comp_type not in self.available_components:
-                self.available_components[comp_type] = 0
-            self.available_components[comp_type] += len(comps)
+            if comp_type not in self.components:
+                self.components[comp_type] = 0
+            for c in comps:
+                if c.get_capacities():
+                    units = c.get_capacities().unit
+                else:
+                    units = c.get_capacity_allocations().unit
+                self.components[comp_type] += units
 
     def add_sliver(self, sliver: BaseSliver):
         """
@@ -85,16 +92,16 @@ class TimeSlot:
 
     def __str__(self):
         """
-        Return a string representation of the available capacities and components in this time slot.
+        Return a string representation of the capacities and components in this time slot.
 
-        :return: String representation of available capacities and components.
+        :return: String representation of capacities and components.
         :rtype: str
         """
-        return f"Capacities: {self.available_capacities}, Components: {self.available_components}"
+        return f"Capacities: {self.capacities}, Components: {self.components}"
 
 
 class ResourceTracker:
-    """Tracks resource availability over time slots and checks availability of resources."""
+    """Tracks resource over time slots and checks availability of resources."""
 
     def __init__(self, cbm_node: NodeSliver):
         """
@@ -110,98 +117,112 @@ class ResourceTracker:
             for comp_type, comps in cbm_node.attached_components_info.by_type.items():
                 if comp_type not in self.total_components:
                     self.total_components[comp_type] = 0
-                self.total_components[comp_type] += len(comps)
+                    for c in comps:
+                        self.total_components[comp_type] += c.get_capacities().unit
 
         self.time_slots = defaultdict(TimeSlot)
         self.reservation_ids = set()
 
-    def add_sliver(self, end: datetime, sliver: BaseSliver, reservation_id: str):
+    def update(self, reservation: ReservationMng, start: datetime, end: datetime):
         """
-        Add sliver to the nearest hour time slot and update total available resources.
+        Update allocated resource information.
 
-        :param end: The end datetime of the reservation for the sliver.
+        :param reservation: Existing Reservation.
+        :type reservation: ReservationMng
+        :param start: Requested start datetime.
+        :type start: datetime
+        :param end: Requested end datetime.
         :type end: datetime
-        :param sliver: The sliver containing resources to add to the time slot.
-        :type sliver: BaseSliver
-        :param reservation_id: Reservation id of the reservation to which the sliver belomgs
-        :type reservation_id: str
         """
         # Check if reservation has already been captured, if so skip it
-        if reservation_id in self.reservation_ids:
+        if reservation.get_reservation_id() in self.reservation_ids:
             return
-        self.reservation_ids.add(reservation_id)
-        nearest_hour = end.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-        if nearest_hour not in self.time_slots:
-            self.time_slots[nearest_hour] = TimeSlot(nearest_hour)
-        slot = self.time_slots[nearest_hour]
-        slot.add_sliver(sliver=sliver)
-        if sliver.capacity_allocations:
-            self.total_capacities -= sliver.capacity_allocations
-        else:
-            self.total_capacities -= sliver.capacities
+        self.reservation_ids.add(reservation.get_reservation_id())
 
-        if not sliver.attached_components_info:
-            return
+        start = start.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+        end = end.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+        sliver_end = ActorClock.from_milliseconds(milli_seconds=reservation.get_end())
+        sliver_end = sliver_end.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
 
-        for comp_type, comps in sliver.attached_components_info.by_type.items():
-            self.total_components[comp_type] -= len(comps)
+        current_time = start
+        while current_time < sliver_end and current_time < end:
+            if current_time not in self.time_slots:
+                self.time_slots[current_time] = TimeSlot(current_time)
 
-    @staticmethod
-    def __check_components(requested_sliver: NodeSliver,
-                           available_components: dict[ComponentType, int]) -> bool:
+            # Update the specific time slot with the sliver's resource usage
+            self.time_slots[current_time].add_sliver(sliver=reservation.get_sliver())
+
+            current_time += timedelta(hours=1)
+
+    def __check_components(self, requested_sliver: NodeSliver,
+                           allocated: dict[ComponentType, int]) -> bool:
         """
         Check if requested components can be fulfilled by available components.
 
         :param requested_sliver: The sliver with requested components.
         :type requested_sliver: NodeSliver
-        :param available_components: Dictionary of available components by type.
-        :type available_components: dict[ComponentType, int]
+        :param allocated: Dictionary of available components by type.
+        :type allocated: dict[ComponentType, int]
         :return: True if components can be fulfilled, False otherwise.
         :rtype: bool
         """
         if not requested_sliver.attached_components_info:
             return True
         for comp_type, comps in requested_sliver.attached_components_info.by_type.items():
-            if comp_type not in available_components:
+            if comp_type not in self.total_components:
                 return False
-            elif available_components[comp_type] < len(comps):
+            elif len(comps) > (self.total_components[comp_type] - allocated.get(comp_type, 0)):
                 return False
-            else:
-                available_components[comp_type] -= len(comps)
         return True
 
-    def find_next_available(self, requested_sliver: NodeSliver,
-                            from_time: datetime = datetime.now(timezone.utc)) -> datetime:
+    def find_next_available(self, requested_sliver: NodeSliver, start: datetime, end: datetime,
+                            duration: int) -> list[datetime]:
         """
-        Find the next available time slot that can fulfill the requested sliver capacities and components.
+        Find the next available time slot that can fulfill the requested sliver's capacities and components.
 
         :param requested_sliver: The sliver with requested capacities and components.
         :type requested_sliver: NodeSliver
-        :param from_time: The datetime from which to search for availability.
-        :type from_time: datetime
-        :return: The datetime of the next available time slot, or None if not found.
+        :param start: The start datetime to begin searching for availability.
+        :type start: datetime
+        :param end: The end datetime to stop searching.
+        :type end: datetime
+        :param duration: The duration in hours for which the resources are needed.
+        :type duration: int
+        :return: List of all possible next available time slot, or empty list if not found.
         :rtype: datetime
         """
-        nearest_hour = from_time.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+        current_time = start.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+        duration_timedelta = timedelta(hours=duration)
+        ret_val = []
 
-        if not (self.total_capacities - requested_sliver.capacities).negative_fields() and \
-                self.__check_components(requested_sliver=requested_sliver,
-                                        available_components=self.total_components):
-            return nearest_hour
+        while current_time + duration_timedelta <= end:
+            available = True
+            for i in range(duration):
+                time_slot_time = current_time + timedelta(hours=i)
+                if time_slot_time not in self.time_slots:
+                    # If there's no entry for this time slot, assume full capacity available
+                    continue
 
-        sorted_times = sorted(self.time_slots.keys(), key=lambda x: abs(x - nearest_hour))
+                time_slot = self.time_slots[time_slot_time]
+                free_capacity = FreeCapacity(total=self.total_capacities, allocated=time_slot.capacities)
 
-        accumulated_capacities = Capacities()
-        accumulated_components = {}
+                # Check if accumulated capacities are negative (means not enough capacity)
+                if free_capacity.free.negative_fields():
+                    available = False
+                    break
 
-        for closest_time in sorted_times:
-            slot = self.time_slots[closest_time]
-            accumulated_capacities += slot.available_capacities
-            for comp_type, comp_count in slot.available_components.items():
-                if comp_type not in accumulated_components:
-                    accumulated_components[comp_type] = 0
-                accumulated_components[comp_type] += comp_count
+                diff = free_capacity.free - requested_sliver.capacities
+                if diff.negative_fields():
+                    available = False
+                    break
 
-            if self.__check_components(requested_sliver, accumulated_components) and \
-                    not (accumulated_capacities - requested_sliver.capacities).negative_fields():
-                return closest_time
+                if not self.__check_components(requested_sliver=requested_sliver, allocated=time_slot.components):
+                    available = False
+                    break
+
+            if available:
+                ret_val.append(current_time)
+
+            current_time += timedelta(hours=1)
+
+        return ret_val

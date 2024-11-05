@@ -317,13 +317,17 @@ class OrchestratorHandler:
             new_slice_object.lock()
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
-            computed_reservations = new_slice_object.create(slice_graph=asm_graph)
+            computed_reservations = new_slice_object.create(slice_graph=asm_graph,
+                                                            lease_start_time=lease_start_time,
+                                                            lease_end_time=lease_end_time,
+                                                            lifetime=lifetime)
             new_slice_object.update_topology(topology=topology)
 
             # Check if Testbed in Maintenance or Site in Maintenance
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
 
             # TODO Future Slice
+            '''
             if lease_start_time and lease_end_time and lifetime:
                 future_start, future_end = self.controller_state.determine_future_lease_time(computed_reservations=computed_reservations,
                                                                                              start=lease_start_time, end=lease_end_time,
@@ -336,6 +340,7 @@ class OrchestratorHandler:
                 for r in computed_reservations:
                     r.set_start(value=ActorClock.to_milliseconds(when=future_start))
                     r.set_end(value=ActorClock.to_milliseconds(when=future_end))
+                '''
 
             # Add Reservations to relational database;
             new_slice_object.add_reservations()
@@ -346,7 +351,10 @@ class OrchestratorHandler:
             # Demand thread is responsible for demanding the reservations
             # Helps improve the create response time
             create_ts = time.time()
-            self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
+            if lease_start_time and lease_end_time and lifetime:
+                self.controller_state.get_advance_scheduling_thread().queue_slice(controller_slice=controller)
+            else:
+                self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
             self.logger.info(f"QU queue: TIME= {time.time() - create_ts:.0f}")
             EventLoggerSingleton.get().log_slice_event(slice_object=slice_obj, action=ActionId.create,
                                                        topology=topology)
