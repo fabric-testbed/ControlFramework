@@ -155,7 +155,7 @@ class NetworkServiceInventory(InventoryForType):
                         )
                     return requested_ifs
 
-                delegation_id, delegated_label = self.get_delegations(delegations=owner_ns.get_label_delegations())
+                delegation_id, delegated_label = FimHelper.get_delegations(delegations=owner_ns.get_label_delegations())
                 vlan_range = self.__extract_vlan_range(labels=delegated_label)
 
                 if vlan_range and requested_vlan not in vlan_range:
@@ -189,7 +189,7 @@ class NetworkServiceInventory(InventoryForType):
                     )
         else:
             if bqm_ifs.get_type() != InterfaceType.FacilityPort:
-                delegation_id, delegated_label = self.get_delegations(
+                delegation_id, delegated_label = FimHelper.get_delegations(
                     delegations=owner_ns.get_label_delegations())
                 vlan_range = self.__extract_vlan_range(labels=delegated_label)
             else:
