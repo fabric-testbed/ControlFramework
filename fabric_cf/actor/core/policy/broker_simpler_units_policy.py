@@ -39,7 +39,7 @@ from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.attached_components import ComponentSliver, ComponentType
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Labels, Capacities
-from fim.slivers.interface_info import InterfaceSliver, InterfaceType
+from fim.slivers.interface_info import InterfaceType
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver, ServiceType, NSLayer
 from fim.slivers.path_info import Path

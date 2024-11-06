@@ -76,13 +76,7 @@ class NetworkServiceInventory(InventoryForType):
                 continue
 
             # For Active or Ticketed or Ticketing reservations; reduce the counts from available
-            allocated_sliver = None
-            if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
-                allocated_sliver = reservation.get_approved_resources().get_sliver()
-
-            if (reservation.is_active() or reservation.is_ticketed()) and \
-                    reservation.get_resources() is not None:
-                allocated_sliver = reservation.get_resources().get_sliver()
+            allocated_sliver = self._get_allocated_sliver(reservation=reservation)
 
             self.logger.debug(
                 f"Existing res# {reservation.get_reservation_id()} state:{reservation.get_state()} "
@@ -284,13 +278,7 @@ class NetworkServiceInventory(InventoryForType):
                     continue
 
                 # For Active or Ticketed or Ticketing reservations; reduce the counts from available
-                allocated_sliver = None
-                if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
-                    allocated_sliver = reservation.get_approved_resources().get_sliver()
-
-                if (reservation.is_active() or reservation.is_ticketed()) and \
-                        reservation.get_resources() is not None:
-                    allocated_sliver = reservation.get_resources().get_sliver()
+                allocated_sliver = self._get_allocated_sliver(reservation=reservation)
 
                 self.logger.debug(f"Existing res# {reservation.get_reservation_id()} "
                                   f"allocated: {allocated_sliver}")
@@ -472,20 +460,6 @@ class NetworkServiceInventory(InventoryForType):
             self.logger.debug(f"Excluding already allocated subnet for reservation {reservation.get_reservation_id()}")
 
         return subnet_list
-
-    def _get_allocated_sliver(self, reservation: ABCReservationMixin) -> NetworkServiceSliver:
-        """
-        Retrieve the allocated sliver from the reservation.
-
-        :param reservation: An instance of ABCReservationMixin representing the reservation to retrieve the sliver from.
-        :return: The allocated NetworkServiceSliver if available, otherwise None.
-        """
-        if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
-            return reservation.get_approved_resources().get_sliver()
-        if (reservation.is_active() or reservation.is_ticketed()) and reservation.get_resources() is not None:
-            return reservation.get_resources().get_sliver()
-
-        self.logger.error("Could not find the allocated Sliver - should not reach here!")
 
     def _assign_gateway_labels(self, *, ip_network: Union[IPv4Network, IPv6Network], subnet_list: List,
                                requested_ns: NetworkServiceSliver) -> Labels:

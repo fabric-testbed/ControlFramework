@@ -25,7 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from collections import defaultdict
+from typing import TYPE_CHECKING, Any, Dict
 
 from fabric_cf.actor.core.container.maintenance import Maintenance
 
@@ -56,7 +57,7 @@ from fim.graph.resources.networkx_abqm import NetworkXABQMFactory
 from fim.graph.slices.abc_asm import ABCASMPropertyGraph
 from fim.graph.slices.neo4j_asm import Neo4jASMFactory
 from fim.graph.slices.networkx_asm import NetworkxASM, NetworkXASMFactory
-from fim.slivers.attached_components import ComponentSliver
+from fim.slivers.attached_components import ComponentSliver, AttachedComponentsInfo
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities
 from fim.slivers.delegations import Delegations, DelegationFormat
@@ -808,10 +809,31 @@ class FimHelper:
                 return topology.serialize(fmt=graph_format)
 
     @staticmethod
-    def candidate_nodes(*, combined_broker_model: Neo4jCBMGraph, sliver: NodeSliver) -> List[str]:
+    def candidate_nodes(*, combined_broker_model: Neo4jCBMGraph, sliver: NodeSliver,
+                        use_capacities: bool = False) -> List[str]:
         """
-        Identify candidate worker nodes in this site that have at least
-        as many needed components as in the sliver.
+        Identify candidate worker nodes in the specified site that have the required number
+        of components as defined in the sliver. If `use_capacities` is True, the function will
+        additionally check that each component's capacities meet the required thresholds.
+
+        :param combined_broker_model: The Neo4jCBMGraph instance that provides access
+                                      to the Neo4j graph model for querying nodes.
+        :type combined_broker_model: Neo4jCBMGraph
+
+        :param sliver: The NodeSliver object that specifies the component requirements,
+                       including type, model, and optionally, capacity constraints.
+        :type sliver: NodeSliver
+
+        :param use_capacities: A boolean flag indicating whether to check component
+                               capacities in addition to component types and models.
+                               If True, the function will validate that each component’s
+                               capacities meet or exceed the values specified in the sliver.
+                               Defaults to False.
+        :type use_capacities: bool
+
+        :return: A list of candidate node IDs that meet the component requirements
+                 specified in the sliver.
+        :rtype: List[str]
         """
         # modify; return existing node map
         if sliver.get_node_map() is not None:
@@ -832,10 +854,16 @@ class FimHelper:
             for c in storage_components:
                 sliver.attached_components_info.remove_device(name=c.get_name())
 
-        result = combined_broker_model.get_matching_nodes_with_components(
-            label=ABCPropertyGraphConstants.CLASS_NetworkNode,
-            props=node_props,
-            comps=sliver.attached_components_info)
+        if not use_capacities:
+            result = combined_broker_model.get_matching_nodes_with_components(
+                label=ABCPropertyGraphConstants.CLASS_NetworkNode,
+                props=node_props,
+                comps=sliver.attached_components_info)
+        else:
+            result = FimHelper.get_matching_nodes_with_components(combined_broker_model=combined_broker_model,
+                                                                  label=ABCPropertyGraphConstants.CLASS_NetworkNode,
+                                                                  props=node_props,
+                                                                  comps=sliver.attached_components_info)
 
         # Skip nodes without any delegations which would be data-switch in this case
         if sliver.get_type() == NodeType.Switch:
@@ -886,3 +914,56 @@ class FimHelper:
         # get the Labels/Capacities object
         delegated_label_capacity = delegation.get_details()
         return delegation_id, delegated_label_capacity
+
+    @staticmethod
+    def get_matching_nodes_with_components(*, combined_broker_model: Neo4jCBMGraph, label: str, props: Dict,
+                                           comps: AttachedComponentsInfo = None) -> List[str]:
+        assert label is not None
+        assert props is not None
+
+        # collect unique types, models and count them
+        component_counts = defaultdict(int)
+        if comps is not None:
+            for comp in comps.list_devices():
+                assert(comp.resource_model is not None or comp.resource_type is not None)
+                # shared nic count should always be 1
+                if comp.resource_type != ComponentType.SharedNIC:
+                    component_counts[(comp.resource_type, comp.resource_model)] = \
+                        component_counts[(comp.resource_type, comp.resource_model)] + 1
+                else:
+                    component_counts[(comp.resource_type, comp.resource_model)] = 1
+        # unroll properties
+        node_props = ", ".join([x + ": " + '"' + props[x] + '"' for x in props.keys()])
+
+        if len(component_counts.values()) == 0:
+            # simple query on the properties of the node (no components)
+            query = f"MATCH(n:GraphNode:{label} {{GraphID: $graphId, {node_props} }}) RETURN collect(n.NodeID) as candidate_ids"
+        else:
+            # build a query list
+            node_query = f"MATCH(n:GraphNode:{label} {{GraphID: $graphId, {node_props} }})"
+            component_clauses = list()
+            # add a clause for every tuple
+            idx = 0
+            for k, v in component_counts.items():
+                comp_props_list = list()
+                if k[0] is not None:
+                    comp_props_list.append('Type: ' + '"' + str(k[0]) + '"' + ' ')
+                if k[1] is not None:
+                    comp_props_list.append('Model: ' + '"' + k[1] + '"' + ' ')
+                comp_props = ", ".join(comp_props_list)
+
+                # uses pattern comprehension rather than pattern matching as per Neo4j v4+
+                component_clauses.append(f" MATCH (n) -[:has]- (c{idx}:Component {{GraphID: $graphId, "
+                                         f"{comp_props}}}) WHERE c{idx}.Capacities IS NOT NULL AND "
+                                         f"apoc.convert.fromJsonMap(c{idx}.Capacities).unit >={str(v)}")
+                idx += 1
+            query = node_query + " ".join(component_clauses) + " RETURN collect(n.NodeID) as candidate_ids"
+
+        print(f'**** Resulting query {query=}')
+
+        with combined_broker_model.driver.session() as session:
+
+            val = session.run(query, graphId=combined_broker_model.graph_id).single()
+        if val is None:
+            return list()
+        return val.data()['candidate_ids']

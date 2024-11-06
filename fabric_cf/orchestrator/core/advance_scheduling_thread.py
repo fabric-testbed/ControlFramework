@@ -180,13 +180,23 @@ class AdvanceSchedulingThread:
                 r.set_start(value=ActorClock.to_milliseconds(when=future_start))
                 r.set_end(value=ActorClock.to_milliseconds(when=future_end))
 
+            self.add_and_demand_reservations(controller_slice=controller_slice)
+
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error("Unable to schedule a future slice: {}".format(e))
+            self.add_and_demand_reservations(controller_slice=controller_slice)
+        finally:
+            controller_slice.unlock()
+
+    def add_and_demand_reservations(self, controller_slice: OrchestratorSliceWrapper):
+        try:
             # Add Reservations to relational database;
             controller_slice.add_reservations()
 
             # Queue the slice to be demanded on Slice Defer Thread
             self.kernel.get_defer_thread().queue_slice(controller_slice=controller_slice)
         except Exception as e:
+            self.logger.error(f"SHOULD_NOT_HAPPEN: Queueing slice on Deferred Queue Failed: {controller_slice.slice_obj}")
+            self.logger.error(f"Exception: {e}")
             self.logger.error(traceback.format_exc())
-            self.logger.error("Unable to get orchestrator or demand reservation: {}".format(e))
-        finally:
-            controller_slice.unlock()

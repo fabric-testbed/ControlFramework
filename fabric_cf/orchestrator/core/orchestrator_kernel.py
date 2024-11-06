@@ -295,7 +295,7 @@ class OrchestratorKernel(ABCTick):
                 continue
 
             candidate_nodes = FimHelper.candidate_nodes(combined_broker_model=self.combined_broker_model,
-                                                        sliver=requested_sliver)
+                                                        sliver=requested_sliver, use_capacities=True)
 
             if not candidate_nodes:
                 self.logger.error(f'Insufficient resources: No hosts available to provision the {r.get_sliver()}')

@@ -27,6 +27,10 @@ from __future__ import annotations
 
 from abc import abstractmethod
 
+from fim.slivers.base_sliver import BaseSliver
+
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+
 
 class InventoryForType:
     def __init__(self):
@@ -53,3 +57,16 @@ class InventoryForType:
         @param resource resource properties
         @return new resource properties
         """
+
+    @staticmethod
+    def _get_allocated_sliver(reservation: ABCReservationMixin) -> BaseSliver:
+        """
+        Retrieve the allocated sliver from the reservation.
+
+        :param reservation: An instance of ABCReservationMixin representing the reservation to retrieve the sliver from.
+        :return: The allocated NetworkServiceSliver if available, otherwise None.
+        """
+        if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
+            return reservation.get_approved_resources().get_sliver()
+        if (reservation.is_active() or reservation.is_ticketed()) and reservation.get_resources() is not None:
+            return reservation.get_resources().get_sliver()
