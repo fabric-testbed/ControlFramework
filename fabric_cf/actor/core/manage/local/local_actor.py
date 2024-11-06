@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 import traceback
+from datetime import datetime
 from typing import TYPE_CHECKING, List, Tuple, Dict
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
@@ -44,12 +45,11 @@ if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
     from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
     from fabric_mb.message_bus.messages.slice_avro import SliceAvro
-    from fabric_cf.actor.core.manage.management_object import ManagementObject
     from fabric_cf.actor.security.auth_token import AuthToken
 
 
 class LocalActor(LocalProxy, ABCMgmtActor):
-    def __init__(self, *, manager: ManagementObject, auth: AuthToken):
+    def __init__(self, *, manager: ActorManagementObject, auth: AuthToken):
         super().__init__(manager=manager, auth=auth)
 
         if not isinstance(manager, ActorManagementObject):
@@ -111,18 +111,29 @@ class LocalActor(LocalProxy, ABCMgmtActor):
     def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
                          type: str = None, site: str = None, node_id: str = None,
-                         host: str = None, ip_subnet: str = None, full: bool = False) -> List[ReservationMng]:
+                         host: str = None, ip_subnet: str = None, full: bool = False,
+                         start: datetime = None, end: datetime = None) -> List[ReservationMng]:
         self.clear_last()
         try:
             result = self.manager.get_reservations(caller=self.auth, states=states, slice_id=slice_id, rid=rid,
                                                    oidc_claim_sub=oidc_claim_sub, email=email, rid_list=rid_list,
                                                    type=type, site=site, node_id=node_id, host=host,
-                                                   ip_subnet=ip_subnet, full=full)
+                                                   ip_subnet=ip_subnet, full=full, start=start, end=end)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
                 return result.reservations
 
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+    def get_components(self, *, node_id: str, rsv_type: list[str], states: list[int],
+                       component: str = None, bdf: str = None, start: datetime = None,
+                       end: datetime = None, excludes: List[str] = None) -> Dict[str, List[str]]:
+        try:
+            return self.manager.get_components(node_id=node_id, rsv_type=rsv_type, states=states,
+                                               component=component, bdf=bdf, start=start,
+                                               end=end, excludes=excludes)
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 

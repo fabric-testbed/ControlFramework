@@ -39,7 +39,7 @@ from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.attached_components import ComponentSliver, ComponentType
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Labels, Capacities
-from fim.slivers.interface_info import InterfaceSliver, InterfaceType
+from fim.slivers.interface_info import InterfaceType
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver, ServiceType, NSLayer
 from fim.slivers.path_info import Path
@@ -50,6 +50,7 @@ from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.container.maintenance import Maintenance
+from fabric_cf.actor.core.core.policy import AllocationAlgorithm
 from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicketFactory
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationOperation
@@ -73,19 +74,6 @@ from fim.slivers.interface_info import InterfaceSliver
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
-
-
-class BrokerAllocationAlgorithm(Enum):
-    FirstFit = enum.auto()
-    BestFit = enum.auto()
-    WorstFit = enum.auto()
-    Random = enum.auto()
-
-    def __repr__(self):
-        return self.name
-
-    def __str__(self):
-        return self.name
 
 
 class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
@@ -669,8 +657,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         @return tuple containing delegation id, sliver, error message if any
         """
         delegation_id = None
-        node_id_list = self.__candidate_nodes(sliver=sliver)
-        if self.get_algorithm_type(site=sliver.site) == BrokerAllocationAlgorithm.Random:
+        node_id_list = FimHelper.candidate_nodes(combined_broker_model=self.combined_broker_model,
+                                                 sliver=sliver)
+        if self.get_algorithm_type(site=sliver.site) == AllocationAlgorithm.Random:
             random.shuffle(node_id_list)
         else:
             # Reshuffle Nodes based on CPU Threshold only for VMs when no specific host is specified
@@ -857,8 +846,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 device_name = owner_switch.get_name()
 
                 if device_name == Constants.AL2S:
-                    delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
-                                                                                       net_cp.get_label_delegations())
+                    delegation_id, delegated_label = FimHelper.get_delegations(delegations=
+                                                                               net_cp.get_label_delegations())
                     device_name = delegated_label.device_name
                     local_name = delegated_label.local_name
 
@@ -938,11 +927,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                             owner_mpls_ns = ns
                             break
                 if owner_ns and ServiceType.MPLS == owner_ns.get_type():
-                    delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
-                                                                                      owner_switch.get_label_delegations())
+                    delegation_id, delegated_label = FimHelper.get_delegations(delegations=
+                                                                               owner_switch.get_label_delegations())
                 else:
-                    delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
-                                                                                      owner_ns.get_label_delegations())
+                    delegation_id, delegated_label = FimHelper.get_delegations(delegations=
+                                                                               owner_ns.get_label_delegations())
 
             # Set the Subnet and gateway from the Owner Switch (a)
             existing_reservations = self.get_existing_reservations(node_id=owner_ns_id,
@@ -1718,17 +1707,17 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.combined_broker_model.rollback(graph_id=snapshot_graph_id)
             raise e
 
-    def get_algorithm_type(self, site: str) -> BrokerAllocationAlgorithm:
+    def get_algorithm_type(self, site: str) -> AllocationAlgorithm:
         if self.properties is not None:
             algorithms = self.properties.get(Constants.ALGORITHM, None)
-            random_algo = algorithms.get(str(BrokerAllocationAlgorithm.Random))
+            random_algo = algorithms.get(str(AllocationAlgorithm.Random))
             if random_algo and random_algo.get('enabled') and random_algo.get('sites') and \
                     site in random_algo.get('sites'):
-                return BrokerAllocationAlgorithm.Random
-            first_fit_algo = algorithms.get(BrokerAllocationAlgorithm.Random.name)
+                return AllocationAlgorithm.Random
+            first_fit_algo = algorithms.get(AllocationAlgorithm.Random.name)
             if first_fit_algo and first_fit_algo.get('enabled'):
-                return BrokerAllocationAlgorithm.FirstFit
-        return BrokerAllocationAlgorithm.FirstFit
+                return AllocationAlgorithm.FirstFit
+        return AllocationAlgorithm.FirstFit
 
     def get_core_capacity_threshold(self) -> Tuple[bool, int]:
         if self.properties is not None:
@@ -1754,8 +1743,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                                    start=term.get_start_time(),
                                                                    end=term.get_end_time())
 
-            delegation_id, delegated_capacity = NetworkNodeInventory.get_delegations(
-                lab_cap_delegations=graph_node.get_capacity_delegations())
+            delegation_id, delegated_capacity = FimHelper.get_delegations(
+                delegations=graph_node.get_capacity_delegations())
 
             allocated_capacity = Capacities()
 

@@ -308,7 +308,7 @@ class Constants:
 
     # Orchestrator Lease params
     TWO_WEEKS = timedelta(days=15)
-    DEFAULT_MAX_DURATION = TWO_WEEKS
+    DEFAULT_MAX_DURATION_IN_WEEKS = TWO_WEEKS
     LEASE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S %z"
     DEFAULT_LEASE_IN_HOURS = 24
     LONG_LIVED_SLICE_TIME_WEEKS = timedelta(weeks=26)

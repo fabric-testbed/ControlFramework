@@ -147,16 +147,6 @@ class OrchestratorHandler:
                 else:
                     saved_bqm.start_refresh()
 
-        '''
-        if broker_query_model is None:
-            if self.local_bqm and level == 2 and not force_refresh:
-                saved_bqm = self.controller_state.get_saved_bqm(graph_format=GraphFormat.GRAPHML, level=0)
-                if saved_bqm and saved_bqm.get_bqm() and len(saved_bqm.get_bqm()):
-                    broker_query_model = controller.build_broker_query_model(level_0_broker_query_model=saved_bqm.get_bqm(),
-                                                                             level=level, graph_format=graph_format,
-                                                                             start=start, end=end, includes=includes,
-                                                                             excludes=excludes)
-        '''
         # Request the model from Broker as a fallback
         if not broker_query_model:
             broker = self.get_broker(controller=controller)
@@ -222,7 +212,8 @@ class OrchestratorHandler:
             raise e
 
     def create_slice(self, *, token: str, slice_name: str, slice_graph: str, ssh_key: str,
-                     lease_start_time: datetime = None, lease_end_time: datetime = None) -> List[dict]:
+                     lease_start_time: datetime = None, lease_end_time: datetime = None,
+                     lifetime: int = 24) -> List[dict]:
         """
         Create a slice
         :param token Fabric Identity Token
@@ -231,6 +222,7 @@ class OrchestratorHandler:
         :param ssh_key: User ssh key
         :param lease_start_time: Lease Start Time (UTC)
         :param lease_end_time: Lease End Time (UTC)
+        :param lifetime: Lifetime of the slice in hours
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
         """
@@ -245,12 +237,10 @@ class OrchestratorHandler:
             fabric_token = AccessChecker.validate_and_decode_token(token=token)
             project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
-            start_time, end_time = self.__compute_lease_end_time(lease_end_time=lease_end_time,
-                                                                 allow_long_lived=allow_long_lived,
-                                                                 project_id=project, lease_start_time=lease_start_time)
+            start_time, end_time = self.__compute_lease_end_time(lease_end_time=lease_end_time, lifetime=lifetime,
+                                                                 allow_long_lived=allow_long_lived, project_id=project)
 
             controller = self.controller_state.get_management_actor()
-            self.logger.debug(f"create_slice invoked for Controller: {controller}")
 
             # Validate the slice graph
             create_ts = time.time()
@@ -327,23 +317,48 @@ class OrchestratorHandler:
             new_slice_object.lock()
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
-            computed_reservations = new_slice_object.create(slice_graph=asm_graph)
+            computed_reservations = new_slice_object.create(slice_graph=asm_graph,
+                                                            lease_start_time=lease_start_time,
+                                                            lease_end_time=lease_end_time,
+                                                            lifetime=lifetime)
             new_slice_object.update_topology(topology=topology)
 
             # Check if Testbed in Maintenance or Site in Maintenance
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
 
-            # Add Reservations to relational database;
-            new_slice_object.add_reservations()
+            # TODO Future Slice
+            '''
+            if lease_start_time and lease_end_time and lifetime:
+                future_start, future_end = self.controller_state.determine_future_lease_time(computed_reservations=computed_reservations,
+                                                                                             start=lease_start_time, end=lease_end_time,
+                                                                                             duration=lifetime)
+                self.logger.debug(f"Advanced Scheduling: Slice: {slice_name}({slice_id}) lifetime: {future_start} to {future_end}")
+                slice_obj.set_lease_start(lease_start=future_start)
+                slice_obj.set_lease_end(lease_end=future_end)
+                self.logger.debug(f"Update Slice {slice_name}")
+                slice_id = controller.update_slice(slice_obj=slice_obj)
+                for r in computed_reservations:
+                    r.set_start(value=ActorClock.to_milliseconds(when=future_start))
+                    r.set_end(value=ActorClock.to_milliseconds(when=future_end))
+                '''
 
-            self.logger.info(f"OC wrapper: TIME= {time.time() - create_ts:.0f}")
-
-            # Enqueue the slice on the demand thread
-            # Demand thread is responsible for demanding the reservations
-            # Helps improve the create response time
             create_ts = time.time()
-            self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
-            self.logger.info(f"QU queue: TIME= {time.time() - create_ts:.0f}")
+            if lease_start_time and lease_end_time and lifetime:
+                # Enqueue future slices on Advanced Scheduling Thread to determine possible start time
+                # Determining start time may take time so this is done asynchronously to avoid increasing response time
+                # of create slice API
+                self.controller_state.get_advance_scheduling_thread().queue_slice(controller_slice=new_slice_object)
+            else:
+                # Enqueue the slice on the demand thread
+                # Demand thread is responsible for demanding the reservations
+                # Helps improve the create response time
+
+                # Add Reservations to relational database;
+                new_slice_object.add_reservations()
+                self.logger.info(f"OC wrapper: TIME= {time.time() - create_ts:.0f}")
+                self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
+                self.logger.info(f"QU queue: TIME= {time.time() - create_ts:.0f}")
+
             EventLoggerSingleton.get().log_slice_event(slice_object=slice_obj, action=ActionId.create,
                                                        topology=topology)
 
@@ -753,9 +768,9 @@ class OrchestratorHandler:
             fabric_token = AccessChecker.validate_and_decode_token(token=token)
             project, tags, project_name = fabric_token.first_project
             allow_long_lived = True if Constants.SLICE_NO_LIMIT_LIFETIME in tags else False
-            start_time, new_end_time = self.__compute_lease_end_time(lease_end_time=new_lease_end_time,
-                                                                     allow_long_lived=allow_long_lived,
-                                                                     project_id=project)
+            _, new_end_time = self.__compute_lease_end_time(lease_end_time=new_lease_end_time,
+                                                            allow_long_lived=allow_long_lived,
+                                                            project_id=project)
 
             reservations = controller.get_reservations(slice_id=slice_id)
             if reservations is None or len(reservations) < 1:
@@ -837,35 +852,48 @@ class OrchestratorHandler:
 
         return new_time
 
-    def __compute_lease_end_time(self, lease_end_time: datetime, allow_long_lived: bool = False,
-                                 project_id: str = None, lease_start_time: datetime = None) -> Tuple[datetime, datetime]:
+    from datetime import datetime, timedelta, timezone
+    from typing import Tuple
+
+    def __compute_lease_end_time(self, lease_end_time: datetime = None, allow_long_lived: bool = False,
+                                 project_id: str = None,
+                                 lifetime: int = Constants.DEFAULT_LEASE_IN_HOURS) -> Tuple[datetime, datetime]:
         """
-        Validate Lease End Time
-        :param lease_end_time: New End Time
-        :param allow_long_lived: Allow long lived tokens
-        :param project_id: Project Id
-        :param lease_start_time: New Start Time
-        :return End Time
-        :raises Exception if new end time is in past
+        Validate and compute Lease End Time.
+
+        :param lease_end_time: The requested end time for the lease.
+        :param allow_long_lived: If True, allows extended duration for leases.
+        :param project_id: Project ID to check for special duration limits.
+        :param lifetime: Requested lease duration in hours. Defaults to the system-defined lease duration.
+        :return: A tuple containing the start time (current time) and the computed end time.
+        :raises ValueError: If the lease end time is in the past.
         """
         base_time = datetime.now(timezone.utc)
-        if lease_start_time and lease_start_time > base_time:
-            base_time = lease_start_time
-        if lease_end_time is None:
-            new_end_time = base_time + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
-            return base_time, new_end_time
 
-        new_end_time = lease_end_time
+        # Raise an error if lease_end_time is in the past
+        if lease_end_time and lease_end_time < base_time:
+            raise ValueError("Requested lease end time is in the past.")
 
-        if allow_long_lived:
-            default_long_lived_duration = Constants.LONG_LIVED_SLICE_TIME_WEEKS
-        else:
-            default_long_lived_duration = Constants.DEFAULT_MAX_DURATION
-        if project_id not in self.infrastructure_project_id and (new_end_time - base_time) > default_long_lived_duration:
-            self.logger.info(f"New term end time {new_end_time} exceeds system default "
-                             f"{default_long_lived_duration}, setting to system default: ")
+        default_max_duration = (Constants.LONG_LIVED_SLICE_TIME_WEEKS
+                                if allow_long_lived else Constants.DEFAULT_MAX_DURATION_IN_WEEKS).total_seconds()
+        # Convert weeks to hours
+        default_max_duration /= 3600
 
-            new_end_time = base_time + default_long_lived_duration
+        # Calculate lifetime if not directly provided
+        if lifetime is None:
+            if lease_end_time:
+                lifetime = (lease_end_time - base_time).total_seconds() / 3600
+            else:
+                lifetime = Constants.DEFAULT_LEASE_IN_HOURS
+
+        # Ensure the requested lifetime does not exceed allowed max duration for the project
+        if project_id not in self.infrastructure_project_id and lifetime > default_max_duration:
+            self.logger.info(f"Requested lifetime ({lifetime} hours) exceeds the allowed duration "
+                             f"({default_max_duration} hours). Setting to maximum allowable.")
+            lifetime = default_max_duration
+
+        # Calculate the new end time
+        new_end_time = base_time + timedelta(hours=lifetime)
 
         return base_time, new_end_time
 

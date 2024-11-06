@@ -23,6 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import enum
+from enum import Enum
+
 from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
@@ -34,6 +37,19 @@ from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
+
+
+class AllocationAlgorithm(Enum):
+    FirstFit = enum.auto()
+    BestFit = enum.auto()
+    WorstFit = enum.auto()
+    Random = enum.auto()
+
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
 
 
 class Policy(ABCPolicy):

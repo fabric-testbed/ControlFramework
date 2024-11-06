@@ -26,11 +26,10 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from ctypes import Union
-from typing import Tuple
 
-from fim.slivers.capacities_labels import Labels, Capacities
-from fim.slivers.delegations import DelegationFormat, Delegations
+from fim.slivers.base_sliver import BaseSliver
+
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 
 
 class InventoryForType:
@@ -49,18 +48,6 @@ class InventoryForType:
         self.__dict__.update(state)
         self.logger = None
 
-    @staticmethod
-    def get_delegations(*, lab_cap_delegations: Delegations) -> Tuple[str or None, Union[Labels, Capacities] or None]:
-        # Grab Label Delegations
-        delegation_id, deleg = lab_cap_delegations.get_sole_delegation()
-        #self.logger.debug(f"Available label/capacity delegations: {deleg} format {deleg.get_format()}")
-        # ignore pool definitions and references for now
-        if deleg.get_format() != DelegationFormat.SinglePool:
-            return None, None
-        # get the Labels/Capacities object
-        delegated_label_capacity = deleg.get_details()
-        return delegation_id, delegated_label_capacity
-
     @abstractmethod
     def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:
         """
@@ -70,3 +57,16 @@ class InventoryForType:
         @param resource resource properties
         @return new resource properties
         """
+
+    @staticmethod
+    def _get_allocated_sliver(reservation: ABCReservationMixin) -> BaseSliver:
+        """
+        Retrieve the allocated sliver from the reservation.
+
+        :param reservation: An instance of ABCReservationMixin representing the reservation to retrieve the sliver from.
+        :return: The allocated NetworkServiceSliver if available, otherwise None.
+        """
+        if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
+            return reservation.get_approved_resources().get_sliver()
+        if (reservation.is_active() or reservation.is_ticketed()) and reservation.get_resources() is not None:
+            return reservation.get_resources().get_sliver()

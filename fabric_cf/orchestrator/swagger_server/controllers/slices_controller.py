@@ -32,23 +32,25 @@ def slices_create_post(body, name, ssh_key, lease_end_time=None):  # noqa: E501
     post_body = SlicesPost()
     post_body.graph_model = body.decode("utf-8")
     post_body.ssh_keys = [ssh_key]
-    return rc.slices_create_post(body=post_body, name=name, lease_end_time=lease_end_time)
+    return rc.slices_creates_post(body=post_body, name=name, lease_end_time=lease_end_time)
 
 
-def slices_creates_post(body, name, lease_start_time=None, lease_end_time=None):  # noqa: E501
+def slices_creates_post(body, name, lifetime=None, lease_start_time=None, lease_end_time=None):  # noqa: E501
     """Create slice
 
     Request to create slice as described in the request. Request would be a graph ML describing the requested resources.
     Resources may be requested to be created now or in future. On success, one or more slivers are allocated,
-    containing resources satisfying the request, and assigned to the given slice. This API returns list and
-    description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger
-    provisioning of these resources asynchronously on the appropriate sites either now or in the future as requested.
+    containing resources satisfying the request, and assigned to the given slice. This API returns list and description
+    of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of
+    these resources asynchronously on the appropriate sites either now or in the future as requested.
     Experimenter can invoke get slice API to get the latest state of the requested resources.   # noqa: E501
 
     :param body: Create new Slice
     :type body: dict | bytes
     :param name: Slice Name
     :type name: str
+    :param lifetime: Lifetime of the slice requested in hours.
+    :type lifetime: int
     :param lease_start_time: Lease End Time for the Slice
     :type lease_start_time: str
     :param lease_end_time: Lease End Time for the Slice
@@ -58,7 +60,8 @@ def slices_creates_post(body, name, lease_start_time=None, lease_end_time=None):
     """
     if connexion.request.is_json:
         body = SlicesPost.from_dict(connexion.request.get_json())  # noqa: E501
-    return rc.slices_create_post(body=body, name=name, lease_start_time=lease_start_time, lease_end_time=lease_end_time)
+    return rc.slices_creates_post(body=body, name=name, lifetime=lifetime,
+                                  lease_start_time=lease_start_time, lease_end_time=lease_end_time)
 
 
 def slices_delete_delete():  # noqa: E501
@@ -90,7 +93,8 @@ def slices_delete_slice_id_delete(slice_id):  # noqa: E501
 def slices_get(name=None, search=None, exact_match=None, as_self=None, states=None, limit=None, offset=None):  # noqa: E501
     """Retrieve a listing of user slices
 
-    Retrieve a listing of user slices. It returns list of all slices belonging to all members in a project when &#x27;as_self&#x27; is False otherwise returns only the all user&#x27;s slices in a project. # noqa: E501
+    Retrieve a listing of user slices. It returns list of all slices belonging to all members in a project when
+    &#x27;as_self&#x27; is False otherwise returns only the all user&#x27;s slices in a project. # noqa: E501
 
     :param name: Search for Slices with the name
     :type name: str
