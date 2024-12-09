@@ -244,3 +244,10 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
+
+    def get_quota_lookup(self, project_id: str) -> dict:
+        self.clear_last()
+        try:
+            return self.manager.get_quota_lookup(project_id=project_id, caller=self.auth)
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())

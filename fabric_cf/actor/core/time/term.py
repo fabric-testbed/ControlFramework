@@ -331,6 +331,18 @@ class Term:
 
         return end_ms - start_ms + 1
 
+    def get_remaining_length(self) -> int:
+        """
+        Returns the length of remaining term in milliseconds. The length of a term is the
+        number of milliseconds in the closed interval [now, end]
+        @returns term length
+        """
+        now = datetime.now(timezone.utc)
+        current_ms = ActorClock.to_milliseconds(when=now)
+        end_ms = ActorClock.to_milliseconds(when=self.end_time)
+
+        return end_ms - current_ms + 1
+
     def get_length(self) -> int:
         """
         Returns the length of a term in milliseconds. The length of a term is the

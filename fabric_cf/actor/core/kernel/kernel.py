@@ -26,6 +26,7 @@
 import threading
 import time
 import traceback
+from datetime import datetime, timezone
 
 from typing import List, Dict
 
@@ -219,6 +220,10 @@ class Kernel:
                 self.policy.close(reservation=reservation)
                 reservation.close(force=force)
                 self.plugin.get_database().update_reservation(reservation=reservation)
+                ## TODO release resources back if deleted before expiry
+                if reservation.get_term().get_remaining_length() > 0:
+                    self.plugin.get_database().update_quota(reservation=reservation)
+
                 reservation.service_close()
         except Exception as e:
             err = f"An error occurred during close for reservation #{reservation.get_reservation_id()}"
@@ -1453,6 +1458,7 @@ class Kernel:
             self.plugin.get_database().update_reservation(reservation=reservation)
             if not reservation.is_failed():
                 reservation.service_update_ticket()
+                self.plugin.get_database().update_quota(reservation=reservation)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during update ticket for "

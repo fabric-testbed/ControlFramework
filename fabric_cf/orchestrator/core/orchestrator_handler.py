@@ -30,11 +30,13 @@ from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
 from typing import List, Tuple, Union
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
+from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.networkx_property_graph_disjoint import NetworkXGraphImporterDisjoint
 from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
 from fim.user import GraphFormat
 from fim.user.topology import ExperimentTopology
@@ -43,6 +45,7 @@ from fabric_cf.actor.core.common.event_logger import EventLoggerSingleton
 from fabric_cf.actor.core.kernel.poa import PoaStates
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
+from fabric_cf.actor.core.util.utils import enforce_quota_limits
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
@@ -313,7 +316,6 @@ class OrchestratorHandler:
             new_slice_object = OrchestratorSliceWrapper(controller=controller, broker=broker,
                                                         slice_obj=slice_obj, logger=self.logger)
 
-            create_ts = time.time()
             new_slice_object.lock()
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
@@ -326,21 +328,14 @@ class OrchestratorHandler:
             # Check if Testbed in Maintenance or Site in Maintenance
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
 
-            # TODO Future Slice
-            '''
-            if lease_start_time and lease_end_time and lifetime:
-                future_start, future_end = self.controller_state.determine_future_lease_time(computed_reservations=computed_reservations,
-                                                                                             start=lease_start_time, end=lease_end_time,
-                                                                                             duration=lifetime)
-                self.logger.debug(f"Advanced Scheduling: Slice: {slice_name}({slice_id}) lifetime: {future_start} to {future_end}")
-                slice_obj.set_lease_start(lease_start=future_start)
-                slice_obj.set_lease_end(lease_end=future_end)
-                self.logger.debug(f"Update Slice {slice_name}")
-                slice_id = controller.update_slice(slice_obj=slice_obj)
-                for r in computed_reservations:
-                    r.set_start(value=ActorClock.to_milliseconds(when=future_start))
-                    r.set_end(value=ActorClock.to_milliseconds(when=future_end))
-                '''
+            quota_lookup = controller.get_quota_lookup(project_id=project)
+            status, error_message = enforce_quota_limits(quota_lookup=quota_lookup,
+                                                         computed_reservations=computed_reservations,
+                                                         duration=(end_time-start_time).total_seconds()/3600)
+
+            if not status:
+                raise OrchestratorException(http_error_code=BAD_REQUEST,
+                                            message=error_message)
 
             create_ts = time.time()
             if lease_start_time and lease_end_time and lifetime:

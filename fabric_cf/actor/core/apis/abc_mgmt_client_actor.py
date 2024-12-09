@@ -181,3 +181,12 @@ class ABCMgmtClientActor(ABCComponent):
         @return reservation
         """
         raise ManageException(Constants.NOT_IMPLEMENTED)
+
+    def get_quota_lookup(self, project_id: str) -> dict:
+        """
+        Fetches all quotas for a given project and creates a lookup dictionary.
+
+        @param project_id: UUID of the project whose quotas are to be fetched.
+        @return: Dictionary with keys as (resource_type, resource_unit) and values as quota details.
+        @throws: Exception if there is an error during the database interaction.
+        """

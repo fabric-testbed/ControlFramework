@@ -36,7 +36,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker, joinedload
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
 from fabric_cf.actor.db import Base, Clients, ConfigMappings, Proxies, Units, Reservations, Slices, ManagerObjects, \
-    Miscellaneous, Actors, Delegations, Sites, Poas, Components, Metrics
+    Miscellaneous, Actors, Delegations, Sites, Poas, Components, Metrics, Quotas
 
 
 @contextmanager
@@ -1711,6 +1711,110 @@ class PsqlDatabase:
             for r in rows:
                 result.append(self.generate_dict_from_row(row=r))
             return result
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+
+    def create_quota(self, project_id: str, resource_type: str, resource_unit: str, quota_limit: int):
+        """
+        Create a new quota record in the database.
+
+        @param project_id: UUID of the project the quota is associated with.
+        @param resource_type: Type of resource (e.g., SLICE, COMPONENT).
+        @param resource_unit: Unit of the resource (e.g., HOURS, COUNT, GB).
+        @param quota_limit: Maximum allowed usage for this resource.
+        @return: The created `Quotas` object.
+        @throws: Exception if there is an error during the creation.
+        """
+        session = self.get_session()
+        try:
+            quota = Quotas(
+                project_id=project_id,
+                resource_type=resource_type,
+                resource_unit=resource_unit,
+                quota_limit=quota_limit,
+                quota_used=0
+            )
+            session.add(quota)
+            session.commit()
+            return quota
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+
+    def get_quota_lookup(self, project_id: str):
+        """
+        Fetches all quotas for a given project and creates a lookup dictionary.
+
+        @param project_id: UUID of the project whose quotas are to be fetched.
+        @return: Dictionary with keys as (resource_type, resource_unit) and values as quota details.
+        @throws: Exception if there is an error during the database interaction.
+        """
+        session = self.get_session()
+        try:
+            # Fetch all quotas for the project
+            project_quotas = session.query(Quotas).filter(Quotas.project_id == project_id).all()
+
+            # Create a lookup dictionary for quick quota access
+            quota_lookup = {}
+            for quota in project_quotas:
+                key = (quota.resource_type, quota.resource_unit)
+                quota_lookup[key] = {
+                    "quota_limit": quota.quota_limit,
+                    "quota_used": quota.quota_used,
+                }
+            return quota_lookup
+        except Exception as e:
+            raise Exception(f"Error while fetching quotas: {str(e)}")
+
+    def update_quota(self, project_id: str, resource_type: str, resource_unit: str, **kwargs):
+        """
+        Update an existing quota record.
+
+        @param project_id: UUID of the project the quota is associated with.
+        @param resource_type: Type of resource (e.g., SLICE, COMPONENT).
+        @param resource_unit: Unit of the resource (e.g., HOURS, COUNT, GB).
+        @param kwargs: Dictionary of fields to update and their new values.
+        @return: The updated `Quotas` object, or None if the quota does not exist.
+        @throws: Exception if there is an error during the update.
+        """
+        session = self.get_session()
+        try:
+            filter_dict = {"project_id": project_id, "resource_type": resource_type, "resource_unit": resource_unit}
+            quota = session.query(Quotas).filter_by(**filter_dict).one_or_none()
+            if not quota:
+                return None
+
+            for key, value in kwargs.items():
+                if hasattr(quota, key):
+                    setattr(quota, key, value)
+                    print(f"Updating: {quota.project_id} {quota.resource_type} {quota.resource_unit} {quota.quota_limit} {quota.quota_used}")
+            session.commit()
+            return quota
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+
+    def delete_quota(self, project_id: str, resource_type: str, resource_unit: str):
+        """
+        Delete a specific quota record.
+
+        @param project_id: UUID of the project the quota is associated with.
+        @param resource_type: Type of resource (e.g., SLICE, COMPONENT).
+        @param resource_unit: Unit of the resource (e.g., HOURS, COUNT, GB).
+        @return: True if the quota was successfully deleted, False if not found.
+        @throws: Exception if there is an error during the deletion.
+        """
+        session = self.get_session()
+        try:
+            quota = session.query(Quotas).filter(Quotas.project_id == project_id and
+                                                 Quotas.resource_type == resource_type and
+                                                 Quotas.resource_unit == resource_unit).first()
+            if quota:
+                session.delete(quota)
+                session.commit()
+                return True
+            return False
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e

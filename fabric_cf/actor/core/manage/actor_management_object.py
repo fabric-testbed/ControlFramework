@@ -29,6 +29,8 @@ import traceback
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List, Dict, Tuple
 
+from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
+
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
@@ -900,6 +902,21 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return FimHelper.build_broker_query_model(db=self.db, level_0_broker_query_model=level_0_broker_query_model,
                                                       level=level, graph_format=graph_format, start=start,
                                                       end=end, includes=includes, excludes=excludes)
+        except Exception as e:
+            self.logger.error(f"Exception occurred build_broker_query_model e: {e}")
+            self.logger.error(traceback.format_exc())
+
+    def get_quota_lookup(self, project_id: str, caller: AuthToken) -> dict:
+        """
+        Fetches all quotas for a given project and creates a lookup dictionary.
+
+        @param project_id: UUID of the project whose quotas are to be fetched.
+        @param caller: caller
+        @return: Dictionary with keys as (resource_type, resource_unit) and values as quota details.
+        @throws: Exception if there is an error during the database interaction.
+        """
+        try:
+            return self.db.get_quota_lookup(project_id=project_id)
         except Exception as e:
             self.logger.error(f"Exception occurred build_broker_query_model e: {e}")
             self.logger.error(traceback.format_exc())

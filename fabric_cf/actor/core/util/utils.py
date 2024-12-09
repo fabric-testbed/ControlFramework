@@ -24,13 +24,14 @@
 # Author Komal Thareja (kthare10@renci.org)
 import hashlib
 from bisect import bisect_left
+from typing import Tuple, Dict
 
 from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
+from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
-from fim.user import ComponentType
-from fim.user.topology import TopologyDiff, TopologyDiffTuple
+from fim.user import ComponentType, InstanceCatalog
 
 from fabric_cf.actor.security.pdp_auth import ActionId
 
@@ -118,3 +119,82 @@ def generate_sha256(*, token: str):
     sha256_hex = sha256_hash.hexdigest()
 
     return sha256_hex
+
+
+def extract_quota_usage(sliver, duration: float) -> Dict[Tuple[str, str], float]:
+    """
+    Extract quota usage from a sliver
+
+    @param sliver: The sliver object from which resources are extracted.
+    @param duration: Number of hours the resources are requested for.
+    @return: A dictionary of resource type/unit tuples to requested amounts.
+    """
+    unit = "HOURS"
+    requested_resources = {}
+
+    # Check if the sliver is a NodeSliver
+    if not isinstance(sliver, NodeSliver):
+        return requested_resources
+
+    allocations = sliver.get_capacity_allocations()
+    if not allocations and sliver.get_capacity_hints():
+        catalog = InstanceCatalog()
+        allocations = catalog.get_instance_capacities(instance_type=sliver.get_capacity_hints().instance_type)
+    else:
+        allocations = sliver.get_capacities()
+
+    # Extract Core, Ram, Disk Hours
+    requested_resources[("Core", unit)] = requested_resources.get(("Core", unit), 0) + (duration * allocations.core)
+    requested_resources[("RAM", unit)] = requested_resources.get(("Core", unit), 0) + (duration * allocations.ram)
+    requested_resources[("Disk", unit)] = requested_resources.get(("Core", unit), 0) + (duration * allocations.disk)
+
+    # Extract component hours (e.g., GPU, FPGA, SmartNIC)
+    if sliver.attached_components_info:
+        for c in sliver.attached_components_info.devices.values():
+            component_type = str(c.get_type())
+            requested_resources[(component_type, unit)] = (
+                requested_resources.get((component_type, unit), 0) + duration
+            )
+
+    return requested_resources
+
+
+def enforce_quota_limits(quota_lookup: dict, computed_reservations: list[LeaseReservationAvro],
+                         duration: float) -> Tuple[bool, str]:
+    """
+    Check if the requested resources for multiple reservations are within the project's quota limits.
+
+    @param quota_lookup: Quota Limits for various resource types.
+    @param computed_reservations: List of slivers requested.
+    @param duration: Number of hours the reservations are requested for.
+    @return: Tuple (True, None) if resources are within quota, or (False, message) if denied.
+    @throws: Exception if there is an error during the database interaction.
+    """
+    try:
+        requested_resources = {}
+
+        # Accumulate resource usage for all reservations
+        for r in computed_reservations:
+            sliver = r.get_sliver()
+            sliver_resources = extract_quota_usage(sliver, duration)
+            for key, value in sliver_resources.items():
+                requested_resources[key] = requested_resources.get(key, 0) + value
+
+        # Check each accumulated resource usage against its quota
+        for quota_key, total_requested_duration in requested_resources.items():
+            if quota_key not in quota_lookup:
+                return False, f"Quota not defined for resource: {quota_key[0]} ({quota_key[1]})."
+
+            quota_info = quota_lookup[quota_key]
+            available_quota = quota_info["quota_limit"] - quota_info["quota_used"]
+
+            if total_requested_duration > available_quota:
+                return False, (
+                    f"Requested {total_requested_duration} {quota_key[1]} of {quota_key[0]}, "
+                    f"but only {available_quota} is available."
+                )
+
+        # If all checks pass
+        return True, None
+    except Exception as e:
+        raise Exception(f"Error while checking reservation: {str(e)}")
