@@ -85,7 +85,7 @@ database:
 
 pdp:
   url: http://localhost:8080/services/pdp
-  enable: False
+  enable: True
 
 neo4j:
   url: bolt://localhost:9687
