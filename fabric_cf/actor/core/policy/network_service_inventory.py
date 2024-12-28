@@ -471,6 +471,9 @@ class NetworkServiceInventory(InventoryForType):
         :param requested_ns: Network Service sliver.
         :return: Gateway labels populated with the appropriate subnet and IP address.
         """
+        if len(subnet_list) == 0:
+            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                  msg=f"No subnets available for {requested_ns.get_site()}")
         gateway_labels = Labels()
         if requested_ns.get_type() == ServiceType.FABNetv4:
             # Allocate the requested network if available else allocate new network
