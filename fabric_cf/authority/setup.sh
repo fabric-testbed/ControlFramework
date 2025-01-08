@@ -51,6 +51,7 @@ cp env.template $name/.env
 cp $config $name/config.yaml
 cp $arm $name/arm.graphml
 cp $handler1 $name/$handler1
+cp switch_handler_config.yml $name/switch_handler_config.yml
 
 if [ -z $6 ]; then
   cp docker-compose.yml $name/
