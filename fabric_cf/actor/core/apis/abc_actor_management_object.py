@@ -238,8 +238,8 @@ class ABCActorManagementObject(ABCManagementObject):
     def get_reservations(self, *, caller: AuthToken, states: List[int] = None,
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
                          email: str = None, rid_list: List[str] = None, type: str = None,
-                         site: str = None, node_id: str = None,
-                         host: str = None, ip_subnet: str = None, full: bool = False) -> ResultReservationAvro:
+                         site: str = None, node_id: str = None, host: str = None, ip_subnet: str = None,
+                         full: bool = False, start: datetime = None, end: datetime = None) -> ResultReservationAvro:
         """
         Get Reservations
         @param states states
@@ -256,8 +256,28 @@ class ABCActorManagementObject(ABCManagementObject):
         @param host host
         @param ip_subnet ip subnet
         @param full
+        @param start: start time
+        @param end: end time
 
         @return returns list of the reservations
+        """
+
+    def get_components(self, *, node_id: str, rsv_type: list[str], states: list[int],
+                       component: str = None, bdf: str = None, start: datetime = None,
+                       end: datetime = None, excludes: List[str] = None) -> Dict[str, List[str]]:
+        """
+        Returns components matching the search criteria
+        @param node_id: Worker Node ID to which components belong
+        @param states: list of states used to find reservations
+        @param rsv_type: type of reservations
+        @param component: component name
+        @param bdf: Component's PCI address
+        @param start: start time
+        @param end: end time
+        @param excludes: Excludes the list of reservations
+        NOTE# For P4 switches; node_id=node+renc-p4-sw  component=ip+192.168.11.8 bdf=p1
+
+        @return Dictionary with component name as the key and value as list of associated PCI addresses in use.
         """
 
     def get_slices(self, *, slice_id: ID, caller: AuthToken, slice_name: str = None, email: str = None,

@@ -29,6 +29,7 @@ import traceback
 from ipaddress import IPv6Network, IPv4Network
 from typing import List, Tuple, Union
 
+from fabric_cf.actor.fim.fim_helper import FimHelper
 from fim.slivers.capacities_labels import Labels
 from fim.slivers.gateway import Gateway
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
@@ -75,13 +76,7 @@ class NetworkServiceInventory(InventoryForType):
                 continue
 
             # For Active or Ticketed or Ticketing reservations; reduce the counts from available
-            allocated_sliver = None
-            if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
-                allocated_sliver = reservation.get_approved_resources().get_sliver()
-
-            if (reservation.is_active() or reservation.is_ticketed()) and \
-                    reservation.get_resources() is not None:
-                allocated_sliver = reservation.get_resources().get_sliver()
+            allocated_sliver = self._get_allocated_sliver(reservation=reservation)
 
             self.logger.debug(
                 f"Existing res# {reservation.get_reservation_id()} state:{reservation.get_state()} "
@@ -154,7 +149,7 @@ class NetworkServiceInventory(InventoryForType):
                         )
                     return requested_ifs
 
-                delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
+                delegation_id, delegated_label = FimHelper.get_delegations(delegations=owner_ns.get_label_delegations())
                 vlan_range = self.__extract_vlan_range(labels=delegated_label)
 
                 if vlan_range and requested_vlan not in vlan_range:
@@ -188,8 +183,8 @@ class NetworkServiceInventory(InventoryForType):
                     )
         else:
             if bqm_ifs.get_type() != InterfaceType.FacilityPort:
-                delegation_id, delegated_label = self.get_delegations(
-                    lab_cap_delegations=owner_ns.get_label_delegations())
+                delegation_id, delegated_label = FimHelper.get_delegations(
+                    delegations=owner_ns.get_label_delegations())
                 vlan_range = self.__extract_vlan_range(labels=delegated_label)
             else:
                 vlan_range = self.__extract_vlan_range(labels=bqm_ifs.labels)
@@ -283,13 +278,7 @@ class NetworkServiceInventory(InventoryForType):
                     continue
 
                 # For Active or Ticketed or Ticketing reservations; reduce the counts from available
-                allocated_sliver = None
-                if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
-                    allocated_sliver = reservation.get_approved_resources().get_sliver()
-
-                if (reservation.is_active() or reservation.is_ticketed()) and \
-                        reservation.get_resources() is not None:
-                    allocated_sliver = reservation.get_resources().get_sliver()
+                allocated_sliver = self._get_allocated_sliver(reservation=reservation)
 
                 self.logger.debug(f"Existing res# {reservation.get_reservation_id()} "
                                   f"allocated: {allocated_sliver}")
@@ -333,7 +322,7 @@ class NetworkServiceInventory(InventoryForType):
                 return requested_ns
 
             # Grab Label Delegations
-            delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
+            delegation_id, delegated_label = FimHelper.get_delegations(delegations=owner_ns.get_label_delegations())
 
             # HACK to use FabNetv6 for FabNetv6Ext as both have the same range
             requested_ns_type = requested_ns.get_type()
@@ -472,20 +461,6 @@ class NetworkServiceInventory(InventoryForType):
 
         return subnet_list
 
-    def _get_allocated_sliver(self, reservation: ABCReservationMixin) -> NetworkServiceSliver:
-        """
-        Retrieve the allocated sliver from the reservation.
-
-        :param reservation: An instance of ABCReservationMixin representing the reservation to retrieve the sliver from.
-        :return: The allocated NetworkServiceSliver if available, otherwise None.
-        """
-        if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
-            return reservation.get_approved_resources().get_sliver()
-        if (reservation.is_active() or reservation.is_ticketed()) and reservation.get_resources() is not None:
-            return reservation.get_resources().get_sliver()
-
-        self.logger.error("Could not find the allocated Sliver - should not reach here!")
-
     def _assign_gateway_labels(self, *, ip_network: Union[IPv4Network, IPv6Network], subnet_list: List,
                                requested_ns: NetworkServiceSliver) -> Labels:
         """
@@ -496,6 +471,9 @@ class NetworkServiceInventory(InventoryForType):
         :param requested_ns: Network Service sliver.
         :return: Gateway labels populated with the appropriate subnet and IP address.
         """
+        if len(subnet_list) == 0:
+            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                  msg=f"No subnets available for {requested_ns.get_site()}")
         gateway_labels = Labels()
         if requested_ns.get_type() == ServiceType.FABNetv4:
             # Allocate the requested network if available else allocate new network
@@ -564,7 +542,7 @@ class NetworkServiceInventory(InventoryForType):
             ifs_labels = Labels()
 
         if owner_switch.get_name() == Constants.AL2S:
-            delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=bqm_interface.get_label_delegations())
+            delegation_id, delegated_label = FimHelper.get_delegations(delegations=bqm_interface.get_label_delegations())
             local_name = delegated_label.local_name
             device_name = delegated_label.device_name
         else:

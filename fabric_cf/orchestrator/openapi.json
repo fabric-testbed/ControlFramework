@@ -915,6 +915,18 @@
             }
           },
           {
+            "name": "lifetime",
+            "in": "query",
+            "description": "Lifetime of the slice requested in hours.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "default": 24
+            }
+          },
+          {
             "name": "lease_start_time",
             "in": "query",
             "description": "Lease End Time for the Slice",

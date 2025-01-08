@@ -38,8 +38,8 @@ from fim.graph.resources.abc_adm import ABCADMPropertyGraph
 from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.attached_components import ComponentSliver, ComponentType
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.capacities_labels import Labels
-from fim.slivers.interface_info import InterfaceSliver, InterfaceType
+from fim.slivers.capacities_labels import Labels, Capacities
+from fim.slivers.interface_info import InterfaceType
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver, ServiceType, NSLayer
 from fim.slivers.path_info import Path
@@ -50,6 +50,7 @@ from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.container.maintenance import Maintenance
+from fabric_cf.actor.core.core.policy import AllocationAlgorithm
 from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicketFactory
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationOperation
@@ -73,19 +74,6 @@ from fim.slivers.interface_info import InterfaceSliver
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
-
-
-class BrokerAllocationAlgorithm(Enum):
-    FirstFit = enum.auto()
-    BestFit = enum.auto()
-    WorstFit = enum.auto()
-    Random = enum.auto()
-
-    def __repr__(self):
-        return self.name
-
-    def __str__(self):
-        return self.name
 
 
 class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
@@ -516,7 +504,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             props=node_props,
             comps=sliver.attached_components_info)
 
-        # Skip nodes without any delegations which would be data-switch in this case
         if sliver.get_type() == NodeType.Switch:
             exclude = []
             for n in result:
@@ -557,6 +544,45 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             node_id_list.remove(x)
 
         return node_id_list
+
+    def __reshuffle_nodes(self, node_id_list: List[str], node_id_to_reservations: dict,
+                          term: Term) -> List[str]:
+        """
+        Reshuffles nodes based on their usage compared to a given threshold.
+
+        @param: node_id_list (list): List of node_ids
+
+        @return:  list: Reshuffled list of nodes, with nodes exceeding the threshold shuffled separately.
+        """
+        if len(node_id_list) == 1:
+            return node_id_list
+
+        enabled, threshold = self.get_core_capacity_threshold()
+        if not enabled:
+            return node_id_list
+
+        # Separate nodes based on whether their usage exceeds the threshold
+        above_threshold = []
+        below_threshold = []
+
+        for node_id in node_id_list:
+            node, total, allocated = self.get_node_capacities(node_id=node_id,
+                                                              node_id_to_reservations=node_id_to_reservations,
+                                                              term=term)
+            if total and allocated:
+                self.logger.debug(f"Allocated: {allocated} Total: {total}")
+                cpu_usage_percent = int(((allocated.core * 100)/ total.core))
+                self.logger.debug(f"CPU Usage for {node.get_name()}: {cpu_usage_percent}; "
+                                  f"threshold: {threshold}")
+                if cpu_usage_percent < threshold:
+                    below_threshold.append(node_id)
+                else:
+                    above_threshold.append(node_id)
+
+        # Combine both shuffled lists (you can choose the order of combining)
+        reshuffled_nodes = below_threshold + above_threshold
+
+        return reshuffled_nodes
 
     def __find_first_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: NetworkNodeInventory,
                          reservation: ABCBrokerReservation, term: Term, sliver: NodeSliver,
@@ -631,9 +657,17 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         @return tuple containing delegation id, sliver, error message if any
         """
         delegation_id = None
-        node_id_list = self.__candidate_nodes(sliver=sliver)
-        if self.get_algorithm_type(site=sliver.site) == BrokerAllocationAlgorithm.Random:
+        node_id_list = FimHelper.candidate_nodes(combined_broker_model=self.combined_broker_model,
+                                                 sliver=sliver)
+        if self.get_algorithm_type(site=sliver.site) == AllocationAlgorithm.Random:
             random.shuffle(node_id_list)
+        else:
+            # Reshuffle Nodes based on CPU Threshold only for VMs when no specific host is specified
+            if sliver.get_type() == NodeType.VM and (sliver.labels is None or
+                                                     (sliver.labels and sliver.labels.instance_parent is None)):
+                node_id_list = self.__reshuffle_nodes(node_id_list=node_id_list,
+                                                      node_id_to_reservations=node_id_to_reservations,
+                                                      term=term)
 
         if len(node_id_list) == 0 and sliver.site not in self.combined_broker_model.get_sites():
             error_msg = f'Unknown site {sliver.site} requested for {reservation}'
@@ -812,8 +846,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 device_name = owner_switch.get_name()
 
                 if device_name == Constants.AL2S:
-                    delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
-                                                                                       net_cp.get_label_delegations())
+                    delegation_id, delegated_label = FimHelper.get_delegations(delegations=
+                                                                               net_cp.get_label_delegations())
                     device_name = delegated_label.device_name
                     local_name = delegated_label.local_name
 
@@ -893,11 +927,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                             owner_mpls_ns = ns
                             break
                 if owner_ns and ServiceType.MPLS == owner_ns.get_type():
-                    delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
-                                                                                      owner_switch.get_label_delegations())
+                    delegation_id, delegated_label = FimHelper.get_delegations(delegations=
+                                                                               owner_switch.get_label_delegations())
                 else:
-                    delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
-                                                                                      owner_ns.get_label_delegations())
+                    delegation_id, delegated_label = FimHelper.get_delegations(delegations=
+                                                                               owner_ns.get_label_delegations())
 
             # Set the Subnet and gateway from the Owner Switch (a)
             existing_reservations = self.get_existing_reservations(node_id=owner_ns_id,
@@ -1673,18 +1707,64 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.combined_broker_model.rollback(graph_id=snapshot_graph_id)
             raise e
 
-    def get_algorithm_type(self, site: str) -> BrokerAllocationAlgorithm:
+    def get_algorithm_type(self, site: str) -> AllocationAlgorithm:
         if self.properties is not None:
             algorithms = self.properties.get(Constants.ALGORITHM, None)
-            random_algo = algorithms.get(str(BrokerAllocationAlgorithm.Random))
+            random_algo = algorithms.get(str(AllocationAlgorithm.Random))
             if random_algo and random_algo.get('enabled') and random_algo.get('sites') and \
                     site in random_algo.get('sites'):
-                return BrokerAllocationAlgorithm.Random
-            first_fit_algo = algorithms.get(BrokerAllocationAlgorithm.Random.name)
+                return AllocationAlgorithm.Random
+            first_fit_algo = algorithms.get(AllocationAlgorithm.Random.name)
             if first_fit_algo and first_fit_algo.get('enabled'):
-                return BrokerAllocationAlgorithm.FirstFit
-        return BrokerAllocationAlgorithm.FirstFit
+                return AllocationAlgorithm.FirstFit
+        return AllocationAlgorithm.FirstFit
 
+    def get_core_capacity_threshold(self) -> Tuple[bool, int]:
+        if self.properties is not None:
+            core_capacity_threshold = self.properties.get(Constants.CORE_CAPACITY_THRESHOLD, None)
+            if core_capacity_threshold and core_capacity_threshold.get('enabled'):
+                core_usage_threshold_percent = core_capacity_threshold.get('core_usage_threshold_percent', 75)
+                return True, core_usage_threshold_percent
+        return False, 0
+
+    def get_node_capacities(self, node_id: str, node_id_to_reservations: dict,
+                            term: Term) -> Tuple[NodeSliver, Capacities, Capacities]:
+        """
+        Get Node capacities - total as well as allocated capacities
+        @param node_id: Node Id
+        @param node_id_to_reservations: Reservations assigned as part of this bid
+        @param term: Term
+        @return: Tuple containing node, total and allocated capacity
+        """
+        try:
+            graph_node = self.get_network_node_from_graph(node_id=node_id)
+            existing_reservations = self.get_existing_reservations(node_id=node_id,
+                                                                   node_id_to_reservations=node_id_to_reservations,
+                                                                   start=term.get_start_time(),
+                                                                   end=term.get_end_time())
+
+            delegation_id, delegated_capacity = FimHelper.get_delegations(
+                delegations=graph_node.get_capacity_delegations())
+
+            allocated_capacity = Capacities()
+
+            if existing_reservations:
+                for reservation in existing_reservations:
+                    # For Active or Ticketed or Ticketing reservations; reduce the counts from available
+                    resource_sliver = None
+                    if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
+                        resource_sliver = reservation.get_approved_resources().get_sliver()
+
+                    if (reservation.is_active() or reservation.is_ticketed()) and \
+                            reservation.get_resources() is not None:
+                        resource_sliver = reservation.get_resources().get_sliver()
+
+                    if resource_sliver is not None and isinstance(resource_sliver, NodeSliver):
+                        allocated_capacity += resource_sliver.get_capacity_allocations()
+
+            return graph_node, delegated_capacity, allocated_capacity
+        except Exception as e:
+            self.logger.error(f"Failed to determine node capacities: {node_id}, error: {e}")
 
 if __name__ == '__main__':
     policy = BrokerSimplerUnitsPolicy()

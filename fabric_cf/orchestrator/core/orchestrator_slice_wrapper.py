@@ -26,6 +26,7 @@
 import ipaddress
 import threading
 import time
+from datetime import datetime
 from ipaddress import IPv4Network
 from typing import List, Tuple, Dict
 from http.client import BAD_REQUEST, NOT_FOUND
@@ -37,8 +38,7 @@ from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReserva
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.slices.abc_asm import ABCASMPropertyGraph
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.capacities_labels import CapacityHints, Labels
-from fim.slivers.instance_catalog import InstanceCatalog
+from fim.slivers.capacities_labels import Labels
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver
 from fim.slivers.topology_diff import WhatsModifiedFlag, TopologyDiff
@@ -80,6 +80,9 @@ class OrchestratorSliceWrapper:
         # Reservations trigger ModifyLease (AM)
         self.computed_modify_properties_reservations = []
         self.thread_lock = threading.Lock()
+        self.start = None
+        self.end = None
+        self.lifetime = None
 
     def lock(self):
         """
@@ -148,13 +151,20 @@ class OrchestratorSliceWrapper:
             self.controller.add_reservation(reservation=r)
         self.logger.info(f"ADD TIME: {time.time() - start:.0f}")
 
-    def create(self, *, slice_graph: ABCASMPropertyGraph) -> List[LeaseReservationAvro]:
+    def create(self, *, slice_graph: ABCASMPropertyGraph, lease_start_time: datetime = None,
+               lease_end_time: datetime = None, lifetime: int = None) -> List[LeaseReservationAvro]:
         """
         Create a slice
         :param slice_graph: Slice Graph
+        :param lease_start_time: Lease Start Time (UTC)
+        :param lease_end_time: Lease End Time (UTC)
+        :param lifetime: Lifetime of the slice in hours
         :return: List of computed reservations
         """
         try:
+            self.start = lease_start_time
+            self.end = lease_end_time
+            self.lifetime = lifetime
             # Build Network Node reservations
             start = time.time()
             network_node_reservations, node_res_mapping = self.__build_network_node_reservations(slice_graph=slice_graph)
@@ -417,19 +427,7 @@ class OrchestratorSliceWrapper:
 
         if sliver.get_type() == NodeType.VM:
             # Compute Requested Capacities from Capacity Hints
-            requested_capacities = sliver.get_capacities()
-            requested_capacity_hints = sliver.get_capacity_hints()
-            catalog = InstanceCatalog()
-            if requested_capacities is None and requested_capacity_hints is not None:
-                requested_capacities = catalog.get_instance_capacities(
-                    instance_type=requested_capacity_hints.instance_type)
-                sliver.set_capacities(cap=requested_capacities)
-
-            # Compute Capacity Hints from Requested Capacities
-            if requested_capacity_hints is None and requested_capacities is not None:
-                instance_type = catalog.map_capacities_to_instance(cap=requested_capacities)
-                requested_capacity_hints = CapacityHints(instance_type=instance_type)
-                sliver.set_capacity_hints(caphint=requested_capacity_hints)
+            FimHelper.compute_capacities(sliver=sliver)
 
         # Generate reservation for the sliver
         reservation = self.reservation_converter.generate_reservation(sliver=sliver,

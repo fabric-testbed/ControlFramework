@@ -27,11 +27,15 @@ import argparse
 import logging
 import os
 import re
+import smtplib
 import traceback
 from datetime import datetime, timezone, timedelta
 from logging.handlers import RotatingFileHandler
 
 import yaml
+from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+
+from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fim.slivers.network_service import ServiceType
 
@@ -43,6 +47,7 @@ from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor
 from fabric_cf.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.util.smtp import send_email, load_and_update_template
 from fabric_cf.actor.fim.fim_helper import FimHelper
 
 
@@ -81,6 +86,8 @@ class MainClass:
 
         # Actor Config
         self.actor_config = config_dict[Constants.CONFIG_SECTION_ACTOR]
+
+        self.smtp_config = config_dict.get(Constants.CONFIG_SECTION_SMTP)
 
         # Load config in the GlobalsSingleton
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
@@ -241,6 +248,10 @@ class MainClass:
         return ansible_helper.get_result_callback()
 
     def clean_sliver_close_fail(self):
+        """
+        Clean the slivers in Close Fail state
+        @return:
+        """
         try:
             actor_type = self.actor_config[Constants.TYPE]
             if actor_type.lower() != ActorType.Broker.name.lower():
@@ -257,14 +268,83 @@ class MainClass:
                 term = s.get_term()
                 end = term.get_end_time() if term else None
                 now = datetime.now(timezone.utc)
-                if end and end <= now:
+                if end and end < now:
                     actor_db.remove_reservation(rid=s.get_reservation_id())
 
         except Exception as e:
             self.logger.error(f"Failed to cleanup inconsistencies: {e}")
             self.logger.error(traceback.format_exc())
 
+    def send_slice_expiry_email_warnings(self):
+        """
+        Sends warning emails to users whose slices are about to expire within 12 hours or 6 hours.
+
+        This function checks the expiration times of active slices and sends warning emails to the
+        slice owners if the slice is set to expire in less than 12 hours or 6 hours. The function is
+        intended to run periodically (e.g., once an hour) and uses a template for email content.
+
+        @return: None: This function does not return any value but sends out emails and logs the process.
+        """
+        actor_type = self.actor_config[Constants.TYPE]
+        if actor_type.lower() != ActorType.Orchestrator.name.lower():
+            return
+
+        actor_db = ActorDatabase(user=self.database_config[Constants.PROPERTY_CONF_DB_USER],
+                                 password=self.database_config[Constants.PROPERTY_CONF_DB_PASSWORD],
+                                 database=self.database_config[Constants.PROPERTY_CONF_DB_NAME],
+                                 db_host=self.database_config[Constants.PROPERTY_CONF_DB_HOST],
+                                 logger=self.logger)
+
+        # Get the currently active slices
+        slices = actor_db.get_slices(states=SliceState.list_values_ex_closing_dead(),
+                                     slc_type=[SliceTypes.ClientSlice])
+
+        now = datetime.now(timezone.utc)
+
+        for s in slices:
+            email = s.get_owner().get_email()
+            if s.get_lease_end():
+                diff = s.get_lease_end() - now
+                hours_left = diff.total_seconds() // 3600
+
+                # Check if it's 12 hours or 6 hours before expiration
+                if 11 < hours_left <= 12:
+                    # Send a 12-hour prior warning email
+                    try:
+                        subject, body = load_and_update_template(
+                            template_path=self.smtp_config.get("template_path"),
+                            user=email,
+                            slice_name=f"{s.get_name()}/{s.get_slice_id()}",
+                            hours_left=12
+                        )
+                        send_email(smtp_config=self.smtp_config, to_email=email, subject=subject, body=body)
+                        self.logger.info(f"Sent 12-hour prior warning to {email} for slice {s.get_name()}")
+                    except smtplib.SMTPAuthenticationError as e:
+                        self.logger.error(f"Failed to send email: Error: {e.smtp_code} Message: {e.smtp_error}")
+                    except Exception as e:
+                        self.logger.error(f"Failed to send email: Error: {e}")
+
+                elif 5 < hours_left <= 6:
+                    # Send a 6-hour prior warning email
+                    try:
+                        subject, body = load_and_update_template(
+                            template_path=self.smtp_config.get("template_path"),
+                            user=email,
+                            slice_name=f"{s.get_name()}/{s.get_slice_id()}",
+                            hours_left=6
+                        )
+                        send_email(smtp_config=self.smtp_config, to_email=email, subject=subject, body=body)
+                        self.logger.info(f"Sent 6-hour prior warning to {email} for slice {s.get_name()}")
+                    except smtplib.SMTPAuthenticationError as e:
+                        self.logger.error(f"Failed to send email: Error: {e.smtp_code} Message: {e.smtp_error}")
+                    except Exception as e:
+                        self.logger.error(f"Failed to send email: Error: {e}")
+
     def clean_sliver_inconsistencies(self):
+        """
+        Clean up any sliver inconsistencies between CF, Libvirt and Openstack
+        @return:
+        """
         try:
             actor_type = self.actor_config[Constants.TYPE]
             if actor_type.lower() != ActorType.Authority.name.lower() or self.am_config_dict is None:
@@ -397,6 +477,7 @@ class MainClass:
                 self.delete_dead_closing_slice(days=args.days)
                 self.clean_sliver_close_fail()
                 self.clean_sliver_inconsistencies()
+                self.send_slice_expiry_email_warnings()
             else:
                 print(f"Unsupported operation: {args.operation}")
         else:

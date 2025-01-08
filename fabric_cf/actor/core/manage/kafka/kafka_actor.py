@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+from datetime import datetime
 from typing import List
 
 from fabric_mb.message_bus.messages.close_delegations_avro import CloseDelegationsAvro
@@ -132,7 +133,8 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
     def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
                          type: str = None, site: str = None, node_id: str = None,
-                         host: str = None, ip_subnet: str = None, full: bool = False) -> List[ReservationMng]:
+                         host: str = None, ip_subnet: str = None, full: bool = False,
+                         start: datetime = None, end: datetime = None) -> List[ReservationMng]:
         request = GetReservationsRequestAvro()
         request = self.fill_request_by_id_message(request=request, slice_id=slice_id,
                                                   states=states, email=email, rid=rid,

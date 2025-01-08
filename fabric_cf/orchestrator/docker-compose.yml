@@ -14,6 +14,7 @@ services:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
       - ./certs/fullchain.pem:/etc/ssl/public.pem
       - ./certs/privkey.pem:/etc/ssl/private.pem
+      - /opt/data/production/logs/nginx/orchestrator:/var/log/nginx
     restart: always
   neo4j:
     image: fabrictestbed/neo4j-apoc:5.3.0
@@ -68,7 +69,7 @@ services:
     build:
       context: ../../../
       dockerfile: Dockerfile-orchestrator
-    image: orchestrator:1.7.0
+    image: orchestrator:1.8.0
     container_name: orchestrator
     restart: always
     depends_on:
@@ -84,6 +85,7 @@ services:
       - ../../../secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
       - ../../../secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
       - ../../../secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
+      - ./slice_expiration_template.txt:/etc/fabric/actor/config/slice_expiration_template.txt
       #- ./state_recovery.lock:/usr/src/app/state_recovery.lock
 networks:
   frontend:

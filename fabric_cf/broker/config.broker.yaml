@@ -139,6 +139,9 @@ actor:
       module: fabric_cf.actor.core.policy.broker_simpler_units_policy
       class: BrokerSimplerUnitsPolicy
       properties:
+        core_capacity_threshold:
+          enabled: true
+          core_usage_threshold_percent: 75
         algorithm:
           FirstFit: # Default policy for all sites
             enabled: true
