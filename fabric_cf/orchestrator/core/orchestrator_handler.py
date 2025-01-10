@@ -797,7 +797,8 @@ class OrchestratorHandler:
                 if new_end_time == current_end_time:
                     continue
 
-                self.logger.debug(f"Extending reservation with reservation# {r.get_reservation_id()}")
+                self.logger.debug(f"Extending reservation with reservation# {r.get_reservation_id()} "
+                                  f"new_end_time: {new_end_time}")
                 result = controller.extend_reservation(reservation=ID(uid=r.get_reservation_id()),
                                                        new_end_time=new_end_time,
                                                        sliver=None)
@@ -852,9 +853,6 @@ class OrchestratorHandler:
 
         return new_time
 
-    from datetime import datetime, timedelta, timezone
-    from typing import Tuple
-
     def __compute_lease_end_time(self, lease_end_time: datetime = None, allow_long_lived: bool = False,
                                  project_id: str = None,
                                  lifetime: int = Constants.DEFAULT_LEASE_IN_HOURS) -> Tuple[datetime, datetime]:
@@ -880,10 +878,10 @@ class OrchestratorHandler:
         default_max_duration /= 3600
 
         # Calculate lifetime if not directly provided
-        if lifetime is None:
-            if lease_end_time:
-                lifetime = (lease_end_time - base_time).total_seconds() / 3600
-            else:
+        if lease_end_time:
+            lifetime = (lease_end_time - base_time).total_seconds() / 3600
+        else:
+            if not lifetime:
                 lifetime = Constants.DEFAULT_LEASE_IN_HOURS
 
         # Ensure the requested lifetime does not exceed allowed max duration for the project
