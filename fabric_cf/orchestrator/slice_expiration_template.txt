@@ -1,4 +1,4 @@
-Subject: FABRIC Reminders | Urgent: Your Slice <slice_name> Will Expire Soon
+Subject: FABRIC Reminders | Urgent: Your Slice <slice_name> Will Expire in <hours_left> hours
 
 Dear <User>,
 
