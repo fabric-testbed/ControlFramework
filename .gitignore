@@ -138,10 +138,7 @@ logs
 *_creds
 *.lock
 *.log
-neo4j1/
-neo4j2/
-neo4j3/
-neo4j4/
+neo4j*/
 pdp/
 pg_data/
 schema/
