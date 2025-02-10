@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import logging
+
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabrictestbed.external_api.core_api import CoreApi
 from fabrictestbed.slice_editor import InstanceCatalog
@@ -32,8 +34,9 @@ from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 
 
 class QuotaMgr:
-    def __init__(self, *, core_api_host: str, token: str):
+    def __init__(self, *, core_api_host: str, token: str, logger: logging.Logger):
         self.core_api = CoreApi(core_api_host=core_api_host, token=token)
+        self.logger = logger
 
     def list_quotas(self, project_uuid: str, offset: int = 0, limit: int = 200) -> dict[tuple[str, str], dict]:
         quota_list = self.core_api.list_quotas(project_uuid=project_uuid, offset=offset, limit=limit)
@@ -75,13 +78,13 @@ class QuotaMgr:
 
             sliver_quota_usage = self.extract_quota_usage(sliver=sliver, duration=duration)
 
-            print(f"Existing: {existing_quotas}")
-            print(f"Updated by: {sliver_quota_usage}")
+            self.logger.debug(f"Existing: {existing_quotas}")
+            self.logger.debug(f"Updated by: {sliver_quota_usage}")
 
             # Check each accumulated resource usage against its quota
             for quota_key, total_duration in sliver_quota_usage.items():
                 existing = existing_quotas.get(quota_key)
-                print(f"No quota available for: prj:{project_id} quota_key:{quota_key}: quota: {existing}")
+                self.logger.debug(f"No quota available for: prj:{project_id} quota_key:{quota_key}: quota: {existing}")
                 if not existing:
                     continue
 
@@ -103,9 +106,9 @@ class QuotaMgr:
                                                resource_unit=existing.get("resource_unit"),
                                                quota_used=usage)
         except Exception as e:
-            print(f"Failed to update Quota: {e}")
+            self.logger.error(f"Failed to update Quota: {e}")
         finally:
-            print("done")
+            self.logger.debug("done")
 
     @staticmethod
     def extract_quota_usage(sliver, duration: float) -> dict[tuple[str, str], float]:
@@ -183,4 +186,4 @@ class QuotaMgr:
             # If all checks pass
             return True, None
         except Exception as e:
-            raise Exception(f"Error while checking reservation: {str(e)}")
+            self.logger.error(f"Error while checking reservation: {str(e)}")
