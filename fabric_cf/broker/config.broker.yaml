@@ -83,6 +83,7 @@ oauth:
   verify-exp: True
 
 core_api:
+  enable: False
   host: https://uis.fabric-testbed.net
   token:
 

@@ -222,7 +222,8 @@ class Kernel:
                 self.plugin.get_database().update_reservation(reservation=reservation)
                 if reservation.get_term().get_remaining_length() > 0:
                     from fabric_cf.actor.core.container.globals import GlobalsSingleton
-                    GlobalsSingleton.get().get_quota_mgr().update_quota(reservation=reservation)
+                    if GlobalsSingleton.get().get_quota_mgr():
+                        GlobalsSingleton.get().get_quota_mgr().update_quota(reservation=reservation)
                 reservation.service_close()
         except Exception as e:
             err = f"An error occurred during close for reservation #{reservation.get_reservation_id()}"
@@ -1458,7 +1459,8 @@ class Kernel:
             if not reservation.is_failed():
                 reservation.service_update_ticket()
                 from fabric_cf.actor.core.container.globals import GlobalsSingleton
-                GlobalsSingleton.get().get_quota_mgr().update_quota(reservation=reservation)
+                if GlobalsSingleton.get().get_quota_mgr():
+                    GlobalsSingleton.get().get_quota_mgr().update_quota(reservation=reservation)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during update ticket for "

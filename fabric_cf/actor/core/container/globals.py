@@ -196,8 +196,9 @@ class Globals:
                                               jwt_validator=self.jwt_validator)
 
         core_api = self.config.get_core_api_config()
-        self.quota_mgr = QuotaMgr(core_api_host=core_api.get(Constants.PROPERTY_CONF_HOST),
-                                  token=core_api.get(Constants.TOKEN, ""))
+        if core_api.get("enable", False):
+            self.quota_mgr = QuotaMgr(core_api_host=core_api.get(Constants.PROPERTY_CONF_HOST),
+                                      token=core_api.get(Constants.TOKEN, ""))
 
     def load_config(self):
         """

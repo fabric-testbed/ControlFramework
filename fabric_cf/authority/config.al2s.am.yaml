@@ -84,6 +84,7 @@ oauth:
 core_api:
   host: https://uis.fabric-testbed.net
   token:
+  enable: False
 
 database:
   db-user: fabric

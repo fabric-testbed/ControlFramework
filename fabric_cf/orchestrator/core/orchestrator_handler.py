@@ -326,14 +326,15 @@ class OrchestratorHandler:
             # Check if Testbed in Maintenance or Site in Maintenance
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
 
-            quotas = self.quota_mgr.list_quotas(project_id=project)
-            status, error_message = self.quota_mgr.enforce_quota_limits(quotas=quotas,
-                                                                        computed_reservations=computed_reservations,
-                                                                        duration=(end_time-start_time).total_seconds()/3600)
+            if self.quota_mgr:
+                quotas = self.quota_mgr.list_quotas(project_id=project)
+                status, error_message = self.quota_mgr.enforce_quota_limits(quotas=quotas,
+                                                                            computed_reservations=computed_reservations,
+                                                                            duration=(end_time-start_time).total_seconds()/3600)
 
-            if not status:
-                raise OrchestratorException(http_error_code=BAD_REQUEST,
-                                            message=error_message)
+                if not status:
+                    raise OrchestratorException(http_error_code=BAD_REQUEST,
+                                                message=error_message)
 
             create_ts = time.time()
             if lease_start_time and lease_end_time and lifetime:
