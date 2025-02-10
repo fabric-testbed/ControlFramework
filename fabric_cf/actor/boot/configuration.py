@@ -45,6 +45,10 @@ class GlobalConfig:
         if Constants.CONFIG_SECTION_O_AUTH in config:
             self.oauth = config.get(Constants.CONFIG_SECTION_O_AUTH)
 
+        self.core_api = {}
+        if Constants.CONFIG_SECTION_CORE_API in config:
+            self.core_api = config.get(Constants.CONFIG_SECTION_CORE_API)
+
         self.smtp = {}
         if Constants.CONFIG_SECTION_SMTP in config:
             self.smtp = config.get(Constants.CONFIG_SECTION_SMTP)
@@ -90,6 +94,12 @@ class GlobalConfig:
         Return oauth config
         """
         return self.oauth
+
+    def get_core_api(self) -> dict:
+        """
+        Return core api
+        """
+        return self.core_api
 
     def get_smtp(self) -> dict:
         """
@@ -425,7 +435,6 @@ class Configuration:
         """
         if self.global_config is not None:
             return self.global_config.get_runtime()
-        return None
 
     def get_oauth_config(self) -> dict:
         """
@@ -433,7 +442,13 @@ class Configuration:
         """
         if self.global_config is not None:
             return self.global_config.get_oauth()
-        return None
+
+    def get_core_api_config(self) -> dict:
+        """
+        Return Core API Config
+        """
+        if self.global_config is not None:
+            return self.global_config.get_core_api()
 
     def get_smtp_config(self) -> dict:
         if self.global_config:

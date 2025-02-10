@@ -86,6 +86,10 @@ oauth:
   key-refresh: 00:10:00
   verify-exp: True
 
+core_api:
+  host: https://uis.fabric-testbed.net
+  token:
+
 smtp:
   smtp_server: mail.fabric-testbed.net
   smtp_port: 587

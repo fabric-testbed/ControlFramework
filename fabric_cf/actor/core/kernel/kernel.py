@@ -35,7 +35,7 @@ from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservatio
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.common.event_logger import EventLogger, EventLoggerSingleton
+from fabric_cf.actor.core.common.event_logger import EventLoggerSingleton
 from fabric_cf.actor.core.common.exceptions import ReservationNotFoundException, DelegationNotFoundException, \
     KernelException
 from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservation
@@ -220,10 +220,9 @@ class Kernel:
                 self.policy.close(reservation=reservation)
                 reservation.close(force=force)
                 self.plugin.get_database().update_reservation(reservation=reservation)
-                ## TODO release resources back if deleted before expiry
                 if reservation.get_term().get_remaining_length() > 0:
-                    self.plugin.get_database().update_quota(reservation=reservation)
-
+                    from fabric_cf.actor.core.container.globals import GlobalsSingleton
+                    GlobalsSingleton.get().get_quota_mgr().update_quota(reservation=reservation)
                 reservation.service_close()
         except Exception as e:
             err = f"An error occurred during close for reservation #{reservation.get_reservation_id()}"
@@ -1458,7 +1457,8 @@ class Kernel:
             self.plugin.get_database().update_reservation(reservation=reservation)
             if not reservation.is_failed():
                 reservation.service_update_ticket()
-                self.plugin.get_database().update_quota(reservation=reservation)
+                from fabric_cf.actor.core.container.globals import GlobalsSingleton
+                GlobalsSingleton.get().get_quota_mgr().update_quota(reservation=reservation)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during update ticket for "

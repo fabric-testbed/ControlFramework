@@ -173,6 +173,9 @@ class Constants:
     PROPERTY_CONF_O_AUTH_TRL_REFRESH = "trl-refresh"
     PROPERTY_CONF_O_AUTH_VERIFY_EXP = "verify-exp"
 
+    CONFIG_SECTION_CORE_API = "core_api"
+    PROPERTY_CONF_HOST = "host"
+
     CONFIG_SECTION_SMTP = "smtp"
 
     CONFIG_SECTION_DATABASE = "database"
@@ -275,6 +278,7 @@ class Constants:
     CLAIMS_PROJECTS = "projects"
     UUID = "uuid"
     TAGS = "tags"
+    TOKEN = "token"
     TOKEN_HASH = "token_hash"
     PROJECT_ID = "project_id"
     USERS = "users"

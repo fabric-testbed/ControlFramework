@@ -35,6 +35,7 @@ from typing import TYPE_CHECKING
 import logging
 import os
 
+from fabric_cf.actor.core.util.qutoa_mgr import QuotaMgr
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter
 from fim.graph.resources.abc_arm import ABCARMPropertyGraph
 from fss_utils.jwt_validate import JWTValidator
@@ -74,6 +75,7 @@ class Globals:
         self.lock = threading.Lock()
         self.jwt_validator = None
         self.token_validator = None
+        self.quota_mgr = None
 
     def make_logger(self):
         """
@@ -193,6 +195,10 @@ class Globals:
                                               refresh_period=timedelta(hours=t.hour, minutes=t.minute, seconds=t.second),
                                               jwt_validator=self.jwt_validator)
 
+        core_api = self.config.get_core_api_config()
+        self.quota_mgr = QuotaMgr(core_api_host=core_api.get(Constants.PROPERTY_CONF_HOST),
+                                  token=core_api.get(Constants.TOKEN, ""))
+
     def load_config(self):
         """
         Load the configuration
@@ -210,6 +216,9 @@ class Globals:
 
     def get_token_validator(self) -> TokenValidator:
         return self.token_validator
+
+    def get_quota_mgr(self) -> QuotaMgr:
+        return self.quota_mgr
 
     def get_container(self) -> ABCActorContainer:
         """

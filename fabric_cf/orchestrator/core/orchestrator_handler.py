@@ -43,7 +43,6 @@ from fabric_cf.actor.core.common.event_logger import EventLoggerSingleton
 from fabric_cf.actor.core.kernel.poa import PoaStates
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
-from fabric_cf.actor.core.util.utils import enforce_quota_limits
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
@@ -62,6 +61,7 @@ class OrchestratorHandler:
         self.controller_state = OrchestratorKernelSingleton.get()
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.globals = GlobalsSingleton.get()
+        self.quota_mgr = self.globals.get_quota_mgr()
         self.logger = self.globals.get_logger()
         self.jwks_url = self.globals.get_config().get_oauth_config().get(Constants.PROPERTY_CONF_O_AUTH_JWKS_URL, None)
         self.pdp_config = self.globals.get_config().get_global_config().get_pdp_config()
@@ -326,10 +326,10 @@ class OrchestratorHandler:
             # Check if Testbed in Maintenance or Site in Maintenance
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
 
-            quota_lookup = controller.get_quota_lookup(project_id=project)
-            status, error_message = enforce_quota_limits(quota_lookup=quota_lookup,
-                                                         computed_reservations=computed_reservations,
-                                                         duration=(end_time-start_time).total_seconds()/3600)
+            quotas = self.quota_mgr.list_quotas(project_id=project)
+            status, error_message = self.quota_mgr.enforce_quota_limits(quotas=quotas,
+                                                                        computed_reservations=computed_reservations,
+                                                                        duration=(end_time-start_time).total_seconds()/3600)
 
             if not status:
                 raise OrchestratorException(http_error_code=BAD_REQUEST,
@@ -848,7 +848,7 @@ class OrchestratorHandler:
 
     def __compute_lease_end_time(self, lease_end_time: datetime = None, allow_long_lived: bool = False,
                                  project_id: str = None,
-                                 lifetime: int = Constants.DEFAULT_LEASE_IN_HOURS) -> Tuple[datetime, datetime]:
+                                 lifetime: int = Constants.DEFAULT_LEASE_IN_HOURS) -> tuple[datetime, datetime]:
         """
         Validate and compute Lease End Time.
 
@@ -924,7 +924,7 @@ class OrchestratorHandler:
                         raise OrchestratorException(message=message,
                                                     http_error_code=Constants.INTERNAL_SERVER_ERROR_MAINT_MODE)
 
-    def poa(self, *, token: str, sliver_id: str, poa: PoaAvro) -> Tuple[str, str]:
+    def poa(self, *, token: str, sliver_id: str, poa: PoaAvro) -> tuple[str, str]:
         try:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"poa invoked for Controller: {controller}")

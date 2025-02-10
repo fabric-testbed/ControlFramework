@@ -24,16 +24,25 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
+from fabrictestbed.external_api.core_api import CoreApi
+from fabrictestbed.slice_editor import InstanceCatalog
+from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 
 
 class QuotaMgr:
-    def __init__(self, *, core_api_host: str):
-        self.core_api_host = core_api_host
+    def __init__(self, *, core_api_host: str, token: str):
+        self.core_api = CoreApi(core_api_host=core_api_host, token=token)
+
+    def list_quotas(self, project_uuid: str, offset: int = 0, limit: int = 200) -> dict[tuple[str, str], dict]:
+        quota_list = self.core_api.list_quotas(project_uuid=project_uuid, offset=offset, limit=limit)
+        quotas = {}
+        for q in quota_list:
+            quotas[(q.get("resource_type"), q.get("resource_unit"))] = q
+        return quotas
 
     def update_quota(self, reservation: ABCReservationMixin):
-        print("Update Quota")
         try:
             slice_object = reservation.get_slice()
             if not slice_object:
@@ -62,40 +71,44 @@ class QuotaMgr:
                 return
 
             duration /= 3600000
-            existing_quota = self.db.get_quota_lookup(project_id=project_id)
+            existing_quotas = self.list_quotas(project_uuid=project_id)
 
             sliver_quota_usage = self.extract_quota_usage(sliver=sliver, duration=duration)
 
-            print(f"Existing: {existing_quota}")
+            print(f"Existing: {existing_quotas}")
             print(f"Updated by: {sliver_quota_usage}")
 
             # Check each accumulated resource usage against its quota
             for quota_key, total_duration in sliver_quota_usage.items():
-                print(f"Iteration: {quota_key}")
-                current_duration = 0
-                if quota_key in existing_quota:
-                    current_duration = existing_quota.get(quota_key)
-                (resource_type, resource_unit) = quota_key
+                existing = existing_quotas.get(quota_key)
+                print(f"No quota available for: prj:{project_id} quota_key:{quota_key}: quota: {existing}")
+                if not existing:
+                    continue
 
                 # Return resource hours for a sliver deleted before expiry
                 if reservation.is_closing() or reservation.is_closed():
-                    usage = current_duration["quota_used"] - total_duration
+                    usage = existing.get("quota_used") - total_duration
                     if usage < 0:
                         usage = 0
-                    self.db.update_quota(project_id=project_id,
-                                         resource_type=resource_type,
-                                         resource_unit=resource_unit, quota_used=usage)
+                    self.core_api.update_quota(uuid=existing.get("uuid"), project_id=project_id,
+                                               resource_type=existing.get("resource_type"),
+                                               resource_unit=existing.get("resource_unit"),
+                                               quota_used=usage)
+
                 # Account for resource hours used for a new or extended sliver
                 else:
-                    usage = total_duration + current_duration["quota_used"]
-                    self.db.update_quota(project_id=project_id,
-                                         resource_type=resource_type,
-                                         resource_unit=resource_unit, quota_used=usage)
+                    usage = total_duration + existing.get("quota_used")
+                    self.core_api.update_quota(uuid=existing.get("uuid"), project_id=project_id,
+                                               resource_type=existing.get("resource_type"),
+                                               resource_unit=existing.get("resource_unit"),
+                                               quota_used=usage)
+        except Exception as e:
+            print(f"Failed to update Quota: {e}")
         finally:
-            if self.lock.locked():
-                self.lock.release()
+            print("done")
 
-    def extract_quota_usage(self, sliver, duration: float) -> dict[tuple[str, str], float]:
+    @staticmethod
+    def extract_quota_usage(sliver, duration: float) -> dict[tuple[str, str], float]:
         """
         Extract quota usage from a sliver
 
@@ -118,9 +131,9 @@ class QuotaMgr:
             allocations = sliver.get_capacities()
 
         # Extract Core, Ram, Disk Hours
-        requested_resources[("Core", unit)] = requested_resources.get(("Core", unit), 0) + (duration * allocations.core)
-        requested_resources[("RAM", unit)] = requested_resources.get(("Core", unit), 0) + (duration * allocations.ram)
-        requested_resources[("Disk", unit)] = requested_resources.get(("Core", unit), 0) + (duration * allocations.disk)
+        requested_resources[("core", unit)] = requested_resources.get(("core", unit), 0) + (duration * allocations.core)
+        requested_resources[("ram", unit)] = requested_resources.get(("ram", unit), 0) + (duration * allocations.ram)
+        requested_resources[("disk", unit)] = requested_resources.get(("disk", unit), 0) + (duration * allocations.disk)
 
         # Extract component hours (e.g., GPU, FPGA, SmartNIC)
         if sliver.attached_components_info:
@@ -132,12 +145,12 @@ class QuotaMgr:
 
         return requested_resources
 
-    def enforce_quota_limits(self, quota_lookup: dict, computed_reservations: list[LeaseReservationAvro],
+    def enforce_quota_limits(self, quotas: dict, computed_reservations: list[LeaseReservationAvro],
                              duration: float) -> tuple[bool, str]:
         """
         Check if the requested resources for multiple reservations are within the project's quota limits.
 
-        @param quota_lookup: Quota Limits for various resource types.
+        @param quotas: Quota Limits for various resource types.
         @param computed_reservations: List of slivers requested.
         @param duration: Number of hours the reservations are requested for.
         @return: Tuple (True, None) if resources are within quota, or (False, message) if denied.
@@ -155,10 +168,10 @@ class QuotaMgr:
 
             # Check each accumulated resource usage against its quota
             for quota_key, total_requested_duration in requested_resources.items():
-                if quota_key not in quota_lookup:
+                if quota_key not in quotas:
                     return False, f"Quota not defined for resource: {quota_key[0]} ({quota_key[1]})."
 
-                quota_info = quota_lookup[quota_key]
+                quota_info = quotas[quota_key]
                 available_quota = quota_info["quota_limit"] - quota_info["quota_used"]
 
                 if total_requested_duration > available_quota:

@@ -82,6 +82,10 @@ oauth:
   trl-refresh: 00:10:00
   verify-exp: True
 
+core_api:
+  host: https://uis.fabric-testbed.net
+  token:
+
 database:
   db-user: fabric
   db-password: fabric
