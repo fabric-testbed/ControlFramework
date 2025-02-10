@@ -45,7 +45,6 @@ from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
 from fabric_cf.actor.core.container.maintenance import Site
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.utils import extract_quota_usage
 from fabric_cf.actor.db.psql_database import PsqlDatabase
 
 
