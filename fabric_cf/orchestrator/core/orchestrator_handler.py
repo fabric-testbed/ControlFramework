@@ -327,7 +327,7 @@ class OrchestratorHandler:
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
 
             if self.quota_mgr:
-                quotas = self.quota_mgr.list_quotas(project_id=project)
+                quotas = self.quota_mgr.list_quotas(project_uuid=project)
                 status, error_message = self.quota_mgr.enforce_quota_limits(quotas=quotas,
                                                                             computed_reservations=computed_reservations,
                                                                             duration=(end_time-start_time).total_seconds()/3600)
