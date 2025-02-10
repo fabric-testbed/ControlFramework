@@ -36,7 +36,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker, joinedload
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
 from fabric_cf.actor.db import Base, Clients, ConfigMappings, Proxies, Units, Reservations, Slices, ManagerObjects, \
-    Miscellaneous, Actors, Delegations, Sites, Poas, Components, Metrics, Quotas
+    Miscellaneous, Actors, Delegations, Sites, Poas, Components, Metrics
 
 
 @contextmanager
