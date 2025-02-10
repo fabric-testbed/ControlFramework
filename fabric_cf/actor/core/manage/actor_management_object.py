@@ -905,18 +905,3 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         except Exception as e:
             self.logger.error(f"Exception occurred build_broker_query_model e: {e}")
             self.logger.error(traceback.format_exc())
-
-    def get_quota_lookup(self, project_id: str, caller: AuthToken) -> dict:
-        """
-        Fetches all quotas for a given project and creates a lookup dictionary.
-
-        @param project_id: UUID of the project whose quotas are to be fetched.
-        @param caller: caller
-        @return: Dictionary with keys as (resource_type, resource_unit) and values as quota details.
-        @throws: Exception if there is an error during the database interaction.
-        """
-        try:
-            return self.db.get_quota_lookup(project_id=project_id)
-        except Exception as e:
-            self.logger.error(f"Exception occurred build_broker_query_model e: {e}")
-            self.logger.error(traceback.format_exc())

@@ -25,7 +25,7 @@
 runtime:
   ssh_retries: 10
 playbooks:
-  admin_ssh_key: /root/.ssh/id_rsa_nova
+  admin_ssh_key: /root/.ssh/id_rsa_p4_fabric
   location: /etc/fabric/actor/playbooks
   inventory_location: /etc/fabric/actor/playbooks/inventory
   Switch: head_switch_provisioning.yml

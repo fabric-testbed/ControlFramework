@@ -1557,16 +1557,16 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
     def add_redeem_predecessor(self, *, reservation: ABCReservationMixin, filters: dict = None):
         if reservation.get_reservation_id() not in self.redeem_predecessors:
-            state = PredecessorState(reservation=reservation)
+            state = PredecessorState(reservation=reservation, filters=filters)
             self.redeem_predecessors[reservation.get_reservation_id()] = state
 
     def remove_redeem_predecessor(self, *, rid: ID):
         if rid in self.redeem_predecessors:
             self.redeem_predecessors.pop(rid)
 
-    def add_join_predecessor(self, *, predecessor):
+    def add_join_predecessor(self, *, predecessor: ABCReservationMixin, filters: dict = None):
         if predecessor.get_reservation_id() not in self.redeem_predecessors:
-            state = PredecessorState(reservation=predecessor)
+            state = PredecessorState(reservation=predecessor, filters=filters)
             self.join_predecessors[predecessor.get_reservation_id()] = state
 
     def get_redeem_predecessors(self) -> List[PredecessorState]:

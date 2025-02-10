@@ -240,24 +240,3 @@ class Components(Base):
     component = Column(String, primary_key=True, index=True)
     bdf = Column(String, primary_key=True, index=True)
     reservation = relationship('Reservations', back_populates='components')
-
-
-class Quotas(Base):
-    __tablename__ = "quotas"
-
-    resource_type = Column(String(50), primary_key=True, index=True, nullable=False)
-    project_id = Column(UUID(as_uuid=True), primary_key=True, index=True, nullable=False)
-    resource_unit = Column(String(20), primary_key=True, index=True, nullable=False, default="HOURS")
-    quota_limit = Column(Float, nullable=False)
-    quota_used = Column(Float, default=0)
-    created_at = Column(
-        TIMESTAMP(timezone=True),
-        nullable=False,
-        server_default=text("timezone('utc', now())")  # Explicitly ensure UTC in PostgreSQL
-    )
-    updated_at = Column(
-        TIMESTAMP(timezone=True),
-        nullable=False,
-        server_default=text("timezone('utc', now())"),
-        onupdate=func.now()
-    )

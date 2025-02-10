@@ -43,8 +43,7 @@ from fim.user import GraphFormat
 
 from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
 from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
-from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
-from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
+from fabric_cf.actor.core.common.constants import ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates

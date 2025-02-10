@@ -28,9 +28,8 @@ import threading
 import time
 import traceback
 from datetime import datetime
-from typing import List, Union, Tuple, Dict
+from typing import List, Union, Dict
 
-from fim.user import ComponentType
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
 from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
@@ -994,95 +993,6 @@ class ActorDatabase(ABCDatabase):
         try:
             #self.lock.acquire()
             self.db.remove_poa(poa_guid=poa_id)
-        finally:
-            if self.lock.locked():
-                self.lock.release()
-
-    def create_quota(self, project_id: str, resource_type: str, resource_unit: str, quota_limit: int):
-        try:
-            self.db.create_quota(project_id=project_id,
-                                 resource_type=resource_type,
-                                 resource_unit=resource_unit,
-                                 quota_limit=quota_limit)
-        finally:
-            if self.lock.locked():
-                self.lock.release()
-
-    def get_quota_lookup(self, project_id: str):
-        try:
-            return self.db.get_quota_lookup(project_id=project_id)
-        finally:
-            if self.lock.locked():
-                self.lock.release()
-
-    def update_quota(self, reservation: ABCReservationMixin):
-        print("Update Quota")
-        try:
-            slice_object = reservation.get_slice()
-            if not slice_object:
-                return
-            project_id = slice_object.get_project_id()
-            if not project_id:
-                return
-
-            sliver = None
-            from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
-            if isinstance(reservation, ReservationClient) and reservation.get_leased_resources() and \
-                    reservation.get_leased_resources().get_sliver():
-                sliver = reservation.get_leased_resources().get_sliver()
-            if not sliver and reservation.get_resources() and reservation.get_resources().get_sliver():
-                sliver = reservation.get_resources().get_sliver()
-
-            if not sliver:
-                return
-
-            if reservation.is_closed() or reservation.is_closing():
-                duration = reservation.get_term().get_remaining_length()
-            else:
-                duration = reservation.get_term().get_length()
-
-            if duration < 60:
-                return
-
-            duration /= 3600000
-            existing_quota = self.db.get_quota_lookup(project_id=project_id)
-
-            sliver_quota_usage = extract_quota_usage(sliver=sliver, duration=duration)
-
-            print(f"Existing: {existing_quota}")
-            print(f"Updated by: {sliver_quota_usage}")
-
-            # Check each accumulated resource usage against its quota
-            for quota_key, total_duration in sliver_quota_usage.items():
-                print(f"Iteration: {quota_key}")
-                current_duration = 0
-                if quota_key in existing_quota:
-                    current_duration = existing_quota.get(quota_key)
-                (resource_type, resource_unit) = quota_key
-
-                # Return resource hours for a sliver deleted before expiry
-                if reservation.is_closing() or reservation.is_closed():
-                    usage = current_duration["quota_used"] - total_duration
-                    if usage < 0:
-                        usage = 0
-                    self.db.update_quota(project_id=project_id,
-                                         resource_type=resource_type,
-                                         resource_unit=resource_unit, quota_used=usage)
-                # Account for resource hours used for a new or extended sliver
-                else:
-                    usage = total_duration + current_duration["quota_used"]
-                    self.db.update_quota(project_id=project_id,
-                                         resource_type=resource_type,
-                                         resource_unit=resource_unit, quota_used=usage)
-        finally:
-            if self.lock.locked():
-                self.lock.release()
-
-    def delete_quota(self, project_id: str, resource_type: str, resource_unit: str):
-        try:
-            self.db.delete_quota(project_id=project_id,
-                                 resource_type=resource_type,
-                                 resource_unit=resource_unit)
         finally:
             if self.lock.locked():
                 self.lock.release()
