@@ -332,9 +332,7 @@ class OrchestratorHandler:
                                                                             computed_reservations=computed_reservations,
                                                                             duration=(end_time-start_time).total_seconds()/3600)
 
-                if not status:
-                    raise OrchestratorException(http_error_code=BAD_REQUEST,
-                                                message=error_message)
+                self.logger.info(f"Quota enforcement status: {status}, error: {error_message}")
 
             create_ts = time.time()
             if lease_start_time and lease_end_time and lifetime:
