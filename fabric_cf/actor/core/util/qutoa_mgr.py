@@ -42,7 +42,7 @@ class QuotaMgr:
         quota_list = self.core_api.list_quotas(project_uuid=project_uuid, offset=offset, limit=limit)
         quotas = {}
         for q in quota_list:
-            quotas[(q.get("resource_type"), q.get("resource_unit"))] = q
+            quotas[(q.get("resource_type").lower(), q.get("resource_unit").lower())] = q
         return quotas
 
     def update_quota(self, reservation: ABCReservationMixin):
@@ -141,7 +141,7 @@ class QuotaMgr:
         # Extract component hours (e.g., GPU, FPGA, SmartNIC)
         if sliver.attached_components_info:
             for c in sliver.attached_components_info.devices.values():
-                component_type = str(c.get_type())
+                component_type = str(c.get_type()).lower()
                 requested_resources[(component_type, unit)] = (
                     requested_resources.get((component_type, unit), 0) + duration
                 )
