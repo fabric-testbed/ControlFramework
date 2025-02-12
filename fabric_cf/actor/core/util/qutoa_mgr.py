@@ -119,7 +119,7 @@ class QuotaMgr:
         @param duration: Number of hours the resources are requested for.
         @return: A dictionary of resource type/unit tuples to requested amounts.
         """
-        unit = "HOURS"
+        unit = "HOURS".lower()
         requested_resources = {}
 
         # Check if the sliver is a NodeSliver
