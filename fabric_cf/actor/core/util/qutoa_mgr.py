@@ -96,7 +96,7 @@ class QuotaMgr:
                     self.core_api.update_quota(uuid=existing.get("uuid"), project_id=project_id,
                                                resource_type=existing.get("resource_type"),
                                                resource_unit=existing.get("resource_unit"),
-                                               quota_used=usage)
+                                               quota_used=usage, quota_limit=existing.get("quota_limit"))
 
                 # Account for resource hours used for a new or extended sliver
                 else:
@@ -104,7 +104,7 @@ class QuotaMgr:
                     self.core_api.update_quota(uuid=existing.get("uuid"), project_id=project_id,
                                                resource_type=existing.get("resource_type"),
                                                resource_unit=existing.get("resource_unit"),
-                                               quota_used=usage)
+                                               quota_used=usage, quota_limit=existing.get("quota_limit"))
         except Exception as e:
             self.logger.error(f"Failed to update Quota: {e}")
         finally:
