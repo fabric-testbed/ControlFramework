@@ -84,8 +84,9 @@ class QuotaMgr:
             # Check each accumulated resource usage against its quota
             for quota_key, total_duration in sliver_quota_usage.items():
                 existing = existing_quotas.get(quota_key)
-                self.logger.debug(f"No quota available for: prj:{project_id} quota_key:{quota_key}: quota: {existing}")
+                self.logger.debug(f"Quota update requested for: prj:{project_id} quota_key:{quota_key}: quota: {existing}")
                 if not existing:
+                    self.logger.debug("Existing not found so skipping!")
                     continue
 
                 # Return resource hours for a sliver deleted before expiry
