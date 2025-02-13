@@ -130,14 +130,18 @@ class QuotaMgr:
         allocations = sliver.get_capacity_allocations()
         if not allocations and sliver.get_capacity_hints():
             catalog = InstanceCatalog()
-            allocations = catalog.get_instance_capacities(instance_type=sliver.get_capacity_hints().instance_type)
+            allocations = catalog.get_instance_capacities(instance_type=
+                                                          sliver.get_capacity_hints().instance_type)
         else:
             allocations = sliver.get_capacities()
 
         # Extract Core, Ram, Disk Hours
-        requested_resources[("core", unit)] = requested_resources.get(("core", unit), 0) + (duration * allocations.core)
-        requested_resources[("ram", unit)] = requested_resources.get(("ram", unit), 0) + (duration * allocations.ram)
-        requested_resources[("disk", unit)] = requested_resources.get(("disk", unit), 0) + (duration * allocations.disk)
+        requested_resources[("core", unit)] = requested_resources.get(("core", unit), 0) + \
+                                              (duration * allocations.core)
+        requested_resources[("ram", unit)] = requested_resources.get(("ram", unit), 0) +\
+                                             (duration * allocations.ram)
+        requested_resources[("disk", unit)] = requested_resources.get(("disk", unit), 0) + \
+                                              (duration * allocations.disk)
 
         # Extract component hours (e.g., GPU, FPGA, SmartNIC)
         if sliver.attached_components_info:
