@@ -35,7 +35,7 @@ from typing import TYPE_CHECKING
 import logging
 import os
 
-from fabric_cf.actor.core.util.qutoa_mgr import QuotaMgr
+from fabric_cf.actor.core.util.quota_mgr import QuotaMgr
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter
 from fim.graph.resources.abc_arm import ABCARMPropertyGraph
 from fss_utils.jwt_validate import JWTValidator
