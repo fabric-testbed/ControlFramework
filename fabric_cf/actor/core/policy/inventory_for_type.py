@@ -59,7 +59,7 @@ class InventoryForType:
         """
 
     @staticmethod
-    def _get_allocated_sliver(reservation: ABCReservationMixin) -> BaseSliver:
+    def get_allocated_sliver(reservation: ABCReservationMixin) -> BaseSliver:
         """
         Retrieve the allocated sliver from the reservation.
 
@@ -69,4 +69,6 @@ class InventoryForType:
         if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
             return reservation.get_approved_resources().get_sliver()
         if (reservation.is_active() or reservation.is_ticketed()) and reservation.get_resources() is not None:
+            return reservation.get_resources().get_sliver()
+        if (reservation.is_closed()) and reservation.get_resources() is not None:
             return reservation.get_resources().get_sliver()

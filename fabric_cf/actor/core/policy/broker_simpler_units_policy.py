@@ -1075,8 +1075,20 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         try:
             if operation == ReservationOperation.Extend:
                 rset = reservation.get_resources()
+                duration = Term.delta(reservation.get_term().get_end_time(), term.get_end_time())
             else:
                 rset = reservation.get_requested_resources()
+                duration = term.get_full_length()
+
+            from fabric_cf.actor.core.container.globals import GlobalsSingleton
+            if GlobalsSingleton.get().get_quota_mgr():
+                status, error_msg = GlobalsSingleton.get().get_quota_mgr().enforce_quota_limits(reservation=reservation,
+                                                                                                duration=duration)
+                self.logger.info(f"Quota enforcement status: {status}, error: {error_msg}")
+                # TODO: enable enforcement action later
+                #if not status:
+                #    return status, node_id_to_reservations, error_msg
+
             needed = rset.get_units()
 
             # for network node slivers
@@ -1115,6 +1127,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 if node_id_to_reservations.get(node_id, None) is None:
                     node_id_to_reservations[node_id] = ReservationSet()
                 node_id_to_reservations[node_id].add(reservation=reservation)
+
+                from fabric_cf.actor.core.container.globals import GlobalsSingleton
+                if GlobalsSingleton.get().get_quota_mgr():
+                    GlobalsSingleton.get().get_quota_mgr().update_quota(reservation=reservation, duration=duration)
+
                 self.logger.debug(f"Ticket Inventory returning: True {error_msg}")
                 return True, node_id_to_reservations, error_msg
         except Exception as e:
@@ -1204,6 +1221,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return reservation
 
     def release(self, *, reservation):
+        duration = reservation.get_term().get_remaining_length()
+        if duration > 0:
+            from fabric_cf.actor.core.container.globals import GlobalsSingleton
+            if GlobalsSingleton.get().get_quota_mgr():
+                GlobalsSingleton.get().get_quota_mgr().update_quota(reservation=reservation,
+                                                                    duration=duration)
+
         if isinstance(reservation, ABCBrokerReservation):
             self.logger.debug("Broker reservation")
             super().release(reservation=reservation)

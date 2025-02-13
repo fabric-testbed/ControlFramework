@@ -28,7 +28,8 @@ import threading
 import time
 import traceback
 from datetime import datetime
-from typing import List, Union, Tuple, Dict
+from typing import List, Union, Dict
+
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
 from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy

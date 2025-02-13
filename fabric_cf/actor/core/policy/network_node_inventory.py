@@ -69,7 +69,7 @@ class NetworkNodeInventory(InventoryForType):
                 if rid == reservation.get_reservation_id():
                     continue
                 # For Active or Ticketed or Ticketing reservations; reduce the counts from available
-                resource_sliver = InventoryForType._get_allocated_sliver(reservation=reservation)
+                resource_sliver = InventoryForType.get_allocated_sliver(reservation=reservation)
 
                 if resource_sliver is not None and isinstance(resource_sliver, NodeSliver):
                     logger.debug(
@@ -380,7 +380,7 @@ class NetworkNodeInventory(InventoryForType):
                     (operation == ReservationOperation.Extend or not reservation.is_ticketed()):
                 continue
             # For Active or Ticketed or Ticketing reservations; reduce the counts from available
-            allocated_sliver = InventoryForType._get_allocated_sliver(reservation=reservation)
+            allocated_sliver = InventoryForType.get_allocated_sliver(reservation=reservation)
 
             if reservation.is_extending_ticket() and reservation.get_requested_resources() is not None and \
                     reservation.get_requested_resources().get_sliver() is not None:

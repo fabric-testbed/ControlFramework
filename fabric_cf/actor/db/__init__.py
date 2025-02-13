@@ -24,11 +24,11 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 
-from sqlalchemy import JSON, ForeignKey, LargeBinary, Index, TIMESTAMP
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import JSON, ForeignKey, LargeBinary, Index, TIMESTAMP, UUID, func, text, Float
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, String, Integer, Sequence
 from sqlalchemy.orm import relationship
+
 
 Base = declarative_base()
 
@@ -240,4 +240,3 @@ class Components(Base):
     component = Column(String, primary_key=True, index=True)
     bdf = Column(String, primary_key=True, index=True)
     reservation = relationship('Reservations', back_populates='components')
-

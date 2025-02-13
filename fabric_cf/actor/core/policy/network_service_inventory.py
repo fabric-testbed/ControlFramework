@@ -76,7 +76,7 @@ class NetworkServiceInventory(InventoryForType):
                 continue
 
             # For Active or Ticketed or Ticketing reservations; reduce the counts from available
-            allocated_sliver = self._get_allocated_sliver(reservation=reservation)
+            allocated_sliver = self.get_allocated_sliver(reservation=reservation)
 
             self.logger.debug(
                 f"Existing res# {reservation.get_reservation_id()} state:{reservation.get_state()} "
@@ -278,7 +278,7 @@ class NetworkServiceInventory(InventoryForType):
                     continue
 
                 # For Active or Ticketed or Ticketing reservations; reduce the counts from available
-                allocated_sliver = self._get_allocated_sliver(reservation=reservation)
+                allocated_sliver = self.get_allocated_sliver(reservation=reservation)
 
                 self.logger.debug(f"Existing res# {reservation.get_reservation_id()} "
                                   f"allocated: {allocated_sliver}")
@@ -413,7 +413,7 @@ class NetworkServiceInventory(InventoryForType):
             if rid == reservation.get_reservation_id():
                 continue
 
-            allocated_sliver = self._get_allocated_sliver(reservation)
+            allocated_sliver = self.get_allocated_sliver(reservation)
             if allocated_sliver is None:
                 continue
 

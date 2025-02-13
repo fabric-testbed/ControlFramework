@@ -24,13 +24,14 @@
 # Author Komal Thareja (kthare10@renci.org)
 import hashlib
 from bisect import bisect_left
+from typing import Tuple, Dict
 
 from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
+from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
-from fim.user import ComponentType
-from fim.user.topology import TopologyDiff, TopologyDiffTuple
+from fim.user import ComponentType, InstanceCatalog
 
 from fabric_cf.actor.security.pdp_auth import ActionId
 
@@ -118,3 +119,4 @@ def generate_sha256(*, token: str):
     sha256_hex = sha256_hash.hexdigest()
 
     return sha256_hex
+

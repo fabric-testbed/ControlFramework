@@ -1898,8 +1898,6 @@ def test3():
 
 if __name__ == '__main__':
     test2()
-    #test()
-    #test3()
 
     logger = logging.getLogger('PsqlDatabase')
     db = PsqlDatabase(user='fabric', password='fabric', database='orchestrator', db_host='127.0.0.1:5432',

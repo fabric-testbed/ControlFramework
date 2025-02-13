@@ -27,7 +27,7 @@ import time
 import traceback
 from datetime import datetime, timedelta, timezone
 from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
-from typing import List, Tuple, Union
+from typing import List, Union
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.poa_avro import PoaAvro
@@ -313,7 +313,6 @@ class OrchestratorHandler:
             new_slice_object = OrchestratorSliceWrapper(controller=controller, broker=broker,
                                                         slice_obj=slice_obj, logger=self.logger)
 
-            create_ts = time.time()
             new_slice_object.lock()
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
@@ -325,22 +324,6 @@ class OrchestratorHandler:
 
             # Check if Testbed in Maintenance or Site in Maintenance
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
-
-            # TODO Future Slice
-            '''
-            if lease_start_time and lease_end_time and lifetime:
-                future_start, future_end = self.controller_state.determine_future_lease_time(computed_reservations=computed_reservations,
-                                                                                             start=lease_start_time, end=lease_end_time,
-                                                                                             duration=lifetime)
-                self.logger.debug(f"Advanced Scheduling: Slice: {slice_name}({slice_id}) lifetime: {future_start} to {future_end}")
-                slice_obj.set_lease_start(lease_start=future_start)
-                slice_obj.set_lease_end(lease_end=future_end)
-                self.logger.debug(f"Update Slice {slice_name}")
-                slice_id = controller.update_slice(slice_obj=slice_obj)
-                for r in computed_reservations:
-                    r.set_start(value=ActorClock.to_milliseconds(when=future_start))
-                    r.set_end(value=ActorClock.to_milliseconds(when=future_end))
-                '''
 
             create_ts = time.time()
             if lease_start_time and lease_end_time and lifetime:
@@ -855,7 +838,7 @@ class OrchestratorHandler:
 
     def __compute_lease_end_time(self, lease_end_time: datetime = None, allow_long_lived: bool = False,
                                  project_id: str = None,
-                                 lifetime: int = Constants.DEFAULT_LEASE_IN_HOURS) -> Tuple[datetime, datetime]:
+                                 lifetime: int = Constants.DEFAULT_LEASE_IN_HOURS) -> tuple[datetime, datetime]:
         """
         Validate and compute Lease End Time.
 
@@ -931,7 +914,7 @@ class OrchestratorHandler:
                         raise OrchestratorException(message=message,
                                                     http_error_code=Constants.INTERNAL_SERVER_ERROR_MAINT_MODE)
 
-    def poa(self, *, token: str, sliver_id: str, poa: PoaAvro) -> Tuple[str, str]:
+    def poa(self, *, token: str, sliver_id: str, poa: PoaAvro) -> tuple[str, str]:
         try:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"poa invoked for Controller: {controller}")

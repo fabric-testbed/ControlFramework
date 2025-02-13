@@ -29,6 +29,8 @@ import traceback
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List, Dict, Tuple
 
+from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
+
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
