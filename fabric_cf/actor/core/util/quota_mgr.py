@@ -26,8 +26,6 @@
 import logging
 from typing import Any
 
-from fabric_cf.actor.core.time.term import Term
-from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabrictestbed.external_api.core_api import CoreApi
 from fabrictestbed.slice_editor import InstanceCatalog
 from fim.slivers.network_node import NodeSliver
@@ -37,18 +35,42 @@ from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
 
 
 class QuotaMgr:
+    """
+    Manages resource quotas for projects, including listing, updating, and enforcing limits.
+    """
     def __init__(self, *, core_api_host: str, token: str, logger: logging.Logger):
+        """
+        Initialize the Quota Manager.
+
+        @param core_api_host: The API host for core services.
+        @param token: Authentication token for API access.
+        @param logger: Logger instance for logging messages.
+        """
         self.core_api = CoreApi(core_api_host=core_api_host, token=token)
         self.logger = logger
 
     def list_quotas(self, project_uuid: str, offset: int = 0, limit: int = 200) -> dict[tuple[str, str], dict]:
+        """
+        Retrieve the list of quotas for a given project.
+
+        @param project_uuid: Unique identifier for the project.
+        @param offset: Pagination offset for results (default: 0).
+        @param limit: Maximum number of quotas to fetch (default: 200).
+        @return: A dictionary mapping resource type/unit pairs to their quota details.
+        """
         quota_list = self.core_api.list_quotas(project_uuid=project_uuid, offset=offset, limit=limit)
         quotas = {}
         for q in quota_list:
             quotas[(q.get("resource_type").lower(), q.get("resource_unit").lower())] = q
         return quotas
 
-    def update_quota(self, reservation: ABCReservationMixin, term: Term):
+    def update_quota(self, reservation: ABCReservationMixin, duration: float):
+        """
+        Update the quota usage based on a reservation.
+
+        @param reservation: Reservation object containing resource usage details.
+        @param duration: Duration in seconds for which the reservation was held.
+        """
         try:
             slice_object = reservation.get_slice()
             if not slice_object:
@@ -69,11 +91,6 @@ class QuotaMgr:
 
             if not sliver:
                 return
-
-            if reservation.is_closed() or reservation.is_closing():
-                duration = term.get_remaining_length()
-            else:
-                duration = term.get_length()
 
             if duration < 60:
                 return
@@ -114,11 +131,11 @@ class QuotaMgr:
     @staticmethod
     def extract_quota_usage(sliver: NodeSliver, duration: float) -> dict[tuple[str, str], float]:
         """
-        Extract quota usage from a sliver
+        Extract resource usage details from a given sliver.
 
-        @param sliver: The sliver object from which resources are extracted.
-        @param duration: Number of hours the resources are requested for.
-        @return: A dictionary of resource type/unit tuples to requested amounts.
+        @param sliver: The sliver object representing allocated resources.
+        @param duration: Duration in hours for which resources are requested.
+        @return: A dictionary mapping resource type/unit pairs to usage amounts.
         """
         unit = "HOURS".lower()
         requested_resources = {}
@@ -155,12 +172,12 @@ class QuotaMgr:
 
     def enforce_quota_limits(self, reservation: ABCReservationMixin, duration: float) -> tuple[bool, Any]:
         """
-        Check if the requested resources for multiple reservations are within the project's quota limits.
+        Verify whether a reservation's requested resources fit within the project's quota limits.
 
-        @param reservation: Reservation.
-        @param duration: Number of hours the reservations are requested for.
-        @return: Tuple (True, None) if resources are within quota, or (False, message) if denied.
-        @throws: Exception if there is an error during the database interaction.
+        @param reservation: The reservation to check against available quotas.
+        @param duration: Duration in hours for the reservation request.
+        @return: Tuple (True, None) if within limits, (False, message) if quota is exceeded.
+        @throws: Exception if an error occurs during database interaction.
         """
         try:
             slice_object = reservation.get_slice()
