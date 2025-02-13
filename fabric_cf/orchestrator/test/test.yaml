@@ -72,8 +72,8 @@ logging:
 
 core_api:
   host: https://alpha-6.fabric-testbed.net
-  token: 
-  enable: True
+  token:
+  enable: False
 
 oauth:
   jwks-url: https://alpha-2.fabric-testbed.net/credmgr/certs
