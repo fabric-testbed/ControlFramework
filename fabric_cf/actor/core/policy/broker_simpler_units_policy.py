@@ -1075,7 +1075,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         try:
             if operation == ReservationOperation.Extend:
                 rset = reservation.get_resources()
-                duration = term.get_length()
+                duration = Term.delta(reservation.get_term().get_end_time(), term.get_end_time())
             else:
                 rset = reservation.get_requested_resources()
                 duration = term.get_full_length()

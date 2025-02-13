@@ -95,9 +95,7 @@ class QuotaMgr:
             if duration < 60:
                 return
 
-            duration /= 3600000
             existing_quotas = self.list_quotas(project_uuid=project_id)
-
             sliver_quota_usage = self.extract_quota_usage(sliver=sliver, duration=duration)
 
             self.logger.debug(f"Existing: {existing_quotas}")
@@ -108,11 +106,8 @@ class QuotaMgr:
                 existing = existing_quotas.get(quota_key)
                 usage = 0
                 self.logger.debug(f"Quota update requested for: prj:{project_id} quota_key:{quota_key}: quota: {existing}")
-                print(
-                    f"Quota update requested for: prj:{project_id} quota_key:{quota_key}: quota: {existing}")
                 if not existing:
                     self.logger.debug("Existing not found so skipping!")
-                    print("Existing not found so skipping!")
                     continue
 
                 # Return resource hours for a sliver deleted before expiry
@@ -134,11 +129,13 @@ class QuotaMgr:
         Extract resource usage details from a given sliver.
 
         @param sliver: The sliver object representing allocated resources.
-        @param duration: Duration in hours for which resources are requested.
+        @param duration: Duration in ms for which resources are requested.
         @return: A dictionary mapping resource type/unit pairs to usage amounts.
         """
         unit = "HOURS".lower()
         requested_resources = {}
+
+        duration /= 3600000
 
         # Check if the sliver is a NodeSliver
         if not isinstance(sliver, NodeSliver):
@@ -175,7 +172,7 @@ class QuotaMgr:
         Verify whether a reservation's requested resources fit within the project's quota limits.
 
         @param reservation: The reservation to check against available quotas.
-        @param duration: Duration in hours for the reservation request.
+        @param duration: Duration in ms for the reservation request.
         @return: Tuple (True, None) if within limits, (False, message) if quota is exceeded.
         @throws: Exception if an error occurs during database interaction.
         """

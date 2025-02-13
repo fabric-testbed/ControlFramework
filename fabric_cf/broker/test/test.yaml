@@ -74,7 +74,7 @@ logging:
 
 core_api:
   host: https://alpha-6.fabric-testbed.net
-  token: 
+  token:
   enable: True
 
 oauth:
