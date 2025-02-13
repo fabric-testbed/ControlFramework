@@ -1115,6 +1115,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 if node_id_to_reservations.get(node_id, None) is None:
                     node_id_to_reservations[node_id] = ReservationSet()
                 node_id_to_reservations[node_id].add(reservation=reservation)
+
+                from fabric_cf.actor.core.container.globals import GlobalsSingleton
+                if GlobalsSingleton.get().get_quota_mgr():
+                    GlobalsSingleton.get().get_quota_mgr().update_quota(reservation=reservation)
+
                 self.logger.debug(f"Ticket Inventory returning: True {error_msg}")
                 return True, node_id_to_reservations, error_msg
         except Exception as e:
@@ -1204,6 +1209,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return reservation
 
     def release(self, *, reservation):
+        if reservation.get_term().get_remaining_length() > 0:
+            from fabric_cf.actor.core.container.globals import GlobalsSingleton
+            if GlobalsSingleton.get().get_quota_mgr():
+                GlobalsSingleton.get().get_quota_mgr().update_quota(reservation=reservation)
+
         if isinstance(reservation, ABCBrokerReservation):
             self.logger.debug("Broker reservation")
             super().release(reservation=reservation)
