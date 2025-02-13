@@ -59,7 +59,7 @@ class InventoryForType:
         """
 
     @staticmethod
-    def _get_allocated_sliver(reservation: ABCReservationMixin) -> BaseSliver:
+    def get_allocated_sliver(reservation: ABCReservationMixin) -> BaseSliver:
         """
         Retrieve the allocated sliver from the reservation.
 

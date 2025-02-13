@@ -31,6 +31,7 @@ from fabrictestbed.slice_editor import InstanceCatalog
 from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
 
 
 class QuotaMgr:
@@ -54,13 +55,15 @@ class QuotaMgr:
             if not project_id:
                 return
 
-            sliver = None
+            sliver = InventoryForType.get_allocated_sliver(reservation=reservation)
+            '''
             from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
             if isinstance(reservation, ReservationClient) and reservation.get_leased_resources() and \
                     reservation.get_leased_resources().get_sliver():
                 sliver = reservation.get_leased_resources().get_sliver()
             if not sliver and reservation.get_resources() and reservation.get_resources().get_sliver():
                 sliver = reservation.get_resources().get_sliver()
+            '''
 
             if not sliver:
                 return
