@@ -188,6 +188,10 @@ class QuotaMgr:
                 return False, None
 
             sliver = InventoryForType.get_allocated_sliver(reservation=reservation)
+
+            if not sliver and reservation.is_ticketing() and reservation.get_requested_resources():
+                sliver = reservation.get_requested_resources().get_sliver()
+
             if not sliver:
                 self.logger.info("No sliver found!")
                 return False, None
