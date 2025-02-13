@@ -94,7 +94,7 @@ class QuotaMgr:
                     usage = existing.get("quota_used") - total_duration
                     if usage < 0:
                         usage = 0
-                    self.core_api.update_quota(uuid=existing.get("uuid"), project_id=project_id,
+                    self.core_api.update_quota(uuid=existing.get("uuid"), project_uuid=project_id,
                                                resource_type=existing.get("resource_type"),
                                                resource_unit=existing.get("resource_unit"),
                                                quota_used=usage, quota_limit=existing.get("quota_limit"))
@@ -102,7 +102,7 @@ class QuotaMgr:
                 # Account for resource hours used for a new or extended sliver
                 else:
                     usage = total_duration + existing.get("quota_used")
-                    self.core_api.update_quota(uuid=existing.get("uuid"), project_id=project_id,
+                    self.core_api.update_quota(uuid=existing.get("uuid"), project_uuid=project_id,
                                                resource_type=existing.get("resource_type"),
                                                resource_unit=existing.get("resource_unit"),
                                                quota_used=usage, quota_limit=existing.get("quota_limit"))
