@@ -61,7 +61,6 @@ class OrchestratorHandler:
         self.controller_state = OrchestratorKernelSingleton.get()
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.globals = GlobalsSingleton.get()
-        self.quota_mgr = self.globals.get_quota_mgr()
         self.logger = self.globals.get_logger()
         self.jwks_url = self.globals.get_config().get_oauth_config().get(Constants.PROPERTY_CONF_O_AUTH_JWKS_URL, None)
         self.pdp_config = self.globals.get_config().get_global_config().get_pdp_config()
@@ -325,14 +324,6 @@ class OrchestratorHandler:
 
             # Check if Testbed in Maintenance or Site in Maintenance
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
-
-            if self.quota_mgr:
-                quotas = self.quota_mgr.list_quotas(project_uuid=project)
-                status, error_message = self.quota_mgr.enforce_quota_limits(quotas=quotas,
-                                                                            computed_reservations=computed_reservations,
-                                                                            duration=(end_time-start_time).total_seconds()/3600)
-
-                self.logger.info(f"Quota enforcement status: {status}, error: {error_message}")
 
             create_ts = time.time()
             if lease_start_time and lease_end_time and lifetime:

@@ -70,6 +70,11 @@ logging:
 
   logger: orchestrator
 
+core_api:
+  host: https://alpha-6.fabric-testbed.net
+  token: 
+  enable: True
+
 oauth:
   jwks-url: https://alpha-2.fabric-testbed.net/credmgr/certs
   # Uses HH:MM:SS (less than 24 hours)

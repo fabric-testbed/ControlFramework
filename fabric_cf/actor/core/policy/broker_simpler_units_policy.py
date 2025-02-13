@@ -1075,8 +1075,20 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         try:
             if operation == ReservationOperation.Extend:
                 rset = reservation.get_resources()
+                duration = term.get_length()
             else:
                 rset = reservation.get_requested_resources()
+                duration = term.get_full_length()
+
+            from fabric_cf.actor.core.container.globals import GlobalsSingleton
+            if GlobalsSingleton.get().get_quota_mgr():
+                status, error_msg = GlobalsSingleton.get().get_quota_mgr().enforce_quota_limits(reservation=reservation,
+                                                                                                duration=duration)
+                self.logger.info(f"Quota enforcement status: {status}, error: {error_msg}")
+                # TODO: enable enforcement action later
+                #if not status:
+                #    return status, node_id_to_reservations, error_msg
+
             needed = rset.get_units()
 
             # for network node slivers

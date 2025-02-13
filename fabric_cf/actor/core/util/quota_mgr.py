@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
+from typing import Any
 
 from fabric_cf.actor.core.time.term import Term
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
@@ -88,31 +89,30 @@ class QuotaMgr:
             # Check each accumulated resource usage against its quota
             for quota_key, total_duration in sliver_quota_usage.items():
                 existing = existing_quotas.get(quota_key)
+                usage = 0
                 self.logger.debug(f"Quota update requested for: prj:{project_id} quota_key:{quota_key}: quota: {existing}")
+                print(
+                    f"Quota update requested for: prj:{project_id} quota_key:{quota_key}: quota: {existing}")
                 if not existing:
                     self.logger.debug("Existing not found so skipping!")
+                    print("Existing not found so skipping!")
                     continue
 
                 # Return resource hours for a sliver deleted before expiry
                 if reservation.is_closing() or reservation.is_closed():
-                    usage = existing.get("quota_used") - total_duration
-                    if usage < 0:
-                        usage = 0
+                    usage -= total_duration
                 # Account for resource hours used for a new or extended sliver
                 else:
-                    usage = total_duration + existing.get("quota_used")
+                    usage += total_duration
 
-                self.core_api.update_quota(uuid=existing.get("uuid"), project_uuid=project_id,
-                                           resource_type=existing.get("resource_type"),
-                                           resource_unit=existing.get("resource_unit"),
-                                           quota_used=usage, quota_limit=existing.get("quota_limit"))
+                self.core_api.update_quota_usage(uuid=existing.get("uuid"), project_uuid=project_id, quota_used=usage)
         except Exception as e:
             self.logger.error(f"Failed to update Quota: {e}")
         finally:
             self.logger.debug("done")
 
     @staticmethod
-    def extract_quota_usage(sliver, duration: float) -> dict[tuple[str, str], float]:
+    def extract_quota_usage(sliver: NodeSliver, duration: float) -> dict[tuple[str, str], float]:
         """
         Extract quota usage from a sliver
 
@@ -153,29 +153,33 @@ class QuotaMgr:
 
         return requested_resources
 
-    def enforce_quota_limits(self, quotas: dict, computed_reservations: list[LeaseReservationAvro],
-                             duration: float) -> tuple[bool, str]:
+    def enforce_quota_limits(self, reservation: ABCReservationMixin, duration: float) -> tuple[bool, Any]:
         """
         Check if the requested resources for multiple reservations are within the project's quota limits.
 
-        @param quotas: Quota Limits for various resource types.
-        @param computed_reservations: List of slivers requested.
+        @param reservation: Reservation.
         @param duration: Number of hours the reservations are requested for.
         @return: Tuple (True, None) if resources are within quota, or (False, message) if denied.
         @throws: Exception if there is an error during the database interaction.
         """
         try:
-            requested_resources = {}
+            slice_object = reservation.get_slice()
+            if not slice_object:
+                return False, None
+            project_uuid = slice_object.get_project_id()
+            if not project_uuid:
+                return False, None
 
-            # Accumulate resource usage for all reservations
-            for r in computed_reservations:
-                sliver = r.get_sliver()
-                sliver_resources = self.extract_quota_usage(sliver, duration)
-                for key, value in sliver_resources.items():
-                    requested_resources[key] = requested_resources.get(key, 0) + value
+            sliver = InventoryForType.get_allocated_sliver(reservation=reservation)
+            if not sliver:
+                self.logger.info("No sliver found!")
+                return False, None
+
+            sliver_resources = self.extract_quota_usage(sliver, duration)
+            quotas = self.list_quotas(project_uuid=project_uuid)
 
             # Check each accumulated resource usage against its quota
-            for quota_key, total_requested_duration in requested_resources.items():
+            for quota_key, total_requested_duration in sliver_resources.items():
                 if quota_key not in quotas:
                     return False, f"Quota not defined for resource: {quota_key[0]} ({quota_key[1]})."
 

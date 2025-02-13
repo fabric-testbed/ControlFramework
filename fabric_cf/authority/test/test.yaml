@@ -89,6 +89,11 @@ database:
 container:
   container.guid: site1-am-conainer
 
+core_api:
+  host: https://alpha-6.fabric-testbed.net
+  token:
+  enable: False
+
 time:
   # This section controls settings, which are generally useful
   # when running under emulation. These settings allow you to
