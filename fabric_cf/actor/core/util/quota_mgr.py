@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
 
+from fabric_cf.actor.core.time.term import Term
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabrictestbed.external_api.core_api import CoreApi
 from fabrictestbed.slice_editor import InstanceCatalog
@@ -46,7 +47,7 @@ class QuotaMgr:
             quotas[(q.get("resource_type").lower(), q.get("resource_unit").lower())] = q
         return quotas
 
-    def update_quota(self, reservation: ABCReservationMixin):
+    def update_quota(self, reservation: ABCReservationMixin, term: Term):
         try:
             slice_object = reservation.get_slice()
             if not slice_object:
@@ -69,9 +70,9 @@ class QuotaMgr:
                 return
 
             if reservation.is_closed() or reservation.is_closing():
-                duration = reservation.get_term().get_remaining_length()
+                duration = term.get_remaining_length()
             else:
-                duration = reservation.get_term().get_length()
+                duration = term.get_length()
 
             if duration < 60:
                 return
