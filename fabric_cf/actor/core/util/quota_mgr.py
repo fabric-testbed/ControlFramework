@@ -207,3 +207,4 @@ class QuotaMgr:
             return True, None
         except Exception as e:
             self.logger.error(f"Error while checking reservation: {str(e)}")
+        return False, None

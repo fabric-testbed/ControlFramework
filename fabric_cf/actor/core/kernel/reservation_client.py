@@ -755,7 +755,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
         # Extend Ticket is invoked by Probe; Check dependencies only in case of modify
         # No new sliver is passed for renew and does not require dependency check
-        if self.requested_resources.sliver is not None and not self.can_ticket(extend=True):
+        #if self.requested_resources.sliver is not None and not self.can_ticket(extend=True):
+        if not self.can_ticket(extend=True):
             self.transition_with_join(prefix="Extend ticket blocked", state=self.state,
                                       pending=self.pending_state, join_state=JoinState.BlockedExtendTicket)
             self.logger.info("Reservation has to wait for the dependencies to be extended!")
@@ -951,18 +952,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
     def prepare_redeem(self):
         assert self.resources is not None
         assert self.resources.sliver is not None
-        sliver = self.resources.sliver
-
-        '''
-        self.logger.info(f"Redeem prepared for Sliver: {sliver}")
-        if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info is not None:
-            for ifs in sliver.interface_info.interfaces.values():
-                self.logger.info(f"Interface Sliver: {ifs}")
-
-        if isinstance(sliver, NodeSliver) and sliver.attached_components_info is not None:
-            for c in sliver.attached_components_info.devices.values():
-                self.logger.info(f"Component: {c}")
-        '''
 
     def probe_join_state(self):
         """
