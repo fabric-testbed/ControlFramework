@@ -341,7 +341,8 @@ class Kernel:
         finally:
             reservation.unlock()
 
-    def extend_reservation(self, *, rid: ID, resources: ResourceSet, term: Term, dependencies: List[ABCReservationMixin]) -> int:
+    def extend_reservation(self, *, rid: ID, resources: ResourceSet, term: Term,
+                           dependencies: List[ABCReservationMixin]) -> int:
         """
         Extends the reservation with the given resources and term.
         @param rid reservation identifier of reservation to extend
@@ -365,7 +366,9 @@ class Kernel:
                 raise KernelException(Constants.PENDING_OPERATION_ERROR)
 
             if isinstance(real, ReservationClient) and dependencies is not None:
-                real.redeem_predecessors.clear()
+                # Modify case - clear old dependencies
+                if resources.get_sliver() is not None:
+                    real.redeem_predecessors.clear()
                 for d in dependencies:
                     real.add_redeem_predecessor(reservation=d)
 

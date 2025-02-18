@@ -1221,12 +1221,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return reservation
 
     def release(self, *, reservation):
-        duration = reservation.get_term().get_remaining_length()
-        if duration > 0:
-            from fabric_cf.actor.core.container.globals import GlobalsSingleton
-            if GlobalsSingleton.get().get_quota_mgr():
-                GlobalsSingleton.get().get_quota_mgr().update_quota(reservation=reservation,
-                                                                    duration=duration)
+        if reservation.get_term():
+            duration = reservation.get_term().get_remaining_length()
+            if duration > 0:
+                from fabric_cf.actor.core.container.globals import GlobalsSingleton
+                if GlobalsSingleton.get().get_quota_mgr():
+                    GlobalsSingleton.get().get_quota_mgr().update_quota(reservation=reservation,
+                                                                        duration=duration)
 
         if isinstance(reservation, ABCBrokerReservation):
             self.logger.debug("Broker reservation")
