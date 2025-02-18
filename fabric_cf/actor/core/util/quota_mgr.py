@@ -24,11 +24,13 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
+import re
 import threading
 from typing import Any
 
 from fabrictestbed.external_api.core_api import CoreApi
 from fabrictestbed.slice_editor import InstanceCatalog
+from fim.slivers.component_catalog import ComponentModelTypeMap
 from fim.slivers.network_node import NodeSliver
 from fim.user import NodeType
 
@@ -51,6 +53,7 @@ class QuotaMgr:
         self.core_api = CoreApi(core_api_host=core_api_host, token=token)
         self.logger = logger
         self.lock = threading.Lock()
+        ComponentModelTypeMap
 
     def list_quotas(self, project_uuid: str, offset: int = 0, limit: int = 200) -> dict[tuple[str, str], dict]:
         """
@@ -118,6 +121,15 @@ class QuotaMgr:
             self.logger.debug("Released lock for quota update.")
 
     @staticmethod
+    def __massage_name(name: str) -> str:
+        """
+        Massage to make it python friendly
+        :param name:
+        :return:
+        """
+        return re.sub(r'[ -]', '_', name)
+
+    @staticmethod
     def extract_quota_usage(sliver: NodeSliver, duration: float) -> dict[tuple[str, str], float]:
         """
         Extract resource usage details from a given sliver.
@@ -159,9 +171,10 @@ class QuotaMgr:
         # Extract component hours (e.g., GPU, FPGA, SmartNIC)
         if sliver.attached_components_info:
             for c in sliver.attached_components_info.devices.values():
-                component_type = str(c.get_type()).lower()
-                requested_resources[(component_type, unit)] = (
-                    requested_resources.get((component_type, unit), 0) + duration
+                type_model_name = '_'.join([QuotaMgr.__massage_name(str(c.get_type())),
+                                            QuotaMgr.__massage_name(str(c.get_model()))])
+                requested_resources[(type_model_name.lower(), unit)] = (
+                    requested_resources.get((type_model_name.lower(), unit), 0) + duration
                 )
 
         return requested_resources
