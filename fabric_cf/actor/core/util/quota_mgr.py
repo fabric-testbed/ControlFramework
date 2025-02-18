@@ -30,6 +30,7 @@ from typing import Any
 from fabrictestbed.external_api.core_api import CoreApi
 from fabrictestbed.slice_editor import InstanceCatalog
 from fim.slivers.network_node import NodeSliver
+from fim.user import NodeType
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
@@ -142,13 +143,18 @@ class QuotaMgr:
         else:
             allocations = sliver.get_capacities()
 
-        # Extract Core, Ram, Disk Hours
-        requested_resources[("core", unit)] = requested_resources.get(("core", unit), 0) + \
-                                              (duration * allocations.core)
-        requested_resources[("ram", unit)] = requested_resources.get(("ram", unit), 0) +\
-                                             (duration * allocations.ram)
-        requested_resources[("disk", unit)] = requested_resources.get(("disk", unit), 0) + \
-                                              (duration * allocations.disk)
+        if allocations:
+            # Extract Core, Ram, Disk Hours
+            requested_resources[("core", unit)] = requested_resources.get(("core", unit), 0) + \
+                                                  (duration * allocations.core)
+            requested_resources[("ram", unit)] = requested_resources.get(("ram", unit), 0) +\
+                                                 (duration * allocations.ram)
+            requested_resources[("disk", unit)] = requested_resources.get(("disk", unit), 0) + \
+                                                  (duration * allocations.disk)
+
+        if sliver.get_type() == NodeType.Switch and allocations:
+            requested_resources["p4", unit] = requested_resources.get(("p4", unit), 0) + \
+                                                  (duration * allocations.unit)
 
         # Extract component hours (e.g., GPU, FPGA, SmartNIC)
         if sliver.attached_components_info:
