@@ -53,7 +53,6 @@ class QuotaMgr:
         self.core_api = CoreApi(core_api_host=core_api_host, token=token)
         self.logger = logger
         self.lock = threading.Lock()
-        ComponentModelTypeMap
 
     def list_quotas(self, project_uuid: str, offset: int = 0, limit: int = 200) -> dict[tuple[str, str], dict]:
         """
@@ -67,7 +66,7 @@ class QuotaMgr:
         quota_list = self.core_api.list_quotas(project_uuid=project_uuid, offset=offset, limit=limit)
         quotas = {}
         for q in quota_list:
-            quotas[(q.get("resource_type").lower(), q.get("resource_unit").lower())] = q
+            quotas[(q.get("resource_type").get("name").lower(), q.get("resource_unit").lower())] = q
         return quotas
 
     def update_quota(self, reservation: ABCReservationMixin, duration: float):
