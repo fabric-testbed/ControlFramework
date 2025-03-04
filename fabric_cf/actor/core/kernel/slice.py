@@ -86,6 +86,7 @@ class Slice(ABCSlice):
         self.lease_start = None
         self.project_id = project_id
         self.project_name = project_name
+        self.last_updated_time = None
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -93,6 +94,7 @@ class Slice(ABCSlice):
         del state['delegations']
         del state['graph']
         del state['lock']
+        del state['last_updated_time']
         return state
 
     def __setstate__(self, state):
@@ -101,6 +103,13 @@ class Slice(ABCSlice):
         self.graph = None
         self.delegations = {}
         self.lock = threading.Lock()
+        self.last_updated_time = None
+
+    def set_last_updated_time(self, updated: datetime):
+        self.last_updated_time = updated
+
+    def get_last_updated_time(self) -> datetime:
+        return self.last_updated_time
 
     def set_project_id(self, project_id):
         self.project_id = project_id

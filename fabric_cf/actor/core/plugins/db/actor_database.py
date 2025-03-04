@@ -224,6 +224,7 @@ class ActorDatabase(ABCDatabase):
                 for s in slices:
                     pickled_slice = s.get(Constants.PROPERTY_PICKLE_PROPERTIES)
                     slice_obj = pickle.loads(pickled_slice)
+                    slice_obj.set_last_updated_time(s.get('last_updated_time'))
                     result.append(slice_obj)
         except Exception as e:
             self.logger.error(e)

@@ -6,7 +6,7 @@ import os
 from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 
-from fabric_cf.actor.core.kernel.slice import SliceTypes
+from fabric_cf.actor.core.kernel.slice import SliceTypes, Slice
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
 from reports.db_manager import DatabaseManager
@@ -86,6 +86,8 @@ class ExportScript:
                     break  # Stop when no more slices are found
 
                 for slice_object in slices:
+
+                    slice_object = Slice()
                     try:
                         slice_updated_at = slice_object.get_last_updated_time()  # Get last update time
                         if slice_updated_at and slice_updated_at > max_timestamp:
