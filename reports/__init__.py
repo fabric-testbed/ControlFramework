@@ -8,7 +8,7 @@ Base = declarative_base()
 class Sites(Base):
     __tablename__ = 'sites'
     id = Column(Integer, Sequence('id', start=1, increment=1), autoincrement=True, primary_key=True, index=True)
-    site_name = Column(String, nullable=False, index=True)
+    name = Column(String, nullable=False, index=True)
 
 
 class Hosts(Base):

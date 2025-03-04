@@ -324,7 +324,7 @@ class DatabaseManager:
         """
         Adds a new site.
         """
-        site = Sites(site=site_name)
+        site = Sites(name=site_name)
         self.session.add(site)
         self.session.commit()
         return site.id
@@ -347,9 +347,9 @@ class DatabaseManager:
         """
         Adds a site if it doesn’t exist, otherwise updates the name.
         """
-        site = self.session.query(Sites).filter(Sites.site == site_name).first()
+        site = self.session.query(Sites).filter(Sites.name == site_name).first()
         if not site:
-            site = Sites(site=site_name)
+            site = Sites(name=site_name)
             self.session.add(site)
 
         self.session.commit()
