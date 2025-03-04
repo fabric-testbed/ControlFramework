@@ -118,11 +118,12 @@ class ExportScript:
                         site_name = sliver.get_site()
                         if sliver.get_gateway():
                             ip_subnet = sliver.get_gateway().subnet
-                        bw = sliver.capacities.bw
+                        if sliver.labels:
+                            bw = sliver.labels.bw
                     if site_name:
-                        site_id = self.dest_db.add_or_update_site(site_name=sliver.get_site())
+                        site_id = self.dest_db.add_or_update_site(site_name=site_name.lower())
                         if host_name:
-                            host_id = self.dest_db.add_or_update_host(host_name=host_name, site_id=site_id)
+                            host_id = self.dest_db.add_or_update_host(host_name=host_name.lower(), site_id=site_id)
                     sliver_id = self.dest_db.add_or_update_sliver(project_id=project_id,
                                                                   user_id=user_id,
                                                                   slice_id=slice_id,
@@ -137,7 +138,8 @@ class ExportScript:
                                                                   ram=ram,
                                                                   disk=disk,
                                                                   image=image,
-                                                                  bandwidth=bw)
+                                                                  bandwidth=bw,
+                                                                  sliver_type=str(reservation.get_type()).lower())
                     if sliver.attached_components_info:
                         for component in sliver.attached_components_info.devices.values():
                             bdfs = None
