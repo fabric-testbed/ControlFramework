@@ -126,7 +126,7 @@ class ExportScript:
                         if sliver.capacities:
                             bw = sliver.capacities.bw
                     if site_name:
-                        site_id = self.dest_db.add_or_update_site(site_name=site_name.lower())
+                        site_id = self.dest_db.add_or_update_site(site_name=site_name.upper())
                         if host_name:
                             host_id = self.dest_db.add_or_update_host(host_name=host_name.lower(), site_id=site_id)
                     sliver_id = self.dest_db.add_or_update_sliver(project_id=project_id,
