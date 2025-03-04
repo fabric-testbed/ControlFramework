@@ -140,7 +140,7 @@ class ExportScript:
                                                                   image=image,
                                                                   bandwidth=bw,
                                                                   sliver_type=str(reservation.get_type()).lower())
-                    if sliver.attached_components_info:
+                    if isinstance(sliver, NodeSliver) and sliver.attached_components_info:
                         for component in sliver.attached_components_info.devices.values():
                             bdfs = None
                             if component.labels and component.labels.bdf:
@@ -153,23 +153,21 @@ class ExportScript:
                                                                                 component_type=str(component.get_type().lower()),
                                                                                 model=str(component.get_model()).lower(),
                                                                                 bdfs=bdfs)
-                    if sliver.network_service_info:
-                        for ns in sliver.network_service_info.network_services.values():
-                            if ns.interface_info:
-                                for ifs in ns.interface_info.interfaces.values():
-                                    ifs = InterfaceSliver()
-                                    vlan = None
-                                    port = None
-                                    bdf = None
-                                    if ifs.labels:
-                                        vlan = ifs.labels.vlan
-                                        port = ifs.labels.local_name
-                                        bdf = ifs.labels.bdf
-                                    interface_id = self.dest_db.add_or_update_interface(sliver_id=sliver_id,
-                                                                                        interface_guid=ifs.node_id,
-                                                                                        vlan=vlan,
-                                                                                        port=port,
-                                                                                        bdf=bdf)
+                    if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
+                        if sliver.interface_info:
+                            for ifs in sliver.interface_info.interfaces.values():
+                                vlan = None
+                                port = None
+                                bdf = None
+                                if ifs.labels:
+                                    vlan = ifs.labels.vlan
+                                    port = ifs.labels.local_name
+                                    bdf = ifs.labels.bdf
+                                interface_id = self.dest_db.add_or_update_interface(sliver_id=sliver_id,
+                                                                                    interface_guid=ifs.node_id,
+                                                                                    vlan=vlan,
+                                                                                    port=port,
+                                                                                    bdf=bdf)
 
             self.logger.info("Export process completed successfully!")
 
