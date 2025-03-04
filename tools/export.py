@@ -1,4 +1,27 @@
 #!/usr/bin/env python3
+#
+# Copyright (c) 2020 FABRIC Testbed
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+# Author: Komal Thareja (kthare10@renci.org)
 import argparse
 import logging
 import traceback
@@ -6,9 +29,13 @@ import os
 from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 
+from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_service import NetworkServiceSliver
+
 from fabric_cf.actor.core.kernel.slice import SliceTypes, Slice
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
+from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
 from reports.db_manager import DatabaseManager
 
 
@@ -86,8 +113,6 @@ class ExportScript:
                     break  # Stop when no more slices are found
 
                 for slice_object in slices:
-
-                    slice_object = Slice()
                     try:
                         slice_updated_at = slice_object.get_last_updated_time()  # Get last update time
                         if slice_updated_at and slice_updated_at > max_timestamp:
@@ -104,12 +129,96 @@ class ExportScript:
                                                                     state=slice_object.get_state().value,
                                                                     lease_start=slice_object.get_lease_start(),
                                                                     lease_end=slice_object.get_lease_end())
+                        added = False
+                        for reservation in self.src_db.get_reservations(slice_id=slice_object.get_slice_id()):
+                            if reservation.get_error_message():
+                                self.logger.warning(f"Skipping reservation {reservation.get_reservation_id()} "
+                                                    f"due to error: {reservation.get_error_message()}")
+                                continue
+                            sliver = InventoryForType.get_allocated_sliver(reservation=reservation)
+                            site_name = None
+                            host_name = None
+                            site_id = None
+                            host_id = None
+                            ip_subnet = None
+                            core = None
+                            ram = None
+                            disk = None
+                            image = None
+                            bw = None
+
+                            if isinstance(sliver, NodeSliver):
+                                site_name = sliver.get_site()
+                                if sliver.label_allocations and sliver.label_allocations.instance_parent:
+                                    host_name = sliver.label_allocations.instance_parent
+                                ip_subnet = str(sliver.management_ip)
+                                image = sliver.image_ref
+
+                                if sliver.capacity_allocations:
+                                    core = sliver.capacity_allocations.core
+                                    ram = sliver.capacity_allocations.ram
+                                    disk = sliver.capacity_allocations.disk
+
+                            elif isinstance(sliver, NetworkServiceSliver):
+                                site_name = sliver.get_site()
+                                if sliver.get_gateway():
+                                    ip_subnet = str(sliver.get_gateway().subnet)
+                                if sliver.capacities:
+                                    bw = sliver.capacities.bw
+
+                            if site_name:
+                                site_id = self.dest_db.add_or_update_site(site_name=site_name.upper())
+                                if host_name:
+                                    host_id = self.dest_db.add_or_update_host(host_name=host_name.lower(), site_id=site_id)
+
+                            sliver_id = self.dest_db.add_or_update_sliver(project_id=project_id,
+                                                                          user_id=user_id,
+                                                                          slice_id=slice_id,
+                                                                          site_id=site_id,
+                                                                          host_id=host_id,
+                                                                          sliver_guid=str(reservation.get_reservation_id()),
+                                                                          lease_start=reservation.get_term().get_start_time(),
+                                                                          lease_end=reservation.get_term().get_end_time(),
+                                                                          state=reservation.get_state().value,
+                                                                          ip_subnet=ip_subnet,
+                                                                          core=core,
+                                                                          ram=ram,
+                                                                          disk=disk,
+                                                                          image=image,
+                                                                          bandwidth=bw,
+                                                                          sliver_type=str(reservation.get_type()).lower())
+                            added = True
+
+                            if isinstance(sliver, NodeSliver) and sliver.attached_components_info:
+                                for component in sliver.attached_components_info.devices.values():
+                                    bdfs = component.labels.bdf if component.labels and component.labels.bdf else None
+                                    if bdfs and not isinstance(bdfs, list):
+                                        bdfs = [bdfs]
+                                    self.dest_db.add_or_update_component(sliver_id=sliver_id,
+                                                                         component_guid=component.node_id,
+                                                                         component_type=str(component.get_type()).lower(),
+                                                                         model=str(component.get_model()).lower(),
+                                                                         bdfs=bdfs)
+
+                            if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
+                                for ifs in sliver.interface_info.interfaces.values():
+                                    vlan = ifs.labels.vlan if ifs.labels else None
+                                    port = ifs.labels.local_name if ifs.labels else None
+                                    bdf = ifs.labels.bdf if ifs.labels else None
+                                    self.dest_db.add_or_update_interface(sliver_id=sliver_id,
+                                                                         interface_guid=ifs.node_id,
+                                                                         vlan=vlan,
+                                                                         port=port,
+                                                                         bdf=bdf)
+
+                        if not added:
+                            self.dest_db.delete_slice(slice_id=slice_id)
 
                     except Exception as slice_error:
                         self.logger.error(f"Error processing slice {slice_object.get_slice_id()}: {slice_error}")
                         traceback.print_exc()
 
-                offset += self.batch_size  # Move to the next batch
+            offset += self.batch_size  # Move to the next batch
 
             if max_timestamp > self.last_export_time:
                 self.logger.info(f"Updating last export time to {max_timestamp}")

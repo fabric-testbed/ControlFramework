@@ -1906,4 +1906,6 @@ if __name__ == '__main__':
     logger = logging.getLogger('PsqlDatabase')
     db = PsqlDatabase(user='fabric', password='fabric', database='orchestrator', db_host='127.0.0.1:5432',
                       logger=logger)
-    comps = db.get_components(node_id="HX7LQ53")
+    #comps = db.get_components(node_id="HX7LQ53")
+    ss = db.get_slices(updated_after=datetime(1970, 1, 1, tzinfo=timezone.utc))
+    print(len(ss))
