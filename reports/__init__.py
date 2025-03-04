@@ -7,34 +7,34 @@ Base = declarative_base()
 
 class Sites(Base):
     __tablename__ = 'sites'
-    id = Column(Integer, Sequence('id', start=1, increment=1), autoincrement=True, primary_key=True, index=True)
+    id = Column(Integer, Sequence('sites.id', start=1, increment=1), autoincrement=True, primary_key=True, index=True)
     name = Column(String, nullable=False, index=True)
 
 
 class Hosts(Base):
     __tablename__ = 'hosts'
-    id = Column(Integer, Sequence('id', start=1, increment=1), autoincrement=True, primary_key=True, index=True)
+    id = Column(Integer, Sequence('hosts.id', start=1, increment=1), autoincrement=True, primary_key=True, index=True)
     site_id = Column(Integer, ForeignKey('sites.id'), index=True)
     name = Column(String, nullable=False, index=True)
 
 
 class Projects(Base):
     __tablename__ = 'projects'
-    id = Column(Integer, Sequence('id', start=1, increment=1), autoincrement=True, primary_key=True, index=True)
+    id = Column(Integer, Sequence('projects.id', start=1, increment=1), autoincrement=True, primary_key=True, index=True)
     project_uuid = Column(String, nullable=False, index=True)
     project_name = Column(String, nullable=True, index=True)
 
 
 class Users(Base):
     __tablename__ = 'users'
-    id = Column(Integer, Sequence('id', start=1, increment=1), autoincrement=True, primary_key=True, index=True)
+    id = Column(Integer, Sequence('users.id', start=1, increment=1), autoincrement=True, primary_key=True, index=True)
     user_uuid = Column(String, nullable=False, index=True)
     user_email = Column(String, nullable=True, index=True)
 
 
 class Slices(Base):
     __tablename__ = 'slices'
-    id = Column(Integer, Sequence('id', start=1, increment=1), autoincrement=True, primary_key=True, index=True)
+    id = Column(Integer, Sequence('slices.id', start=1, increment=1), autoincrement=True, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey('projects.id'), index=True)
     user_id = Column(Integer, ForeignKey('users.id'), index=True)
     slice_guid = Column(String, nullable=False, index=True)
@@ -50,7 +50,7 @@ class Slices(Base):
 
 class Slivers(Base):
     __tablename__ = 'slivers'
-    id = Column(Integer, Sequence('id', start=1, increment=1), autoincrement=True, primary_key=True, index=True)
+    id = Column(Integer, Sequence('slivers.id', start=1, increment=1), autoincrement=True, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey('projects.id'), index=True)
     slice_id = Column(Integer, ForeignKey('slices.id'), index=True)
     user_id = Column(Integer, ForeignKey('users.id'), index=True)
