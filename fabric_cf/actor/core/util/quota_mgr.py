@@ -30,7 +30,6 @@ from typing import Any
 
 from fabrictestbed.external_api.core_api import CoreApi
 from fabrictestbed.slice_editor import InstanceCatalog
-from fim.slivers.component_catalog import ComponentModelTypeMap
 from fim.slivers.network_node import NodeSliver
 from fim.user import NodeType
 
