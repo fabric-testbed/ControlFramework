@@ -95,6 +95,7 @@ class ExportScript:
                     if reservation.get_error_message():
                         print(f"Skipping reservation: {reservation.get_reservation_id()} "
                               f"error: {reservation.get_error_message()}")
+                        continue
                     sliver = InventoryForType.get_allocated_sliver(reservation=reservation)
                     site_name = None
                     host_name = None
