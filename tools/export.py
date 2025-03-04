@@ -150,7 +150,7 @@ class ExportScript:
                                     bdfs = [component.labels.bdf]
                             component_id = self.dest_db.add_or_update_component(sliver_id=sliver_id,
                                                                                 component_guid=component.node_id,
-                                                                                component_type=str(component.get_type().lower()),
+                                                                                component_type=str(component.get_type()).lower(),
                                                                                 model=str(component.get_model()).lower(),
                                                                                 bdfs=bdfs)
                     if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:

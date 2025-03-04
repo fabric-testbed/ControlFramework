@@ -87,5 +87,5 @@ class Interfaces(Base):
     sliver_id = Column(Integer, ForeignKey('slivers.id'), primary_key=True, index=True)
     interface_guid = Column(String, primary_key=True, index=True)
     port = Column(String, nullable=False, index=True)
-    vlan = Column(String, nullable=False, index=True)
-    bdf = Column(String, nullable=False, index=True)
+    vlan = Column(String, nullable=True, index=True)
+    bdf = Column(String, nullable=True, index=True)
