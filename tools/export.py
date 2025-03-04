@@ -97,15 +97,28 @@ class ExportScript:
                     site_id = None
                     host_id = None
                     ip_subnet = None
+                    core = None
+                    ram = None
+                    disk = None
+                    image = None
+                    bw = None
                     if isinstance(sliver, NodeSliver):
                         site_name = sliver.get_site()
                         if sliver.label_allocations and sliver.label_allocations.instance_parent:
                             host_name = sliver.label_allocations.instance_parent
                         ip_subnet = sliver.management_ip
+                        image = sliver.image_ref
+
+                        if sliver.capacity_allocations:
+                            core = sliver.capacity_allocations.cor
+                            ram = sliver.capacity_allocations.ram
+                            disk = sliver.capacity_allocations.disk
+
                     elif isinstance(sliver, NetworkServiceSliver):
                         site_name = sliver.get_site()
                         if sliver.get_gateway():
                             ip_subnet = sliver.get_gateway().subnet
+                        bw = sliver.capacities.bw
                     if site_name:
                         site_id = self.dest_db.add_or_update_site(site_name=sliver.get_site())
                         if host_name:
@@ -119,7 +132,12 @@ class ExportScript:
                                                                   lease_start=reservation.get_term().get_start_time(),
                                                                   lease_end=reservation.get_term().get_end_time(),
                                                                   state=reservation.get_state().value,
-                                                                  ip_subnet=ip_subnet)
+                                                                  ip_subnet=ip_subnet,
+                                                                  core=core,
+                                                                  ram=ram,
+                                                                  disk=disk,
+                                                                  image=image,
+                                                                  bandwidth=bw)
                     if sliver.attached_components_info:
                         for component in sliver.attached_components_info.devices.values():
                             bdfs = None

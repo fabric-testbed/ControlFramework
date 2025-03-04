@@ -58,6 +58,13 @@ class Slivers(Base):
     site_id = Column(Integer, ForeignKey('sites.id'), index=True)
     sliver_guid = Column(String, nullable=False, index=True)
     state = Column(Integer, nullable=False, index=True)
+    sliver_type = Column(String, nullable=False, index=True)
+    ip_subnet = Column(String, nullable=True, index=True)
+    image = Column(String, nullable=True)
+    core = Column(Integer, nullable=True)
+    ram = Column(Integer, nullable=True)
+    disk = Column(Integer, nullable=True)
+    bandwidth = Column(Integer, nullable=True)
     lease_start = Column(TIMESTAMP(timezone=True), nullable=True, index=True)
     lease_end = Column(TIMESTAMP(timezone=True), nullable=True, index=True)
 

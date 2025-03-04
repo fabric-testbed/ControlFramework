@@ -30,17 +30,6 @@ class DatabaseManager:
         self.session.commit()
         return user.id
 
-    def add_sliver(self, project_id, slice_id, user_id, host_id, site_id, sliver_guid, ip_subnet, state,
-                   lease_start, lease_end):
-        sliver = Slivers(
-            project_id=project_id, slice_id=slice_id, user_id=user_id, host_id=host_id,
-            site_id=site_id, sliver_guid=sliver_guid, ip_subnet=ip_subnet, state=state,
-            lease_start=lease_start, lease_end=lease_end
-        )
-        self.session.add(sliver)
-        self.session.commit()
-        return sliver.id
-
     # -------------------- DELETE DATA --------------------
     def delete_project(self, project_id):
         project = self.session.query(Projects).filter(Projects.id == project_id).first()
@@ -227,31 +216,110 @@ class DatabaseManager:
         self.session.commit()
         return slice_obj.id
 
-    def add_or_update_sliver(
-        self, project_id: int, slice_id: int, user_id: int, host_id: int, site_id: int,
-        sliver_guid: str, ip_subnet: Optional[str], state: int,
-        lease_start: Optional[datetime], lease_end: Optional[datetime]
+    # -------------------- ADD SLIVER --------------------
+    def add_sliver(
+        self,
+        project_id: int,
+        slice_id: int,
+        user_id: int,
+        host_id: int,
+        site_id: int,
+        sliver_guid: str,
+        state: int,
+        sliver_type: str,
+        ip_subnet: Optional[str] = None,
+        image: Optional[str] = None,
+        core: Optional[int] = None,
+        ram: Optional[int] = None,
+        disk: Optional[int] = None,
+        bandwidth: Optional[int] = None,
+        lease_start: Optional[datetime] = None,
+        lease_end: Optional[datetime] = None
     ) -> int:
         """
-        Adds a sliver if it doesn't exist, otherwise updates the fields.
+        Adds a new sliver.
+        """
+        sliver = Slivers(
+            project_id=project_id,
+            slice_id=slice_id,
+            user_id=user_id,
+            host_id=host_id,
+            site_id=site_id,
+            sliver_guid=sliver_guid,
+            state=state,
+            sliver_type=sliver_type,
+            ip_subnet=ip_subnet,
+            image=image,
+            core=core,
+            ram=ram,
+            disk=disk,
+            bandwidth=bandwidth,
+            lease_start=lease_start,
+            lease_end=lease_end
+        )
+        self.session.add(sliver)
+        self.session.commit()
+        return sliver.id
+
+    # -------------------- ADD OR UPDATE SLIVER --------------------
+    def add_or_update_sliver(
+        self,
+        project_id: int,
+        slice_id: int,
+        user_id: int,
+        host_id: int,
+        site_id: int,
+        sliver_guid: str,
+        state: int,
+        sliver_type: str,
+        ip_subnet: Optional[str] = None,
+        image: Optional[str] = None,
+        core: Optional[int] = None,
+        ram: Optional[int] = None,
+        disk: Optional[int] = None,
+        bandwidth: Optional[int] = None,
+        lease_start: Optional[datetime] = None,
+        lease_end: Optional[datetime] = None
+    ) -> int:
+        """
+        Adds a sliver if it doesn’t exist, otherwise updates its fields.
         """
         sliver = self.session.query(Slivers).filter(Slivers.sliver_guid == sliver_guid).first()
+
         if sliver:
             sliver.project_id = project_id
             sliver.slice_id = slice_id
             sliver.user_id = user_id
             sliver.host_id = host_id
             sliver.site_id = site_id
-            if ip_subnet:
-                sliver.ip_subnet = ip_subnet
             sliver.state = state
+            sliver.sliver_type = sliver_type
+            sliver.ip_subnet = ip_subnet
+            sliver.image = image
+            sliver.core = core
+            sliver.ram = ram
+            sliver.disk = disk
+            sliver.bandwidth = bandwidth
             sliver.lease_start = lease_start
             sliver.lease_end = lease_end
         else:
             sliver = Slivers(
-                project_id=project_id, slice_id=slice_id, user_id=user_id, host_id=host_id,
-                site_id=site_id, sliver_guid=sliver_guid, ip_subnet=ip_subnet, state=state,
-                lease_start=lease_start, lease_end=lease_end
+                project_id=project_id,
+                slice_id=slice_id,
+                user_id=user_id,
+                host_id=host_id,
+                site_id=site_id,
+                sliver_guid=sliver_guid,
+                state=state,
+                sliver_type=sliver_type,
+                ip_subnet=ip_subnet,
+                image=image,
+                core=core,
+                ram=ram,
+                disk=disk,
+                bandwidth=bandwidth,
+                lease_start=lease_start,
+                lease_end=lease_end
             )
             self.session.add(sliver)
 
