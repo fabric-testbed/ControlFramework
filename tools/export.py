@@ -213,12 +213,10 @@ class ExportScript:
 
                         if not added:
                             self.dest_db.delete_slice(slice_id=slice_id)
-
                     except Exception as slice_error:
                         self.logger.error(f"Error processing slice {slice_object.get_slice_id()}: {slice_error}")
                         traceback.print_exc()
-
-                offset += self.batch_size  # Move to the next batch
+                    offset += self.batch_size  # Move to the next batch
 
             if max_timestamp > self.last_export_time:
                 self.logger.info(f"Updating last export time to {max_timestamp}")
