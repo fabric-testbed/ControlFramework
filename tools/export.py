@@ -118,8 +118,8 @@ class ExportScript:
                         site_name = sliver.get_site()
                         if sliver.get_gateway():
                             ip_subnet = str(sliver.get_gateway().subnet)
-                        if sliver.labels:
-                            bw = sliver.labels.bw
+                        if sliver.capacities:
+                            bw = sliver.capacities.bw
                     if site_name:
                         site_id = self.dest_db.add_or_update_site(site_name=site_name.lower())
                         if host_name:
