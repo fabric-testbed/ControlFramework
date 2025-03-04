@@ -18,6 +18,14 @@ class DatabaseManager:
         Base.metadata.create_all(self.db_engine)
 
     # -------------------- DELETE DATA --------------------
+    def delete_slice(self, slice_id):
+        slice_object = self.session.query(Slices).filter(Slices.id == slice_id).first()
+        if slice:
+            self.session.delete(slice_object)
+            self.session.commit()
+            return True
+        return False
+
     def delete_project(self, project_id):
         project = self.session.query(Projects).filter(Projects.id == project_id).first()
         if project:

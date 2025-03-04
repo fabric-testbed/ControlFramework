@@ -90,7 +90,11 @@ class ExportScript:
                                                             lease_start=slice_object.get_lease_start(),
                                                             lease_end=slice_object.get_lease_end())
 
+                added = False
                 for reservation in self.src_db.get_reservations(slice_id=slice_object.get_slice_id()):
+                    if reservation.get_error_message():
+                        print(f"Skipping reservation: {reservation.get_reservation_id()} "
+                              f"error: {reservation.get_error_message()}")
                     sliver = InventoryForType.get_allocated_sliver(reservation=reservation)
                     site_name = None
                     host_name = None
@@ -140,6 +144,7 @@ class ExportScript:
                                                                   image=image,
                                                                   bandwidth=bw,
                                                                   sliver_type=str(reservation.get_type()).lower())
+                    added = True
                     if isinstance(sliver, NodeSliver) and sliver.attached_components_info:
                         for component in sliver.attached_components_info.devices.values():
                             bdfs = None
@@ -168,6 +173,8 @@ class ExportScript:
                                                                                     vlan=vlan,
                                                                                     port=port,
                                                                                     bdf=bdf)
+                if not added:
+                    self.dest_db.delete_slice(slice_id=slice_id)
 
             self.logger.info("Export process completed successfully!")
 
