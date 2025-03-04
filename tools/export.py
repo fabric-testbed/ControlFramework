@@ -108,7 +108,7 @@ class ExportScript:
                 slices = self.src_db.get_slices(offset=offset, limit=self.batch_size, slc_type=[SliceTypes.ClientSlice],
                                                 updated_after=self.last_export_time)  # Fetch only updated slices
 
-                if not slices:
+                if not slices or len(slices) == 0:
                     self.logger.info("No more slices to process. Export complete.")
                     break  # Stop when no more slices are found
 
