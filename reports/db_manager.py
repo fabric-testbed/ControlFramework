@@ -119,7 +119,8 @@ class DatabaseManager:
         """
         project = self.session.query(Projects).filter(Projects.project_uuid == project_uuid).first()
         if project:
-            project.project_name = project_name
+            if project_name:
+                project.project_name = project_name
         else:
             project = Projects(project_uuid=project_uuid, project_name=project_name)
             self.session.add(project)
@@ -133,7 +134,8 @@ class DatabaseManager:
         """
         user = self.session.query(Users).filter(Users.user_uuid == user_uuid).first()
         if user:
-            user.user_email = user_email
+            if user_email:
+                user.user_email = user_email
         else:
             user = Users(user_uuid=user_uuid, user_email=user_email)
             self.session.add(user)
@@ -155,8 +157,10 @@ class DatabaseManager:
             slice_obj.user_id = user_id
             slice_obj.slice_name = slice_name
             slice_obj.state = state
-            slice_obj.lease_start = lease_start
-            slice_obj.lease_end = lease_end
+            if lease_start:
+                slice_obj.lease_start = lease_start
+            if lease_end:
+                slice_obj.lease_end = lease_end
         else:
             slice_obj = Slices(
                 project_id=project_id,
@@ -205,14 +209,22 @@ class DatabaseManager:
             sliver.site_id = site_id
             sliver.state = state
             sliver.sliver_type = sliver_type
-            sliver.ip_subnet = ip_subnet
-            sliver.image = image
-            sliver.core = core
-            sliver.ram = ram
-            sliver.disk = disk
-            sliver.bandwidth = bandwidth
-            sliver.lease_start = lease_start
-            sliver.lease_end = lease_end
+            if ip_subnet:
+                sliver.ip_subnet = ip_subnet
+            if image:
+                sliver.image = image
+            if core:
+                sliver.core = core
+            if ram:
+                sliver.ram = ram
+            if disk:
+                sliver.disk = disk
+            if bandwidth:
+                sliver.bandwidth = bandwidth
+            if lease_start:
+                sliver.lease_start = lease_start
+            if lease_end:
+                sliver.lease_end = lease_end
         else:
             sliver = Slivers(
                 project_id=project_id,
@@ -248,9 +260,12 @@ class DatabaseManager:
         ).first()
 
         if component:
-            component.type = component_type
-            component.model = model
-            component.bdfs = bdfs  # Store as JSON
+            if component_type:
+                component.type = component_type
+            if model:
+                component.model = model
+            if bdfs:
+                component.bdfs = bdfs  # Store as JSON
         else:
             component = Components(
                 sliver_id=sliver_id,
@@ -274,8 +289,12 @@ class DatabaseManager:
         ).first()
 
         if interface:
-            interface.port = port
-            interface.vlan = vlan
+            if port:
+                interface.port = port
+            if vlan:
+                interface.vlan = vlan
+            if bdf:
+                interface.bdf = bdf
         else:
             interface = Interfaces(
                 sliver_id=sliver_id,
@@ -330,8 +349,8 @@ if __name__ == "__main__":
     )
 
     # Add a project and a user
-    project_id = db.add_project("1234-uuid", "Test Project")
-    user_id = db.add_user("5678-uuid", "user@example.com")
+    project_id = db.add_or_update_project("1234-uuid", "Test Project")
+    user_id = db.add_or_update_user("5678-uuid", "user@example.com")
 
     # Query all projects
     print("Projects:", db.get_all_projects())
@@ -340,7 +359,7 @@ if __name__ == "__main__":
     print("Users with email containing 'example':", db.get_users_by_email("example"))
 
     # Update a project name
-    db.update_project_name(project_id, "Updated Project Name")
+    db.add_or_update_project(project_uuid="1234-uuid", project_name="Updated Project Name")
 
     # Delete a user
     db.delete_user(user_id)
