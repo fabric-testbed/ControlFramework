@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 
-from sqlalchemy import JSON, ForeignKey, LargeBinary, Index, TIMESTAMP, UUID, func, text, Float
+from sqlalchemy import JSON, ForeignKey, LargeBinary, Index, TIMESTAMP, func
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, String, Integer, Sequence
 from sqlalchemy.orm import relationship
@@ -167,6 +167,9 @@ class Slices(Base):
     lease_start = Column(TIMESTAMP(timezone=True), nullable=True)
     lease_end = Column(TIMESTAMP(timezone=True), nullable=True)
     properties = Column(LargeBinary)
+
+    # New column for tracking last update time
+    last_update_time = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
 
     Index('idx_slc_guid_name', slc_guid, slc_name)
     Index('idx_slc_guid_name_email', slc_guid, slc_name, email)
