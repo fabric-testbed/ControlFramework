@@ -106,7 +106,7 @@ class ExportScript:
                         site_name = sliver.get_site()
                         if sliver.label_allocations and sliver.label_allocations.instance_parent:
                             host_name = sliver.label_allocations.instance_parent
-                        ip_subnet = sliver.management_ip
+                        ip_subnet = str(sliver.management_ip)
                         image = sliver.image_ref
 
                         if sliver.capacity_allocations:
@@ -117,7 +117,7 @@ class ExportScript:
                     elif isinstance(sliver, NetworkServiceSliver):
                         site_name = sliver.get_site()
                         if sliver.get_gateway():
-                            ip_subnet = sliver.get_gateway().subnet
+                            ip_subnet = str(sliver.get_gateway().subnet)
                         if sliver.labels:
                             bw = sliver.labels.bw
                     if site_name:
