@@ -28,7 +28,7 @@ import pickle
 import threading
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 from sqlalchemy import create_engine, desc, func, and_, or_
 from sqlalchemy.orm import scoped_session, sessionmaker, joinedload
@@ -575,30 +575,32 @@ class PsqlDatabase:
             raise e
 
     def get_slices(self, *, slice_id: str = None, slice_name: str = None, project_id: str = None, email: str = None,
-                   states: list[int] = None, oidc_sub: str = None, slc_type: list[int] = None, limit: int = None,
-                   offset: int = None, lease_end: datetime = None, search: str = None,
-                   exact_match: bool = False) -> List[dict]:
+                   states: Optional[list[int]] = None, oidc_sub: str = None, slc_type: Optional[list[int]] = None,
+                   limit: int = None, offset: int = None, lease_end: datetime = None, search: str = None,
+                   exact_match: bool = False, updated_after: datetime = None) -> List[dict]:
         """
-        Get slices for an actor
-        @param slice_id actor id
-        @param slice_name slice name
-        @param project_id project id
-        @param email email
-        @param states states
-        @param oidc_sub oidc claim sub
-        @param slc_type slice type
-        @param limit limit
-        @param offset offset
-        @param lease_end lease_end
+        Get slices for an actor, with an option to filter by last update timestamp.
+
+        @param slice_id: actor id
+        @param slice_name: slice name
+        @param project_id: project id
+        @param email: email
+        @param states: list of states
+        @param oidc_sub: oidc claim sub
+        @param slc_type: list of slice types
+        @param limit: limit
+        @param offset: offset
+        @param lease_end: lease_end
         @param search: search term applied
         @param exact_match: Exact Match for Search term
-        @return list of slices
+        @param updated_after: Filter slices updated after this timestamp
+        @return: list of slices
         """
         result = []
         session = self.get_session()
         try:
-            filter_dict = self.create_slices_filter(slice_id=slice_id, slice_name=slice_name, project_id=project_id,
-                                                    email=email, oidc_sub=oidc_sub)
+            filter_dict = self.create_slices_filter(slice_id=slice_id, slice_name=slice_name,
+                                                    project_id=project_id, email=email, oidc_sub=oidc_sub)
 
             rows = session.query(Slices).filter_by(**filter_dict)
 
@@ -608,12 +610,14 @@ class PsqlDatabase:
                     rows = rows.filter(((func.lower(Slices.email) == search_term) |
                                         (func.lower(Slices.oidc_claim_sub) == search_term)))
                 else:
-                    rows = rows.filter(
-                        ((Slices.email.ilike("%" + search + "%")) |
-                         (Slices.oidc_claim_sub.ilike("%" + search + "%"))))
+                    rows = rows.filter(((Slices.email.ilike(f"%{search}%")) |
+                                        (Slices.oidc_claim_sub.ilike(f"%{search}%"))))
 
             if lease_end is not None:
                 rows = rows.filter(Slices.lease_end < lease_end)
+
+            if updated_after is not None:
+                rows = rows.filter(Slices.last_update_time > updated_after)
 
             rows = rows.order_by(desc(Slices.lease_end))
 
