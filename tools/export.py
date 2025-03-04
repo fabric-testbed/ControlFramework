@@ -101,7 +101,7 @@ class ExportScript:
             self.logger.info(f"Starting export process... Last export was at {self.last_export_time}")
 
             offset = 0
-            max_timestamp = self.last_export_time
+            new_timestamp = datetime.now(timezone.utc)
 
             while True:
                 self.logger.info(f"Fetching slices from offset {offset} (batch size: {self.batch_size})")
@@ -114,10 +114,6 @@ class ExportScript:
 
                 for slice_object in slices:
                     try:
-                        slice_updated_at = slice_object.get_last_updated_time()  # Get last update time
-                        if slice_updated_at and slice_updated_at > max_timestamp:
-                            max_timestamp = slice_updated_at  # Track latest timestamp
-
                         project_id = self.dest_db.add_or_update_project(project_uuid=slice_object.get_project_id(),
                                                                         project_name=slice_object.get_project_name())
                         user_id = self.dest_db.add_or_update_user(user_uuid=slice_object.get_owner().get_oidc_sub_claim(),
@@ -218,10 +214,8 @@ class ExportScript:
                         traceback.print_exc()
                     offset += self.batch_size  # Move to the next batch
 
-            if max_timestamp > self.last_export_time:
-                self.logger.info(f"Updating last export time to {max_timestamp}")
-                self.update_last_export_time(max_timestamp)
-
+            self.logger.info(f"Updating last export time to {new_timestamp}")
+            self.update_last_export_time(new_timestamp)
             self.logger.info("Export process completed successfully!")
 
         except Exception as e:
