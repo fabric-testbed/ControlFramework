@@ -155,8 +155,6 @@ class MainClass:
             res_list = self.db.get_reservations(slice_id=slice_id, rid=res_id, email=email)
             if res_list is not None and len(res_list) > 0:
                 for r in res_list:
-                    print(r)
-                    print(type(r))
                     print(f"RES Sliver: {r.get_resources().get_sliver()}")
                     print(f"REQ RES Sliver: {r.get_requested_resources()} {r.get_requested_resources().get_sliver()}")
                     print(f"APPR RES Sliver: {r.get_approved_resources()} {r.get_approved_resources().get_sliver()}")
