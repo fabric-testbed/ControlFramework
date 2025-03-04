@@ -17,19 +17,6 @@ class DatabaseManager:
         self.session = SessionLocal()
         Base.metadata.create_all(self.db_engine)
 
-    # -------------------- ADD DATA --------------------
-    def add_project(self, project_uuid, project_name):
-        project = Projects(project_uuid=project_uuid, project_name=project_name)
-        self.session.add(project)
-        self.session.commit()
-        return project.id
-
-    def add_user(self, user_uuid, user_email):
-        user = Users(user_uuid=user_uuid, user_email=user_email)
-        self.session.add(user)
-        self.session.commit()
-        return user.id
-
     # -------------------- DELETE DATA --------------------
     def delete_project(self, project_id):
         project = self.session.query(Projects).filter(Projects.id == project_id).first()
@@ -43,23 +30,6 @@ class DatabaseManager:
         user = self.session.query(Users).filter(Users.id == user_id).first()
         if user:
             self.session.delete(user)
-            self.session.commit()
-            return True
-        return False
-
-    # -------------------- UPDATE DATA --------------------
-    def update_project_name(self, project_id, new_name):
-        project = self.session.query(Projects).filter(Projects.id == project_id).first()
-        if project:
-            project.project_name = new_name
-            self.session.commit()
-            return True
-        return False
-
-    def update_sliver_state(self, sliver_id, new_state):
-        sliver = self.session.query(Slivers).filter(Slivers.id == sliver_id).first()
-        if sliver:
-            sliver.state = new_state
             self.session.commit()
             return True
         return False
@@ -100,28 +70,6 @@ class DatabaseManager:
             )
         ).distinct().all()
         return results
-
-    # -------------------- ADD DATA --------------------
-    def add_component(
-        self, sliver_id: int, component_guid: str, component_type: str, model: str, bdfs: List[str]
-    ) -> str:
-        """
-        Adds a Component associated with a Sliver and stores a list of BDFs.
-        """
-        existing_sliver = self.session.query(Slivers).filter(Slivers.id == sliver_id).first()
-        if not existing_sliver:
-            raise ValueError(f"Sliver with ID {sliver_id} does not exist.")
-
-        component = Components(
-            sliver_id=sliver_id,
-            component_guid=component_guid,
-            type=component_type,
-            model=model,
-            bdfs=bdfs  # Store as JSON
-        )
-        self.session.add(component)
-        self.session.commit()
-        return component.component_guid
 
     def get_components_by_sliver(self, sliver_id: int) -> List[dict]:
         """
@@ -215,51 +163,6 @@ class DatabaseManager:
 
         self.session.commit()
         return slice_obj.id
-
-    # -------------------- ADD SLIVER --------------------
-    def add_sliver(
-        self,
-        project_id: int,
-        slice_id: int,
-        user_id: int,
-        host_id: int,
-        site_id: int,
-        sliver_guid: str,
-        state: int,
-        sliver_type: str,
-        ip_subnet: Optional[str] = None,
-        image: Optional[str] = None,
-        core: Optional[int] = None,
-        ram: Optional[int] = None,
-        disk: Optional[int] = None,
-        bandwidth: Optional[int] = None,
-        lease_start: Optional[datetime] = None,
-        lease_end: Optional[datetime] = None
-    ) -> int:
-        """
-        Adds a new sliver.
-        """
-        sliver = Slivers(
-            project_id=project_id,
-            slice_id=slice_id,
-            user_id=user_id,
-            host_id=host_id,
-            site_id=site_id,
-            sliver_guid=sliver_guid,
-            state=state,
-            sliver_type=sliver_type,
-            ip_subnet=ip_subnet,
-            image=image,
-            core=core,
-            ram=ram,
-            disk=disk,
-            bandwidth=bandwidth,
-            lease_start=lease_start,
-            lease_end=lease_end
-        )
-        self.session.add(sliver)
-        self.session.commit()
-        return sliver.id
 
     # -------------------- ADD OR UPDATE SLIVER --------------------
     def add_or_update_sliver(
@@ -378,33 +281,14 @@ class DatabaseManager:
         self.session.commit()
         return interface.interface_guid
 
-    # -------------------- ADD DATA --------------------
-    def add_host(self, host_name: str) -> int:
-        """
-        Adds a new host.
-        """
-        host = Hosts(host=host_name)
-        self.session.add(host)
-        self.session.commit()
-        return host.id
-
-    def add_site(self, site_name: str) -> int:
-        """
-        Adds a new site.
-        """
-        site = Sites(name=site_name)
-        self.session.add(site)
-        self.session.commit()
-        return site.id
-
     # -------------------- ADD OR UPDATE HOST --------------------
     def add_or_update_host(self, host_name: str, site_id: int) -> int:
         """
         Adds a host if it doesn’t exist, otherwise updates the name.
         """
-        host = self.session.query(Hosts).filter(Hosts.host == host_name).first()
+        host = self.session.query(Hosts).filter(Hosts.name == host_name).first()
         if not host:
-            host = Hosts(host=host_name, site_id=site_id)
+            host = Hosts(name=host_name, site_id=site_id)
             self.session.add(host)
 
         self.session.commit()

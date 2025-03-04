@@ -110,7 +110,7 @@ class ExportScript:
                         image = sliver.image_ref
 
                         if sliver.capacity_allocations:
-                            core = sliver.capacity_allocations.cor
+                            core = sliver.capacity_allocations.core
                             ram = sliver.capacity_allocations.ram
                             disk = sliver.capacity_allocations.disk
 

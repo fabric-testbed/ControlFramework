@@ -15,7 +15,7 @@ class Hosts(Base):
     __tablename__ = 'hosts'
     id = Column(Integer, Sequence('id', start=1, increment=1), autoincrement=True, primary_key=True, index=True)
     site_id = Column(Integer, ForeignKey('sites.id'), index=True)
-    host_name = Column(String, nullable=False, index=True)
+    name = Column(String, nullable=False, index=True)
 
 
 class Projects(Base):
