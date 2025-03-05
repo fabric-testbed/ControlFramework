@@ -29,6 +29,7 @@ import os
 from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 
+from fim.slivers.interface_info import InterfaceSliver
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
 
@@ -125,12 +126,8 @@ class ExportScript:
                                                                     state=slice_object.get_state().value,
                                                                     lease_start=slice_object.get_lease_start(),
                                                                     lease_end=slice_object.get_lease_end())
-                        added = False
                         for reservation in self.src_db.get_reservations(slice_id=slice_object.get_slice_id()):
-                            if reservation.get_error_message():
-                                self.logger.warning(f"Skipping reservation {reservation.get_reservation_id()} "
-                                                    f"due to error: {reservation.get_error_message()}")
-                                continue
+                            error_message = reservation.get_error_message()
                             sliver = InventoryForType.get_allocated_sliver(reservation=reservation)
                             site_name = None
                             host_name = None
@@ -182,8 +179,8 @@ class ExportScript:
                                                                           disk=disk,
                                                                           image=image,
                                                                           bandwidth=bw,
-                                                                          sliver_type=str(reservation.get_type()).lower())
-                            added = True
+                                                                          sliver_type=str(reservation.get_type()).lower(),
+                                                                          error=error_message)
 
                             if isinstance(sliver, NodeSliver) and sliver.attached_components_info:
                                 for component in sliver.attached_components_info.devices.values():
@@ -199,16 +196,29 @@ class ExportScript:
                             if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
                                 for ifs in sliver.interface_info.interfaces.values():
                                     vlan = ifs.labels.vlan if ifs.labels else None
-                                    port = ifs.labels.local_name if ifs.labels else None
+                                    if not vlan and ifs.label_allocations:
+                                        vlan = ifs.label_allocations.vlan
+
                                     bdf = ifs.labels.bdf if ifs.labels else None
+                                    if not bdf and ifs.label_allocations:
+                                        bdf = ifs.label_allocations.bdf
+
+                                    local_name = ifs.labels.local_name if ifs.labels else None
+                                    if not local_name and ifs.label_allocations:
+                                        local_name = ifs.label_allocations.local_name
+
+                                    device_name = ifs.labels.device_name if ifs.labels else None
+                                    if not device_name and ifs.label_allocations:
+                                        device_name = ifs.label_allocations.device_name
+
                                     self.dest_db.add_or_update_interface(sliver_id=sliver_id,
                                                                          interface_guid=ifs.node_id,
                                                                          vlan=vlan,
-                                                                         port=port,
-                                                                         bdf=bdf)
+                                                                         name=ifs.get_name(),
+                                                                         bdf=bdf,
+                                                                         local_name=local_name,
+                                                                         device_name=device_name)
 
-                        if not added:
-                            self.dest_db.delete_slice(slice_id=slice_id)
                     except Exception as slice_error:
                         self.logger.error(f"Error processing slice {slice_object.get_slice_id()}: {slice_error}")
                         traceback.print_exc()

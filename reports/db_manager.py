@@ -63,7 +63,6 @@ class DatabaseManager:
             and_(
                 Slices.lease_start <= end_time,
                 Slices.lease_end >= start_time,
-                Slices.state == 1  # Active state
             )
         ).distinct().all()
         return results
@@ -74,7 +73,6 @@ class DatabaseManager:
             and_(
                 Slices.lease_start <= end_time,
                 Slices.lease_end >= start_time,
-                Slices.state == 1  # Active state
             )
         ).distinct().all()
         return results
@@ -194,7 +192,8 @@ class DatabaseManager:
         disk: Optional[int] = None,
         bandwidth: Optional[int] = None,
         lease_start: Optional[datetime] = None,
-        lease_end: Optional[datetime] = None
+        lease_end: Optional[datetime] = None,
+        error: Optional[str] = None
     ) -> int:
         """
         Adds a sliver if it doesn’t exist, otherwise updates its fields.
@@ -225,6 +224,8 @@ class DatabaseManager:
                 sliver.lease_start = lease_start
             if lease_end:
                 sliver.lease_end = lease_end
+            if error:
+                sliver.error = error
         else:
             sliver = Slivers(
                 project_id=project_id,
@@ -242,7 +243,8 @@ class DatabaseManager:
                 disk=disk,
                 bandwidth=bandwidth,
                 lease_start=lease_start,
-                lease_end=lease_end
+                lease_end=lease_end,
+                error=error
             )
             self.session.add(sliver)
 
@@ -279,8 +281,8 @@ class DatabaseManager:
         self.session.commit()
         return component.component_guid
 
-    def add_or_update_interface(self, sliver_id: int, interface_guid: str, port: str, vlan: str,
-                                bdf: str) -> str:
+    def add_or_update_interface(self, sliver_id: int, interface_guid: str, vlan: str,
+                                bdf: str, local_name: str, device_name: str, name: str) -> str:
         """
         Adds an Interface if it doesn't exist, otherwise updates its fields.
         """
@@ -289,19 +291,25 @@ class DatabaseManager:
         ).first()
 
         if interface:
-            if port:
-                interface.port = port
+            if local_name:
+                interface.local_name = local_name
             if vlan:
                 interface.vlan = vlan
             if bdf:
                 interface.bdf = bdf
+            if device_name:
+                interface.facility = device_name
+            if name:
+                interface.name = name
         else:
             interface = Interfaces(
                 sliver_id=sliver_id,
                 interface_guid=interface_guid,
-                port=port,
+                local_name=local_name,
+                device_name=device_name,
                 vlan=vlan,
-                bdf=bdf
+                bdf=bdf,
+                name=name
             )
             self.session.add(interface)
 

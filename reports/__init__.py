@@ -65,6 +65,7 @@ class Slivers(Base):
     ram = Column(Integer, nullable=True)
     disk = Column(Integer, nullable=True)
     bandwidth = Column(Integer, nullable=True)
+    error = Column(String, nullable=True)
     lease_start = Column(TIMESTAMP(timezone=True), nullable=True, index=True)
     lease_end = Column(TIMESTAMP(timezone=True), nullable=True, index=True)
 
@@ -77,8 +78,8 @@ class Components(Base):
     __tablename__ = 'components'
     sliver_id = Column(Integer, ForeignKey('slivers.id'), primary_key=True)
     component_guid = Column(String, primary_key=True, index=True)
-    type = Column(String, nullable=False, index=True)
-    model = Column(String, nullable=False, index=True)
+    type = Column(String, nullable=True, index=True)
+    model = Column(String, nullable=True, index=True)
     bdfs = Column(JSON, nullable=True)  # Store BDFs as a JSON list
 
 
@@ -86,6 +87,8 @@ class Interfaces(Base):
     __tablename__ = 'interfaces'
     sliver_id = Column(Integer, ForeignKey('slivers.id'), primary_key=True, index=True)
     interface_guid = Column(String, primary_key=True, index=True)
-    port = Column(String, nullable=False, index=True)
     vlan = Column(String, nullable=True, index=True)
     bdf = Column(String, nullable=True, index=True)
+    local_name = Column(String, nullable=True, index=True)
+    device_name = Column(String, nullable=True, index=True)
+    name = Column(String, nullable=True, index=True)
