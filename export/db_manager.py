@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, and_, cast, func, String
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
-from reports import Base, Projects, Users, Slivers, Slices, Components, Interfaces, Hosts, Sites
+from export import Base, Projects, Users, Slivers, Slices, Components, Interfaces, Hosts, Sites
 
 
 class DatabaseManager:

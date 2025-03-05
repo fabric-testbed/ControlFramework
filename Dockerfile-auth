@@ -20,7 +20,7 @@ COPY README.md /usr/src/app/
 COPY LICENSE /usr/src/app/
 COPY tools/audit.py /usr/src/app/
 COPY tools/export.py /usr/src/app/
-COPY reports /usr/src/app/
+COPY export/ /usr/src/app/export/
 COPY tools/install.sh /usr/src/app/
 
 RUN pip3 install .

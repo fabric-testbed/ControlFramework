@@ -37,7 +37,7 @@ from fabric_cf.actor.core.kernel.slice import SliceTypes, Slice
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
 from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
-from reports.db_manager import DatabaseManager
+from export.db_manager import DatabaseManager
 
 
 LAST_EXPORT_FILE = "./last_export_time.txt"
