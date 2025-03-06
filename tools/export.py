@@ -54,7 +54,7 @@ class ExportScript:
         Initializes connections to both source (Postgres) and destination (DatabaseManager).
         """
         self.logger = logging.getLogger("export")
-        file_handler = RotatingFileHandler('./export.log', backupCount=5, maxBytes=50000)
+        file_handler = RotatingFileHandler('/var/log/actor/export.log', backupCount=5, maxBytes=50000)
         logging.basicConfig(level=logging.INFO,
                             format="%(asctime)s [%(filename)s:%(lineno)d] [%(levelname)s] %(message)s",
                             handlers=[logging.StreamHandler(), file_handler])
@@ -231,9 +231,6 @@ class ExportScript:
         except Exception as e:
             self.logger.error(f"Exception occurred during export: {e}")
             traceback.print_exc()
-
-        finally:
-            self.dest_db.close()
 
 
 if __name__ == "__main__":
