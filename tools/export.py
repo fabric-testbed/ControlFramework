@@ -222,7 +222,7 @@ class ExportScript:
                     except Exception as slice_error:
                         self.logger.error(f"Error processing slice {slice_object.get_slice_id()}: {slice_error}")
                         traceback.print_exc()
-                    offset += self.batch_size  # Move to the next batch
+                offset += self.batch_size  # Move to the next batch
 
             self.logger.info(f"Updating last export time to {new_timestamp}")
             self.update_last_export_time(new_timestamp)
