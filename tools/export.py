@@ -244,8 +244,8 @@ if __name__ == "__main__":
     parser.add_argument("--src_host", default="orchestrator-db:5432", help="Source database host")
     parser.add_argument("--dest_user", default="fabric", help="Destination database username")
     parser.add_argument("--dest_password", default="fabric", help="Destination database password")
-    parser.add_argument("--dest_db", default="report", help="Destination database name")
-    parser.add_argument("--dest_host", default="report-db:6432", help="Destination database host")
+    parser.add_argument("--dest_db", default="analytics", help="Destination database name")
+    parser.add_argument("--dest_host", default="analytics-db:5432", help="Destination database host")
     parser.add_argument("--batch_size", type=int, default=1000, help="Number of slices to process per batch")
 
     args = parser.parse_args()
