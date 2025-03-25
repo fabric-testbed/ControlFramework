@@ -578,7 +578,8 @@ class OrchestratorSliceWrapper:
 
         # Remove nodes
         for x in topology_diff.removed.nodes:
-            self.computed_remove_reservations.append(x.reservation_info.reservation_id)
+            if x.type != NodeType.Facility:
+                self.computed_remove_reservations.append(x.reservation_info.reservation_id)
 
         # Remove services
         for x in topology_diff.removed.services:

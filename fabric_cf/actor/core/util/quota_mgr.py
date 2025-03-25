@@ -24,12 +24,14 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
+import re
 import threading
 from typing import Any
 
 from fabrictestbed.external_api.core_api import CoreApi
 from fabrictestbed.slice_editor import InstanceCatalog
 from fim.slivers.network_node import NodeSliver
+from fim.user import NodeType
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
@@ -63,7 +65,7 @@ class QuotaMgr:
         quota_list = self.core_api.list_quotas(project_uuid=project_uuid, offset=offset, limit=limit)
         quotas = {}
         for q in quota_list:
-            quotas[(q.get("resource_type").lower(), q.get("resource_unit").lower())] = q
+            quotas[(q.get("resource_type").get("name").lower(), q.get("resource_unit").lower())] = q
         return quotas
 
     def update_quota(self, reservation: ABCReservationMixin, duration: float):
@@ -117,6 +119,15 @@ class QuotaMgr:
             self.logger.debug("Released lock for quota update.")
 
     @staticmethod
+    def __massage_name(name: str) -> str:
+        """
+        Massage to make it python friendly
+        :param name:
+        :return:
+        """
+        return re.sub(r'[ -]', '_', name)
+
+    @staticmethod
     def extract_quota_usage(sliver: NodeSliver, duration: float) -> dict[tuple[str, str], float]:
         """
         Extract resource usage details from a given sliver.
@@ -142,20 +153,26 @@ class QuotaMgr:
         else:
             allocations = sliver.get_capacities()
 
-        # Extract Core, Ram, Disk Hours
-        requested_resources[("core", unit)] = requested_resources.get(("core", unit), 0) + \
-                                              (duration * allocations.core)
-        requested_resources[("ram", unit)] = requested_resources.get(("ram", unit), 0) +\
-                                             (duration * allocations.ram)
-        requested_resources[("disk", unit)] = requested_resources.get(("disk", unit), 0) + \
-                                              (duration * allocations.disk)
+        if allocations:
+            # Extract Core, Ram, Disk Hours
+            requested_resources[("core", unit)] = requested_resources.get(("core", unit), 0) + \
+                                                  (duration * allocations.core)
+            requested_resources[("ram", unit)] = requested_resources.get(("ram", unit), 0) +\
+                                                 (duration * allocations.ram)
+            requested_resources[("disk", unit)] = requested_resources.get(("disk", unit), 0) + \
+                                                  (duration * allocations.disk)
+
+        if sliver.get_type() == NodeType.Switch and allocations:
+            requested_resources["p4", unit] = requested_resources.get(("p4", unit), 0) + \
+                                                  (duration * allocations.unit)
 
         # Extract component hours (e.g., GPU, FPGA, SmartNIC)
         if sliver.attached_components_info:
             for c in sliver.attached_components_info.devices.values():
-                component_type = str(c.get_type()).lower()
-                requested_resources[(component_type, unit)] = (
-                    requested_resources.get((component_type, unit), 0) + duration
+                type_model_name = '_'.join([QuotaMgr.__massage_name(str(c.get_type())),
+                                            QuotaMgr.__massage_name(str(c.get_model()))])
+                requested_resources[(type_model_name.lower(), unit)] = (
+                    requested_resources.get((type_model_name.lower(), unit), 0) + duration
                 )
 
         return requested_resources
@@ -207,3 +224,4 @@ class QuotaMgr:
             return True, None
         except Exception as e:
             self.logger.error(f"Error while checking reservation: {str(e)}")
+        return False, None

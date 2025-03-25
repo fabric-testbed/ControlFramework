@@ -29,6 +29,7 @@ import traceback
 from logging.handlers import RotatingFileHandler
 
 from fim.user import ServiceType
+from fim.slivers.network_service import NetworkServiceSliver
 
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
@@ -154,14 +155,16 @@ class MainClass:
             res_list = self.db.get_reservations(slice_id=slice_id, rid=res_id, email=email)
             if res_list is not None and len(res_list) > 0:
                 for r in res_list:
-                    print(r)
-                    print(type(r))
                     print(f"RES Sliver: {r.get_resources().get_sliver()}")
                     print(f"REQ RES Sliver: {r.get_requested_resources()} {r.get_requested_resources().get_sliver()}")
                     print(f"APPR RES Sliver: {r.get_approved_resources()} {r.get_approved_resources().get_sliver()}")
                     from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
-                    if isinstance(r, ReservationClient):
+                    if isinstance(r, ReservationClient) and r.get_leased_resources():
                         print(r.get_leased_resources().get_sliver())
+                    sliver = r.get_resources().get_sliver()
+                    if isinstance(sliver, NetworkServiceSliver):
+                        from fabric_cf.actor.core.util.utils import sliver_to_str
+                        print(sliver_to_str(sliver=sliver))
                     print()
             else:
                 print(f"No reservations found: {res_list}")

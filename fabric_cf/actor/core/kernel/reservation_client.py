@@ -511,7 +511,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
             parent_res = pred_state.get_reservation()
 
             if Constants.PEERED in value1:
-                self.logger.debug(f"KOMAL --- Node MAP:{ifs.get_node_map()} Result: {result}")
+                self.logger.debug(f"Node MAP:{ifs.get_node_map()} Result: {result}")
                 if parent_res is not None:
                     ns_sliver = parent_res.get_resources().get_sliver()
                     # component_name contains =>  Peered:<peered ns id>:<peer ifs name>
@@ -553,6 +553,56 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
             self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {sliver}")
 
+    def approve_extend_ticket(self) -> Tuple[bool, bool]:
+        """
+        ExtendTicket predicate: invoked internally to determine if the reservation
+        should be extended. This gives subclasses an opportunity sequence actions at the orchestrator side.
+
+        If false, the reservation enters a "BlockedTicket" sub-state until a subsequent approve_ticket returns true.
+        When true, the reservation can manipulate the current reservation's attributes to
+        facilitate ticketing from the broker. Note that approve_ticket may be polled multiple
+        times, and should be idempotent.
+
+        @return tuple (true if approved; false otherwise, list of failed predecessors in case of false)
+        """
+        approved = True
+        rollback = False
+        failed_preds = []
+        for pred_state in self.redeem_predecessors.values():
+            pred_reservation = pred_state.get_reservation()
+            if pred_reservation is None:
+                self.logger.error(f"redeem predecessor reservation is null, ignoring it: {pred_reservation}")
+                continue
+
+            pred_reservation_term = pred_reservation.get_term()
+            if pred_reservation_term is None:
+                self.logger.error(f"redeem predecessor reservation term is null, ignoring it: {pred_reservation}")
+                continue
+
+            if pred_reservation.is_failed() or pred_reservation.is_closed() or pred_reservation.is_closing():
+                msg = f"redeem predecessor reservation# {pred_reservation.get_reservation_id()}"\
+                      f" is in a terminal state, failing the reservation# {self.get_reservation_id()}"
+                self.logger.error(msg)
+
+                # In case of modify, roll back to the previous state and do not fail the reservation
+                if self.is_active() or self.is_active_joined() or self.is_active_ticketed():
+                    failed_preds.append(str(pred_reservation.get_reservation_id()))
+                    approved = False
+                    break
+                else:
+                    self.fail(message=msg)
+
+            if not (pred_reservation.is_ticketed() or pred_reservation.is_active()) or \
+                    pred_reservation.is_extending_ticket():
+                approved = False
+                break
+
+            if self.get_approved_term().ends_after(date=pred_reservation_term.get_end_time()):
+                rollback = True
+                break
+
+        return approved, rollback
+
     def approve_ticket(self, extend: bool = False) -> Tuple[bool, List[str]]:
         """
         Ticket predicate: invoked internally to determine if the reservation
@@ -593,6 +643,17 @@ class ReservationClient(Reservation, ABCControllerReservation):
             self.prepare_ticket(extend=extend)
 
         return approved, failed_preds
+
+    def can_extend(self) -> bool:
+        ret_val = False
+        if self.get_type() is not None:
+            resource_type_str = str(self.get_type())
+            if resource_type_str in Constants.SUPPORTED_SERVICES_STR:
+                ret_val, rollback = self.approve_extend_ticket()
+            else:
+                ret_val = True
+
+        return ret_val
 
     def can_ticket(self, extend: bool = False) -> bool:
         ret_val = False
@@ -754,12 +815,19 @@ class ReservationClient(Reservation, ABCControllerReservation):
             self.error(err="Wrong state to initiate extend ticket: {}".format(ReservationStates(self.state).name))
 
         # Extend Ticket is invoked by Probe; Check dependencies only in case of modify
+        if self.requested_resources.sliver is not None:
+            if not self.can_ticket(extend=True):
+                self.transition_with_join(prefix="Extend ticket blocked", state=self.state,
+                                          pending=self.pending_state, join_state=JoinState.BlockedExtendTicket)
+                self.logger.info("Reservation has to wait for the dependencies to be extended!")
+                return
         # No new sliver is passed for renew and does not require dependency check
-        if self.requested_resources.sliver is not None and not self.can_ticket(extend=True):
-            self.transition_with_join(prefix="Extend ticket blocked", state=self.state,
-                                      pending=self.pending_state, join_state=JoinState.BlockedExtendTicket)
-            self.logger.info("Reservation has to wait for the dependencies to be extended!")
-            return
+        else:
+            if not self.can_extend():
+                self.transition_with_join(prefix="Extend ticket blocked", state=self.state,
+                                          pending=self.pending_state, join_state=JoinState.BlockedExtendTicket)
+                self.logger.info("Reservation has to wait for the dependencies to be extended!")
+                return
 
         self.sequence_ticket_out += 1
         RPCManagerSingleton.get().extend_ticket(reservation=self)
@@ -951,18 +1019,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
     def prepare_redeem(self):
         assert self.resources is not None
         assert self.resources.sliver is not None
-        sliver = self.resources.sliver
-
-        '''
-        self.logger.info(f"Redeem prepared for Sliver: {sliver}")
-        if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info is not None:
-            for ifs in sliver.interface_info.interfaces.values():
-                self.logger.info(f"Interface Sliver: {ifs}")
-
-        if isinstance(sliver, NodeSliver) and sliver.attached_components_info is not None:
-            for c in sliver.attached_components_info.devices.values():
-                self.logger.info(f"Component: {c}")
-        '''
 
     def probe_join_state(self):
         """
@@ -996,17 +1052,27 @@ class ReservationClient(Reservation, ABCControllerReservation):
             # this is existing reservation, and the extend ticket is
             # blocked for a predecessor: see if we can get it going now.
             assert self.state == ReservationStates.Active
+            rollback = False
+            failed_preds = []
 
-            status, failed_preds = self.approve_ticket(extend=True)
+            if self.requested_resources.sliver is not None:
+                status, failed_preds = self.approve_ticket(extend=True)
+            else:
+                status, rollback = self.approve_extend_ticket()
+
             if status:
-                self.transition_with_join(prefix="unblock ticket", state=self.state,
-                                          pending=self.pending_state, join_state=JoinState.NoJoin)
+                if not rollback:
+                    self.transition_with_join(prefix="unblock ticket", state=self.state,
+                                              pending=self.pending_state, join_state=JoinState.NoJoin)
 
-                # This is a regular request for modifying network resources to an upstream broker.
-                self.sequence_ticket_out += 1
-                self.logger.debug(f"Issuing an extend ticket "
-                                  f"{sliver_to_str(sliver=self.get_requested_resources().get_sliver())}")
-                RPCManagerSingleton.get().extend_ticket(reservation=self)
+                    # This is a regular request for modifying network resources to an upstream broker.
+                    self.sequence_ticket_out += 1
+                    self.logger.debug(f"Issuing an extend ticket "
+                                      f"{sliver_to_str(sliver=self.get_requested_resources().get_sliver())}")
+                    RPCManagerSingleton.get().extend_ticket(reservation=self)
+                else:
+                    self.transition_with_join(prefix="failed ticket update", state=self.state,
+                                              pending=ReservationPendingStates.None_, join_state=JoinState.NoJoin)
 
                 # Update ASM with Reservation Info
                 self.update_slice_graph(sliver=self.resources.sliver)
@@ -1555,7 +1621,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if self.term is None:
             self.error(err=Constants.NOT_SPECIFIED_PREFIX.format("term"))
 
-    def add_redeem_predecessor(self, *, reservation: ABCReservationMixin, filters: dict = None):
+    def add_redeem_predecessor(self, *, reservation: ABCReservationMixin, filters: dict = None, extend: bool = False):
         if reservation.get_reservation_id() not in self.redeem_predecessors:
             state = PredecessorState(reservation=reservation, filters=filters)
             self.redeem_predecessors[reservation.get_reservation_id()] = state
@@ -1565,7 +1631,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
             self.redeem_predecessors.pop(rid)
 
     def add_join_predecessor(self, *, predecessor: ABCReservationMixin, filters: dict = None):
-        if predecessor.get_reservation_id() not in self.redeem_predecessors:
+        if predecessor.get_reservation_id() not in self.join_predecessors:
             state = PredecessorState(reservation=predecessor, filters=filters)
             self.join_predecessors[predecessor.get_reservation_id()] = state
 
