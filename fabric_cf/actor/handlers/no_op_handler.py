@@ -174,6 +174,9 @@ class NoOpHandler(HandlerBase):
                 self.__process_node_sliver_modify(existing=unit.get_sliver(), new=sliver)
 
             elif isinstance(sliver, NetworkServiceSliver):
+                existing = unit.get_sliver()
+                diff = existing.diff(sliver)
+                print(diff)
                 self.__process_ns_sliver(sliver=sliver)
 
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_MODIFY,
