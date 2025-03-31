@@ -29,7 +29,7 @@ dependencies = [
     "fabric_fss_utils==1.6.0",
     "fabric-message-bus==1.7.0",
     "fabric-fim==1.8.3",
-    "fabrictestbed==1.8.3",
+    "fabrictestbed==1.8.4",
     "ansible"
     ]
 
