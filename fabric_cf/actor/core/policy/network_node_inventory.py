@@ -146,10 +146,16 @@ class NetworkNodeInventory(InventoryForType):
         assigned_bdf = delegated_label.bdf[0]
         assigned_numa = delegated_label.numa[0]
 
+        # Updated the Requested component with VLAN, BDF, MAC
+        req_ns_name = next(iter(requested.network_service_info.network_services))
+        req_ns = requested.network_service_info.network_services[req_ns_name]
+        req_ifs_name = next(iter(req_ns.interface_info.interfaces))
+        req_ifs = req_ns.interface_info.interfaces[req_ifs_name]
+
         # Check if the requested component's VLAN exists in the delegated labels
-        if requested.labels and requested.labels.vlan and \
-                requested.labels.vlan in ifs_delegated_labels.vlan:
-            vlan_index = ifs_delegated_labels.vlan.index(requested.labels.vlan)
+        if req_ifs.labels and req_ifs.labels.vlan and \
+                req_ifs.labels.vlan in ifs_delegated_labels.vlan:
+            vlan_index = ifs_delegated_labels.vlan.index(req_ifs.labels.vlan)
             bdf_for_requested_vlan = ifs_delegated_labels.bdf[vlan_index]
             
             if bdf_for_requested_vlan in delegated_label.bdf:
@@ -162,12 +168,6 @@ class NetworkNodeInventory(InventoryForType):
 
         # Find index of assigned BDF in the interface delegated labels
         assigned_index = ifs_delegated_labels.bdf.index(assigned_bdf)
-
-        # Updated the Requested component with VLAN, BDF, MAC
-        req_ns_name = next(iter(requested.network_service_info.network_services))
-        req_ns = requested.network_service_info.network_services[req_ns_name]
-        req_ifs_name = next(iter(req_ns.interface_info.interfaces))
-        req_ifs = req_ns.interface_info.interfaces[req_ifs_name]
 
         # Do not copy VLAN for OpenStack-vNIC
         if requested.get_model() == Constants.OPENSTACK_VNIC_MODEL:

@@ -167,12 +167,28 @@ class PdpAuth:
         self.logger.debug("PDP Auth Request: {}".format(pdp_request))
 
         # send request to PDP
-        response = requests.post(url=self.config['url'], headers=self._headers(), json=pdp_request)
-        response_json = response.json()
+        try:
+            response = requests.post(url=self.config['url'], headers=self._headers(), json=pdp_request)
 
-        if response.status_code == 200 and response_json["Response"][0]["Decision"] == "Permit":
-            self.logger.debug("PDP response: {}".format(response_json))
-        else:
-            self.logger.error("PDP response: {}".format(response_json))
-            msg = response_json["Response"][0]["AssociatedAdvice"][0]["AttributeAssignment"][0]["Value"]
-            raise PdpAuthException(f"PDP Authorization check failed - {msg}")
+            try:
+                response_json = response.json()
+            except ValueError:
+                # Handle non-JSON response
+                self.logger.error(f"Non-JSON response from PDP: {response.text}")
+                raise PdpAuthException("PDP returned a non-JSON response")
+
+            if response.status_code == 200 and response_json.get("Response", [{}])[0].get("Decision") == "Permit":
+                self.logger.debug("PDP response: {}".format(response_json))
+            else:
+                self.logger.error("PDP response: {}".format(response_json))
+                msg = (
+                    response_json.get("Response", [{}])[0]
+                        .get("AssociatedAdvice", [{}])[0]
+                        .get("AttributeAssignment", [{}])[0]
+                        .get("Value", "Unknown reason")
+                )
+                raise PdpAuthException(f"PDP Authorization check failed - {msg}")
+
+        except Exception as e:
+            self.logger.error(f"Request to PDP failed: {e}")
+            raise PdpAuthException(f"PDP Failure: {e}") from e

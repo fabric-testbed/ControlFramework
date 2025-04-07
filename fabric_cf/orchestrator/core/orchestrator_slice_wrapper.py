@@ -593,6 +593,10 @@ class OrchestratorSliceWrapper:
             if not (flag & WhatsModifiedFlag.CAPACITIES):
                 continue
             sliver, parent_node_id = FimHelper.get_parent_node(graph_model=existing_topology.graph_model, node=x)
+            if not sliver.reservation_info or sliver.reservation_info.reservation_id:
+                self.logger.warning(f"Skipping modified interface -- possibly the interface on component; "
+                                    f"update on corresponding network service interface would be picked -- {x}")
+                continue
             rid = sliver.reservation_info.reservation_id
             # If corresponding sliver also has add operations; it's already in the map
             # No need to rebuild it
