@@ -588,6 +588,35 @@ class OrchestratorSliceWrapper:
             reservation_info = x.get_property('reservation_info')
             self.computed_remove_reservations.append(reservation_info.reservation_id)
 
+        # Modified Interfaces
+        for x, flag in topology_diff.modified.interfaces:
+            if not (flag & WhatsModifiedFlag.CAPACITIES):
+                continue
+            sliver, parent_node_id = FimHelper.get_parent_node(graph_model=existing_topology.graph_model, node=x)
+            if not sliver.reservation_info or not sliver.reservation_info.reservation_id:
+                self.logger.warning(f"Skipping modified interface -- possibly the interface on component; "
+                                    f"update on corresponding network service interface would be picked -- {x}")
+                continue
+            rid = sliver.reservation_info.reservation_id
+            # If corresponding sliver also has add operations; it's already in the map
+            # No need to rebuild it
+            if rid not in self.computed_modify_reservations:
+                if x.type == InterfaceType.SubInterface:
+                    new_sliver = new_slice_graph.build_deep_node_sliver(node_id=parent_node_id)
+                    self.computed_modify_reservations[rid] = ModifiedReservation(sliver=new_sliver)
+                else:
+                    new_reservation, dep_update_needed = self.__build_ns_sliver_reservation(
+                        slice_graph=new_slice_graph,
+                        node_id=parent_node_id,
+                        node_res_mapping=node_res_mapping)
+                    self.computed_modify_reservations[rid] = ModifiedReservation(
+                        sliver=new_reservation.get_sliver(),
+                        dependencies=new_reservation.redeem_processors)
+
+                    if dep_update_needed:
+                        ns_peered_reservations.append(new_reservation)
+                    ns_mapping[new_reservation.sliver.node_id] = rid
+
         # Update Dependencies for Peered NS
         self.__update_peered_ns_dependencies(ns_peered_reservations=ns_peered_reservations, ns_mapping=ns_mapping)
 
