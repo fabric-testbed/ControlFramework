@@ -16,29 +16,34 @@ class PoaPostData(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, vcpu_cpu_map: List[PoaPostDataVcpuCpuMap]=None, node_set: List[str]=None, keys: List[PoaPostDataKeys]=None):  # noqa: E501
+    def __init__(self, vcpu_cpu_map: List[PoaPostDataVcpuCpuMap]=None, node_set: List[str]=None, bdf: List[str]=None, keys: List[PoaPostDataKeys]=None):  # noqa: E501
         """PoaPostData - a model defined in Swagger
 
         :param vcpu_cpu_map: The vcpu_cpu_map of this PoaPostData.  # noqa: E501
         :type vcpu_cpu_map: List[PoaPostDataVcpuCpuMap]
         :param node_set: The node_set of this PoaPostData.  # noqa: E501
         :type node_set: List[str]
+        :param bdf: The bdf of this PoaPostData.  # noqa: E501
+        :type bdf: List[str]
         :param keys: The keys of this PoaPostData.  # noqa: E501
         :type keys: List[PoaPostDataKeys]
         """
         self.swagger_types = {
             'vcpu_cpu_map': List[PoaPostDataVcpuCpuMap],
             'node_set': List[str],
+            'bdf': List[str],
             'keys': List[PoaPostDataKeys]
         }
 
         self.attribute_map = {
             'vcpu_cpu_map': 'vcpu_cpu_map',
             'node_set': 'node_set',
+            'bdf': 'bdf',
             'keys': 'keys'
         }
         self._vcpu_cpu_map = vcpu_cpu_map
         self._node_set = node_set
+        self._bdf = bdf
         self._keys = keys
 
     @classmethod
@@ -93,6 +98,27 @@ class PoaPostData(Model):
         """
 
         self._node_set = node_set
+
+    @property
+    def bdf(self) -> List[str]:
+        """Gets the bdf of this PoaPostData.
+
+
+        :return: The bdf of this PoaPostData.
+        :rtype: List[str]
+        """
+        return self._bdf
+
+    @bdf.setter
+    def bdf(self, bdf: List[str]):
+        """Sets the bdf of this PoaPostData.
+
+
+        :param bdf: The bdf of this PoaPostData.
+        :type bdf: List[str]
+        """
+
+        self._bdf = bdf
 
     @property
     def keys(self) -> List[PoaPostDataKeys]:

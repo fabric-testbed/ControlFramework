@@ -1378,6 +1378,7 @@ components:
           - reboot
           - addkey
           - removekey
+          - rescan
         data:
           $ref: '#/components/schemas/poa_post_data'
     slices_post:
@@ -1771,6 +1772,10 @@ components:
           items:
             $ref: '#/components/schemas/poa_post_data_vcpu_cpu_map'
         node_set:
+          type: array
+          items:
+            type: string
+        bdf:
           type: array
           items:
             type: string
