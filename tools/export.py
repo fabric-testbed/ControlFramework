@@ -109,7 +109,7 @@ class ExportScript:
         """
         try:
             if self.reports_conf.get("enable", False):
-                return 
+                return
             actor_type = self.actor_config.get_type()
             if actor_type.lower() != ActorType.Orchestrator.name.lower():
                 return
