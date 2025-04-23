@@ -1,6 +1,5 @@
 #!/usr/bin/sh
 pip install fabric_reports_client
-echo '{"id_token": "abc123xyz456longtokenvalue"}' > /etc/fabric/actor/config/static_token.json
 echo "0 * * * * root /usr/local/bin/python3.11 /usr/src/app/export.py --config_file /etc/fabric/actor/config/config.yaml" >> /etc/crontab
 echo "0 * * * * root /usr/local/bin/python3.11 /usr/src/app/audit.py -f /etc/fabric/actor/config/config.yaml -a  /etc/fabric/actor/config/vm_handler_config.yml -d 30 -c audit -o audit" >> /etc/crontab
 #echo "0 2 * * * root /usr/local/bin/python3.11 /usr/src/app/audit.py -f /etc/fabric/actor/config/config.yaml -d 30 -c slices -o remove" >> /etc/crontab

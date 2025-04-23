@@ -62,7 +62,7 @@ class ExportScript:
         GlobalsSingleton.get().initialized = True
         self.config = GlobalsSingleton.get().get_config()
 
-        db_conf = self.config.get_database()
+        db_conf = self.config.get_global_config().get_database()
         self.src_db = ActorDatabase(user=db_conf.get("db-user"),
                                     password=db_conf.get("db-password"),
                                     database=db_conf.get("db-name"),
