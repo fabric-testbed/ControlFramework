@@ -102,6 +102,11 @@ class ImportScript:
                         sliver["lease_end"] = slice_data.get("lease_end")
                         sliver["sliver_type"] = sliver["type"]
                         sliver.pop("type")
+                        if "components" in sliver:
+                            sliver["components"] = {
+                                "total": len(sliver["components"]),
+                                "data": sliver["components"]
+                            }
                         sliver_payload = {k: v for k, v in sliver.items() if v is not None}
                         self.reports_api.post_sliver(slice_id=slice_guid, sliver_id=sliver.get("sliver_id"),
                                                      sliver_payload=sliver_payload)
