@@ -108,10 +108,12 @@ class ExportScript:
         Exports only the slices updated after the last execution timestamp.
         """
         try:
-            if self.reports_conf.get("enable", False):
+            if not self.reports_conf.get("enable", False):
+                self.logger.info(f"Exiting export process... not enabled {self.reports_conf}")
                 return
             actor_type = self.actor_config.get_type()
             if actor_type.lower() != ActorType.Orchestrator.name.lower():
+                self.logger.info(f"Exiting export process... not orchestrator")
                 return
 
             self.logger.info(f"Starting export process... Last export was at {self.last_export_time}")
@@ -190,7 +192,7 @@ class ExportScript:
                                 "site": site_name,
                                 "sliver_id": sliver_guid,
                                 "node_id": node_id,
-                                "state": reservation.get_state().name,
+                                "state": reservation.get_state().name.lower(),
                                 "sliver_type": str(reservation.get_type()).lower(),
                                 "ip_subnet": ip_subnet,
                                 "error": error_message,
