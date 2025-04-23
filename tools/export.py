@@ -69,9 +69,9 @@ class ExportScript:
                                     db_host=db_conf.get("db-host"),
                                     logger=self.logger)
 
-        reports_conf = self.config.get_reports_api()
-        self.temp_token_file = self._create_temp_token_file(reports_conf.get("token"))
-        self.reports_api = ReportsApi(base_url=reports_conf.get("host"), token_file=self.temp_token_file)
+        self.reports_conf = self.config.get_reports_api()
+        self.temp_token_file = self._create_temp_token_file(self.reports_conf.get("token"))
+        self.reports_api = ReportsApi(base_url=self.reports_conf.get("host"), token_file=self.temp_token_file)
 
         self.actor_config = self.config.get_actor_config()
         self.batch_size = batch_size
@@ -108,6 +108,8 @@ class ExportScript:
         Exports only the slices updated after the last execution timestamp.
         """
         try:
+            if self.reports_conf.get("enable", False):
+                return 
             actor_type = self.actor_config.get_type()
             if actor_type.lower() != ActorType.Orchestrator.name.lower():
                 return
