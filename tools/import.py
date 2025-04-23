@@ -41,7 +41,7 @@ class ImportScript:
 
     def __init__(self, config_file: str, slices_dir: str):
         self.logger = logging.getLogger("import")
-        file_handler = RotatingFileHandler('/var/log/actor/import.log', backupCount=5, maxBytes=50000)
+        file_handler = RotatingFileHandler('./import.log', backupCount=5, maxBytes=50000)
         logging.basicConfig(level=logging.INFO,
                             format="%(asctime)s [%(filename)s:%(lineno)d] [%(levelname)s] %(message)s",
                             handlers=[logging.StreamHandler(), file_handler])
@@ -73,30 +73,38 @@ class ImportScript:
             for slice_file in self.slices_dir.glob("slice_*.json"):
                 with open(slice_file, 'r') as f:
                     slice_data = json.load(f)
-                    slice_guid = slice_data.get("slice_guid")
-                    if slice_data.get("lease_end") is None or slice_data.get("lease_start") :
+                    slice_guid = slice_data.get("slice_id")
+                    slivers = slice_data.get("slivers")
+                    if not slice_data.get("lease_end") or not slice_data.get("lease_start") or not slivers:
                         ignored_slices += 1
                         self.logger.info(f"Ignoring slice: {slice_guid}")
                         continue
 
                     self.logger.info(f"Importing slice: {slice_guid}")
                     state = SliceState(slice_data.get("state")).name
-
-                    self.reports_api.post_slice(slice_id=slice_guid, slice_payload={
-                        "project_id": slice_data.get("project_uuid"),
+                    slice_payload = {
+                        "project_id": slice_data.get("project_id"),
                         "project_name": slice_data.get("project_name"),
-                        "user_id": slice_data.get("user_uuid"),
+                        "user_id": slice_data.get("user_id"),
                         "user_email": slice_data.get("user_email"),
                         "slice_id": slice_guid,
                         "slice_name": slice_data.get("slice_name"),
                         "state": state,
                         "lease_start": slice_data.get("lease_start"),
                         "lease_end": slice_data.get("lease_end")
-                    })
+                    }
+
+                    cleaned_slice_dict = {k: v for k, v in slice_payload.items() if v is not None}
+
+                    self.reports_api.post_slice(slice_id=slice_guid, slice_payload=cleaned_slice_dict)
 
                     for sliver in slice_data.get("slivers", []):
                         sliver["lease_end"] = slice_data.get("lease_end")
-                        self.reports_api.post_sliver(slice_id=slice_guid, sliver_id=sliver.get("sliver_guid"), sliver_payload=sliver)
+                        sliver["sliver_type"] = sliver["type"]
+                        sliver.pop("type")
+                        sliver_payload = {k: v for k, v in sliver.items() if v is not None}
+                        self.reports_api.post_sliver(slice_id=slice_guid, sliver_id=sliver.get("sliver_id"),
+                                                     sliver_payload=sliver_payload)
 
                     imported_slices += 1
 
