@@ -274,6 +274,7 @@ if __name__ == "__main__":
     parser.add_argument("--src_host", default="orchestrator-db:5432", help="Source database host")
     parser.add_argument("--url", default="https://reports.fabric-testbed.net:8443/reports", help="URI for Reports")
     parser.add_argument("--token_file", help="Location of the token file")
+    parser.add_argument("--batch_size", type=int, default=1000, help="Number of slices to process per batch")
 
     args = parser.parse_args()
 
