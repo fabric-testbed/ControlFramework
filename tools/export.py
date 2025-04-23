@@ -103,7 +103,7 @@ class ExportScript:
         try:
             actor_type = self.actor_config.get_type()
             if actor_type.lower() != ActorType.Orchestrator.name.lower():
-                return 
+                return
 
             self.logger.info(f"Starting export process... Last export was at {self.last_export_time}")
 
@@ -131,8 +131,8 @@ class ExportScript:
                                                         "slice_id": slice_guid,
                                                         "slice_name": slice_object.get_name(),
                                                         "state": slice_object.get_state().name,
-                                                        "lease_start": slice_object.get_lease_start(),
-                                                        "lease_end": slice_object.get_lease_end()
+                                                        "lease_start": slice_object.get_lease_start().isoformat(),
+                                                        "lease_end": slice_object.get_lease_end().isoformat()
 
                                                     })
 
@@ -190,8 +190,8 @@ class ExportScript:
                                 "ram": ram,
                                 "disk": disk,
                                 "bandwidth": bw,
-                                "lease_start": reservation.get_term().get_start_time(),
-                                "lease_end": reservation.get_term().get_end_time(),
+                                "lease_start": reservation.get_term().get_start_time().isoformat(),
+                                "lease_end": reservation.get_term().get_end_time().isoformat(),
                                 "interfaces": [
                                     {
                                         "interface_id": "eth0",
