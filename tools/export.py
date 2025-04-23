@@ -30,6 +30,7 @@ import os
 from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
 
@@ -63,6 +64,8 @@ class ExportScript:
         Globals.config_file = '/etc/fabric/actor/config/config.yaml'
         GlobalsSingleton.get().load_config()
         GlobalsSingleton.get().initialized = True
+
+        self.actor_config = GlobalsSingleton.get().get_config().get_actor_config()
 
         self.src_db = ActorDatabase(user=src_user, password=src_password, database=src_db,
                                     db_host=src_host, logger=self.logger)
@@ -98,6 +101,10 @@ class ExportScript:
         Exports only the slices updated after the last execution timestamp.
         """
         try:
+            actor_type = self.actor_config.get_type()
+            if actor_type.lower() != ActorType.Orchestrator.name.lower():
+                return 
+
             self.logger.info(f"Starting export process... Last export was at {self.last_export_time}")
 
             offset = 0
