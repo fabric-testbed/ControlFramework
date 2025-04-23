@@ -475,7 +475,7 @@ class Configuration:
         Return Reports Config
         """
         if self.global_config is not None:
-            return self.global_config.get_core_api()
+            return self.global_config.get_reports_api()
 
     def get_peers(self) -> List[Peer]:
         """
