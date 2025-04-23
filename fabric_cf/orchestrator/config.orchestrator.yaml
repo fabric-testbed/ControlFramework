@@ -91,6 +91,11 @@ core_api:
   host: https://uis.fabric-testbed.net
   token:
 
+reports_api:
+  enable: False
+  host: https://reports.fabric-testbed.net:8443/reports/
+  token:
+
 smtp:
   smtp_server: mail.fabric-testbed.net
   smtp_port: 587

@@ -173,6 +173,8 @@ class Constants:
     PROPERTY_CONF_O_AUTH_TRL_REFRESH = "trl-refresh"
     PROPERTY_CONF_O_AUTH_VERIFY_EXP = "verify-exp"
 
+    CONFIG_SECTION_REPORTS_API = "reports_api"
+
     CONFIG_SECTION_CORE_API = "core_api"
     PROPERTY_CONF_HOST = "host"
 

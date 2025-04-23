@@ -49,6 +49,10 @@ class GlobalConfig:
         if Constants.CONFIG_SECTION_CORE_API in config:
             self.core_api = config.get(Constants.CONFIG_SECTION_CORE_API)
 
+        self.reports_api = {}
+        if Constants.CONFIG_SECTION_REPORTS_API in config:
+            self.reports_api = config.get(Constants.CONFIG_SECTION_REPORTS_API)
+
         self.smtp = {}
         if Constants.CONFIG_SECTION_SMTP in config:
             self.smtp = config.get(Constants.CONFIG_SECTION_SMTP)
@@ -100,6 +104,12 @@ class GlobalConfig:
         Return core api
         """
         return self.core_api
+
+    def get_reports_api(self) -> dict:
+        """
+        Return reports api
+        """
+        return self.reports_api
 
     def get_smtp(self) -> dict:
         """
@@ -459,6 +469,13 @@ class Configuration:
         Return Actor Config
         """
         return self.actor
+
+    def get_reports_api(self) -> dict:
+        """
+        Return Reports Config
+        """
+        if self.global_config is not None:
+            return self.global_config.get_core_api()
 
     def get_peers(self) -> List[Peer]:
         """

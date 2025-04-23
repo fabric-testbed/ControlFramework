@@ -25,6 +25,7 @@
 import argparse
 import logging
 import re
+import tempfile
 import traceback
 import os
 from datetime import datetime, timezone
@@ -49,32 +50,38 @@ class ExportScript:
     CLI interface to fetch data from Postgres and push to reports db via reportsApi.
     """
 
-    def __init__(self, src_user:str, src_password:str, src_db:str, src_host:str, base_url: str,
-                 token_file: str, batch_size=1000):
-        """
-        Initializes connections to both source (Postgres) and destination (DatabaseManager).
-        """
+    def __init__(self, config_file: str, batch_size=1000):
         self.logger = logging.getLogger("export")
         file_handler = RotatingFileHandler('/var/log/actor/export.log', backupCount=5, maxBytes=50000)
         logging.basicConfig(level=logging.INFO,
                             format="%(asctime)s [%(filename)s:%(lineno)d] [%(levelname)s] %(message)s",
                             handlers=[logging.StreamHandler(), file_handler])
 
-        # Connect to the source Postgres database
-        Globals.config_file = '/etc/fabric/actor/config/config.yaml'
+        Globals.config_file = config_file
         GlobalsSingleton.get().load_config()
         GlobalsSingleton.get().initialized = True
+        self.config = GlobalsSingleton.get().get_config()
 
-        self.actor_config = GlobalsSingleton.get().get_config().get_actor_config()
+        db_conf = self.config.get_database()
+        self.src_db = ActorDatabase(user=db_conf.get("db-user"),
+                                    password=db_conf.get("db-password"),
+                                    database=db_conf.get("db-name"),
+                                    db_host=db_conf.get("db-host"),
+                                    logger=self.logger)
 
-        self.src_db = ActorDatabase(user=src_user, password=src_password, database=src_db,
-                                    db_host=src_host, logger=self.logger)
+        reports_conf = self.config.get_reports_api()
+        self.temp_token_file = self._create_temp_token_file(reports_conf.get("token"))
+        self.reports_api = ReportsApi(base_url=reports_conf.get("host"), token_file=self.temp_token_file)
 
-        # Initialize the destination database manager
-        self.reports_api = ReportsApi(base_url=base_url, token_file=token_file)
-
+        self.actor_config = self.config.get_actor_config()
         self.batch_size = batch_size
         self.last_export_time = self.get_last_export_time()
+
+    def _create_temp_token_file(self, token: str) -> str:
+        fd, path = tempfile.mkstemp(prefix="token_", suffix=".json")
+        with os.fdopen(fd, 'w') as f:
+            f.write(f'{{"id_token": "{token}"}}')
+        return path
 
     def get_last_export_time(self):
         """
@@ -271,24 +278,16 @@ class ExportScript:
         except Exception as e:
             self.logger.error(f"Exception occurred during export: {e}")
             traceback.print_exc()
+        finally:
+            if os.path.exists(self.temp_token_file):
+                os.remove(self.temp_token_file)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Export data from Postgres to SQLAlchemy DB via DatabaseManager")
-    parser.add_argument("--src_user", default="fabric", help="Source database username")
-    parser.add_argument("--src_password", default="fabric", help="Source database password")
-    parser.add_argument("--src_db", default="orchestrator", help="Source database name")
-    parser.add_argument("--src_host", default="orchestrator-db:5432", help="Source database host")
-    parser.add_argument("--url", default="https://reports.fabric-testbed.net:8443/reports", help="URI for Reports")
-    parser.add_argument("--token_file", help="Location of the token file")
+    parser.add_argument("--config_file", default="/etc/fabric/actor/config/config.yaml", help="Path to config file")
     parser.add_argument("--batch_size", type=int, default=1000, help="Number of slices to process per batch")
 
     args = parser.parse_args()
-
-    exporter = ExportScript(
-        src_user=args.src_user, src_password=args.src_password, src_db=args.src_db, src_host=args.src_host,
-        base_url=args.url, token_file=args.token_file,
-        batch_size=args.batch_size
-    )
-
+    exporter = ExportScript(config_file=args.config_file, batch_size=args.batch_size)
     exporter.export()
