@@ -24,20 +24,22 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import argparse
 import logging
+import re
+import tempfile
 import traceback
 import os
 from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 
-from fim.slivers.interface_info import InterfaceSliver
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
 
-from fabric_cf.actor.core.kernel.slice import SliceTypes, Slice
+from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
 from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
-from export.db_manager import DatabaseManager
+from fabric_reports_client.reports_api import ReportsApi
 
 
 LAST_EXPORT_FILE = "./last_export_time.txt"
@@ -45,34 +47,41 @@ LAST_EXPORT_FILE = "./last_export_time.txt"
 
 class ExportScript:
     """
-    CLI interface to fetch data from Postgres and insert it into the new SQLAlchemy database via DatabaseManager.
+    CLI interface to fetch data from Postgres and push to reports db via reportsApi.
     """
 
-    def __init__(self, src_user, src_password, src_db, src_host,
-                 dest_user, dest_password, dest_db, dest_host, batch_size=1000):
-        """
-        Initializes connections to both source (Postgres) and destination (DatabaseManager).
-        """
+    def __init__(self, config_file: str, batch_size=1000):
         self.logger = logging.getLogger("export")
         file_handler = RotatingFileHandler('/var/log/actor/export.log', backupCount=5, maxBytes=50000)
         logging.basicConfig(level=logging.INFO,
                             format="%(asctime)s [%(filename)s:%(lineno)d] [%(levelname)s] %(message)s",
                             handlers=[logging.StreamHandler(), file_handler])
 
-        # Connect to the source Postgres database
-        Globals.config_file = '/etc/fabric/actor/config/config.yaml'
+        Globals.config_file = config_file
         GlobalsSingleton.get().load_config()
         GlobalsSingleton.get().initialized = True
+        self.config = GlobalsSingleton.get().get_config()
 
-        self.src_db = ActorDatabase(user=src_user, password=src_password, database=src_db,
-                                    db_host=src_host, logger=self.logger)
+        db_conf = self.config.get_global_config().get_database()
+        self.src_db = ActorDatabase(user=db_conf.get("db-user"),
+                                    password=db_conf.get("db-password"),
+                                    database=db_conf.get("db-name"),
+                                    db_host=db_conf.get("db-host"),
+                                    logger=self.logger)
 
-        # Initialize the destination database manager
-        self.dest_db = DatabaseManager(user=dest_user, password=dest_password, database=dest_db,
-                                       db_host=dest_host)
+        self.reports_conf = self.config.get_reports_api()
+        self.temp_token_file = self._create_temp_token_file(self.reports_conf.get("token"))
+        self.reports_api = ReportsApi(base_url=self.reports_conf.get("host"), token_file=self.temp_token_file)
 
+        self.actor_config = self.config.get_actor_config()
         self.batch_size = batch_size
         self.last_export_time = self.get_last_export_time()
+
+    def _create_temp_token_file(self, token: str) -> str:
+        fd, path = tempfile.mkstemp(prefix="token_", suffix=".json")
+        with os.fdopen(fd, 'w') as f:
+            f.write(f'{{"id_token": "{token}"}}')
+        return path
 
     def get_last_export_time(self):
         """
@@ -99,6 +108,14 @@ class ExportScript:
         Exports only the slices updated after the last execution timestamp.
         """
         try:
+            if not self.reports_conf.get("enable", False):
+                self.logger.info(f"Exiting export process... not enabled {self.reports_conf}")
+                return
+            actor_type = self.actor_config.get_type()
+            if actor_type.lower() != ActorType.Orchestrator.name.lower():
+                self.logger.info(f"Exiting export process... not orchestrator")
+                return
+
             self.logger.info(f"Starting export process... Last export was at {self.last_export_time}")
 
             offset = 0
@@ -115,30 +132,34 @@ class ExportScript:
 
                 for slice_object in slices:
                     try:
-                        project_id = self.dest_db.add_or_update_project(project_uuid=slice_object.get_project_id(),
-                                                                        project_name=slice_object.get_project_name())
-                        user_id = self.dest_db.add_or_update_user(user_uuid=slice_object.get_owner().get_oidc_sub_claim(),
-                                                                  user_email=slice_object.get_owner().get_email())
+                        slice_guid = str(slice_object.get_slice_id())
+                        self.reports_api.post_slice(slice_id=slice_guid,
+                                                    slice_payload={
+                                                        "project_id": slice_object.get_project_id(),
+                                                        "project_name": slice_object.get_project_name(),
+                                                        "user_id": slice_object.get_owner().get_oidc_sub_claim(),
+                                                        "user_email": slice_object.get_owner().get_email(),
+                                                        "slice_id": slice_guid,
+                                                        "slice_name": slice_object.get_name(),
+                                                        "state": slice_object.get_state().name,
+                                                        "lease_start": slice_object.get_lease_start().isoformat(),
+                                                        "lease_end": slice_object.get_lease_end().isoformat()
 
-                        slice_id = self.dest_db.add_or_update_slice(project_id=project_id, user_id=user_id,
-                                                                    slice_guid=str(slice_object.get_slice_id()),
-                                                                    slice_name=slice_object.get_name(),
-                                                                    state=slice_object.get_state().value,
-                                                                    lease_start=slice_object.get_lease_start(),
-                                                                    lease_end=slice_object.get_lease_end())
+                                                    })
+
                         for reservation in self.src_db.get_reservations(slice_id=slice_object.get_slice_id()):
                             error_message = reservation.get_error_message()
+                            sliver_guid = str(reservation.get_reservation_id())
                             sliver = InventoryForType.get_allocated_sliver(reservation=reservation)
                             site_name = None
                             host_name = None
-                            site_id = None
-                            host_id = None
                             ip_subnet = None
                             core = None
                             ram = None
                             disk = None
                             image = None
                             bw = None
+                            node_id = None
 
                             if isinstance(sliver, NodeSliver):
                                 site_name = sliver.get_site()
@@ -146,6 +167,7 @@ class ExportScript:
                                     host_name = sliver.label_allocations.instance_parent
                                 ip_subnet = str(sliver.management_ip)
                                 image = sliver.image_ref
+                                node_id = str(reservation.get_graph_node_id())
 
                                 if sliver.capacity_allocations:
                                     core = sliver.capacity_allocations.core
@@ -159,42 +181,61 @@ class ExportScript:
                                 if sliver.capacities:
                                     bw = sliver.capacities.bw
 
-                            if site_name:
-                                site_id = self.dest_db.add_or_update_site(site_name=site_name.upper())
-                                if host_name:
-                                    host_id = self.dest_db.add_or_update_host(host_name=host_name.lower(), site_id=site_id)
-
-                            sliver_id = self.dest_db.add_or_update_sliver(project_id=project_id,
-                                                                          user_id=user_id,
-                                                                          slice_id=slice_id,
-                                                                          site_id=site_id,
-                                                                          host_id=host_id,
-                                                                          sliver_guid=str(reservation.get_reservation_id()),
-                                                                          lease_start=reservation.get_term().get_start_time(),
-                                                                          lease_end=reservation.get_term().get_end_time(),
-                                                                          state=reservation.get_state().value,
-                                                                          ip_subnet=ip_subnet,
-                                                                          core=core,
-                                                                          ram=ram,
-                                                                          disk=disk,
-                                                                          image=image,
-                                                                          bandwidth=bw,
-                                                                          sliver_type=str(reservation.get_type()).lower(),
-                                                                          error=error_message)
-
+                            sliver_payload = {
+                                "project_id": slice_object.get_project_id(),
+                                "project_name": slice_object.get_project_name(),
+                                "slice_id": slice_guid,
+                                "slice_name": slice_object.get_name(),
+                                "user_id": slice_object.get_owner().get_oidc_sub_claim(),
+                                "user_email": slice_object.get_owner().get_email(),
+                                "host": host_name,
+                                "site": site_name,
+                                "sliver_id": sliver_guid,
+                                "node_id": node_id,
+                                "state": reservation.get_state().name.lower(),
+                                "sliver_type": str(reservation.get_type()).lower(),
+                                "ip_subnet": ip_subnet,
+                                "error": error_message,
+                                "image": image,
+                                "core": core,
+                                "ram": ram,
+                                "disk": disk,
+                                "bandwidth": bw,
+                                "lease_start": reservation.get_term().get_start_time().isoformat(),
+                                "lease_end": reservation.get_term().get_end_time().isoformat(),
+                                "interfaces": [
+                                    {
+                                        "interface_id": "eth0",
+                                        "site": "RENC",
+                                        "vlan": "123",
+                                        "bdf": "0000:3b:00.0",
+                                        "local_name": "ens3",
+                                        "device_name": "mlx5_0",
+                                        "name": "mgmt-net"
+                                    }
+                                ]
+                            }
                             if isinstance(sliver, NodeSliver) and sliver.attached_components_info:
+                                components = []
                                 for component in sliver.attached_components_info.devices.values():
                                     bdfs = component.labels.bdf if component.labels and component.labels.bdf else None
                                     if bdfs and not isinstance(bdfs, list):
                                         bdfs = [bdfs]
-                                    self.dest_db.add_or_update_component(sliver_id=sliver_id,
-                                                                         component_guid=component.node_id,
-                                                                         component_type=str(component.get_type()).lower(),
-                                                                         model=str(component.get_model()).lower(),
-                                                                         bdfs=bdfs)
+                                    components.append({
+                                        "component_id": component.node_id,
+                                        "node_id": str(reservation.get_graph_node_id()),
+                                        "component_node_id": component.get_node_map(),
+                                        "type": str(component.get_type()).lower(),
+                                        "model": str(component.get_model()).lower(),
+                                        "bdfs": bdfs
+                                    })
+                                if len(components):
+                                    sliver_payload["components"] = components
 
                             if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
+                                interfaces = []
                                 for ifs in sliver.interface_info.interfaces.values():
+                                    site = None
                                     vlan = ifs.labels.vlan if ifs.labels else None
                                     if not vlan and ifs.label_allocations:
                                         vlan = ifs.label_allocations.vlan
@@ -210,14 +251,24 @@ class ExportScript:
                                     device_name = ifs.labels.device_name if ifs.labels else None
                                     if not device_name and ifs.label_allocations:
                                         device_name = ifs.label_allocations.device_name
+                                        if device_name:
+                                            result = re.findall(r'\b([\w]+)-data-sw\b', device_name)
+                                            if result and len(result) > 0:
+                                                site = result[0]
 
-                                    self.dest_db.add_or_update_interface(sliver_id=sliver_id,
-                                                                         interface_guid=ifs.node_id,
-                                                                         vlan=vlan,
-                                                                         name=ifs.get_name(),
-                                                                         bdf=bdf,
-                                                                         local_name=local_name,
-                                                                         device_name=device_name)
+                                    interfaces.append({
+                                        "interface_id": ifs.node_id,
+                                        "site": site,
+                                        "vlan": vlan,
+                                        "bdf": bdf,
+                                        "local_name": local_name,
+                                        "device_name": device_name,
+                                        "name": ifs.get_name()
+                                    })
+
+                            self.reports_api.post_sliver(slice_id=slice_guid,
+                                                         sliver_id=sliver_guid,
+                                                         sliver_payload=sliver_payload)
 
                     except Exception as slice_error:
                         self.logger.error(f"Error processing slice {slice_object.get_slice_id()}: {slice_error}")
@@ -231,26 +282,16 @@ class ExportScript:
         except Exception as e:
             self.logger.error(f"Exception occurred during export: {e}")
             traceback.print_exc()
+        finally:
+            if os.path.exists(self.temp_token_file):
+                os.remove(self.temp_token_file)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Export data from Postgres to SQLAlchemy DB via DatabaseManager")
-    parser.add_argument("--src_user", default="fabric", help="Source database username")
-    parser.add_argument("--src_password", default="fabric", help="Source database password")
-    parser.add_argument("--src_db", default="orchestrator", help="Source database name")
-    parser.add_argument("--src_host", default="orchestrator-db:5432", help="Source database host")
-    parser.add_argument("--dest_user", default="fabric", help="Destination database username")
-    parser.add_argument("--dest_password", default="fabric", help="Destination database password")
-    parser.add_argument("--dest_db", default="analytics", help="Destination database name")
-    parser.add_argument("--dest_host", default="analytics-db:5432", help="Destination database host")
+    parser.add_argument("--config_file", default="/etc/fabric/actor/config/config.yaml", help="Path to config file")
     parser.add_argument("--batch_size", type=int, default=1000, help="Number of slices to process per batch")
 
     args = parser.parse_args()
-
-    exporter = ExportScript(
-        src_user=args.src_user, src_password=args.src_password, src_db=args.src_db, src_host=args.src_host,
-        dest_user=args.dest_user, dest_password=args.dest_password, dest_db=args.dest_db, dest_host=args.dest_host,
-        batch_size=args.batch_size
-    )
-
+    exporter = ExportScript(config_file=args.config_file, batch_size=args.batch_size)
     exporter.export()
