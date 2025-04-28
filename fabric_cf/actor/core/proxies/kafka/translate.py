@@ -410,7 +410,7 @@ class Translate:
         poa_avro = PoaAvro(operation=poa.operation, rid=str(poa.sliver_id), poa_id=poa.poa_id,
                            vcpu_cpu_map=poa.vcpu_cpu_map, node_set=poa.node_set, auth=auth_avro,
                            project_id=poa.get_slice().get_project_id(), slice_id=str(poa.get_slice_id()),
-                           keys=poa.keys)
+                           keys=poa.keys, bdf=poa.bdf)
         poa_avro.sequence = poa.sequence_poa_out
         return poa_avro
 
