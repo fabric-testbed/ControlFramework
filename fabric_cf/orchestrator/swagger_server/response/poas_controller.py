@@ -29,6 +29,7 @@ def poas_create_sliver_id_post(body: PoaPost, sliver_id: str):  # noqa: E501
     logger = handler.get_logger()
     received_counter.labels(POST_METHOD, POAS_POST_SLIVER_ID_PATH).inc()
     try:
+        logger.info(f"KOMAL -- incoming: {body.data}")
         token = get_token()
         poa_avro = PoaAvro(operation=body.operation, rid=sliver_id)
         if body.data is not None:
