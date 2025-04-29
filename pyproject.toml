@@ -27,7 +27,7 @@ dependencies = [
     "swagger-ui-bundle==0.0.9",
     "PyYAML",
     "fabric_fss_utils==1.6.0",
-    "fabric-message-bus==1.9.0rc1",
+    "fabric-message-bus==1.9.0rc2",
     "fabric-fim==1.8.3",
     "fabrictestbed==1.8.4",
     "ansible"

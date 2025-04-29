@@ -1,7 +1,7 @@
 FROM python:3.11.0
 MAINTAINER Komal Thareja<komal.thareja@gmail.com>
 
-ARG HANDLERS_VER=1.9.0rc0
+ARG HANDLERS_VER=1.9.0rc1
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
