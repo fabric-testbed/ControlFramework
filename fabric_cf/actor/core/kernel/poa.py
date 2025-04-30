@@ -85,13 +85,14 @@ class Poa:
     """
     def __init__(self, *, poa_id: str = uuid4().__str__(), operation: str, reservation: ABCReservationMixin = None,
                  sliver_id: ID = None, vcpu_cpu_map: List[Dict[str, str]] = None, node_set: List[str] = None,
-                 keys: List[str] = None):
+                 keys: List[str] = None, bdf: List[str] = None):
         self.poa_id = poa_id
         self.operation = operation
         self.state = PoaStates.Nascent
         self.reservation = reservation
         self.sliver_id = sliver_id
         self.vcpu_cpu_map = vcpu_cpu_map
+        self.bdf = bdf
         self.node_set = node_set
         self.keys = keys
         # Sequence number for outgoing poa messages. Increases with every new message.
@@ -339,6 +340,9 @@ class Poa:
         if self.keys is not None:
             result.keys = self.keys.copy()
 
+        if self.bdf is not None:
+            result.bdf = self.bdf.copy()
+
         result.error_code = self.error_code
 
         if self.reservation is not None:
@@ -364,6 +368,8 @@ class Poa:
             result['node_set'] = self.node_set
         if self.keys is not None:
             result['keys'] = self.keys
+        if self.bdf is not None:
+            result['bdf'] = self.bdf
         return result
 
     def __str__(self):
@@ -373,7 +379,8 @@ class Poa:
 class PoaFactory:
     @staticmethod
     def create(*, poa_id: str, operation: str, sliver_id: ID, vcpu_cpu_map: List[Dict[str, str]] = None,
-               node_set: List[str] = None, keys: List[Dict[str, str]] = None) -> Poa:
+               node_set: List[str] = None, keys: List[Dict[str, str]] = None,
+               bdf: List[str] = None) -> Poa:
         """
         Create POA
         :param poa_id:
@@ -382,8 +389,9 @@ class PoaFactory:
         :param vcpu_cpu_map:
         :param node_set:
         :param keys:
+        :param bdf:
         :return:
         """
         result = Poa(poa_id=poa_id, operation=operation, vcpu_cpu_map=vcpu_cpu_map, node_set=node_set,
-                     sliver_id=sliver_id, keys=keys)
+                     sliver_id=sliver_id, keys=keys, bdf=bdf)
         return result

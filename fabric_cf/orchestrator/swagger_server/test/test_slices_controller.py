@@ -46,6 +46,7 @@ class TestSlicesController(BaseTestCase):
         """
         body = SlicesPost()
         query_string = [('name', 'name_example'),
+                        ('lifetime', 24),
                         ('lease_start_time', 'lease_start_time_example'),
                         ('lease_end_time', 'lease_end_time_example')]
         response = self.client.open(

@@ -92,8 +92,6 @@
             "in": "query",
             "description": "List of projects to exclude from the metrics overview",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "array",
               "items": {
@@ -179,8 +177,6 @@
             "in": "query",
             "description": "Level of details",
             "required": true,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "integer",
               "default": 1
@@ -191,8 +187,6 @@
             "in": "query",
             "description": "Force to retrieve current available resource information.",
             "required": true,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "boolean",
               "default": false
@@ -203,8 +197,6 @@
             "in": "query",
             "description": "starting date to check availability from",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string",
               "example": "2023-01-01 16:20:15 +00:00"
@@ -215,8 +207,6 @@
             "in": "query",
             "description": "end date to check availability until",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string",
               "example": "2023-01-01 16:20:15 +00:00"
@@ -227,8 +217,6 @@
             "in": "query",
             "description": "comma separated lists of sites to include",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string",
               "example": "RENC,UKY"
@@ -239,8 +227,6 @@
             "in": "query",
             "description": "comma separated lists of sites to exclude",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string",
               "example": "SRI,LBNL"
@@ -329,8 +315,6 @@
             "in": "query",
             "description": "graph format",
             "required": true,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string",
               "default": "GRAPHML",
@@ -346,8 +330,6 @@
             "in": "query",
             "description": "Level of details",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "integer",
               "default": 1
@@ -358,8 +340,6 @@
             "in": "query",
             "description": "Force to retrieve current available resource information.",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "boolean",
               "default": false
@@ -370,8 +350,6 @@
             "in": "query",
             "description": "starting date to check availability from",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string",
               "example": "2023-01-01 16:20:15 +00:00"
@@ -382,8 +360,6 @@
             "in": "query",
             "description": "end date to check availability until",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string",
               "example": "2023-01-01 16:20:15 +00:00"
@@ -394,8 +370,6 @@
             "in": "query",
             "description": "comma separated lists of sites to include",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string",
               "example": "RENC,UKY"
@@ -406,8 +380,6 @@
             "in": "query",
             "description": "comma separated lists of sites to exclude",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string",
               "example": "SRI,LBNL"
@@ -538,8 +510,6 @@
             "in": "query",
             "description": "Search for Slices in the specified states",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "array",
               "items": {
@@ -673,8 +643,6 @@
             "in": "path",
             "description": "Slice identified by universally unique identifier",
             "required": true,
-            "style": "simple",
-            "explode": false,
             "schema": {
               "type": "string"
             }
@@ -696,8 +664,6 @@
             "in": "query",
             "description": "graph format",
             "required": true,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string",
               "default": "GRAPHML",
@@ -792,8 +758,6 @@
             "in": "query",
             "description": "Slice Name",
             "required": true,
-            "style": "form",
-            "explode": true,
             "schema": {
               "minLength": 3,
               "type": "string"
@@ -815,8 +779,6 @@
             "in": "query",
             "description": "Lease End Time for the Slice",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string"
             }
@@ -907,8 +869,6 @@
             "in": "query",
             "description": "Slice Name",
             "required": true,
-            "style": "form",
-            "explode": true,
             "schema": {
               "minLength": 3,
               "type": "string"
@@ -919,8 +879,6 @@
             "in": "query",
             "description": "Lifetime of the slice requested in hours.",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "integer",
               "default": 24
@@ -931,8 +889,6 @@
             "in": "query",
             "description": "Lease End Time for the Slice",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string",
               "example": "2023-01-01 16:20:15 +00:00"
@@ -943,8 +899,6 @@
             "in": "query",
             "description": "Lease End Time for the Slice",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string",
               "example": "2023-01-01 16:20:15 +00:00"
@@ -1036,8 +990,6 @@
             "in": "path",
             "description": "Slice identified by universally unique identifier",
             "required": true,
-            "style": "simple",
-            "explode": false,
             "schema": {
               "type": "string"
             }
@@ -1128,8 +1080,6 @@
             "in": "path",
             "description": "Slice identified by universally unique identifier",
             "required": true,
-            "style": "simple",
-            "explode": false,
             "schema": {
               "type": "string"
             }
@@ -1217,8 +1167,6 @@
             "in": "path",
             "description": "Slice identified by universally unique identifier",
             "required": true,
-            "style": "simple",
-            "explode": false,
             "schema": {
               "type": "string"
             }
@@ -1228,8 +1176,6 @@
             "in": "query",
             "description": "New Lease End Time for the Slice",
             "required": true,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string"
             }
@@ -1317,8 +1263,6 @@
             "in": "path",
             "description": "Slice identified by universally unique identifier",
             "required": true,
-            "style": "simple",
-            "explode": false,
             "schema": {
               "type": "string"
             }
@@ -1482,8 +1426,6 @@
             "in": "query",
             "description": "Slice identifier as UUID",
             "required": true,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string"
             }
@@ -1583,8 +1525,6 @@
             "in": "query",
             "description": "Slice identified by universally unique identifier",
             "required": true,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "string"
             }
@@ -1594,8 +1534,6 @@
             "in": "path",
             "description": "Sliver identified by universally unique identifier",
             "required": true,
-            "style": "simple",
-            "explode": false,
             "schema": {
               "type": "string"
             }
@@ -1695,8 +1633,6 @@
             "in": "path",
             "description": "Sliver identified by universally unique identifier",
             "required": true,
-            "style": "simple",
-            "explode": false,
             "schema": {
               "type": "string"
             }
@@ -1799,8 +1735,6 @@
             "in": "query",
             "description": "Search for POAs in the specified states",
             "required": false,
-            "style": "form",
-            "explode": true,
             "schema": {
               "type": "array",
               "items": {
@@ -1928,8 +1862,6 @@
             "in": "path",
             "description": "Poa Id for the POA triggered",
             "required": true,
-            "style": "simple",
-            "explode": false,
             "schema": {
               "type": "string"
             }
@@ -2022,7 +1954,8 @@
               "numatune",
               "reboot",
               "addkey",
-              "removekey"
+              "removekey",
+              "rescan"
             ]
           },
           "data": {
@@ -2621,6 +2554,12 @@
             }
           },
           "node_set": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bdf": {
             "type": "array",
             "items": {
               "type": "string"

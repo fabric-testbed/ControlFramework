@@ -607,7 +607,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
             return result
 
         self.logger.debug(f"reservation: {poa.rid} | operation = {poa.operation} | "
-                          f"vcpu_cpu_map = {poa.vcpu_cpu_map} | node_set = {poa.node_set}")
+                          f"vcpu_cpu_map = {poa.vcpu_cpu_map} | node_set = {poa.node_set} | bdf = {poa.bdf}")
         try:
 
             class Runner(ABCActorRunnable):
