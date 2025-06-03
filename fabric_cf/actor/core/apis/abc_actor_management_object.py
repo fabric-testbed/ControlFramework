@@ -280,6 +280,20 @@ class ABCActorManagementObject(ABCManagementObject):
         @return Dictionary with component name as the key and value as list of associated PCI addresses in use.
         """
 
+    def get_links(self, *, node_id: str, rsv_type: list[str], states: list[int], start: datetime = None,
+                  end: datetime = None, excludes: List[str] = None) -> Dict[str, int]:
+        """
+        Returns links matching the search criteria
+        @param node_id: Link Node ID
+        @param states: list of states used to find reservations
+        @param rsv_type: type of reservations
+        @param start: start time
+        @param end: end time
+        @param excludes: Excludes the list of reservations
+
+        @return Dictionary with link node id as key and cumulative bandwidth.
+        """
+
     def get_slices(self, *, slice_id: ID, caller: AuthToken, slice_name: str = None, email: str = None,
                    states: List[int] = None, project: str = None, limit: int = None,
                    offset: int = None, user_id: str = None, search: str = None,

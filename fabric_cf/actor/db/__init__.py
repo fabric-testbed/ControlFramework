@@ -139,6 +139,7 @@ class Reservations(Base):
     lease_end = Column(TIMESTAMP(timezone=True), nullable=True)
     properties = Column(LargeBinary)
     components = relationship('Components', back_populates='reservation')
+    links = relationship('Links', back_populates='reservation')
 
     Index('idx_slc_guid_resid', rsv_slc_id, rsv_resid)
     Index('idx_slc_guid_resid_email', rsv_slc_id, rsv_resid, email)
@@ -243,3 +244,13 @@ class Components(Base):
     component = Column(String, primary_key=True, index=True)
     bdf = Column(String, primary_key=True, index=True)
     reservation = relationship('Reservations', back_populates='components')
+
+
+class Links(Base):
+    __tablename__ = 'Links'
+    reservation_id = Column(Integer, ForeignKey('Reservations.rsv_id'), primary_key=True)
+    node_id = Column(String, primary_key=True, index=True)
+    layer = Column(String, primary_key=True, index=True)
+    type = Column(String, primary_key=True, index=True)
+    properties = Column(LargeBinary)
+    reservation = relationship('Reservations', back_populates='links')

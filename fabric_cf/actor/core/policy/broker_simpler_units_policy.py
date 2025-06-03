@@ -757,7 +757,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             owner_switch = None
 
             peered_ns_interfaces = []
-            ero_source_end_info = []
+            #ero_source_end_info = []
 
             # For each Interface Sliver;
             for ifs in sliver.interface_info.interfaces.values():
@@ -906,10 +906,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
                 self.logger.info(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
 
-                owner_v4_service = self.get_ns_from_switch(switch=owner_switch, ns_type=ServiceType.FABNetv4)
-                self.logger.info(f"owner_v4_service: {owner_v4_service}")
-                if owner_v4_service and owner_v4_service.get_labels():
-                    ero_source_end_info.append((owner_switch.node_id, owner_v4_service.get_labels().ipv4))
+                #owner_v4_service = self.get_ns_from_switch(switch=owner_switch, ns_type=ServiceType.FABNetv4)
+                #self.logger.info(f"owner_v4_service: {owner_v4_service}")
+                #if owner_v4_service and owner_v4_service.get_labels():
+                #    ero_source_end_info.append((owner_switch.node_id, owner_v4_service.get_labels().ipv4))
 
             if not owner_ns:
                 bqm_graph_id, bqm_node_id = sliver.get_node_map()
@@ -955,14 +955,19 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                               owner_mpls=owner_mpls_ns, inv=inv, sliver=sliver, owner_ns=owner_ns,
                                               node_id_to_reservations=node_id_to_reservations, term=term)
 
-            if sliver.ero and len(sliver.ero.get()) and len(ero_source_end_info) == 2:
-                self.logger.info(f"Requested ERO: {sliver.ero} {ero_source_end_info}")
-                ero_hops = []
-                new_path = [ero_source_end_info[0][1]]
+            if sliver.ero:
+                type, path = sliver.ero.get()
+                if not len(path):
+                    raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                          msg=f"No path available with the requested QoS")
+                self.logger.info(f"Requested ERO: {sliver.ero}")
+                new_path = []
                 type, path = sliver.ero.get()
                 for hop in path.get()[0]:
+                    if hop.startswith('link:'):
+                        continue
                     # User passes the site names; Broker maps the sites names to the respective switch IP
-                    hop_switch = self.get_switch_sliver(site=hop)
+                    mpls_sliver, hop_switch = self.get_network_service_from_graph(node_id=hop, parent=True)
                     self.logger.debug(f"Switch information for {hop}: {hop_switch}")
                     if not hop_switch:
                         self.logger.error(f"Requested hop: {hop} in the ERO does not exist")
@@ -972,24 +977,16 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                     hop_v4_service = self.get_ns_from_switch(switch=hop_switch, ns_type=ServiceType.FABNetv4)
                     if hop_v4_service and hop_v4_service.get_labels() and hop_v4_service.get_labels().ipv4:
                         self.logger.debug(f"Fabnetv4 information for {hop}: {hop_v4_service}")
-                        ero_hops.append(f"{hop_switch.node_id}-ns")
                         new_path.append(hop_v4_service.get_labels().ipv4)
 
-                new_path.append(ero_source_end_info[1][1])
-
                 if len(new_path):
-                    '''
-                    if not self.validate_requested_ero_path(source_node=ero_source_end_info[0][0],
-                                                            end_node=ero_source_end_info[1][0],
-                                                            hops=ero_hops):
-                        raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
-                                              msg=f"Requested ERO path: {sliver.ero} is invalid!")
-                    '''
                     ero_path = Path()
                     ero_path.set_symmetric(new_path)
                     sliver.ero.set(ero_path)
                     self.logger.info(f"Allocated ERO: {sliver.ero}")
-
+                else:
+                    raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                          msg=f"No path available with the requested QoS")
         except BrokerException as e:
             delegation_id = None
             if e.error_code == ExceptionErrorCode.INSUFFICIENT_RESOURCES:

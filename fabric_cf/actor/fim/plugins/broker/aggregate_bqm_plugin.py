@@ -463,8 +463,13 @@ class AggregatedBQMPlugin:
             new_link_props = {ABCPropertyGraph.PROP_NAME: cbm_link_props[ABCPropertyGraph.PROP_NAME],
                               ABCPropertyGraph.PROP_TYPE: cbm_link_props[ABCPropertyGraph.PROP_TYPE],
                               ABCPropertyGraph.PROP_CLASS: cbm_link_props[ABCPropertyGraph.PROP_CLASS],
-                              ABCPropertyGraph.PROP_LAYER: cbm_link_props[ABCPropertyGraph.PROP_LAYER]
+                              ABCPropertyGraph.PROP_LAYER: cbm_link_props[ABCPropertyGraph.PROP_LAYER],
                               }
+            if cbm_link_props.get(ABCPropertyGraph.PROP_CAPACITIES):
+                new_link_props[ABCPropertyGraph.PROP_CAPACITIES] = cbm_link_props[ABCPropertyGraph.PROP_CAPACITIES]
+            if cbm_link_props.get(ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS):
+                new_link_props[ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS] = cbm_link_props[ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS]
+
             abqm.add_node(node_id=link, label=ABCPropertyGraph.CLASS_Link, props=new_link_props)
             # connect them together
             abqm.add_link(node_a=site_to_ns_node_id[source_site], rel=ABCPropertyGraph.REL_CONNECTS,
@@ -571,6 +576,13 @@ class AggregatedBQMPlugin:
                                       ABCPropertyGraph.PROP_TYPE: fac_link_props[ABCPropertyGraph.PROP_TYPE],
                                       ABCPropertyGraph.PROP_LAYER: fac_link_props[ABCPropertyGraph.PROP_LAYER]
                                       }
+                    if fac_link_props.get(ABCPropertyGraph.PROP_CAPACITIES):
+                        new_link_props[ABCPropertyGraph.PROP_CAPACITIES] = fac_link_props[
+                            ABCPropertyGraph.PROP_CAPACITIES]
+                    if fac_link_props.get(ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS):
+                        new_link_props[ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS] = fac_link_props[
+                            ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS]
+
                     abqm.add_node(node_id=fac_link_id, label=ABCPropertyGraph.CLASS_Link,
                                   props=new_link_props)
                     try:

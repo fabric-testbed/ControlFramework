@@ -83,6 +83,7 @@ class OrchestratorSliceWrapper:
         self.start = None
         self.end = None
         self.lifetime = None
+        self.ero = False
 
     def lock(self):
         """
@@ -232,6 +233,8 @@ class OrchestratorSliceWrapper:
 
         # Process only the currently supported Network Sliver types L2STS, L2PTP and L2Bridge
         elif sliver_type in Constants.SUPPORTED_SERVICES:
+            if sliver_type == ServiceType.L2PTP and sliver.ero and sliver.ero.get():
+                self.ero = True
 
             self.logger.trace(f"Network Service Sliver Interfaces: {sliver.interface_info}")
             # Processing Interface Slivers

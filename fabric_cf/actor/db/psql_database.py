@@ -36,7 +36,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker, joinedload
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
 from fabric_cf.actor.db import Base, Clients, ConfigMappings, Proxies, Units, Reservations, Slices, ManagerObjects, \
-    Miscellaneous, Actors, Delegations, Sites, Poas, Components, Metrics
+    Miscellaneous, Actors, Delegations, Sites, Poas, Components, Metrics, Links
 
 
 @contextmanager
@@ -100,6 +100,7 @@ class PsqlDatabase:
             session.query(Units).delete()
             session.query(Delegations).delete()
             session.query(Components).delete()
+            session.query(Links).delete()
             session.query(Reservations).delete()
             session.query(Slices).delete()
             session.query(ManagerObjects).delete()
@@ -660,7 +661,8 @@ class PsqlDatabase:
                         rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
                         lease_end: datetime = None, rsv_graph_node_id: str = None, oidc_claim_sub: str = None,
                         email: str = None, project_id: str = None, site: str = None, rsv_type: str = None,
-                        components: List[Tuple[str, str, str]] = None, host: str = None, ip_subnet: str = None):
+                        components: List[Tuple[str, str, str]] = None, host: str = None, ip_subnet: str = None,
+                        links: list[dict] = None):
         """
         Add a reservation
         @param slc_guid slice guid
@@ -681,6 +683,7 @@ class PsqlDatabase:
         @param components list of components
         @param host host
         @param ip_subnet ip_subnet
+        @param links: list of dictionary objects representing link
         """
         session = self.get_session()
         try:
@@ -700,6 +703,13 @@ class PsqlDatabase:
                                          component=cid, bdf=bdf)
                     session.add(mapping)
 
+            if links:
+                for l in links:
+                    link_mapping = Links(node_id=l.get("node_id"), reservation=rsv_obj,
+                                         layer=l.get("layer"), type=l.get("type"),
+                                         properties=l.get("properties"))
+                    session.add(link_mapping)
+
             session.add(rsv_obj)
             session.commit()
         except Exception as e:
@@ -707,79 +717,80 @@ class PsqlDatabase:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
+    def _update_links(self, session, rsv_obj, links: List[dict]):
+        existing = session.query(Links).filter(Links.reservation_id == rsv_obj.rsv_id).all()
+        existing_map = {l.node_id: l for l in existing}
+        new_map = {l["node_id"]: l for l in links}
+
+        removed_ids = set(existing_map) - set(new_map)
+        added_ids = set(new_map) - set(existing_map)
+
+        for node_id in removed_ids:
+            session.delete(existing_map[node_id])
+
+        for node_id in added_ids:
+            l = new_map[node_id]
+            new_link = Links(
+                node_id=node_id,
+                reservation=rsv_obj,
+                layer=l.get("layer"),
+                type=l.get("type"),
+                properties=l.get("properties")
+            )
+            session.add(new_link)
+
+    def _update_components(self, session, rsv_obj, components: List[Tuple[str, str, str]]):
+        existing = session.query(Components).filter(Components.reservation_id == rsv_obj.rsv_id).all()
+        existing_set = {(c.node_id, c.component, c.bdf) for c in existing}
+        new_set = set(components)
+
+        removed = existing_set - new_set
+        added = new_set - existing_set
+
+        for node_id, cid, bdf in removed:
+            comp = next((c for c in existing if c.node_id == node_id and c.component == cid and c.bdf == bdf), None)
+            if comp:
+                session.delete(comp)
+
+        for node_id, cid, bdf in added:
+            new_comp = Components(node_id=node_id, reservation=rsv_obj, component=cid, bdf=bdf)
+            session.add(new_comp)
+
     def update_reservation(self, *, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
                            rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
                            lease_end: datetime = None, rsv_graph_node_id: str = None, site: str = None,
                            rsv_type: str = None, components: List[Tuple[str, str, str]] = None,
-                           host: str = None, ip_subnet: str = None):
-        """
-        Update a reservation
-        @param slc_guid slice guid
-        @param rsv_resid reservation guid
-        @param rsv_category category
-        @param rsv_state state
-        @param rsv_pending pending state
-        @param rsv_joining join state
-        @param properties pickled instance
-        @param lease_start Lease start time
-        @param lease_end Lease end time
-        @param rsv_graph_node_id graph id
-        @param site site
-        @param rsv_type reservation type
-        @param components list of components
-        @param ip_subnet ip subnet
-        @param host host
-        """
+                           host: str = None, ip_subnet: str = None, links: list[dict] = None):
         session = self.get_session()
         try:
             rsv_obj = session.query(Reservations).filter_by(rsv_resid=rsv_resid).one()
-            if rsv_obj is not None:
-                rsv_obj.rsv_category = rsv_category
-                rsv_obj.rsv_state = rsv_state
-                rsv_obj.rsv_pending = rsv_pending
-                rsv_obj.rsv_joining = rsv_joining
-                rsv_obj.properties = properties
-                rsv_obj.lease_end = lease_end
-                rsv_obj.lease_start = lease_start
-                if host:
-                    rsv_obj.host = host
-                if ip_subnet:
-                    rsv_obj.ip_subnet = ip_subnet
-                if site is not None:
-                    rsv_obj.site = site
-                if rsv_graph_node_id is not None:
-                    rsv_obj.rsv_graph_node_id = rsv_graph_node_id
-                if rsv_type is not None:
-                    rsv_obj.rsv_type = rsv_type
-
-                # Update components records for the reservation
-                if components and len(components):
-                    existing = session.query(Components).filter(Components.reservation_id == rsv_obj.rsv_id).all()
-                    existing_components = {(c.node_id, c.component, c.bdf) for c in existing}
-
-                    # Identify new string values
-                    added_comps = set(components) - existing_components
-
-                    # Identify outdated string values
-                    removed_comps = existing_components - set(components)
-
-                    # Remove outdated comps
-                    for node_id, cid, bdf in removed_comps:
-                        comp_to_remove = next(
-                            (comp for comp in existing if comp.component == cid and
-                             comp.node_id == node_id and comp.bdf == bdf),
-                            None)
-                        if comp_to_remove:
-                            session.delete(comp_to_remove)
-
-                    # Add new comps
-                    for node_id, cid, bdf in added_comps:
-                        new_mapping = Components(node_id=node_id, reservation=rsv_obj,
-                                                 component=cid, bdf=bdf)
-                        session.add(new_mapping)
-
-            else:
+            if rsv_obj is None:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", rsv_resid))
+
+            # Update reservation attributes
+            rsv_obj.rsv_category = rsv_category
+            rsv_obj.rsv_state = rsv_state
+            rsv_obj.rsv_pending = rsv_pending
+            rsv_obj.rsv_joining = rsv_joining
+            rsv_obj.properties = properties
+            rsv_obj.lease_start = lease_start
+            rsv_obj.lease_end = lease_end
+            if host:
+                rsv_obj.host = host
+            if ip_subnet:
+                rsv_obj.ip_subnet = ip_subnet
+            if site is not None:
+                rsv_obj.site = site
+            if rsv_graph_node_id is not None:
+                rsv_obj.rsv_graph_node_id = rsv_graph_node_id
+            if rsv_type is not None:
+                rsv_obj.rsv_type = rsv_type
+
+            if components:
+                self._update_components(session, rsv_obj, components)
+            if links:
+                self._update_links(session, rsv_obj, links)
+
             session.commit()
         except Exception as e:
             session.rollback()
@@ -800,6 +811,11 @@ class PsqlDatabase:
                 # Delete associated Components records
                 mappings = session.query(Components).filter(Components.reservation_id == reservation.rsv_id).all()
                 for mapping in mappings:
+                    session.delete(mapping)
+
+                # Delete associated Links records
+                link_mappings = session.query(Links).filter(Links.reservation_id == reservation.rsv_id).all()
+                for mapping in link_mappings:
                     session.delete(mapping)
 
             session.delete(reservation)
@@ -969,6 +985,61 @@ class PsqlDatabase:
                     result[row.component] = []
                 if row.bdf not in result[row.component]:
                     result[row.component].append(row.bdf)
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
+    def get_links(self, *, node_id: str, states: list[int], rsv_type: list[str],
+                  start: datetime = None, end: datetime = None, excludes: List[str] = None) -> Dict[str, int]:
+        """
+        Returns components matching the search criteria
+        @param node_id: Worker Node ID to which components belong
+        @param states: list of states used to find reservations
+        @param rsv_type: type of reservations
+        @param start: start time
+        @param end: end time
+        @param excludes: list of the reservations ids to exclude
+
+        @return Dictionary with component name as the key and value as list of associated PCI addresses in use.
+        """
+        result = {}
+        session = self.get_session()
+        try:
+            lease_end_filter = True  # Initialize with True to avoid NoneType comparison
+            # Construct filter condition for lease_end within the given time range
+            if start is not None or end is not None:
+                if start is not None and end is not None:
+                    lease_end_filter = or_(
+                        and_(start <= Reservations.lease_end, Reservations.lease_end <= end),
+                        and_(start <= Reservations.lease_start, Reservations.lease_start <= end),
+                        and_(Reservations.lease_start <= start, Reservations.lease_end >= end)
+                    )
+                elif start is not None:
+                    lease_end_filter = start <= Reservations.lease_end
+                elif end is not None:
+                    lease_end_filter = Reservations.lease_end <= end
+
+            # Query to retrieve links based on specific Reservation types and states
+            rows = (
+                session.query(Links)
+                    .join(Reservations, Links.reservation_id == Reservations.rsv_id)
+                    .filter(Reservations.rsv_type.in_(rsv_type))
+                    .filter(Reservations.rsv_state.in_(states))
+                    .filter(lease_end_filter)
+                    .filter(Links.node_id == node_id)
+                    .options(joinedload(Links.reservation))
+            )
+
+            # Add excludes filter if excludes list is not None and not empty
+            if excludes:
+                rows = rows.filter(Reservations.rsv_resid.notin_(excludes))
+
+            for row in rows.all():
+                if row.node_id not in result:
+                    result[row.node_id] = 0
+                if row.node_id not in result[row.node_id]:
+                    result[row.node_id] += row.bw
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e

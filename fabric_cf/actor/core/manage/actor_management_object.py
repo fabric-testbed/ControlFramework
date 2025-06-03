@@ -436,6 +436,11 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         return self.db.get_components(node_id=node_id, rsv_type=rsv_type, states=states,
                                       component=component, bdf=bdf, start=start, end=end, excludes=excludes)
 
+    def get_links(self, *, node_id: str, rsv_type: list[str], states: list[int], start: datetime = None,
+                  end: datetime = None, excludes: List[str] = None) -> Dict[str, int]:
+        return self.db.get_links(node_id=node_id, rsv_type=rsv_type, states=states, start=start,
+                                 end=end, excludes=excludes)
+
     def get_reservations(self, *, caller: AuthToken, states: List[int] = None,
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
                          email: str = None, rid_list: List[str] = None, type: str = None,

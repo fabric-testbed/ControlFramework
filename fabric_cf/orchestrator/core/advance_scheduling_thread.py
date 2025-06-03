@@ -158,22 +158,30 @@ class AdvanceSchedulingThread:
         try:
             controller_slice.lock()
 
-            # Determine nearest start time in the time range requested
-            # If not found, start time specified in the request is used as start resulting in slice failing
-            # with insufficient resources error
-            future_start, future_end = self.kernel.determine_future_lease_time(
-                computed_reservations=computed_reservations,
-                start=controller_slice.start, end=controller_slice.end,
-                duration=controller_slice.lifetime)
+            # TODO handle modify
+            if controller_slice.ero:
+                self.kernel.update_ero_links(computed_reservations=computed_reservations)
 
-            self.logger.debug(f"Slice: {controller_slice.slice_obj.slice_name}/{controller_slice.slice_obj.get_slice_id()}"
-                              f" Start Time: {future_start} End: {future_end}")
+            if controller_slice.lifetime:
+                # Determine nearest start time in the time range requested
+                # If not found, start time specified in the request is used as start resulting in slice failing
+                # with insufficient resources error
+                future_start, future_end = self.kernel.determine_future_lease_time(
+                    computed_reservations=computed_reservations,
+                    start=controller_slice.start, end=controller_slice.end,
+                    duration=controller_slice.lifetime)
 
-            # Update slice start/end time
-            controller_slice.slice_obj.set_lease_start(lease_start=future_start)
-            controller_slice.slice_obj.set_lease_end(lease_end=future_end)
-            self.logger.debug(f"Update Slice {controller_slice.slice_obj.slice_name}")
-            self.mgmt_actor.update_slice(slice_obj=controller_slice.slice_obj)
+                self.logger.debug(f"Slice: {controller_slice.slice_obj.slice_name}/{controller_slice.slice_obj.get_slice_id()}"
+                                  f" Start Time: {future_start} End: {future_end}")
+
+                # Update slice start/end time
+                controller_slice.slice_obj.set_lease_start(lease_start=future_start)
+                controller_slice.slice_obj.set_lease_end(lease_end=future_end)
+                self.logger.debug(f"Update Slice {controller_slice.slice_obj.slice_name}")
+                self.mgmt_actor.update_slice(slice_obj=controller_slice.slice_obj)
+            else:
+                future_start = controller_slice.slice_obj.get_lease_start()
+                future_end = controller_slice.slice_obj.get_lease_end()
 
             # Update the reservations start/end time
             for r in computed_reservations:

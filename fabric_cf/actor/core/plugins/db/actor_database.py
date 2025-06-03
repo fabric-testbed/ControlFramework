@@ -359,7 +359,7 @@ class ActorDatabase(ABCDatabase):
                                     components=components,
                                     lease_start=term.get_start_time() if term else None,
                                     lease_end=term.get_end_time() if term else None,
-                                    host=host, ip_subnet=ip_subnet)
+                                    host=host, ip_subnet=ip_subnet, links=links)
             self.logger.debug(
                 "Reservation {} added to slice {}".format(reservation.get_reservation_id(), reservation.get_slice()))
         finally:
@@ -594,6 +594,17 @@ class ActorDatabase(ABCDatabase):
         try:
             return self.db.get_components(node_id=node_id, states=states, component=component, bdf=bdf,
                                           rsv_type=rsv_type, start=start, end=end, excludes=excludes)
+        except Exception as e:
+            self.logger.error(e)
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+
+    def get_links(self, *, node_id: str, states: list[int], rsv_type: list[str], start: datetime = None,
+                  end: datetime = None, excludes: List[str] = None) -> Dict[str, int]:
+        try:
+            return self.db.get_links(node_id=node_id, states=states, rsv_type=rsv_type, start=start,
+                                     end=end, excludes=excludes)
         except Exception as e:
             self.logger.error(e)
         finally:

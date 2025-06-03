@@ -24,10 +24,15 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
+import traceback
 from datetime import datetime, timedelta
 from heapq import heappush, heappop
 from http.client import BAD_REQUEST
-from typing import List, Iterator, Tuple, Optional
+from typing import List, Iterator, Tuple, Optional, Union
+
+from fim.graph.abc_property_graph_constants import ABCPropertyGraphConstants
+from fim.slivers.network_service import NetworkServiceSliver
+from fim.slivers.path_info import Path
 
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 
@@ -37,7 +42,7 @@ from fim.slivers.network_node import NodeSliver
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
-from fim.user import GraphFormat
+from fim.user import GraphFormat, ServiceType, NodeType
 
 from fabric_cf.actor.core.apis.abc_actor_event import ABCActorEvent
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
@@ -235,7 +240,7 @@ class OrchestratorKernel(ABCTick):
     def get_name(self) -> str:
         return self.__class__.__name__
 
-    def find_common_start_time(self, reservation_start_times: list[list[datetime]]) -> datetime:
+    def find_common_start_time(self, reservation_start_times: list[list[datetime]]) -> Union[datetime, None]:
         """
         Find the earliest common start time for a group of reservations.
 
@@ -260,6 +265,110 @@ class OrchestratorKernel(ABCTick):
 
         # Return the earliest common start time
         return min(common_times)
+
+    def get_existing_links(self, node_id: str, start: datetime = None, end: datetime = None,
+                           excludes: List[str] = None, include_ns: bool = True,
+                           include_node: bool = True) -> dict[str, int]:
+        """
+        Get existing links attached to Active/Ticketed Network Service Slivers
+        :param node_id:
+        :param start:
+        :param end:
+        :param excludes:
+        :param include_node:
+        :param include_ns:
+        :return: list of links
+        """
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value,
+                  ReservationStates.Nascent.value,
+                  ReservationStates.CloseFail.value]
+
+        res_type = []
+        if include_ns:
+            for x in ServiceType:
+                res_type.append(str(x))
+
+        if include_node:
+            for x in NodeType:
+                res_type.append(str(x))
+
+        # Only get Active or Ticketing reservations
+        return self.controller.get_links(node_id=node_id, rsv_type=res_type, states=states,
+                                         start=start, end=end, excludes=excludes)
+
+    def find_suitable_link(self, reservation: LeaseReservationAvro):
+        requested_sliver = reservation.get_sliver()
+        if not isinstance(requested_sliver, NetworkServiceSliver):
+            return
+        if not requested_sliver.ero or not len(requested_sliver.ero.get()) or \
+                not requested_sliver.interface_info or not len(requested_sliver.interface_info.interfaces):
+            return
+
+        found = False
+        final_path = []
+        try:
+            type, path = requested_sliver.ero.get()
+            path_list = path.get()[0]
+
+            source = self.combined_broker_model.get_matching_nodes_with_components(label=ABCPropertyGraphConstants.CLASS_NetworkNode,
+                                                                                   props={ABCPropertyGraphConstants.PROP_SITE: path_list[0]})
+
+            dest = self.combined_broker_model.get_matching_nodes_with_components(label=ABCPropertyGraphConstants.CLASS_NetworkNode,
+                                                                                 props={ABCPropertyGraphConstants.PROP_SITE: path_list[-1]})
+
+            hops = []
+            for h in path_list:
+                hop = self.combined_broker_model.get_matching_nodes_with_components(label=ABCPropertyGraphConstants.CLASS_NetworkService,
+                                                                                    props={ABCPropertyGraphConstants.PROP_NAME: f"{h}_ns"})
+                hops.append(hop[0])
+
+            paths = self.combined_broker_model.get_nodes_on_path_with_hops(node_a=source[0], node_z=dest[0], hops=hops)
+            sorted_paths = sorted(paths, key=len)
+            path_threshold = 10
+            path_couner = 0
+            for sorted_path in sorted_paths:
+                if path_couner > path_threshold:
+                    break
+                path_couner += 1
+                found = True
+                final_path = []
+                links = []
+                for item in sorted_path:
+                    _, props = self.combined_broker_model.get_node_properties(node_id=item)
+                    if props.get("Class") == "NetworkService":
+                        #final_path.append(f'{props.get("Name")}:{props.get("NodeID")}')
+                        final_path.append({props.get("NodeID")})
+                    if item.startswith('link:'):
+                        final_path.append(item)
+                        links.append(item)
+
+                for l in links:
+                    link_sliver = self.combined_broker_model.build_deep_link_sliver(node_id=l)
+                    existing = self.get_existing_links(node_id=link_sliver.node_id)
+                    allowed = link_sliver.capacity_allocations.bw if link_sliver.capacity_allocations else link_sliver.capacities.bw
+                    if existing and link_sliver.node_id in existing.get(link_sliver.node_id) and existing.get(link_sliver.node_id) > allowed:
+                        found = False
+                        break
+                if found:
+                    break
+        except Exception as e:
+            found = False
+            final_path = []
+            self.logger.error(f"Error occurred when finding ERO link: {e}")
+            self.logger.error(traceback.format_exc())
+
+        if not found:
+            final_path = []
+
+        ero_path = Path()
+        ero_path.set_symmetric(final_path)
+        requested_sliver.ero.set(ero_path)
+
+    def update_ero_links(self, computed_reservations: list[LeaseReservationAvro]):
+        for res in computed_reservations:
+            self.find_suitable_link(reservation=res)
 
     def determine_future_lease_time(self, computed_reservations: list[LeaseReservationAvro], start: datetime,
                                     end: datetime, duration: int) -> tuple[datetime, datetime]:
