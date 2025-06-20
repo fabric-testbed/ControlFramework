@@ -257,38 +257,6 @@ class OrchestratorKernel(ABCTick):
         # Return the earliest common start time
         return min(common_times)
 
-    def get_existing_links(self, node_id: str, start: datetime = None, end: datetime = None,
-                           excludes: List[str] = None, include_ns: bool = True,
-                           include_node: bool = True) -> dict[str, int]:
-        """
-        Get existing links attached to Active/Ticketed Network Service Slivers
-        :param node_id:
-        :param start:
-        :param end:
-        :param excludes:
-        :param include_node:
-        :param include_ns:
-        :return: list of links
-        """
-        states = [ReservationStates.Active.value,
-                  ReservationStates.ActiveTicketed.value,
-                  ReservationStates.Ticketed.value,
-                  ReservationStates.Nascent.value,
-                  ReservationStates.CloseFail.value]
-
-        res_type = []
-        if include_ns:
-            for x in ServiceType:
-                res_type.append(str(x))
-
-        if include_node:
-            for x in NodeType:
-                res_type.append(str(x))
-
-        # Only get Active or Ticketing reservations
-        return self.controller.get_links(node_id=node_id, rsv_type=res_type, states=states,
-                                         start=start, end=end, excludes=excludes)
-
     def determine_future_lease_time(self, computed_reservations: list[LeaseReservationAvro], start: datetime,
                                     end: datetime, duration: int) -> tuple[datetime, datetime]:
         """
