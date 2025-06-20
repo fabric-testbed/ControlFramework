@@ -1627,7 +1627,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         new_path = self.__resolve_ero_direction(a2z)
         if new_path:
             ero_path = Path()
-            path.set(a2z=new_path[1:], z2a=new_path[1:-1] + [new_path[0]] if len(new_path) > 1 else [])
+            ero_path.set(a2z=new_path[1:], z2a=new_path[1:-1] + [new_path[0]] if len(new_path) > 1 else [])
             #ero_path.set_symmetric(new_path)
             sliver.ero.set(ero_path)
             self.logger.info(f"Allocated ERO: {sliver.ero}")
