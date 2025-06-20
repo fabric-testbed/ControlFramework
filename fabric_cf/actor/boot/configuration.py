@@ -564,7 +564,7 @@ class Configuration:
         return int(value)
 
     def get_kafka_max_message_size(self) -> int:
-        value = self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_MAX_MESSAGE_SIZE, 1048588)
+        value = self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_MAX_MESSAGE_SIZE, 3145764)
         return int(value)
 
     def get_rpc_request_timeout_seconds(self) -> int:

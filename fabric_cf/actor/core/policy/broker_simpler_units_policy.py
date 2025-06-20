@@ -29,12 +29,14 @@ import enum
 import random
 import threading
 import traceback
+import uuid
 from datetime import datetime, timezone
 from enum import Enum
 from typing import TYPE_CHECKING, Tuple, List, Any, Dict
 
 from fim.graph.abc_property_graph import ABCPropertyGraphConstants, GraphFormat, ABCPropertyGraph
 from fim.graph.resources.abc_adm import ABCADMPropertyGraph
+from fim.graph.resources.networkx_abqm import NetworkXAggregateBQM
 from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.attached_components import ComponentSliver, ComponentType
 from fim.slivers.base_sliver import BaseSliver
@@ -105,12 +107,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.delegations = {}
         self.combined_broker_model = None
         self.combined_broker_model_graph_id = None
+        self.abqm = None
         self.query_cbm = None
 
         self.queue = FIFOQueue()
         self.inventory = Inventory()
 
         self.pluggable_registry = PluggableRegistry()
+        self.abqm_lock = threading.Lock()
         self.lock = threading.Lock()
 
     def __getstate__(self):
@@ -122,8 +126,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         del state['delegations']
         del state['combined_broker_model']
+        del state['abqm']
         del state['query_cbm']
         del state['lock']
+        del state['abqm_lock']
 
         del state['calendar']
 
@@ -145,8 +151,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.delegations = {}
         self.combined_broker_model = None
         self.query_cbm = None
+        self.abqm = None
 
         self.lock = threading.Lock()
+        self.abqm_lock = threading.Lock()
         self.calendar = None
 
         self.last_allocation = -1
@@ -168,6 +176,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.logger.debug(f"Successfully loaded an Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
         self.pluggable_registry.register_pluggable(t=PluggableType.Broker, p=AggregatedBQMPlugin, actor=self.actor,
                                                    logger=self.logger)
+
+        self.abqm = self.query_cbm.get_bqm(query_level=0, graph_id=str(uuid.uuid4()))
+
         self.logger.debug(f"Registered AggregateBQMPlugin")
 
     def load_new_controls(self, *, config: ActorConfig):
@@ -757,7 +768,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             owner_switch = None
 
             peered_ns_interfaces = []
-            #ero_source_end_info = []
 
             # For each Interface Sliver;
             for ifs in sliver.interface_info.interfaces.values():
@@ -906,11 +916,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
                 self.logger.info(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
 
-                #owner_v4_service = self.get_ns_from_switch(switch=owner_switch, ns_type=ServiceType.FABNetv4)
-                #self.logger.info(f"owner_v4_service: {owner_v4_service}")
-                #if owner_v4_service and owner_v4_service.get_labels():
-                #    ero_source_end_info.append((owner_switch.node_id, owner_v4_service.get_labels().ipv4))
-
             if not owner_ns:
                 bqm_graph_id, bqm_node_id = sliver.get_node_map()
                 owner_ns, owner_switch = self.get_network_service_from_graph(node_id=bqm_node_id,
@@ -956,8 +961,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                               node_id_to_reservations=node_id_to_reservations, term=term)
 
             if sliver.ero:
+                self.find_suitable_link(reservation_id=str(rid), requested_sliver=sliver, start=term.get_start_time(),
+                                        end=term.get_end_time())
                 type, path = sliver.ero.get()
-                if not len(path):
+                if not path or not len(path.get()):
                     raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
                                           msg=f"No path available with the requested QoS")
                 self.logger.info(f"Requested ERO: {sliver.ero}")
@@ -965,9 +972,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 type, path = sliver.ero.get()
                 for hop in path.get()[0]:
                     if hop.startswith('link:'):
+                        new_path.append(hop)
+                        # TODO validate allocation
                         continue
                     # User passes the site names; Broker maps the sites names to the respective switch IP
-                    mpls_sliver, hop_switch = self.get_network_service_from_graph(node_id=hop, parent=True)
+                    hop_switch = self.get_switch_sliver(site=hop)
                     self.logger.debug(f"Switch information for {hop}: {hop_switch}")
                     if not hop_switch:
                         self.logger.error(f"Requested hop: {hop} in the ERO does not exist")
@@ -1634,6 +1643,38 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return existing_reservations
 
+    def get_existing_links(self, node_id: str, start: datetime = None, end: datetime = None,
+                           excludes: List[str] = None, include_ns: bool = True,
+                           include_node: bool = True) -> dict[str, int]:
+        """
+        Get existing links attached to Active/Ticketed Network Service Slivers
+        :param node_id:
+        :param start:
+        :param end:
+        :param excludes:
+        :param include_node:
+        :param include_ns:
+        :return: list of links
+        """
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value,
+                  ReservationStates.Nascent.value,
+                  ReservationStates.CloseFail.value]
+
+        res_type = []
+        if include_ns:
+            for x in ServiceType:
+                res_type.append(str(x))
+
+        if include_node:
+            for x in NodeType:
+                res_type.append(str(x))
+
+        # Only get Active or Ticketing reservations
+        return self.actor.get_plugin().get_database().get_links(node_id=node_id, rsv_type=res_type, states=states,
+                                                                start=start, end=end, excludes=excludes)
+
     def get_existing_components(self, node_id: str, start: datetime = None, end: datetime = None,
                                 excludes: List[str] = None, include_ns: bool = True,
                                 include_node: bool = True) -> Dict[str, List[str]]:
@@ -1694,6 +1735,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.combined_broker_model.importer.delete_graph(graph_id=snapshot_graph_id)
             # reload the query CBM
             self.query_cbm = FimHelper.get_neo4j_cbm_graph(graph_id=self.combined_broker_model_graph_id)
+            # reload the abqm
+            with self.abqm_lock:
+                self.abqm.delete_graph()
+                self.abqm = self.query_cbm.get_bqm(query_level=0, graph_id=str(uuid.uuid4()))
         except Exception as e:
             self.logger.error(f"Exception occurred: {e}")
             self.logger.error(traceback.format_exc())
@@ -1787,6 +1832,111 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             return graph_node, delegated_capacity, allocated_capacity
         except Exception as e:
             self.logger.error(f"Failed to determine node capacities: {node_id}, error: {e}")
+
+    def find_suitable_link(self, reservation_id: str, requested_sliver: NetworkServiceSliver,
+                           start: datetime, end: datetime):
+        if not isinstance(requested_sliver, NetworkServiceSliver):
+            return
+
+        ero = requested_sliver.ero
+        interfaces = requested_sliver.interface_info
+
+        if not ero or not ero.get() or not interfaces or not interfaces.interfaces:
+            return
+
+        requested_bw = 0
+        if requested_sliver.capacities:
+            requested_bw = requested_sliver.capacities.bw
+
+        try:
+            sliver_type, path = ero.get()
+            path_list = path.get()[0]
+            if not path_list:
+                return
+
+            source_site = path_list[0]
+            dest_site = path_list[-1]
+
+            source_node_id = self.abqm.find_node_by_name(
+                label=ABCPropertyGraphConstants.CLASS_CompositeNode,
+                node_name=f"{source_site}"
+            )
+            dest_node_id = self.abqm.find_node_by_name(
+                label=ABCPropertyGraphConstants.CLASS_CompositeNode,
+                node_name=f"{dest_site}"
+            )
+            if not source_node_id or not dest_node_id:
+                raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                      msg=f"Source {source_site} or Dest {dest_site} not found!")
+
+            hops = []
+
+            for hop in path_list:
+                ns_node_id = self.abqm.find_node_by_name(
+                    label=ABCPropertyGraphConstants.CLASS_NetworkService,
+                    node_name=f"{hop}_ns"
+                )
+                if not ns_node_id:
+                    raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                          msg=f"Hop: {hop} is not found in the available sites!")
+                hops.append(ns_node_id)
+
+            paths = self.abqm.get_all_paths_with_hops(
+                node_a=source_node_id,
+                node_z=dest_node_id,
+                hops=hops
+            )
+
+            for sorted_path in sorted(paths, key=len)[:50]:
+                links = []
+                final_path = []
+
+                for node_id in sorted_path:
+                    _, props = self.abqm.get_node_properties(node_id=node_id)
+                    node_type = props.get("Type")
+                    name = props.get("Name")
+
+                    if node_type == "MPLS":
+                        final_path.append(name.replace("_ns", ""))
+                    elif node_id.startswith("link:"):
+                        final_path.append(node_id)
+                        links.append(node_id)
+
+                if all(self._is_link_allowed(link_id=link_id, requested_bw=requested_bw,
+                                             reservation_id=reservation_id, start=start, end=end) for link_id in links):
+                    path = Path()
+                    path.set_symmetric(final_path)
+                    requested_sliver.ero.set(path)
+                    print(f"Final path: {final_path}")
+                    return
+
+            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                  msg=f"No ERO path from {source_site} => {dest_site} found that satisfies "
+                                      f"the requested bandwidth: {requested_bw} constraints.")
+
+        except Exception as e:
+            self.logger.error(f"Error occurred when finding ERO link: {e}")
+            self.logger.error(traceback.format_exc())
+            raise e
+
+    def _is_link_allowed(self, link_id: str, requested_bw: int, reservation_id: str, start: datetime,
+                         end: datetime) -> bool:
+        link_sliver = self.abqm.build_deep_link_sliver(node_id=link_id)
+        print(f"Link Sliver: {link_sliver}")
+        existing = self.get_existing_links(node_id=link_sliver.node_id, excludes=[reservation_id],
+                                           start=start, end=end)
+        allowed_bw = (
+            link_sliver.capacity_allocations.bw
+            if link_sliver.capacity_allocations
+            else link_sliver.capacities.bw
+        )
+        print(f"Total allowed bandwidth: {allowed_bw}")
+        print(f"Existing bandwidth: {existing}")
+        if existing:
+            allowed_bw -= existing.get(link_id, 0)
+        print(f"Available bandwidth: {allowed_bw}")
+        return requested_bw <= allowed_bw
+
 
 if __name__ == '__main__':
     policy = BrokerSimplerUnitsPolicy()

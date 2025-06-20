@@ -9,14 +9,13 @@ from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 
 
-from fabric_cf.actor.core.common.constants import Constants
 from fim.graph.abc_property_graph import ABCPropertyGraph, GraphFormat
 from fim.graph.abc_property_graph_constants import ABCPropertyGraphConstants
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMFactory, Neo4jCBMGraph
 from fim.slivers.path_info import Path
-from fim.user import NodeType, LinkType, ERO, ExperimentTopology, Capacities, ComponentModelType, ServiceType
+from fim.user import NodeType, ERO, ExperimentTopology, Capacities, ComponentModelType, ServiceType
 
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
 from fabric_cf.actor.test.base_test_case import BaseTestCase
@@ -220,6 +219,7 @@ class ABQM_Test(BaseTestCase, unittest.TestCase):
 
         print('CBM ID is ' + cbm.graph_id)
 
+        '''
         cbm_graph_id = cbm.graph_id
         # turn on debug so we can test formation of ABQM without querying
         # actor for reservations
@@ -247,37 +247,7 @@ class ABQM_Test(BaseTestCase, unittest.TestCase):
             f.write(abqm_string)
 
         #self.n4j_imp.delete_all_graphs()
-
-    def get_existing_links(self, db: ActorDatabase, node_id: str, start: datetime = None, end: datetime = None,
-                           excludes: list[str] = None, include_ns: bool = True,
-                           include_node: bool = True) -> dict[str, int]:
-        """
-        Get existing links attached to Active/Ticketed Network Service Slivers
-        :param node_id:
-        :param start:
-        :param end:
-        :param excludes:
-        :param include_node:
-        :param include_ns:
-        :return: list of links
-        """
-        states = [ReservationStates.Active.value,
-                  ReservationStates.ActiveTicketed.value,
-                  ReservationStates.Ticketed.value,
-                  ReservationStates.Nascent.value,
-                  ReservationStates.CloseFail.value]
-
-        res_type = []
-        if include_ns:
-            for x in ServiceType:
-                res_type.append(str(x))
-
-        if include_node:
-            for x in NodeType:
-                res_type.append(str(x))
-
-        # Only get Active or Ticketing reservations
-        return db.get_links(node_id=node_id, rsv_type=res_type, states=states, start=start, end=end, excludes=excludes)
+        '''
 
     def test_ero_find_paths(self):
         cbm_graph_id = "162bf53f-85c5-498f-bc6f-d7d3109263a8"
@@ -345,11 +315,6 @@ class ABQM_Test(BaseTestCase, unittest.TestCase):
             print(f"Links in path: {links}")
             for l in links:
                 link_sliver = n4j_pg.build_deep_link_sliver(node_id=l)
-                existing = self.get_existing_links(db=db, node_id=link_sliver.node_id)
-                allowed = link_sliver.capacity_allocations.bw if link_sliver.capacity_allocations else link_sliver.capacities.bw
-                if existing and link_sliver.node_id in existing.get(link_sliver.node_id) and existing.get(link_sliver.node_id) > allowed:
-                    found = False
-                    break
                 print(f"""
                 Link Info:
                   Node ID       : {link_sliver.node_id}

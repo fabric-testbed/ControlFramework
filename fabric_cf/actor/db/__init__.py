@@ -250,7 +250,8 @@ class Links(Base):
     __tablename__ = 'Links'
     reservation_id = Column(Integer, ForeignKey('Reservations.rsv_id'), primary_key=True)
     node_id = Column(String, primary_key=True, index=True)
-    layer = Column(String, primary_key=True, index=True)
-    type = Column(String, primary_key=True, index=True)
+    layer = Column(String)
+    type = Column(String)
+    bw = Column(Integer)
     properties = Column(LargeBinary)
     reservation = relationship('Reservations', back_populates='links')

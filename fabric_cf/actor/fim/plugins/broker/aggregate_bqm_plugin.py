@@ -169,11 +169,28 @@ class AggregatedBQMPlugin:
 
     def plug_produce_bqm(self, *, cbm: ABCCBMPropertyGraph, **kwargs) -> ABCBQMPropertyGraph:
         """
-        Take a CBM, sort nodes by site, aggregate servers, components and interfaces to
-        create a site-based advertisement. Use a NetworkX-based implementation.
-        :param cbm:
-        :param kwargs:
-        :return:
+        Generate a site-aggregated BQM (Broker Query Model) graph from a CBM (Combined Broker Model).
+
+        This function aggregates network and compute resources per site, organizing them based on the
+        specified query level. The resulting graph is suitable for advertisement, resource lookup, and
+        scheduling decisions.
+
+        Query Levels:
+            - Level 0: Includes full per-worker detail with original node IDs (used by Orchestrator for advanced scheduling)
+            - Level 1: Includes consolidated per-site information only, with anonymized node IDs (used by `fablib.get_sites()`)
+            - Level 2: Includes per-worker detail with anonymized node IDs (default for `fablib.get_sites()`)
+
+        Parameters:
+            cbm (ABCCBMPropertyGraph): Input graph containing raw broker data including nodes, links, and components.
+            **kwargs:
+                query_level (int): Level of aggregation (0, 1, or 2). Defaults to Level 2 if unspecified.
+                includes (str): Comma-separated list of site names to include.
+                excludes (str): Comma-separated list of site names to exclude.
+                start (datetime): Optional start time for querying capacity allocations.
+                end (datetime): Optional end time for querying capacity allocations.
+
+        Returns:
+            ABCBQMPropertyGraph: An aggregated NetworkX-based BQM graph reflecting the requested query level.
         """
         if kwargs.get('query_level', None) is None or kwargs['query_level'] > 2:
             return cbm.clone_graph(new_graph_id=str(uuid.uuid4()))
@@ -206,7 +223,10 @@ class AggregatedBQMPlugin:
 
         # create a new blank Aggregated BQM NetworkX graph
         if kwargs['query_level'] == 0:
-            abqm = NetworkXAggregateBQM(graph_id=cbm.graph_id,
+            graph_id = cbm.graph_id
+            if kwargs.get('graph_id'):
+                graph_id = kwargs.get('graph_id')
+            abqm = NetworkXAggregateBQM(graph_id=graph_id,
                                         importer=NetworkXGraphImporter(logger=self.logger),
                                         logger=self.logger)
         else:

@@ -46,7 +46,7 @@ runtime:
   prometheus.port: 11000
   kafka.request.timeout.ms: 120000
   rpc.request.timeout.seconds: 900
-  message.max.bytes: 1048588
+  message.max.bytes: 3145764
   rpc.retries: 5
   commit.batch.size: 1
   enable.auto.commit: False
@@ -118,10 +118,10 @@ pdp:
   enable: False
 
 neo4j:
-  url: bolt://localhost:7687
+  url: bolt://localhost:8687
   user: neo4j
   pass: password
-  import_host_dir: ../../../neo4j1/imports/
+  import_host_dir: ../../../neo4j2/imports/
   import_dir: /imports
 
 actor:
@@ -130,7 +130,7 @@ actor:
   guid: site1-am-guid
   description: Site AM
   kafka-topic: site1-am-topic
-  substrate.file: ../../../neo4j/RENC.graphml
+  substrate.file: ../../../neo4j/CERN.graphml
   policy:
       module: fabric_cf.actor.core.policy.authority_calendar_policy
       class: AuthorityCalendarPolicy

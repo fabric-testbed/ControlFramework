@@ -1,55 +1,45 @@
 ---
-version: "2.3"
 services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    restart: always
-    hostname: zookeeper
-    container_name: zookeeper
-    ports:
-      - 2181:2181
-    environment:
-      ZOOKEEPER_SERVER_ID: 1
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-      ZOOKEEPER_INIT_LIMIT: 5
-      ZOOKEEPER_SYNC_LIMIT: 2
-
   broker1:
     image: confluentinc/cp-kafka:latest
     restart: always
     hostname: broker1
     container_name: broker1
-    depends_on:
-      - zookeeper
     ports:
-      - 9092:9092
-      - 19092:19092
+      - 9092:9092   # For external access
+      - 19092:19092   # For external access
+      - 9093:9093   # For controller communication
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker1:9092,PLAINTEXT_HOST://localhost:19092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      CLUSTER_ID: kraft-cluster-id-01
+      KAFKA_MESSAGE_MAX_BYTES: 3145764 # or higher (e.g., 20MB = 20971520)
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 3145764 # must be >= message.max.bytes
+      KAFKA_FETCH_MESSAGE_MAX_BYTES: 3145764
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENERS: PLAINTEXT://broker1:9092,HOST://0.0.0.0:19092,CONTROLLER://broker1:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker1:9092,HOST://localhost:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker1:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LOG_DIRS: ./kraft-logs
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
   schemaregistry:
     image: confluentinc/cp-schema-registry:latest
     container_name: schemaregistry
     restart: always
     depends_on:
-      - zookeeper
       - broker1
-    volumes:
-      - ${KAFKA_SSL_SECRETS_DIR}:/etc/kafka/secrets
     ports:
       - 8081:8081
     environment:
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: broker1:9092
-      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: ""
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://broker1:9092
       SCHEMA_REGISTRY_HOST_NAME: schemaregistry
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
       SCHEMA_REGISTRY_DEBUG: 'true'

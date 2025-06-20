@@ -706,7 +706,7 @@ class PsqlDatabase:
             if links:
                 for l in links:
                     link_mapping = Links(node_id=l.get("node_id"), reservation=rsv_obj,
-                                         layer=l.get("layer"), type=l.get("type"),
+                                         layer=l.get("layer"), type=l.get("type"), bw=l.get("bw"),
                                          properties=l.get("properties"))
                     session.add(link_mapping)
 
@@ -735,6 +735,7 @@ class PsqlDatabase:
                 reservation=rsv_obj,
                 layer=l.get("layer"),
                 type=l.get("type"),
+                bw=l.get("bw"),
                 properties=l.get("properties")
             )
             session.add(new_link)
@@ -1036,10 +1037,10 @@ class PsqlDatabase:
                 rows = rows.filter(Reservations.rsv_resid.notin_(excludes))
 
             for row in rows.all():
+                print(row.node_id)
                 if row.node_id not in result:
                     result[row.node_id] = 0
-                if row.node_id not in result[row.node_id]:
-                    result[row.node_id] += row.bw
+                result[row.node_id] += row.bw
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -1980,3 +1981,18 @@ if __name__ == '__main__':
     #comps = db.get_components(node_id="HX7LQ53")
     ss = db.get_slices(updated_after=datetime(1970, 1, 1, tzinfo=timezone.utc))
     print(len(ss))
+
+    res_type = []
+    from fabrictestbed.slice_editor import ServiceType
+    for x in ServiceType:
+        res_type.append(str(x))
+    from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+    states = [ReservationStates.Active.value,
+              ReservationStates.ActiveTicketed.value,
+              ReservationStates.Ticketed.value,
+              ReservationStates.Nascent.value,
+              ReservationStates.CloseFail.value]
+
+    links = db.get_links(node_id="link:local-port+hawi-data-sw:HundredGigE0/0/0/23.3390:remote-port+losa-data-sw:HundredGigE0/0/0/15.3390",
+                         rsv_type=res_type, states=states, start=None, end=None, excludes=None)
+    print(links)
