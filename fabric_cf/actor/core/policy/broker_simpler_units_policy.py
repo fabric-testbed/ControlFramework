@@ -1439,16 +1439,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                              requested_bw=requested_bw, reservation_id=reservation_id,
                                              start=start, end=end) for link_id in links):
                     path = Path()
-                    # Construct A→Z and Z→A paths
-                    final_path_1 = final_path + [dest_site]  # A to Z
-                    final_path_2 = final_path + [source_site]  # Z to A
-                    # Set asymmetric paths
-                    path.set(a2z=final_path_1, z2a=final_path_2)
-                    #path.set_symmetric(final_path)
+                    path.set_symmetric(final_path)
                     # Assign to requested sliver
                     requested_sliver.ero.set(path)
-                    self.logger.debug(f"Final path: {final_path_1}")
-                    self.logger.debug(f"Final path: {final_path_2}")
+                    self.logger.debug(f"Final path: {final_path}")
                     return
 
             raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
@@ -1552,6 +1546,35 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
                               msg=f"No path available with the requested QoS")
 
+    def __resolve_ero_direction(self, hops: List[str]) -> List[str]:
+        """
+        Resolves a list of ERO hop site names or link IDs into a list of IPv4 addresses or direct link IDs.
+
+        :param hops: List of site names or 'link:' IDs
+        :return: List of resolved hop IPs or link IDs
+        """
+        resolved = []
+        for hop in hops:
+            if hop.startswith('link:'):
+                resolved.append(hop)
+                continue
+
+            hop_switch = self.get_switch_sliver(site=hop)
+            self.logger.debug(f"Switch information for {hop}: {hop_switch}")
+            if not hop_switch:
+                self.logger.error(f"Requested hop: {hop} in the ERO does not exist")
+                raise BrokerException(
+                    error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                    msg=f"Requested hop: {hop} in the ERO does not exist"
+                )
+
+            hop_v4_service = self.get_ns_from_switch(switch=hop_switch, ns_type=ServiceType.FABNetv4)
+            if hop_v4_service and hop_v4_service.get_labels() and hop_v4_service.get_labels().ipv4:
+                self.logger.debug(f"Fabnetv4 information for {hop}: {hop_v4_service}")
+                resolved.append(hop_v4_service.get_labels().ipv4)
+
+        return resolved
+
     def __allocate_ero_path(self, *, reservation_id: str, sliver: NetworkServiceSliver, term: Term,
                             operation: ReservationOperation, node_id_to_reservations: dict):
         """
@@ -1599,31 +1622,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             )
 
         self.logger.info(f"Requested ERO: {sliver.ero}")
-        new_path = []
+        a2z, z2a = path.get()
 
-        for hop in path.get()[0]:
-            if hop.startswith('link:'):
-                new_path.append(hop)
-                continue
-
-            hop_switch = self.get_switch_sliver(site=hop)
-            self.logger.debug(f"Switch information for {hop}: {hop_switch}")
-
-            if not hop_switch:
-                self.logger.error(f"Requested hop: {hop} in the ERO does not exist")
-                raise BrokerException(
-                    error_code=ExceptionErrorCode.INVALID_ARGUMENT,
-                    msg=f"Requested hop: {hop} in the ERO does not exist"
-                )
-
-            hop_v4_service = self.get_ns_from_switch(switch=hop_switch, ns_type=ServiceType.FABNetv4)
-            if hop_v4_service and hop_v4_service.get_labels() and hop_v4_service.get_labels().ipv4:
-                self.logger.debug(f"Fabnetv4 information for {hop}: {hop_v4_service}")
-                new_path.append(hop_v4_service.get_labels().ipv4)
-
+        new_path = self.__resolve_ero_direction(a2z)
         if new_path:
             ero_path = Path()
-            ero_path.set_symmetric(new_path)
+            path.set(a2z=new_path[1:], z2a=new_path[1:-1] + [new_path[0]] if len(new_path) > 1 else [])
+            #ero_path.set_symmetric(new_path)
             sliver.ero.set(ero_path)
             self.logger.info(f"Allocated ERO: {sliver.ero}")
         else:
