@@ -1439,9 +1439,16 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                              requested_bw=requested_bw, reservation_id=reservation_id,
                                              start=start, end=end) for link_id in links):
                     path = Path()
-                    path.set_symmetric(final_path)
+                    # Construct A→Z and Z→A paths
+                    final_path_1 = final_path + [dest_site]  # A to Z
+                    final_path_2 = final_path + [source_site]  # Z to A
+                    # Set asymmetric paths
+                    path.set(a2z=final_path_1, z2a=final_path_2)
+                    #path.set_symmetric(final_path)
+                    # Assign to requested sliver
                     requested_sliver.ero.set(path)
-                    self.logger.debug(f"Final path: {final_path}")
+                    self.logger.debug(f"Final path: {final_path_1}")
+                    self.logger.debug(f"Final path: {final_path_2}")
                     return
 
             raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
