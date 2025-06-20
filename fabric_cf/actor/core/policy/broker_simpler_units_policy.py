@@ -1294,7 +1294,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                               owner_mpls=owner_mpls_ns, inv=inv, sliver=sliver, owner_ns=owner_ns,
                                               node_id_to_reservations=node_id_to_reservations, term=term)
 
-            self.__allocate_ero_path(reservation_id=str(rid), sliver=sliver, term=term, operation=operation)
+            self.__allocate_ero_path(reservation_id=str(rid), sliver=sliver, term=term, operation=operation,
+                                     node_id_to_reservations=node_id_to_reservations)
         except BrokerException as e:
             delegation_id = None
             if e.error_code == ExceptionErrorCode.INSUFFICIENT_RESOURCES:
@@ -1305,7 +1306,193 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.logger.debug(f"Allocate Services returning: {delegation_id} {sliver} {error_msg}")
         return delegation_id, sliver, error_msg
 
-    def __can_extend_ero(self, rid: str, sliver: NetworkServiceSliver, start: datetime, end: datetime):
+    def _validate_requested_ero_path(self, source_node: str, end_node: str, hops: List[str]) -> bool:
+        """
+        Validate the requested Explicit Route Object (ERO) path between source and destination sites.
+
+        Ensures the requested sequence of hops (site names) forms a valid path in the CBM and that
+        each hop in the path has enough available bandwidth to satisfy the L2PTP request.
+
+        Used to pre-check feasibility before constructing the symmetric path and committing
+        to a reservation.
+
+        :param source: Starting site name
+        :type source: str
+        :param end: Destination site name
+        :type end: str
+        :param hops: Ordered list of intermediate site names (the ERO)
+        :type hops: List[str]
+        :raises Exception: If any hop is invalid or bandwidth requirements cannot be met
+        """
+        try:
+            self.lock.acquire()
+            if self.combined_broker_model:
+                path = self.combined_broker_model.get_nodes_on_path_with_hops(node_a=source_node,
+                                                                              node_z=end_node, hops=hops, cut_off=200)
+                self.logger.debug(f"Network path from source:{source_node} to end: {end_node} "
+                                  f"with hops: {hops} is path: {path}")
+                if len(path) and path[0] == source_node and path[-1] == end_node:
+                    return True
+        finally:
+            self.lock.release()
+        return False
+
+    def _find_suitable_link(self, reservation_id: str, requested_sliver: NetworkServiceSliver,
+                            start: datetime, end: datetime, node_id_to_reservations: dict):
+        """
+        Identify a suitable L2PTP link in the Combined Broker Model (CBM) that can satisfy the
+        requested reservation sliver and term.
+
+        This method is invoked for L2PTP services that include Explicit Route Object (ERO) paths.
+        It performs the following:
+          - Extracts the ERO path, source, and destination sites from the requested sliver
+          - Validates presence of interface information and hop sequence
+          - Looks up links in the CBM that match the ERO
+          - For each candidate link, checks whether sufficient bandwidth is available over the requested term
+
+        If a valid link is found that satisfies all constraints (e.g., bandwidth, ERO compliance),
+        the method updates the internal selection state accordingly.
+
+        :param reservation_id: Unique ID for the reservation being processed
+        :type reservation_id: str
+        :param requested_sliver: Network service sliver representing the L2PTP request
+        :type requested_sliver: NetworkServiceSliver
+        :param start: Requested lease start time
+        :type start: datetime
+        :param end: Requested lease end time
+        :type end: datetime
+        :param node_id_to_reservations: Map of node IDs to currently assigned reservations
+        :type node_id_to_reservations: dict
+        :raises Exception: If ERO path is missing, malformed, or no viable link satisfies the bandwidth requirement
+        """
+        if not isinstance(requested_sliver, NetworkServiceSliver):
+            return
+
+        ero = requested_sliver.ero
+        interfaces = requested_sliver.interface_info
+
+        if not ero or not ero.get() or not interfaces or not interfaces.interfaces:
+            return
+
+        requested_bw = 0
+        if requested_sliver.capacities:
+            requested_bw = requested_sliver.capacities.bw
+
+        try:
+            sliver_type, path = ero.get()
+            path_list = path.get()[0]
+            if not path_list or len(path_list) < 2:
+                raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                      msg=f"ERO Path {path_list} too short!")
+
+            source_site = path_list.pop(0)
+            dest_site = path_list.pop(-1)
+
+            source_node_id = self.abqm.find_node_by_name(
+                label=ABCPropertyGraphConstants.CLASS_CompositeNode,
+                node_name=f"{source_site}"
+            )
+            dest_node_id = self.abqm.find_node_by_name(
+                label=ABCPropertyGraphConstants.CLASS_CompositeNode,
+                node_name=f"{dest_site}"
+            )
+            if not source_node_id or not dest_node_id:
+                raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                      msg=f"Source {source_site} or Dest {dest_site} not found!")
+
+            hops = []
+
+            for hop in path_list:
+                ns_node_id = self.abqm.find_node_by_name(
+                    label=ABCPropertyGraphConstants.CLASS_NetworkService,
+                    node_name=f"{hop}_ns"
+                )
+                if not ns_node_id:
+                    raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                          msg=f"Hop: {hop} is not found in the available sites!")
+                hops.append(ns_node_id)
+
+            paths = self.abqm.get_all_paths_with_hops(
+                node_a=source_node_id,
+                node_z=dest_node_id,
+                hops=hops
+            )
+
+            for sorted_path in sorted(paths, key=len)[:50]:
+                links = []
+                final_path = []
+
+                for node_id in sorted_path:
+                    _, props = self.abqm.get_node_properties(node_id=node_id)
+                    node_type = props.get("Type")
+                    name = props.get("Name")
+
+                    if node_type == "MPLS":
+                        if source_site in name or dest_site in name:
+                            continue
+                        final_path.append(name.replace("_ns", ""))
+                    elif node_id.startswith("link:"):
+                        final_path.append(node_id)
+                        links.append(node_id)
+
+                if all(self._is_link_allowed(link_id=link_id, node_id_to_reservations=node_id_to_reservations,
+                                             requested_bw=requested_bw, reservation_id=reservation_id,
+                                             start=start, end=end) for link_id in links):
+                    path = Path()
+                    path.set_symmetric(final_path)
+                    requested_sliver.ero.set(path)
+                    self.logger.debug(f"Final path: {final_path}")
+                    return
+
+            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                  msg=f"No ERO path from {source_site} => {dest_site} found that satisfies "
+                                      f"the requested bandwidth: {requested_bw} constraints.")
+
+        except Exception as e:
+            self.logger.error(f"Error occurred when finding ERO link: {e}")
+            self.logger.error(traceback.format_exc())
+            raise e
+
+    def _is_link_allowed(self, link_id: str, requested_bw: int, reservation_id: str, start: datetime,
+                         end: datetime, node_id_to_reservations: dict) -> bool:
+        """
+        Check if a given L2 link sliver can support the requested bandwidth.
+
+        This method compares the requested bandwidth with the currently allocated
+        and available bandwidth for the link. It is used during QoS-aware path validation.
+
+        :param link_id: Link id
+        :type link_id: str
+        :param requested_bw: Requested bandwidth in Mbps
+        :type requested_bw: int
+        :param reservation_id: Reservation ID
+        :type reservation_id: str
+        :param start: Requested lease start time
+        :type start: datetime
+        :param end: Requested lease end time
+        :type end: datetime
+        :param node_id_to_reservations: Map of node IDs to currently assigned reservations
+        :type node_id_to_reservations: dict
+        :return: True if the link has enough bandwidth, False otherwise
+        :rtype: bool
+        """
+        link_sliver = self.abqm.build_deep_link_sliver(node_id=link_id)
+        existing = self.get_existing_links(node_id=link_sliver.node_id, excludes=[reservation_id],
+                                           start=start, end=end, node_id_to_reservations=node_id_to_reservations)
+        allowed_bw = (
+            link_sliver.capacity_allocations.bw
+            if link_sliver.capacity_allocations
+            else link_sliver.capacities.bw
+        )
+        if existing:
+            allowed_bw -= existing.get(link_id, 0)
+        self.logger.debug(f"Link Sliver: {link_sliver}")
+        self.logger.debug("Existing bandwidth: {existing} Available bandwidth: {allowed_bw}")
+
+        return requested_bw <= allowed_bw
+
+    def __can_extend_ero(self, rid: str, sliver: NetworkServiceSliver, start: datetime, end: datetime,
+                         node_id_to_reservations: dict):
         """
         Validate whether an existing Explicit Route Object (ERO) path for a network service sliver
         can be extended into the requested time window without violating bandwidth constraints.
@@ -1325,6 +1512,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         :type start: datetime
         :param end: Requested end time of the extension
         :type end: datetime
+        :param node_id_to_reservations: Map of node IDs to currently assigned reservations
+        :type node_id_to_reservations: dict
         :raises BrokerException: If any link in the ERO path cannot support the requested bandwidth
         :raises Exception: For any unexpected internal error during validation
         """
@@ -1345,8 +1534,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 if hop.startswith("link:"):
                     links.append(hop)
 
-            if all(self._is_link_allowed(link_id=link_id, requested_bw=requested_bw,
-                                         reservation_id=rid, start=start, end=end) for link_id in links):
+            if all(self._is_link_allowed(link_id=link_id, node_id_to_reservations=node_id_to_reservations,
+                                         requested_bw=requested_bw, reservation_id=rid, start=start,
+                                         end=end) for link_id in links):
                 return
         except Exception as e:
             self.logger.error(f"Error occurred when finding ERO link: {e}")
@@ -1356,7 +1546,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                               msg=f"No path available with the requested QoS")
 
     def __allocate_ero_path(self, *, reservation_id: str, sliver: NetworkServiceSliver, term: Term,
-                            operation: ReservationOperation):
+                            operation: ReservationOperation, node_id_to_reservations: dict):
         """
         Validate and resolve the Explicit Route Object (ERO) path for the given network service sliver.
 
@@ -1374,6 +1564,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         :type term: Term
         :param operation: Reservation operation type (Create, Extend, Modify)
         :type operation: ReservationOperation
+        :param node_id_to_reservations: Map of node IDs to currently assigned reservations
+        :type node_id_to_reservations: dict
         :raises BrokerException: If path resolution fails or hops are invalid
         """
         if not sliver.ero:
@@ -1381,14 +1573,15 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         if operation == ReservationOperation.Extend:
             self.__can_extend_ero(rid=reservation_id, sliver=sliver, start=term.get_start_time(),
-                                  end=term.get_end_time())
+                                  end=term.get_end_time(), node_id_to_reservations=node_id_to_reservations)
             return
 
         self._find_suitable_link(
             reservation_id=reservation_id,
             requested_sliver=sliver,
             start=term.get_start_time(),
-            end=term.get_end_time()
+            end=term.get_end_time(),
+            node_id_to_reservations=node_id_to_reservations
         )
 
         type, path = sliver.ero.get()
@@ -1608,6 +1801,15 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 if node_id_to_reservations.get(node_id, None) is None:
                     node_id_to_reservations[node_id] = ReservationSet()
                 node_id_to_reservations[node_id].add(reservation=reservation)
+
+                if isinstance(sliver, NetworkServiceSliver) and sliver.ero:
+                    sliver_type, path = sliver.ero.get()
+                    path_list = path.get()[0]
+                    for hop in path_list:
+                        if hop.startswith("link:"):
+                            if node_id_to_reservations.get(hop, None) is None:
+                                node_id_to_reservations[hop] = ReservationSet()
+                            node_id_to_reservations[hop].add(reservation=reservation)
 
                 from fabric_cf.actor.core.container.globals import GlobalsSingleton
                 if GlobalsSingleton.get().get_quota_mgr():
@@ -1954,181 +2156,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.logger.info(f"CBM rollback due to un-merge failure")
                 self.combined_broker_model.rollback(graph_id=snapshot_graph_id)
             raise e
-
-    def _validate_requested_ero_path(self, source_node: str, end_node: str, hops: List[str]) -> bool:
-        """
-        Validate the requested Explicit Route Object (ERO) path between source and destination sites.
-
-        Ensures the requested sequence of hops (site names) forms a valid path in the CBM and that
-        each hop in the path has enough available bandwidth to satisfy the L2PTP request.
-
-        Used to pre-check feasibility before constructing the symmetric path and committing
-        to a reservation.
-
-        :param source: Starting site name
-        :type source: str
-        :param end: Destination site name
-        :type end: str
-        :param hops: Ordered list of intermediate site names (the ERO)
-        :type hops: List[str]
-        :raises Exception: If any hop is invalid or bandwidth requirements cannot be met
-        """
-        try:
-            self.lock.acquire()
-            if self.combined_broker_model:
-                path = self.combined_broker_model.get_nodes_on_path_with_hops(node_a=source_node,
-                                                                              node_z=end_node, hops=hops, cut_off=200)
-                self.logger.debug(f"Network path from source:{source_node} to end: {end_node} "
-                                  f"with hops: {hops} is path: {path}")
-                if len(path) and path[0] == source_node and path[-1] == end_node:
-                    return True
-        finally:
-            self.lock.release()
-        return False
-
-    def _find_suitable_link(self, reservation_id: str, requested_sliver: NetworkServiceSliver,
-                            start: datetime, end: datetime):
-        """
-        Identify a suitable L2PTP link in the Combined Broker Model (CBM) that can satisfy the
-        requested reservation sliver and term.
-
-        This method is invoked for L2PTP services that include Explicit Route Object (ERO) paths.
-        It performs the following:
-          - Extracts the ERO path, source, and destination sites from the requested sliver
-          - Validates presence of interface information and hop sequence
-          - Looks up links in the CBM that match the ERO
-          - For each candidate link, checks whether sufficient bandwidth is available over the requested term
-
-        If a valid link is found that satisfies all constraints (e.g., bandwidth, ERO compliance),
-        the method updates the internal selection state accordingly.
-
-        :param reservation_id: Unique ID for the reservation being processed
-        :type reservation_id: str
-        :param requested_sliver: Network service sliver representing the L2PTP request
-        :type requested_sliver: NetworkServiceSliver
-        :param start: Requested lease start time
-        :type start: datetime
-        :param end: Requested lease end time
-        :type end: datetime
-        :raises Exception: If ERO path is missing, malformed, or no viable link satisfies the bandwidth requirement
-        """
-        if not isinstance(requested_sliver, NetworkServiceSliver):
-            return
-
-        ero = requested_sliver.ero
-        interfaces = requested_sliver.interface_info
-
-        if not ero or not ero.get() or not interfaces or not interfaces.interfaces:
-            return
-
-        requested_bw = 0
-        if requested_sliver.capacities:
-            requested_bw = requested_sliver.capacities.bw
-
-        try:
-            sliver_type, path = ero.get()
-            path_list = path.get()[0]
-            if not path_list:
-                return
-
-            source_site = path_list[0]
-            dest_site = path_list[-1]
-
-            source_node_id = self.abqm.find_node_by_name(
-                label=ABCPropertyGraphConstants.CLASS_CompositeNode,
-                node_name=f"{source_site}"
-            )
-            dest_node_id = self.abqm.find_node_by_name(
-                label=ABCPropertyGraphConstants.CLASS_CompositeNode,
-                node_name=f"{dest_site}"
-            )
-            if not source_node_id or not dest_node_id:
-                raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
-                                      msg=f"Source {source_site} or Dest {dest_site} not found!")
-
-            hops = []
-
-            for hop in path_list:
-                ns_node_id = self.abqm.find_node_by_name(
-                    label=ABCPropertyGraphConstants.CLASS_NetworkService,
-                    node_name=f"{hop}_ns"
-                )
-                if not ns_node_id:
-                    raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
-                                          msg=f"Hop: {hop} is not found in the available sites!")
-                hops.append(ns_node_id)
-
-            paths = self.abqm.get_all_paths_with_hops(
-                node_a=source_node_id,
-                node_z=dest_node_id,
-                hops=hops
-            )
-
-            for sorted_path in sorted(paths, key=len)[:50]:
-                links = []
-                final_path = []
-
-                for node_id in sorted_path:
-                    _, props = self.abqm.get_node_properties(node_id=node_id)
-                    node_type = props.get("Type")
-                    name = props.get("Name")
-
-                    if node_type == "MPLS":
-                        final_path.append(name.replace("_ns", ""))
-                    elif node_id.startswith("link:"):
-                        final_path.append(node_id)
-                        links.append(node_id)
-
-                if all(self._is_link_allowed(link_id=link_id, requested_bw=requested_bw,
-                                             reservation_id=reservation_id, start=start, end=end) for link_id in links):
-                    path = Path()
-                    path.set_symmetric(final_path)
-                    requested_sliver.ero.set(path)
-                    self.logger.debug(f"Final path: {final_path}")
-                    return
-
-            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                  msg=f"No ERO path from {source_site} => {dest_site} found that satisfies "
-                                      f"the requested bandwidth: {requested_bw} constraints.")
-
-        except Exception as e:
-            self.logger.error(f"Error occurred when finding ERO link: {e}")
-            self.logger.error(traceback.format_exc())
-            raise e
-
-    def _is_link_allowed(self, link_id: str, requested_bw: int, reservation_id: str, start: datetime,
-                         end: datetime) -> bool:
-        """
-        Check if a given L2 link sliver can support the requested bandwidth.
-
-        This method compares the requested bandwidth with the currently allocated
-        and available bandwidth for the link. It is used during QoS-aware path validation.
-
-        :param link_id: Link id
-        :type link_id: str
-        :param requested_bw: Requested bandwidth in Mbps
-        :type requested_bw: int
-        :param reservation_id: Reservation ID
-        :type reservation_id: str
-        :param start: Requested lease start time
-        :type start: datetime
-        :param end: Requested lease end time
-        :type end: datetime
-        :return: True if the link has enough bandwidth, False otherwise
-        :rtype: bool
-        """
-        link_sliver = self.abqm.build_deep_link_sliver(node_id=link_id)
-        existing = self.get_existing_links(node_id=link_sliver.node_id, excludes=[reservation_id],
-                                           start=start, end=end)
-        allowed_bw = (
-            link_sliver.capacity_allocations.bw
-            if link_sliver.capacity_allocations
-            else link_sliver.capacities.bw
-        )
-        if existing:
-            allowed_bw -= existing.get(link_id, 0)
-        self.logger.debug(f"Link Sliver: {link_sliver} Existing bandwidth: {existing} Available bandwidth: {allowed_bw}")
-        return requested_bw <= allowed_bw
 
     def query(self, *, p: dict) -> dict:
         """
@@ -2525,8 +2552,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return existing_reservations
 
-    def get_existing_links(self, node_id: str, start: datetime = None, end: datetime = None,
-                           excludes: List[str] = None, include_ns: bool = True,
+    def get_existing_links(self, node_id: str, node_id_to_reservations: dict, start: datetime = None,
+                           end: datetime = None, excludes: List[str] = None, include_ns: bool = True,
                            include_node: bool = True) -> dict[str, int]:
         """
         Compute bandwidth usage for existing L2 link reservations associated with a given node ID,
@@ -2549,6 +2576,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         :type include_ns: bool
         :param include_node: Whether to include the node’s own bandwidth usage in the calculation
         :type include_node: bool
+        :param node_id_to_reservations: Map of node IDs to currently assigned reservations
+        :type node_id_to_reservations: dict
         :return: Dictionary with reservation ID or aggregate label as key and corresponding bandwidth in Mbps
         :rtype: dict[str, int]
         """
@@ -2568,8 +2597,24 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 res_type.append(str(x))
 
         # Only get Active or Ticketing reservations
-        return self.actor.get_plugin().get_database().get_links(node_id=node_id, rsv_type=res_type, states=states,
-                                                                start=start, end=end, excludes=excludes)
+        existing = self.actor.get_plugin().get_database().get_links(node_id=node_id, rsv_type=res_type, states=states,
+                                                                    start=start, end=end, excludes=excludes)
+
+        reservations_allocated_in_cycle = node_id_to_reservations.get(node_id, None)
+
+        if reservations_allocated_in_cycle is None:
+            return existing
+
+        if existing is None:
+            existing = {}
+
+        for r in reservations_allocated_in_cycle.values():
+            allocated_sliver = InventoryForType.get_allocated_sliver(reservation=r)
+            if node_id not in existing:
+                existing[node_id] = 0
+            existing[node_id] = allocated_sliver.capacities.bw
+
+        return existing
 
     def get_existing_components(self, node_id: str, start: datetime = None, end: datetime = None,
                                 excludes: List[str] = None, include_ns: bool = True,
