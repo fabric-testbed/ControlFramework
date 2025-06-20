@@ -1428,8 +1428,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                     name = props.get("Name")
 
                     if node_type == "MPLS":
-                        if source_site in name or dest_site in name:
-                            continue
                         final_path.append(name.replace("_ns", ""))
                     elif node_id.startswith("link:"):
                         final_path.append(node_id)
