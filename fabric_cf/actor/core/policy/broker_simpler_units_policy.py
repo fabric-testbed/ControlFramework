@@ -1102,6 +1102,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             owner_switch = None
 
             peered_ns_interfaces = []
+            ero_source_end_info = []
 
             # For each Interface Sliver;
             for ifs in sliver.interface_info.interfaces.values():
@@ -1249,6 +1250,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 ifs.label_allocations = Labels.update(lab=ifs_labels)
 
                 self.logger.info(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
+                ero_source_end_info.append(owner_switch.get_site())
 
             if not owner_ns:
                 bqm_graph_id, bqm_node_id = sliver.get_node_map()
@@ -1295,7 +1297,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                               node_id_to_reservations=node_id_to_reservations, term=term)
 
             self.__allocate_ero_path(reservation_id=str(rid), sliver=sliver, term=term, operation=operation,
-                                     node_id_to_reservations=node_id_to_reservations)
+                                     node_id_to_reservations=node_id_to_reservations,
+                                     ero_source_end_info=ero_source_end_info)
         except BrokerException as e:
             delegation_id = None
             if e.error_code == ExceptionErrorCode.INSUFFICIENT_RESOURCES:
@@ -1574,7 +1577,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return resolved
 
     def __allocate_ero_path(self, *, reservation_id: str, sliver: NetworkServiceSliver, term: Term,
-                            operation: ReservationOperation, node_id_to_reservations: dict):
+                            operation: ReservationOperation, node_id_to_reservations: dict,
+                            ero_source_end_info: list[str]):
         """
         Validate and resolve the Explicit Route Object (ERO) path for the given network service sliver.
 
@@ -1594,6 +1598,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         :type operation: ReservationOperation
         :param node_id_to_reservations: Map of node IDs to currently assigned reservations
         :type node_id_to_reservations: dict
+        :param ero_source_end_info: Source and Destination Switch Names
         :raises BrokerException: If path resolution fails or hops are invalid
         """
         if not sliver.ero:
@@ -1603,6 +1608,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.__can_extend_ero(rid=reservation_id, sliver=sliver, start=term.get_start_time(),
                                   end=term.get_end_time(), node_id_to_reservations=node_id_to_reservations)
             return
+
+        type, path = sliver.ero.get()
+        a2z, z2a = path.get()
+        # Add source and destination site switches
+        path.set_symmetric([ero_source_end_info[0], *a2z, ero_source_end_info[1]])
 
         self._find_suitable_link(
             reservation_id=reservation_id,
@@ -1625,8 +1635,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         new_path = self.__resolve_ero_direction(a2z)
         if new_path:
             ero_path = Path()
-            ero_path.set(a2z=new_path[1:], z2a=new_path[1:-1] + [new_path[0]] if len(new_path) > 1 else [])
-            #ero_path.set_symmetric(new_path)
+            #ero_path.set(a2z=new_path[1:], z2a=new_path[1:-1] + [new_path[0]] if len(new_path) > 1 else [])
+            ero_path.set_symmetric(new_path)
             sliver.ero.set(ero_path)
             self.logger.info(f"Allocated ERO: {sliver.ero}")
         else:
