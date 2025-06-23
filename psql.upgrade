@@ -101,3 +101,18 @@ CREATE TRIGGER slices_last_update_time_trigger
 BEFORE UPDATE ON "Slices"
 FOR EACH ROW
 EXECUTE FUNCTION update_last_update_time();
+
+-- Create the Links table
+CREATE TABLE IF NOT EXISTS "Links" (
+    reservation_id INTEGER NOT NULL,
+    node_id VARCHAR NOT NULL,
+    layer VARCHAR,
+    type VARCHAR,
+    bw INTEGER,
+    properties BYTEA,
+    PRIMARY KEY (reservation_id, node_id),
+    FOREIGN KEY (reservation_id) REFERENCES "Reservations" (rsv_id)
+);
+
+-- Create an index on node_id for faster lookups
+CREATE INDEX IF NOT EXISTS ix_Links_node_id ON "Links" (node_id);

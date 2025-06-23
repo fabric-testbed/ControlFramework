@@ -232,7 +232,6 @@ class OrchestratorSliceWrapper:
 
         # Process only the currently supported Network Sliver types L2STS, L2PTP and L2Bridge
         elif sliver_type in Constants.SUPPORTED_SERVICES:
-
             self.logger.trace(f"Network Service Sliver Interfaces: {sliver.interface_info}")
             # Processing Interface Slivers
             if sliver.interface_info is not None:

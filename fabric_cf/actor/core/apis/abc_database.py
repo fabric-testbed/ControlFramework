@@ -191,6 +191,21 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
+    def get_links(self, *, node_id: str, states: list[int], rsv_type: list[str], start: datetime = None,
+                  end: datetime = None, excludes: List[str] = None) -> Dict[str, int]:
+        """
+        Returns links matching the search criteria
+        @param node_id: Link Node ID
+        @param states: list of states used to find reservations
+        @param rsv_type: type of reservations
+        @param start: start time
+        @param end: end time
+        @param excludes: Excludes the list of reservations
+
+        @return Dictionary with link node id as the key and value cumulative bw.
+        """
+
+    @abstractmethod
     def get_client_reservations(self, *, slice_id: ID = None) -> List[ABCReservationMixin]:
         """
         Retrieves the client reservations

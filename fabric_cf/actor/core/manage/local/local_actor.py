@@ -137,6 +137,14 @@ class LocalActor(LocalProxy, ABCMgmtActor):
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
+    def get_links(self, *, node_id: str, rsv_type: list[str], states: list[int], start: datetime = None,
+                  end: datetime = None, excludes: List[str] = None) -> Dict[str, int]:
+        try:
+            return self.manager.get_links(node_id=node_id, rsv_type=rsv_type, states=states,
+                                          start=start, end=end, excludes=excludes)
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
     def get_sites(self, *, site: str) -> List[SiteAvro] or None:
         self.clear_last()
         try:
