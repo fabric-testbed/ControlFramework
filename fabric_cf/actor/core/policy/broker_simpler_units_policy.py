@@ -2632,7 +2632,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             allocated_sliver = InventoryForType.get_allocated_sliver(reservation=r)
             if node_id not in existing:
                 existing[node_id] = 0
-            existing[node_id] = allocated_sliver.capacities.bw
+            existing[node_id] += allocated_sliver.capacities.bw
 
         return existing
 
