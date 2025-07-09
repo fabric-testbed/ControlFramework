@@ -2124,6 +2124,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         :raises Exception: If validation or merge fails
         """
         snapshot_graph_id = None
+        reload_abqm = False
         try:
             if self.combined_broker_model.graph_exists():
                 snapshot_graph_id = self.combined_broker_model.snapshot()
@@ -2135,9 +2136,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             # reload the query CBM
             self.query_cbm = FimHelper.get_neo4j_cbm_graph(graph_id=self.combined_broker_model_graph_id)
             # reload the abqm
-            with self.abqm_lock:
-                self.abqm.delete_graph()
-                self.abqm = self.query_cbm.get_bqm(query_level=0, graph_id=str(uuid.uuid4()))
+            reload_abqm = True
         except Exception as e:
             self.logger.error(f"Exception occurred: {e}")
             self.logger.error(traceback.format_exc())
@@ -2145,6 +2144,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.logger.info(f"CBM rollback due to merge failure")
                 self.combined_broker_model.rollback(graph_id=snapshot_graph_id)
             raise e
+        finally:
+            if reload_abqm:
+                self.reload_abqm()
 
     def unmerge_adm(self, *, graph_id: str):
         """
@@ -2157,6 +2159,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         :raises Exception: If rollback or validation fails
         """
         snapshot_graph_id = None
+        reload_abqm = False
         try:
             if self.combined_broker_model.graph_exists():
                 snapshot_graph_id = self.combined_broker_model.snapshot()
@@ -2169,6 +2172,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.combined_broker_model.importer.delete_graph(graph_id=snapshot_graph_id)
             # Reload the Query CBM
             self.query_cbm = FimHelper.get_neo4j_cbm_graph(graph_id=self.combined_broker_model_graph_id)
+            # reload the abqm
+            reload_abqm = True
         except Exception as e:
             self.logger.error(f"Exception occurred: {e}")
             self.logger.error(traceback.format_exc())
@@ -2176,6 +2181,27 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.logger.info(f"CBM rollback due to un-merge failure")
                 self.combined_broker_model.rollback(graph_id=snapshot_graph_id)
             raise e
+        finally:
+            if reload_abqm:
+                self.reload_abqm()
+
+    def reload_abqm(self):
+        snapshot_graph_id = None
+        try:
+            if self.abqm.graph_exists():
+                snapshot_graph_id = self.abqm.snapshot()
+            with self.abqm_lock:
+                self.abqm.delete_graph()
+                self.abqm = self.query_cbm.get_bqm(query_level=0, graph_id=str(uuid.uuid4()))
+            # delete the snapshot
+            if snapshot_graph_id is not None:
+                self.abqm.importer.delete_graph(graph_id=snapshot_graph_id)
+        except Exception as e:
+            self.logger.error(f"Exception occurred: {e}")
+            self.logger.error(traceback.format_exc())
+            if snapshot_graph_id is not None:
+                self.logger.info(f"ABQM rollback due to failure")
+                self.abqm.rollback(graph_id=snapshot_graph_id)
 
     def query(self, *, p: dict) -> dict:
         """
