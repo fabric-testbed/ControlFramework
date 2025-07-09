@@ -25,18 +25,15 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import enum
 import random
 import threading
 import traceback
 import uuid
 from datetime import datetime, timezone
-from enum import Enum
 from typing import TYPE_CHECKING, Tuple, List, Any, Dict
 
 from fim.graph.abc_property_graph import ABCPropertyGraphConstants, GraphFormat, ABCPropertyGraph
 from fim.graph.resources.abc_adm import ABCADMPropertyGraph
-from fim.graph.resources.networkx_abqm import NetworkXAggregateBQM
 from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.attached_components import ComponentSliver, ComponentType
 from fim.slivers.base_sliver import BaseSliver
@@ -2186,22 +2183,26 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.reload_abqm()
 
     def reload_abqm(self):
-        snapshot_graph_id = None
+        snapshot_graph = None
         try:
+            self.logger.debug(f"ABQM reload")
             if self.abqm.graph_exists():
-                snapshot_graph_id = self.abqm.snapshot()
+                self.logger.debug(f"ABQM snapshot")
+                snapshot_graph = self.abqm.clone_graph(new_graph_id=str(uuid.uuid4()))
             with self.abqm_lock:
+                self.logger.debug(f"ABQM - old delete")
                 self.abqm.delete_graph()
+                self.logger.debug(f"ABQM - refresh")
                 self.abqm = self.query_cbm.get_bqm(query_level=0, graph_id=str(uuid.uuid4()))
             # delete the snapshot
-            if snapshot_graph_id is not None:
-                self.abqm.importer.delete_graph(graph_id=snapshot_graph_id)
+            if snapshot_graph is not None:
+                snapshot_graph.delete_graph()
         except Exception as e:
             self.logger.error(f"Exception occurred: {e}")
             self.logger.error(traceback.format_exc())
-            if snapshot_graph_id is not None:
+            if snapshot_graph is not None:
                 self.logger.info(f"ABQM rollback due to failure")
-                self.abqm.rollback(graph_id=snapshot_graph_id)
+                self.abqm = snapshot_graph
 
     def query(self, *, p: dict) -> dict:
         """
