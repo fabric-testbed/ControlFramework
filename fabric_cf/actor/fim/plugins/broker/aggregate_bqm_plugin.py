@@ -148,7 +148,8 @@ class AggregatedBQMPlugin:
         existing = db.get_links(node_id=node_id, rsv_type=res_type, states=states, start=start, end=end)
 
         bw_used = existing.get(node_id, 0)
-        return Capacities(bw=bw_used).to_dict()
+        if bw_used:
+            return Capacities(bw=bw_used).to_dict()
 
     @staticmethod
     def occupied_node_capacity(*, db: ABCDatabase, node_id: str, start: datetime,
@@ -656,7 +657,8 @@ class AggregatedBQMPlugin:
                         if not self.DEBUG_FLAG:
                             occupied_link_capacity = self.occupied_link_capacity(db=db, node_id=fac_link_id,
                                                                                  start=start, end=end)
-                            new_link_props[ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS] = occupied_link_capacity
+                            if occupied_link_capacity:
+                                new_link_props[ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS] = occupied_link_capacity
 
                     abqm.add_node(node_id=fac_link_id, label=ABCPropertyGraph.CLASS_Link,
                                   props=new_link_props)
