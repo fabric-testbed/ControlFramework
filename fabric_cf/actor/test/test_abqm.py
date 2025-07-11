@@ -210,7 +210,7 @@ class ABQM_Test(BaseTestCase, unittest.TestCase):
     def test_load_abqm_level_zero(self):
         self.n4j_imp.delete_all_graphs()
         # these are produced by substrate tests
-        cbm = 'cbm-prod.graphml'
+        cbm = 'cbm-dev.graphml'
 
         plain_cbm = self.n4j_imp.import_graph_from_file_direct(graph_file=cbm)
         cbm = Neo4jCBMFactory.create(Neo4jPropertyGraph(graph_id=plain_cbm.graph_id,
@@ -219,7 +219,6 @@ class ABQM_Test(BaseTestCase, unittest.TestCase):
 
         print('CBM ID is ' + cbm.graph_id)
 
-        '''
         cbm_graph_id = cbm.graph_id
         # turn on debug so we can test formation of ABQM without querying
         # actor for reservations
@@ -231,7 +230,7 @@ class ABQM_Test(BaseTestCase, unittest.TestCase):
 
         plugin = AggregatedBQMPlugin(actor=None, logger=None)
 
-        abqm = plugin.plug_produce_bqm(cbm=cbm, query_level=0)
+        abqm = plugin.plug_produce_bqm(cbm=cbm, query_level=2)
 
         abqm.validate_graph()
 
@@ -246,8 +245,12 @@ class ABQM_Test(BaseTestCase, unittest.TestCase):
         with open('abqm-from-cbm.graphml', 'w') as f:
             f.write(abqm_string)
 
-        #self.n4j_imp.delete_all_graphs()
-        '''
+        from fim.user.topology import AdvertizedTopology
+        substrate = AdvertizedTopology()
+        substrate.load(graph_string=abqm_string)
+        print(substrate)
+
+        self.n4j_imp.delete_all_graphs()
 
     def test_ero_find_paths(self):
         cbm_graph_id = "162bf53f-85c5-498f-bc6f-d7d3109263a8"

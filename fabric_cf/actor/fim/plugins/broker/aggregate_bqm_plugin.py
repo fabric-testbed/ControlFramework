@@ -119,7 +119,7 @@ class AggregatedBQMPlugin:
         return result
 
     @staticmethod
-    def occupied_link_capacity(*, db: ABCDatabase, node_id: str, start: datetime, end: datetime) -> int:
+    def occupied_link_capacity(*, db: ABCDatabase, node_id: str, start: datetime, end: datetime) -> Capacities:
         """
         Compute the total bandwidth capacity occupied on a given link node within a specific time window.
 
@@ -131,7 +131,8 @@ class AggregatedBQMPlugin:
         :param node_id: The unique identifier of the link node to check.
         :param start: The start time of the reservation window.
         :param end: The end time of the reservation window.
-        :return: Total occupied bandwidth (in Gbps) on the link during the specified time window.
+        :return: Total Capacities object containing the occupied bandwidth (in Gbps) on the link during the
+        specified time window.
         """
 
         states = [ReservationStates.Active.value,
@@ -146,7 +147,8 @@ class AggregatedBQMPlugin:
         # Only get Active or Ticketing reservations
         existing = db.get_links(node_id=node_id, rsv_type=res_type, states=states, start=start, end=end)
 
-        return existing.get(node_id, 0)
+        bw_used = existing.get(node_id, 0)
+        return Capacities(bw=bw_used)
 
     @staticmethod
     def occupied_node_capacity(*, db: ABCDatabase, node_id: str, start: datetime,
@@ -526,10 +528,10 @@ class AggregatedBQMPlugin:
                         ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS]
                 elif cbm_link_props.get(ABCPropertyGraph.PROP_CAPACITIES):
                     new_link_props[ABCPropertyGraph.PROP_CAPACITIES] = cbm_link_props[ABCPropertyGraph.PROP_CAPACITIES]
-                new_link_props[ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS] = self.occupied_link_capacity(node_id=link,
-                                                                                                         db=db,
-                                                                                                         start=start,
-                                                                                                         end=end)
+                if not self.DEBUG_FLAG:
+                    occupied_link_capacity = self.occupied_link_capacity(node_id=link, db=db, start=start, end=end)
+                    if occupied_link_capacity:
+                        new_link_props[ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS] = occupied_link_capacity
 
             abqm.add_node(node_id=link, label=ABCPropertyGraph.CLASS_Link, props=new_link_props)
             # connect them together
@@ -651,10 +653,10 @@ class AggregatedBQMPlugin:
                         elif fac_link_props.get(ABCPropertyGraph.PROP_CAPACITIES):
                             new_link_props[ABCPropertyGraph.PROP_CAPACITIES] = fac_link_props[
                                 ABCPropertyGraph.PROP_CAPACITIES]
-                        new_link_props[ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS] = self.occupied_link_capacity(db=db,
-                                                                                                                 node_id=fac_link_id,
-                                                                                                                 start=start,
-                                                                                                                 end=end)
+                        if not self.DEBUG_FLAG:
+                            occupied_link_capacity = self.occupied_link_capacity(db=db, node_id=fac_link_id,
+                                                                                 start=start, end=end)
+                            new_link_props[ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS] = occupied_link_capacity
 
                     abqm.add_node(node_id=fac_link_id, label=ABCPropertyGraph.CLASS_Link,
                                   props=new_link_props)
