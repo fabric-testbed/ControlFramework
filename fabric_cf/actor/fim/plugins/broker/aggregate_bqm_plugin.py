@@ -131,7 +131,7 @@ class AggregatedBQMPlugin:
         :param node_id: The unique identifier of the link node to check.
         :param start: The start time of the reservation window.
         :param end: The end time of the reservation window.
-        :return: Total Capacities object containing the occupied bandwidth (in Gbps) on the link during the
+        :return: Total Capacities in dict containing the occupied bandwidth (in Gbps) on the link during the
         specified time window.
         """
 
@@ -148,7 +148,7 @@ class AggregatedBQMPlugin:
         existing = db.get_links(node_id=node_id, rsv_type=res_type, states=states, start=start, end=end)
 
         bw_used = existing.get(node_id, 0)
-        return Capacities(bw=bw_used)
+        return Capacities(bw=bw_used).to_dict()
 
     @staticmethod
     def occupied_node_capacity(*, db: ABCDatabase, node_id: str, start: datetime,
