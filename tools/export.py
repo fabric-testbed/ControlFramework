@@ -203,17 +203,12 @@ class ExportScript:
                                 "bandwidth": bw,
                                 "lease_start": reservation.get_term().get_start_time().isoformat(),
                                 "lease_end": reservation.get_term().get_end_time().isoformat(),
-                                "interfaces": [
-                                    {
-                                        "interface_id": "eth0",
-                                        "site": "RENC",
-                                        "vlan": "123",
-                                        "bdf": "0000:3b:00.0",
-                                        "local_name": "ens3",
-                                        "device_name": "mlx5_0",
-                                        "name": "mgmt-net"
-                                    }
-                                ]
+                                "interfaces": {
+                                    "data": []
+                                },
+                                "components": {
+                                    "data": []
+                                }
                             }
                             if isinstance(sliver, NodeSliver) and sliver.attached_components_info:
                                 components = []
@@ -221,16 +216,27 @@ class ExportScript:
                                     bdfs = component.labels.bdf if component.labels and component.labels.bdf else None
                                     if bdfs and not isinstance(bdfs, list):
                                         bdfs = [bdfs]
+                                    node_id = None
+                                    component_node_id = None
+
+                                    sliver_map = sliver.get_node_map()
+                                    if sliver_map:
+                                        _, node_id = sliver_map
+
+                                    component_map = component.get_node_map()
+                                    if component_map:
+                                        _, component_node_id = component_map
+
                                     components.append({
                                         "component_id": component.node_id,
-                                        "node_id": str(reservation.get_graph_node_id()),
-                                        "component_node_id": component.get_node_map(),
+                                        "node_id": node_id,
+                                        "component_node_id": component_node_id,
                                         "type": str(component.get_type()).lower(),
                                         "model": str(component.get_model()).lower(),
                                         "bdfs": bdfs
                                     })
                                 if len(components):
-                                    sliver_payload["components"] = components
+                                    sliver_payload["components"]["data"] = components
 
                             if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info:
                                 interfaces = []
@@ -265,6 +271,8 @@ class ExportScript:
                                         "device_name": device_name,
                                         "name": ifs.get_name()
                                     })
+                                if len(interfaces):
+                                    sliver_payload["interfaces"]["data"] = interfaces
 
                             self.reports_api.post_sliver(slice_id=slice_guid,
                                                          sliver_id=sliver_guid,

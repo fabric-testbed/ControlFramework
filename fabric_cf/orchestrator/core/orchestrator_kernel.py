@@ -25,11 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 from datetime import datetime, timedelta
-from heapq import heappush, heappop
-from http.client import BAD_REQUEST
-from typing import List, Iterator, Tuple, Optional
-
-from fabric_cf.actor.core.time.actor_clock import ActorClock
+from typing import List, Union
 
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fim.slivers.network_node import NodeSliver
@@ -37,7 +33,7 @@ from fim.slivers.network_node import NodeSliver
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
-from fim.user import GraphFormat
+from fim.user import GraphFormat, ServiceType, NodeType
 
 from fabric_cf.actor.core.apis.abc_actor_event import ABCActorEvent
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
@@ -235,7 +231,7 @@ class OrchestratorKernel(ABCTick):
     def get_name(self) -> str:
         return self.__class__.__name__
 
-    def find_common_start_time(self, reservation_start_times: list[list[datetime]]) -> datetime:
+    def find_common_start_time(self, reservation_start_times: list[list[datetime]]) -> Union[datetime, None]:
         """
         Find the earliest common start time for a group of reservations.
 

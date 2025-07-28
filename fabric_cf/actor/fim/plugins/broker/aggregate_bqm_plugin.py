@@ -119,6 +119,39 @@ class AggregatedBQMPlugin:
         return result
 
     @staticmethod
+    def occupied_link_capacity(*, db: ABCDatabase, node_id: str, start: datetime, end: datetime) -> Capacities:
+        """
+        Compute the total bandwidth capacity occupied on a given link node within a specific time window.
+
+        This method queries the database for reservations on the specified link node that are in active or
+        ticketing states and fall within the given start and end time window. It sums up the capacity used
+        by all such relevant reservations.
+
+        :param db: An instance of ABCDatabase used to query reservations.
+        :param node_id: The unique identifier of the link node to check.
+        :param start: The start time of the reservation window.
+        :param end: The end time of the reservation window.
+        :return: Total Capacities in dict containing the occupied bandwidth (in Gbps) on the link during the
+        specified time window.
+        """
+
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value,
+                  ReservationStates.Nascent.value]
+
+        res_type = []
+        for x in ServiceType:
+            res_type.append(str(x))
+
+        # Only get Active or Ticketing reservations
+        existing = db.get_links(node_id=node_id, rsv_type=res_type, states=states, start=start, end=end)
+
+        bw_used = existing.get(node_id, 0)
+        if bw_used:
+            return Capacities(bw=bw_used).to_dict()
+
+    @staticmethod
     def occupied_node_capacity(*, db: ABCDatabase, node_id: str, start: datetime,
                                end: datetime) -> Tuple[Capacities, Dict[ComponentType, Dict[str, Capacities]]]:
         """
@@ -169,11 +202,28 @@ class AggregatedBQMPlugin:
 
     def plug_produce_bqm(self, *, cbm: ABCCBMPropertyGraph, **kwargs) -> ABCBQMPropertyGraph:
         """
-        Take a CBM, sort nodes by site, aggregate servers, components and interfaces to
-        create a site-based advertisement. Use a NetworkX-based implementation.
-        :param cbm:
-        :param kwargs:
-        :return:
+        Generate a site-aggregated BQM (Broker Query Model) graph from a CBM (Combined Broker Model).
+
+        This function aggregates network and compute resources per site, organizing them based on the
+        specified query level. The resulting graph is suitable for advertisement, resource lookup, and
+        scheduling decisions.
+
+        Query Levels:
+            - Level 0: Includes full per-worker detail with original node IDs (used by Orchestrator for advanced scheduling)
+            - Level 1: Includes consolidated per-site information only, with anonymized node IDs (used by `fablib.get_sites()`)
+            - Level 2: Includes per-worker detail with anonymized node IDs (default for `fablib.get_sites()`)
+
+        Parameters:
+            cbm (ABCCBMPropertyGraph): Input graph containing raw broker data including nodes, links, and components.
+            **kwargs:
+                query_level (int): Level of aggregation (0, 1, or 2). Defaults to Level 2 if unspecified.
+                includes (str): Comma-separated list of site names to include.
+                excludes (str): Comma-separated list of site names to exclude.
+                start (datetime): Optional start time for querying capacity allocations.
+                end (datetime): Optional end time for querying capacity allocations.
+
+        Returns:
+            ABCBQMPropertyGraph: An aggregated NetworkX-based BQM graph reflecting the requested query level.
         """
         if kwargs.get('query_level', None) is None or kwargs['query_level'] > 2:
             return cbm.clone_graph(new_graph_id=str(uuid.uuid4()))
@@ -206,7 +256,10 @@ class AggregatedBQMPlugin:
 
         # create a new blank Aggregated BQM NetworkX graph
         if kwargs['query_level'] == 0:
-            abqm = NetworkXAggregateBQM(graph_id=cbm.graph_id,
+            graph_id = cbm.graph_id
+            if kwargs.get('graph_id'):
+                graph_id = kwargs.get('graph_id')
+            abqm = NetworkXAggregateBQM(graph_id=graph_id,
                                         importer=NetworkXGraphImporter(logger=self.logger),
                                         logger=self.logger)
         else:
@@ -463,8 +516,24 @@ class AggregatedBQMPlugin:
             new_link_props = {ABCPropertyGraph.PROP_NAME: cbm_link_props[ABCPropertyGraph.PROP_NAME],
                               ABCPropertyGraph.PROP_TYPE: cbm_link_props[ABCPropertyGraph.PROP_TYPE],
                               ABCPropertyGraph.PROP_CLASS: cbm_link_props[ABCPropertyGraph.PROP_CLASS],
-                              ABCPropertyGraph.PROP_LAYER: cbm_link_props[ABCPropertyGraph.PROP_LAYER]
+                              ABCPropertyGraph.PROP_LAYER: cbm_link_props[ABCPropertyGraph.PROP_LAYER],
                               }
+            if kwargs['query_level'] == 0:
+                if cbm_link_props.get(ABCPropertyGraph.PROP_CAPACITIES):
+                    new_link_props[ABCPropertyGraph.PROP_CAPACITIES] = cbm_link_props[ABCPropertyGraph.PROP_CAPACITIES]
+                if cbm_link_props.get(ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS):
+                    new_link_props[ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS] = cbm_link_props[ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS]
+            else:
+                if cbm_link_props.get(ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS):
+                    new_link_props[ABCPropertyGraph.PROP_CAPACITIES] = cbm_link_props[
+                        ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS]
+                elif cbm_link_props.get(ABCPropertyGraph.PROP_CAPACITIES):
+                    new_link_props[ABCPropertyGraph.PROP_CAPACITIES] = cbm_link_props[ABCPropertyGraph.PROP_CAPACITIES]
+                if not self.DEBUG_FLAG:
+                    occupied_link_capacity = self.occupied_link_capacity(node_id=link, db=db, start=start, end=end)
+                    if occupied_link_capacity:
+                        new_link_props[ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS] = occupied_link_capacity
+
             abqm.add_node(node_id=link, label=ABCPropertyGraph.CLASS_Link, props=new_link_props)
             # connect them together
             abqm.add_link(node_a=site_to_ns_node_id[source_site], rel=ABCPropertyGraph.REL_CONNECTS,
@@ -571,6 +640,26 @@ class AggregatedBQMPlugin:
                                       ABCPropertyGraph.PROP_TYPE: fac_link_props[ABCPropertyGraph.PROP_TYPE],
                                       ABCPropertyGraph.PROP_LAYER: fac_link_props[ABCPropertyGraph.PROP_LAYER]
                                       }
+                    if kwargs['query_level'] == 0:
+                        if fac_link_props.get(ABCPropertyGraph.PROP_CAPACITIES):
+                            new_link_props[ABCPropertyGraph.PROP_CAPACITIES] = fac_link_props[
+                                ABCPropertyGraph.PROP_CAPACITIES]
+                        if fac_link_props.get(ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS):
+                            new_link_props[ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS] = fac_link_props[
+                                ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS]
+                    else:
+                        if fac_link_props.get(ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS):
+                            new_link_props[ABCPropertyGraph.PROP_CAPACITIES] = fac_link_props[
+                                ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS]
+                        elif fac_link_props.get(ABCPropertyGraph.PROP_CAPACITIES):
+                            new_link_props[ABCPropertyGraph.PROP_CAPACITIES] = fac_link_props[
+                                ABCPropertyGraph.PROP_CAPACITIES]
+                        if not self.DEBUG_FLAG:
+                            occupied_link_capacity = self.occupied_link_capacity(db=db, node_id=fac_link_id,
+                                                                                 start=start, end=end)
+                            if occupied_link_capacity:
+                                new_link_props[ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS] = occupied_link_capacity
+
                     abqm.add_node(node_id=fac_link_id, label=ABCPropertyGraph.CLASS_Link,
                                   props=new_link_props)
                     try:

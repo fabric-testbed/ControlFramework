@@ -1,7 +1,7 @@
 FROM python:3.11.0
 MAINTAINER Komal Thareja<komal.thareja@gmail.com>
 
-ARG HANDLERS_VER=1.8.4
+ARG HANDLERS_VER=1.9.0
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
@@ -19,7 +19,7 @@ COPY pyproject.toml /usr/src/app/
 COPY README.md /usr/src/app/
 COPY LICENSE /usr/src/app/
 COPY tools/audit.py /usr/src/app/
-COPY export/ /usr/src/app/export/
+COPY tools/export.py /usr/src/app/
 COPY tools/install.sh /usr/src/app/
 
 RUN pip3 install .

@@ -193,6 +193,21 @@ class ABCMgmtActor(ABCComponent):
         """
         raise NotImplementedError
 
+    def get_links(self, *, node_id: str, rsv_type: list[str], states: list[int], start: datetime = None,
+                  end: datetime = None, excludes: List[str] = None) -> Dict[str, int]:
+        """
+        Returns Links matching the search criteria
+        @param node_id: Link Node ID
+        @param states: list of states used to find reservations
+        @param rsv_type: type of reservations
+        @param start: start time
+        @param end: end time
+        @param excludes: Excludes the list of reservations
+
+        @return Dictionary with link node id as key and cumulative bandwidth.
+        """
+        raise NotImplementedError
+
     @abstractmethod
     def get_sites(self, *, site: str) -> List[SiteAvro] or None:
         """

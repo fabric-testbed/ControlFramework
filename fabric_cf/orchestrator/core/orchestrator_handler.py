@@ -326,7 +326,9 @@ class OrchestratorHandler:
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
 
             create_ts = time.time()
+            #if (lease_start_time and lease_end_time and lifetime) or new_slice_object.ero:
             if lease_start_time and lease_end_time and lifetime:
+                # Enqueue slices with ERO also on Advanced Scheduling Thread to determine the links
                 # Enqueue future slices on Advanced Scheduling Thread to determine possible start time
                 # Determining start time may take time so this is done asynchronously to avoid increasing response time
                 # of create slice API
@@ -917,7 +919,7 @@ class OrchestratorHandler:
     def poa(self, *, token: str, sliver_id: str, poa: PoaAvro) -> tuple[str, str]:
         try:
             controller = self.controller_state.get_management_actor()
-            self.logger.debug(f"poa invoked for Controller: {controller}")
+            self.logger.debug(f"poa invoked for Controller: {controller} pos: {poa}")
 
             rid = ID(uid=sliver_id) if sliver_id is not None else None
 

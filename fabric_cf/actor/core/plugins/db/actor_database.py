@@ -30,6 +30,7 @@ import traceback
 from datetime import datetime
 from typing import List, Union, Dict
 
+from fim.slivers.network_link import NetworkLinkSliver
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
 from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
@@ -292,6 +293,7 @@ class ActorDatabase(ABCDatabase):
             host = None
             ip_subnet = None
             sliver = None
+            links = []
             from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
             if isinstance(reservation, ReservationClient) and reservation.get_leased_resources() and \
                     reservation.get_leased_resources().get_sliver():
@@ -322,6 +324,13 @@ class ActorDatabase(ABCDatabase):
                             bdf = ":".join(split_string[3:]) if len(split_string) > 3 else None
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
+                    if sliver.ero and sliver.capacities:
+                        type, path = sliver.ero.get()
+                        if path and len(path.get()):
+                            for hop in path.get()[0]:
+                                if hop.startswith('link:'):
+                                    links.append({"node_id": hop,
+                                                  "bw": sliver.capacities.bw})
 
                 elif isinstance(sliver, NodeSliver):
                     site = sliver.get_site()
@@ -359,7 +368,7 @@ class ActorDatabase(ABCDatabase):
                                     components=components,
                                     lease_start=term.get_start_time() if term else None,
                                     lease_end=term.get_end_time() if term else None,
-                                    host=host, ip_subnet=ip_subnet)
+                                    host=host, ip_subnet=ip_subnet, links=links)
             self.logger.debug(
                 "Reservation {} added to slice {}".format(reservation.get_reservation_id(), reservation.get_slice()))
         finally:
@@ -382,6 +391,7 @@ class ActorDatabase(ABCDatabase):
             ip_subnet = None
             host = None
             sliver = None
+            links = []
             from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
             if isinstance(reservation, ReservationClient) and reservation.get_leased_resources() and \
                     reservation.get_leased_resources().get_sliver():
@@ -412,6 +422,14 @@ class ActorDatabase(ABCDatabase):
                             bdf = ":".join(split_string[3:]) if len(split_string) > 3 else None
                             if node_id and comp_id and bdf:
                                 components.append((node_id, comp_id, bdf))
+
+                    if sliver.ero and sliver.capacities:
+                        type, path = sliver.ero.get()
+                        if path and len(path.get()):
+                            for hop in path.get()[0]:
+                                if hop.startswith('link:'):
+                                    links.append({"node_id": hop,
+                                                  "bw": sliver.capacities.bw})
                 elif isinstance(sliver, NodeSliver):
                     site = sliver.get_site()
 
@@ -452,7 +470,7 @@ class ActorDatabase(ABCDatabase):
                                        site=site, rsv_type=rsv_type, components=components,
                                        lease_start=term.get_start_time() if term else None,
                                        lease_end=term.get_end_time() if term else None,
-                                       ip_subnet=ip_subnet, host=host)
+                                       ip_subnet=ip_subnet, host=host, links=links)
             diff = int(time.time() - begin)
             if diff > 0:
                 self.logger.info(f"DB TIME: {diff}")
@@ -594,6 +612,17 @@ class ActorDatabase(ABCDatabase):
         try:
             return self.db.get_components(node_id=node_id, states=states, component=component, bdf=bdf,
                                           rsv_type=rsv_type, start=start, end=end, excludes=excludes)
+        except Exception as e:
+            self.logger.error(e)
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+
+    def get_links(self, *, node_id: str, states: list[int], rsv_type: list[str], start: datetime = None,
+                  end: datetime = None, excludes: List[str] = None) -> Dict[str, int]:
+        try:
+            return self.db.get_links(node_id=node_id, states=states, rsv_type=rsv_type, start=start,
+                                     end=end, excludes=excludes)
         except Exception as e:
             self.logger.error(e)
         finally:

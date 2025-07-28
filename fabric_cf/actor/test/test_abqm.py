@@ -1,12 +1,24 @@
+import time
 import unittest
+from datetime import datetime
+
+from fabric_cf.actor.fim.fim_helper import FimHelper
+
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+
+from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
+
 
 from fim.graph.abc_property_graph import ABCPropertyGraph, GraphFormat
+from fim.graph.abc_property_graph_constants import ABCPropertyGraphConstants
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMFactory, Neo4jCBMGraph
-from fim.user import NodeType
+from fim.slivers.path_info import Path
+from fim.user import NodeType, ERO, ExperimentTopology, Capacities, ComponentModelType, ServiceType
 
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
+from fabric_cf.actor.test.base_test_case import BaseTestCase
 
 """
 Test of an ABQM plugin
@@ -21,7 +33,14 @@ with open("./config/config.test.yaml", 'r') as stream:
         print(exc)
 
 
-class ABQM_Test(unittest.TestCase):
+class ABQM_Test(BaseTestCase, unittest.TestCase):
+    def get_clean_database(self) -> ActorDatabase:
+        db = self.get_actor_database()
+        db.set_actor_name(name=self.actor_name)
+        db.set_reset_state(state=True)
+        db.initialize()
+        return db
+
     n4j_imp = Neo4jGraphImporter(url=neo4j["url"], user=neo4j["user"],
                                  pswd=neo4j["pass"],
                                  import_host_dir=neo4j["import_host_dir"],
@@ -146,8 +165,7 @@ class ABQM_Test(unittest.TestCase):
     def test_cbm(self):
         self.n4j_imp.delete_all_graphs()
         # these are produced by substrate tests
-        #cbm = '../../../neo4j/abqm-l2-cbm.graphml'
-        cbm = 'cbm.graphml'
+        cbm = '../../../neo4j/abqm-l2-cbm.graphml'
 
         plain_cbm = self.n4j_imp.import_graph_from_file_direct(graph_file=cbm)
         cbm = Neo4jCBMFactory.create(Neo4jPropertyGraph(graph_id=plain_cbm.graph_id,
@@ -188,3 +206,146 @@ class ABQM_Test(unittest.TestCase):
             f.write(abqm2_string)
 
         self.n4j_imp.delete_all_graphs()
+
+    def test_load_abqm_level_zero(self):
+        self.n4j_imp.delete_all_graphs()
+        # these are produced by substrate tests
+        cbm = 'cbm-dev.graphml'
+
+        plain_cbm = self.n4j_imp.import_graph_from_file_direct(graph_file=cbm)
+        cbm = Neo4jCBMFactory.create(Neo4jPropertyGraph(graph_id=plain_cbm.graph_id,
+                                     importer=self.n4j_imp))
+        cbm.validate_graph()
+
+        print('CBM ID is ' + cbm.graph_id)
+
+        cbm_graph_id = cbm.graph_id
+        # turn on debug so we can test formation of ABQM without querying
+        # actor for reservations
+        AggregatedBQMPlugin.DEBUG_FLAG = True
+
+        n4j_pg = Neo4jPropertyGraph(graph_id=cbm_graph_id, importer=self.n4j_imp)
+
+        cbm = Neo4jCBMFactory.create(n4j_pg)
+
+        plugin = AggregatedBQMPlugin(actor=None, logger=None)
+
+        abqm = plugin.plug_produce_bqm(cbm=cbm, query_level=2)
+
+        abqm.validate_graph()
+
+        abqm_string = abqm.serialize_graph()
+
+        cbm.delete_graph()
+
+        plain_abqm = self.n4j_imp.import_graph_from_string_direct(graph_string=abqm_string)
+        plain_abqm.validate_graph()
+
+        print('Writing ABQM to abqm-from-cbm.graphml')
+        with open('abqm-from-cbm.graphml', 'w') as f:
+            f.write(abqm_string)
+
+        from fim.user.topology import AdvertizedTopology
+        substrate = AdvertizedTopology()
+        substrate.load(graph_string=abqm_string)
+        print(substrate)
+
+        self.n4j_imp.delete_all_graphs()
+
+    def test_ero_find_paths(self):
+        cbm_graph_id = "162bf53f-85c5-498f-bc6f-d7d3109263a8"
+        n4j_pg = Neo4jCBMGraph(graph_id=cbm_graph_id, importer=self.n4j_imp)
+
+        hop = "WASH"
+        t = ExperimentTopology()
+        n1 = t.add_node(name='n1', site='HAWI')
+        n2 = t.add_node(name='n2', site='CERN')
+        cap = Capacities(core=2, ram=8, disk=100)
+        n1.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+        n2.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+
+        n1.add_component(model_type=ComponentModelType.SmartNIC_ConnectX_6, name='n1-nic1')
+
+        n2.add_component(model_type=ComponentModelType.SmartNIC_ConnectX_6, name='n2-nic1')
+
+        ns = t.add_network_service(name='bridge1', nstype=ServiceType.L2PTP, interfaces=[n1.interface_list[0],
+                                                                                         n2.interface_list[0]])
+
+        hops = [n1.site, hop, n2.site]
+        path = Path()
+        path.set_symmetric(hops)
+        ero = ERO()
+        ero.set(payload=path)
+        ns.ero = ero
+
+        type, path = ns.ero.get()
+        path_list = path.get()[0]
+
+        source = n4j_pg.get_matching_nodes_with_components(label=ABCPropertyGraphConstants.CLASS_NetworkNode,
+                                                           props={ABCPropertyGraphConstants.PROP_SITE: path_list[0]})
+
+        dest = n4j_pg.get_matching_nodes_with_components(label=ABCPropertyGraphConstants.CLASS_NetworkNode,
+                                                         props={ABCPropertyGraphConstants.PROP_SITE: path_list[-1]})
+        hops = []
+        for h in path_list:
+            hop = n4j_pg.get_matching_nodes_with_components(label=ABCPropertyGraphConstants.CLASS_NetworkService,
+                                                            props={ABCPropertyGraphConstants.PROP_NAME: f"{h}_ns"})
+            hops.append(hop[0])
+
+        print(f"HOPS: {hops}")
+        final_path = []
+
+        db = self.get_actor_database()
+
+
+        #shortest_path = n4j_pg.get_nodes_on_shortest_path(node_a=source[0], node_z=dest[0])
+        #print(f"Shortest Path: {shortest_path}")
+
+        paths = n4j_pg.get_nodes_on_path_with_hops(node_a=source[0], node_z=dest[0], hops=hops)
+        sorted_paths = sorted(paths, key=len)
+        print(f"Number of paths: {len(sorted_paths)}")
+        for sorted_path in sorted_paths:
+            found = True
+            links = []
+            for item in sorted_path:
+                _, props = n4j_pg.get_node_properties(node_id=item)
+                #print(props)
+                if item.startswith('link:'):
+                    links.append(item)
+                if props.get("Class") == "NetworkService":
+                    final_path.append(f'{props.get("Name")}:{props.get("NodeID")}')
+
+            print(f"Links in path: {links}")
+            for l in links:
+                link_sliver = n4j_pg.build_deep_link_sliver(node_id=l)
+                print(f"""
+                Link Info:
+                  Node ID       : {link_sliver.node_id}
+                  Type          : {link_sliver.get_type()}
+                  Allowed Caps  : {link_sliver.capacity_allocations}
+                  Total Caps    : {link_sliver.capacities}
+                """)
+
+                #if link_sliver.get_type() == LinkType.L1Path:
+                #    print(link_sliver)
+                #    break
+            if found:
+                break
+
+        print(f"FINAL - Path: {final_path}")
+
+        '''
+        print("=============================================================================================")
+        print(f"Number of paths: {len(sorted_paths)}")
+        paths = n4j_pg.get_nodes_on_path_with_hops(node_a=dest[0], node_z=source[0], hops=hops)
+        sorted_paths = sorted(paths, key=len)
+        for sorted_path in sorted_paths:
+            links = [item for item in sorted_path if item.startswith('link:')]
+            print(f"Links in path: {links}")
+            for l in links:
+                _, props = n4j_pg.get_node_properties(node_id=l)
+                print(props)
+                if props['Type'] != 'L2Path':
+                    break
+            break
+        '''

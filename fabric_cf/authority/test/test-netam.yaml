@@ -46,7 +46,7 @@ runtime:
   prometheus.port: 11007
   kafka.request.timeout.ms: 120000
   rpc.request.timeout.seconds: 900
-  message.max.bytes: 1048588
+  message.max.bytes: 3145764
   rpc.retries: 5
   commit.batch.size: 1
   enable.auto.commit: False
@@ -114,10 +114,10 @@ pdp:
   enable: False
 
 neo4j:
-  url: bolt://localhost:6687
+  url: bolt://localhost:8687
   user: neo4j
   pass: password
-  import_host_dir: ../../../neo4j4/imports/
+  import_host_dir: ../../../neo4j2/imports/
   import_dir: /imports
 
 actor:
