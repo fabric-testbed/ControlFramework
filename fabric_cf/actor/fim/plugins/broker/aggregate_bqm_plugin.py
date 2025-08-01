@@ -119,7 +119,7 @@ class AggregatedBQMPlugin:
         return result
 
     @staticmethod
-    def occupied_link_capacity(*, db: ABCDatabase, node_id: str, start: datetime, end: datetime) -> Capacities:
+    def occupied_link_capacity(*, db: ABCDatabase, node_id: str, start: datetime, end: datetime) -> str:
         """
         Compute the total bandwidth capacity occupied on a given link node within a specific time window.
 
@@ -149,7 +149,7 @@ class AggregatedBQMPlugin:
 
         bw_used = existing.get(node_id, 0)
         if bw_used:
-            return Capacities(bw=bw_used).to_dict()
+            return Capacities(bw=bw_used).to_json()
 
     @staticmethod
     def occupied_node_capacity(*, db: ABCDatabase, node_id: str, start: datetime,

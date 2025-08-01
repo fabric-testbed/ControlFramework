@@ -81,7 +81,8 @@ class OrchestratorHandler:
 
     def __authorize_request(self, *, id_token: str, action_id: ActionId,
                             resource: BaseSliver or ExperimentTopology = None,
-                            lease_end_time: datetime = None) -> FabricToken:
+                            lease_end_time: datetime = None,
+                            poa_operation: str = None) -> FabricToken:
         """
         Authorize request
         :param id_token:
@@ -96,6 +97,11 @@ class OrchestratorHandler:
 
         if fabric_token.subject is None:
             raise OrchestratorException(http_error_code=UNAUTHORIZED, message="Invalid token")
+        project_uuid, tags, project_name = fabric_token.first_project
+        if action_id == ActionId.POA and poa_operation and poa_operation == "rescan" and project_uuid and \
+                tags and "Component.FPGA" not in tags:
+            raise OrchestratorException(http_error_code=UNAUTHORIZED,
+                                        message="POA rescan not authorized - missing permissions Component.FPGA")
         return fabric_token
 
     def get_broker(self, *, controller: ABCMgmtControllerMixin) -> ID:
@@ -923,7 +929,8 @@ class OrchestratorHandler:
 
             rid = ID(uid=sliver_id) if sliver_id is not None else None
 
-            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.POA)
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.POA,
+                                                    poa_operation=poa.operation)
             user_id = fabric_token.uuid
             project, tags, project_name = fabric_token.first_project
 
