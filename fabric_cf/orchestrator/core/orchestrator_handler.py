@@ -511,7 +511,8 @@ class OrchestratorHandler:
 
             # Compute the reservations
             topology_diff, computed_reservations = slice_object.modify(new_slice_graph=asm_graph)
-            slice_object.update_topology(topology=topology)
+            if topology_diff is not None:
+                slice_object.update_topology(topology=topology)
 
             # Check if Test Bed or site is in maintenance
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
@@ -521,10 +522,11 @@ class OrchestratorHandler:
 
             # Slice has sliver modifications - add/remove/update for slivers requiring AM updates
             modify_state = slice_object.has_sliver_updates_at_authority()
-            FimHelper.delete_graph(graph_id=slice_obj.get_graph_id())
-            graph_id = asm_graph.get_graph_id()
+            if topology_diff is not None:
+                FimHelper.delete_graph(graph_id=slice_obj.get_graph_id())
+                graph_id = asm_graph.get_graph_id()
+                slice_obj.graph_id = graph_id
 
-            slice_obj.graph_id = graph_id
             config_props = slice_obj.get_config_properties()
             config_props[Constants.PROJECT_ID] = project
             config_props[Constants.TAGS] = ','.join(tags)
