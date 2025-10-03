@@ -442,7 +442,8 @@ class MainClass:
                             if instance not in os_vms:
                                 results_4 = self.execute_ansible(inventory_path=inventory_location,
                                                                  playbook_path=f"{pb_dir}/worker_libvirt_operations.yml",
-                                                                 extra_vars={"operation": "delete", "host": str(host)},
+                                                                 extra_vars={"operation": "delete", "host": str(host),
+                                                                             "kvmguest_name": instance},
                                                                  ansible_python_interpreter=ansible_python_interpreter)
                                 self.logger.info(f"Deleted instance: {instance}; result: {results_4.get_json_result_ok()}")
                 except Exception as e:
