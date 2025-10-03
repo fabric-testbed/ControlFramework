@@ -775,3 +775,35 @@ class OrchestratorSliceWrapper:
 
         self.logger.debug(f"Topology diff found: {ret_val}")
         return ret_val
+
+    def has_meta_data_updates(self, *, topology_diff: TopologyDiff) -> bool:
+        """
+        Check if there any updates in topology
+        :param topology_diff: topology difference object
+        """
+        ret_val = False
+        if not topology_diff:
+            ret_val = False
+
+        if len(topology_diff.modified.nodes):
+            for x, flag in topology_diff.modified.nodes:
+                if not (flag & WhatsModifiedFlag.USER_DATA):
+                    ret_val = True
+
+        if len(topology_diff.modified.components):
+            for x, flag in topology_diff.modified.nodes:
+                if not (flag & WhatsModifiedFlag.USER_DATA):
+                    ret_val = True
+
+        if len(topology_diff.modified.interfaces):
+            for x, flag in topology_diff.modified.nodes:
+                if not (flag & WhatsModifiedFlag.USER_DATA):
+                    ret_val = True
+
+        if len(topology_diff.modified.services):
+            for x, flag in topology_diff.modified.nodes:
+                if not (flag & WhatsModifiedFlag.USER_DATA):
+                    ret_val = True
+
+        self.logger.debug(f"Topology diff found with User Data Update: {ret_val}")
+        return ret_val
