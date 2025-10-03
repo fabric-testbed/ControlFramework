@@ -778,32 +778,25 @@ class OrchestratorSliceWrapper:
 
     def has_meta_data_updates(self, *, topology_diff: TopologyDiff) -> bool:
         """
-        Check if there any updates in topology
-        :param topology_diff: topology difference object
+        Check if there are any User Data updates in the given topology difference.
+
+        :param topology_diff: TopologyDiff object containing modifications.
+        :return: True if any node, component, interface, or service has USER_DATA updated.
         """
-        ret_val = False
         if not topology_diff:
-            ret_val = False
+            return False
 
-        if len(topology_diff.modified.nodes):
-            for x, flag in topology_diff.modified.nodes:
-                if not (flag & WhatsModifiedFlag.USER_DATA):
-                    ret_val = True
+        modified = topology_diff.modified
 
-        if len(topology_diff.modified.components):
-            for x, flag in topology_diff.modified.nodes:
-                if not (flag & WhatsModifiedFlag.USER_DATA):
-                    ret_val = True
+        for collection in (
+                modified.nodes,
+                modified.components,
+                modified.interfaces,
+                modified.services,
+        ):
+            if any(flag & WhatsModifiedFlag.USER_DATA for _, flag in collection):
+                self.logger.debug("Topology diff found with User Data Update: True")
+                return True
 
-        if len(topology_diff.modified.interfaces):
-            for x, flag in topology_diff.modified.nodes:
-                if not (flag & WhatsModifiedFlag.USER_DATA):
-                    ret_val = True
-
-        if len(topology_diff.modified.services):
-            for x, flag in topology_diff.modified.nodes:
-                if not (flag & WhatsModifiedFlag.USER_DATA):
-                    ret_val = True
-
-        self.logger.debug(f"Topology diff found with User Data Update: {ret_val}")
-        return ret_val
+        self.logger.debug("Topology diff found with User Data Update: False")
+        return False
