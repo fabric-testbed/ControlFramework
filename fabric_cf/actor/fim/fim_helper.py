@@ -337,90 +337,96 @@ class FimHelper:
         :param asm_graph:
         :return:
         """
-        if sliver is None:
-            return
-        if graph_id is None and asm_graph is None:
-            return
-        if graph_id:
-            graph = FimHelper.get_graph(graph_id=graph_id)
-            asm_graph = Neo4jASMFactory.create(graph=graph)
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        logger = GlobalsSingleton.get().get_logger()
+        try:
+            if sliver is None:
+                return
+            if graph_id is None and asm_graph is None:
+                return
+            if graph_id:
+                graph = FimHelper.get_graph(graph_id=graph_id)
+                asm_graph = Neo4jASMFactory.create(graph=graph)
 
-        neo4j_topo = ExperimentTopology()
-        neo4j_topo.cast(asm_graph=asm_graph)
+            neo4j_topo = ExperimentTopology()
+            neo4j_topo.cast(asm_graph=asm_graph)
 
-        res_info = ReservationInfo()
-        res_info.reservation_id = reservation_id
-        res_info.reservation_state = state
-        res_info.error_message = error_message
+            res_info = ReservationInfo()
+            res_info.reservation_id = reservation_id
+            res_info.reservation_state = state
+            res_info.error_message = error_message
 
-        node_name = sliver.get_name()
-        if isinstance(sliver, NodeSliver) and node_name in neo4j_topo.nodes:
-            node = neo4j_topo.nodes[node_name]
-            node.set_properties(labels=sliver.labels,
-                                label_allocations=sliver.label_allocations,
-                                capacity_allocations=sliver.capacity_allocations,
-                                reservation_info=res_info,
-                                node_map=sliver.node_map,
-                                management_ip=sliver.management_ip,
-                                capacity_hints=sliver.capacity_hints)
-            if sliver.attached_components_info is not None:
-                graph_sliver = asm_graph.build_deep_node_sliver(node_id=sliver.node_id)
-                diff = graph_sliver.diff(other_sliver=sliver)
-                if diff is not None:
-                    for cname in diff.removed.components:
-                        reservation_info = ReservationInfo()
-                        reservation_info.reservation_id = reservation_id
-                        reservation_info.reservation_state = ReservationStates.Failed.name
-                        node.components[cname].set_properties(reservation_info=reservation_info)
+            node_name = sliver.get_name()
+            if isinstance(sliver, NodeSliver) and node_name in neo4j_topo.nodes:
+                node = neo4j_topo.nodes[node_name]
+                node.set_properties(labels=sliver.labels,
+                                    label_allocations=sliver.label_allocations,
+                                    capacity_allocations=sliver.capacity_allocations,
+                                    reservation_info=res_info,
+                                    node_map=sliver.node_map,
+                                    management_ip=sliver.management_ip,
+                                    capacity_hints=sliver.capacity_hints)
+                if sliver.attached_components_info is not None:
+                    graph_sliver = asm_graph.build_deep_node_sliver(node_id=sliver.node_id)
+                    diff = graph_sliver.diff(other_sliver=sliver)
+                    if diff is not None:
+                        for cname in diff.removed.components:
+                            reservation_info = ReservationInfo()
+                            reservation_info.reservation_id = reservation_id
+                            reservation_info.reservation_state = ReservationStates.Failed.name
+                            node.components[cname].set_properties(reservation_info=reservation_info)
 
-                topo_component_dict = node.components
-                for component in sliver.attached_components_info.devices.values():
-                    topo_component = topo_component_dict[component.get_name()]
-                    topo_component.set_properties(labels=component.labels,
-                                                  label_allocations=component.label_allocations,
-                                                  capacity_allocations=component.capacity_allocations,
-                                                  node_map=component.node_map)
-                    # Update Mac address
-                    if component.network_service_info is not None and \
-                            component.network_service_info.network_services is not None:
-                        topo_ifs_dict = topo_component.interfaces
-                        for ns in component.network_service_info.network_services.values():
-                            if ns.interface_info is None or ns.interface_info.interfaces is None:
-                                continue
-                            for ifs in ns.interface_info.interfaces.values():
-                                topo_ifs = topo_ifs_dict[ifs.get_name()]
-                                topo_ifs.set_properties(labels=ifs.labels,
-                                                        label_allocations=ifs.label_allocations,
-                                                        node_map=ifs.node_map)
-                                if ifs.peer_labels is not None:
-                                    topo_ifs.set_properties(peer_labels=ifs.peer_labels)
+                    topo_component_dict = node.components
+                    for component in sliver.attached_components_info.devices.values():
+                        topo_component = topo_component_dict[component.get_name()]
+                        topo_component.set_properties(labels=component.labels,
+                                                      label_allocations=component.label_allocations,
+                                                      capacity_allocations=component.capacity_allocations,
+                                                      node_map=component.node_map)
+                        # Update Mac address
+                        if component.network_service_info is not None and \
+                                component.network_service_info.network_services is not None:
+                            topo_ifs_dict = topo_component.interfaces
+                            for ns in component.network_service_info.network_services.values():
+                                if ns.interface_info is None or ns.interface_info.interfaces is None:
+                                    continue
+                                for ifs in ns.interface_info.interfaces.values():
+                                    topo_ifs = topo_ifs_dict[ifs.get_name()]
+                                    topo_ifs.set_properties(labels=ifs.labels,
+                                                            label_allocations=ifs.label_allocations,
+                                                            node_map=ifs.node_map)
+                                    if ifs.peer_labels is not None:
+                                        topo_ifs.set_properties(peer_labels=ifs.peer_labels)
 
-                                if ifs.capacities is not None:
-                                    topo_ifs.set_properties(capacities=ifs.capacities)
+                                    if ifs.capacities is not None:
+                                        topo_ifs.set_properties(capacities=ifs.capacities)
 
-        elif isinstance(sliver, NetworkServiceSliver) and node_name in neo4j_topo.network_services:
-            node = neo4j_topo.network_services[node_name]
-            node.set_properties(labels=sliver.labels,
-                                label_allocations=sliver.label_allocations,
-                                capacity_allocations=sliver.capacity_allocations,
-                                reservation_info=res_info,
-                                node_map=sliver.node_map,
-                                gateway=sliver.gateway)
-            if sliver.interface_info is not None:
-                topo_ifs_dict = node.interfaces
-                for ifs in sliver.interface_info.interfaces.values():
-                    if ifs.get_name() not in node.interfaces:
-                        continue
-                    topo_ifs = topo_ifs_dict[ifs.get_name()]
-                    topo_ifs.set_properties(labels=ifs.labels,
-                                            label_allocations=ifs.label_allocations,
-                                            node_map=ifs.node_map)
+            elif isinstance(sliver, NetworkServiceSliver) and node_name in neo4j_topo.network_services:
+                node = neo4j_topo.network_services[node_name]
+                node.set_properties(labels=sliver.labels,
+                                    label_allocations=sliver.label_allocations,
+                                    capacity_allocations=sliver.capacity_allocations,
+                                    reservation_info=res_info,
+                                    node_map=sliver.node_map,
+                                    gateway=sliver.gateway)
+                if sliver.interface_info is not None:
+                    topo_ifs_dict = node.interfaces
+                    for ifs in sliver.interface_info.interfaces.values():
+                        if ifs.get_name() not in node.interfaces:
+                            continue
+                        topo_ifs = topo_ifs_dict[ifs.get_name()]
+                        topo_ifs.set_properties(labels=ifs.labels,
+                                                label_allocations=ifs.label_allocations,
+                                                node_map=ifs.node_map)
 
-                    if ifs.peer_labels is not None:
-                        topo_ifs.set_properties(peer_labels=ifs.peer_labels)
+                        if ifs.peer_labels is not None:
+                            topo_ifs.set_properties(peer_labels=ifs.peer_labels)
 
-                    if ifs.capacities is not None:
-                        topo_ifs.set_properties(capacities=ifs.capacities)
+                        if ifs.capacities is not None:
+                            topo_ifs.set_properties(capacities=ifs.capacities)
+
+        except Exception as e:
+            logger.error("Exception while updating information about an ASM Node in Neo4j", exc_info=e)
 
     @staticmethod
     def get_neo4j_asm_graph(*, slice_graph: str) -> ABCASMPropertyGraph:
