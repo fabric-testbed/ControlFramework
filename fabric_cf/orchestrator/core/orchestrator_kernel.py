@@ -88,7 +88,7 @@ class OrchestratorKernel(ABCTick):
         try:
             self.lock.acquire()
             key = f"{graph_format}-{level}"
-            saved_bqm = self.bqm_cache.get(key, None)
+            saved_bqm = self.bqm_cache.get(key)
             return saved_bqm
         finally:
             self.lock.release()
@@ -97,18 +97,14 @@ class OrchestratorKernel(ABCTick):
         try:
             self.lock.acquire()
             key = f"{graph_format}-{level}"
-            saved_bqm = self.bqm_cache.get(key, None)
+            saved_bqm = self.bqm_cache.get(key)
             if saved_bqm is None:
-                from fabric_cf.actor.core.container.globals import GlobalsSingleton
-                refresh_interval = GlobalsSingleton.get().get_config().get_global_config().get_bqm_config().get(
-                    Constants.REFRESH_INTERVAL, None)
                 saved_bqm = BqmWrapper()
-                saved_bqm.set_refresh_interval(refresh_interval=int(refresh_interval))
             saved_bqm.save(bqm=bqm, graph_format=graph_format, level=level)
             self.bqm_cache[key] = saved_bqm
 
-            if level == 0:
-                self.load_model(model=bqm)
+            #if level == 0:
+            #    self.load_model(model=bqm)
         finally:
             self.lock.release()
 

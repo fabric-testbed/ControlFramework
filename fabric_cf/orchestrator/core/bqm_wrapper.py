@@ -41,7 +41,7 @@ class BqmWrapper:
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         config = GlobalsSingleton.get().get_config()
         bqm_config = config.get_global_config().get_bqm_config()
-        refresh_interval = bqm_config.get(Constants.REFRESH_INTERVAL, 60)
+        refresh_interval = bqm_config.get(Constants.REFRESH_INTERVAL, 2000)
         self.refresh_interval_in_seconds = refresh_interval
         self.refresh_in_progress = False
         self.level = 1
