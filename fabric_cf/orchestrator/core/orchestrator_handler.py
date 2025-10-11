@@ -326,7 +326,6 @@ class OrchestratorHandler:
                                                             lease_start_time=lease_start_time,
                                                             lease_end_time=lease_end_time,
                                                             lifetime=lifetime)
-            new_slice_object.update_topology(topology=topology)
 
             # Check if Testbed in Maintenance or Site in Maintenance
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
@@ -338,6 +337,7 @@ class OrchestratorHandler:
                 # Enqueue future slices on Advanced Scheduling Thread to determine possible start time
                 # Determining start time may take time so this is done asynchronously to avoid increasing response time
                 # of create slice API
+                new_slice_object.update_topology(topology=topology)
                 self.controller_state.get_advance_scheduling_thread().queue_slice(controller_slice=new_slice_object)
             else:
                 # Enqueue the slice on the demand thread
@@ -346,6 +346,7 @@ class OrchestratorHandler:
 
                 # Add Reservations to relational database;
                 new_slice_object.add_reservations()
+                new_slice_object.update_topology(topology=topology)
                 self.logger.info(f"OC wrapper: TIME= {time.time() - create_ts:.0f}")
                 self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
                 self.logger.info(f"QU queue: TIME= {time.time() - create_ts:.0f}")

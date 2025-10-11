@@ -42,7 +42,7 @@ from fim.slivers.capacities_labels import Labels
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver
 from fim.slivers.topology_diff import WhatsModifiedFlag, TopologyDiff
-from fim.user import ServiceType, ExperimentTopology, InterfaceType
+from fim.user import ServiceType, ExperimentTopology, InterfaceType, ReservationInfo
 
 from fabric_cf.actor.core.common.constants import ErrorCodes, Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
@@ -148,7 +148,12 @@ class OrchestratorSliceWrapper:
         start = time.time()
         # Add Network Node reservations
         for r in self.computed_add_reservations:
-            self.controller.add_reservation(reservation=r)
+            res_id = self.controller.add_reservation(reservation=r)
+            sliver = r.get_sliver()
+            sliver.reservation_info = ReservationInfo()
+            sliver.reservation_info.reservation_id = str(res_id)
+            sliver.reservation_info.reservation_state = str(ReservationStates.Nascent)
+
         self.logger.info(f"ADD TIME: {time.time() - start:.0f}")
 
     def create(self, *, slice_graph: ABCASMPropertyGraph, lease_start_time: datetime = None,
