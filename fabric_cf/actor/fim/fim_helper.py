@@ -358,7 +358,8 @@ class FimHelper:
 
             node_name = sliver.get_name()
             if isinstance(sliver, NodeSliver) and node_name in neo4j_topo.nodes:
-                node = neo4j_topo.nodes[node_name]
+                #node = neo4j_topo.nodes[node_name]
+                node = neo4j_topo._get_node_by_name(name=node_name)
                 node.set_properties(labels=sliver.labels,
                                     label_allocations=sliver.label_allocations,
                                     capacity_allocations=sliver.capacity_allocations,
@@ -402,7 +403,8 @@ class FimHelper:
                                         topo_ifs.set_properties(capacities=ifs.capacities)
 
             elif isinstance(sliver, NetworkServiceSliver) and node_name in neo4j_topo.network_services:
-                node = neo4j_topo.network_services[node_name]
+                #node = neo4j_topo.network_services[node_name]
+                node = neo4j_topo._get_ns_by_name(name=node_name)
                 node.set_properties(labels=sliver.labels,
                                     label_allocations=sliver.label_allocations,
                                     capacity_allocations=sliver.capacity_allocations,

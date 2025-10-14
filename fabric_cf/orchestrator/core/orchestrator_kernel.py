@@ -195,7 +195,7 @@ class OrchestratorKernel(ABCTick):
                                                force_refresh=True, level=0)
         self.load_model(model=model)
 
-        self.get_logger().debug("Starting SliceDeferThread")
+        self.get_logger().info("Starting SliceDeferThread")
         self.defer_thread = SliceDeferThread(kernel=self)
         self.defer_thread.start()
         self.event_processor = EventProcessor(name="PeriodicProcessor", logger=self.logger)
