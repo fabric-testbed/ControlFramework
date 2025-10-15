@@ -357,9 +357,12 @@ class FimHelper:
             res_info.error_message = error_message
 
             node_name = sliver.get_name()
-            if isinstance(sliver, NodeSliver) and node_name in neo4j_topo.nodes:
-                #node = neo4j_topo.nodes[node_name]
-                node = neo4j_topo._get_node_by_name(name=node_name)
+            if isinstance(sliver, NodeSliver):
+                #node = neo4j_topo._get_node_by_name(name=node_name)
+                node = neo4j_topo._get_node_by_id(node_id=sliver.node_id)
+                if node is None:
+                    logger.error("Node {} not found".format(node_name))
+                    return
                 node.set_properties(labels=sliver.labels,
                                     label_allocations=sliver.label_allocations,
                                     capacity_allocations=sliver.capacity_allocations,
@@ -370,14 +373,14 @@ class FimHelper:
                 if sliver.attached_components_info is not None:
                     graph_sliver = asm_graph.build_deep_node_sliver(node_id=sliver.node_id)
                     diff = graph_sliver.diff(other_sliver=sliver)
+                    topo_component_dict = node.components
                     if diff is not None:
                         for cname in diff.removed.components:
                             reservation_info = ReservationInfo()
                             reservation_info.reservation_id = reservation_id
                             reservation_info.reservation_state = ReservationStates.Failed.name
-                            node.components[cname].set_properties(reservation_info=reservation_info)
+                            topo_component_dict[cname].set_properties(reservation_info=reservation_info)
 
-                    topo_component_dict = node.components
                     for component in sliver.attached_components_info.devices.values():
                         topo_component = topo_component_dict[component.get_name()]
                         topo_component.set_properties(labels=component.labels,
@@ -402,9 +405,12 @@ class FimHelper:
                                     if ifs.capacities is not None:
                                         topo_ifs.set_properties(capacities=ifs.capacities)
 
-            elif isinstance(sliver, NetworkServiceSliver) and node_name in neo4j_topo.network_services:
-                #node = neo4j_topo.network_services[node_name]
-                node = neo4j_topo._get_ns_by_name(name=node_name)
+            elif isinstance(sliver, NetworkServiceSliver):
+                #node = neo4j_topo._get_ns_by_name(name=node_name)
+                node = neo4j_topo._get_ns_by_id(node_id=sliver.node_id)
+                if node is None:
+                    logger.warning("node %s not found in neo4j topology", node_name)
+                    return
                 node.set_properties(labels=sliver.labels,
                                     label_allocations=sliver.label_allocations,
                                     capacity_allocations=sliver.capacity_allocations,
