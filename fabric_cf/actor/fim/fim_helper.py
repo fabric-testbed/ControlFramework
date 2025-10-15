@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from time import perf_counter
 from typing import TYPE_CHECKING, Any, Dict
 
 from fabric_cf.actor.core.container.maintenance import Maintenance
@@ -324,6 +325,7 @@ class FimHelper:
         delegation = delegated_capacities.get_by_delegation_id(delegation_name)
         return delegation.get_details() if delegation is not None else None
 
+    '''
     @staticmethod
     def update_node(*, sliver: BaseSliver, reservation_id: str, state: str, error_message: str, graph_id: str = None,
                     asm_graph: ABCASMPropertyGraph = None):
@@ -435,6 +437,223 @@ class FimHelper:
 
         except Exception as e:
             logger.error("Exception while updating information about an ASM Node in Neo4j", exc_info=e)
+    '''
+
+    @staticmethod
+    def update_node(*, sliver: BaseSliver, reservation_id: str, state: str, error_message: str,
+                    graph_id: str = None, asm_graph: ABCASMPropertyGraph = None):
+        """
+        Update Sliver Node in ASM (instrumented with processing-time metrics).
+        """
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        logger = GlobalsSingleton.get().get_logger()
+
+        t0 = perf_counter()
+        steps = {
+            "get_graph": 0.0,
+            "cast_topology": 0.0,
+            "lookup_node": 0.0,
+            "update_node_props": 0.0,
+            "update_components": 0.0,
+            "update_interfaces": 0.0,
+        }
+        counters = {"components": 0, "interfaces": 0}
+        kind = None
+        node_name = None
+        node_id_used = None
+
+        try:
+            if sliver is None:
+                return
+            if graph_id is None and asm_graph is None:
+                return
+
+            # --- graph/asm setup ---
+            if graph_id:
+                t_a = perf_counter()
+                graph = FimHelper.get_graph(graph_id=graph_id)
+                asm_graph = Neo4jASMFactory.create(graph=graph)
+                steps["get_graph"] += perf_counter() - t_a
+
+            t_a = perf_counter()
+            neo4j_topo = ExperimentTopology()
+            neo4j_topo.cast(asm_graph=asm_graph)
+            steps["cast_topology"] += perf_counter() - t_a
+
+            # --- common reservation info payload ---
+            res_info = ReservationInfo()
+            res_info.reservation_id = reservation_id
+            res_info.reservation_state = state
+            res_info.error_message = error_message
+
+            node_name = sliver.get_name()
+
+            # ========= NodeSliver path =========
+            if isinstance(sliver, NodeSliver):
+                kind = "NodeSliver"
+
+                # Prefer lookup by ID; fallback to name if missing
+                t_a = perf_counter()
+                node_obj = None
+                node_id_used = getattr(sliver, "node_id", None)
+                if node_id_used:
+                    node_obj = neo4j_topo._get_node_by_id(node_id=sliver.node_id)
+                else:
+                    logger.warning("node_id missing on sliver '%s'; falling back to name lookup", node_name)
+                    node_obj = neo4j_topo._get_node_by_name(name=node_name)
+                    node_id_used = node_obj.node_id
+                steps["lookup_node"] += perf_counter() - t_a
+
+                if node_obj is None:
+                    logger.error("Node %s not found", node_name)
+                    return
+
+                # Update top-level node props
+                t_a = perf_counter()
+                node_obj.set_properties(
+                    labels=sliver.labels,
+                    label_allocations=sliver.label_allocations,
+                    capacity_allocations=sliver.capacity_allocations,
+                    reservation_info=res_info,
+                    node_map=sliver.node_map,
+                    management_ip=sliver.management_ip,
+                    capacity_hints=sliver.capacity_hints,
+                )
+                steps["update_node_props"] += perf_counter() - t_a
+
+                # Components + interfaces
+                if sliver.attached_components_info is not None:
+                    # compute component diffs (removed vs present)
+                    graph_sliver = asm_graph.build_deep_node_sliver(node_id=sliver.node_id)
+                    diff = graph_sliver.diff(other_sliver=sliver)
+
+                    topo_component_dict = node_obj.components
+
+                    # mark removed components as failed
+                    if diff is not None and getattr(diff, "removed", None):
+                        for cname in diff.removed.components:
+                            ri = ReservationInfo()
+                            ri.reservation_id = reservation_id
+                            ri.reservation_state = ReservationStates.Failed.name
+                            t_a = perf_counter()
+                            topo_component_dict[cname].set_properties(reservation_info=ri)
+                            steps["update_components"] += perf_counter() - t_a
+
+                    # upsert/refresh components and their interfaces
+                    for component in sliver.attached_components_info.devices.values():
+                        if component.get_name() not in topo_component_dict:
+                            # silently skip if topology lacks it
+                            continue
+                        t_a = perf_counter()
+                        topo_component = topo_component_dict[component.get_name()]
+                        topo_component.set_properties(
+                            labels=component.labels,
+                            label_allocations=component.label_allocations,
+                            capacity_allocations=component.capacity_allocations,
+                            node_map=component.node_map,
+                        )
+                        counters["components"] += 1
+                        steps["update_components"] += perf_counter() - t_a
+
+                        # interfaces nested under component -> network services -> interfaces
+                        if component.network_service_info is not None and \
+                           component.network_service_info.network_services is not None:
+                            topo_ifs_dict = topo_component.interfaces
+                            for ns in component.network_service_info.network_services.values():
+                                if ns.interface_info is None or ns.interface_info.interfaces is None:
+                                    continue
+                                for ifs in ns.interface_info.interfaces.values():
+                                    if ifs.get_name() not in topo_ifs_dict:
+                                        continue
+                                    t_b = perf_counter()
+                                    topo_ifs = topo_ifs_dict[ifs.get_name()]
+                                    topo_ifs.set_properties(
+                                        labels=ifs.labels,
+                                        label_allocations=ifs.label_allocations,
+                                        node_map=ifs.node_map,
+                                    )
+                                    if ifs.peer_labels is not None:
+                                        topo_ifs.set_properties(peer_labels=ifs.peer_labels)
+                                    if ifs.capacities is not None:
+                                        topo_ifs.set_properties(capacities=ifs.capacities)
+                                    counters["interfaces"] += 1
+                                    steps["update_interfaces"] += perf_counter() - t_b
+
+            # ========= NetworkServiceSliver path =========
+            elif isinstance(sliver, NetworkServiceSliver):
+                kind = "NetworkServiceSliver"
+
+                # Prefer ID lookup; fallback to name if missing
+                t_a = perf_counter()
+                node_obj = None
+                node_id_used = getattr(sliver, "node_id", None)
+                if node_id_used:
+                    node_obj = neo4j_topo._get_ns_by_id(node_id=sliver.node_id)
+                else:
+                    logger.warning("ns.node_id missing on sliver '%s'; falling back to name lookup", node_name)
+                    node_obj = neo4j_topo._get_ns_by_name(name=node_name)
+                    node_id_used = node_obj.node_id
+                steps["lookup_node"] += perf_counter() - t_a
+
+                if node_obj is None:
+                    logger.warning("node %s not found in neo4j topology", node_name)
+                    return
+
+                # Update NS props
+                t_a = perf_counter()
+                node_obj.set_properties(
+                    labels=sliver.labels,
+                    label_allocations=sliver.label_allocations,
+                    capacity_allocations=sliver.capacity_allocations,
+                    reservation_info=res_info,
+                    node_map=sliver.node_map,
+                    gateway=sliver.gateway,
+                )
+                steps["update_node_props"] += perf_counter() - t_a
+
+                # Interfaces directly on NS
+                if sliver.interface_info is not None:
+                    topo_ifs_dict = node_obj.interfaces
+                    for ifs in sliver.interface_info.interfaces.values():
+                        if ifs.get_name() not in topo_ifs_dict:
+                            continue
+                        t_b = perf_counter()
+                        topo_ifs = topo_ifs_dict[ifs.get_name()]
+                        topo_ifs.set_properties(
+                            labels=ifs.labels,
+                            label_allocations=ifs.label_allocations,
+                            node_map=ifs.node_map,
+                        )
+                        if ifs.peer_labels is not None:
+                            topo_ifs.set_properties(peer_labels=ifs.peer_labels)
+                        if ifs.capacities is not None:
+                            topo_ifs.set_properties(capacities=ifs.capacities)
+                        counters["interfaces"] += 1
+                        steps["update_interfaces"] += perf_counter() - t_b
+
+            else:
+                kind = type(sliver).__name__
+                logger.warning("Unsupported sliver type %s; no updates performed", kind)
+                return
+
+        except Exception as e:
+            # Log elapsed so far even on failure
+            total_so_far = perf_counter() - t0
+            logger.error(
+                "ASM update_node FAILED kind=%s name=%s node_id=%s reservation_id=%s graph_id=%s "
+                "elapsed=%.6fs steps=%s counters=%s",
+                kind, node_name, node_id_used, reservation_id, graph_id, total_so_far, steps, counters,
+                exc_info=e
+            )
+            return
+
+        # Final success timing log
+        total = perf_counter() - t0
+        logger.info(
+            "ASM update_node OK kind=%s name=%s node_id=%s reservation_id=%s graph_id=%s "
+            "elapsed=%.6fs steps=%s counters=%s",
+            kind, node_name, node_id_used, reservation_id, graph_id, total, steps, counters
+        )
 
     @staticmethod
     def get_neo4j_asm_graph(*, slice_graph: str) -> ABCASMPropertyGraph:
