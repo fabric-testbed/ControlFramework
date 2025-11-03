@@ -181,9 +181,15 @@ class ExportScript:
                                 if sliver.get_gateway():
                                     ip_subnet = str(sliver.get_gateway().subnet)
                                 if sliver.labels and sliver.labels.ipv4:
-                                    ip_v4 = str(sliver.labels.ipv4)
+                                    if isinstance(sliver.labels.ipv4, list):
+                                        ip_v4 = str(sliver.labels.ipv4[0])
+                                    else:
+                                        ip_v4 = str(sliver.labels.ipv4)
                                 if sliver.labels and sliver.labels.ipv6:
-                                    ip_v6 = str(sliver.labels.ipv6)
+                                    if isinstance(sliver.labels.ipv4, list):
+                                        ip_v6 = str(sliver.labels.ipv6[0])
+                                    else:
+                                        ip_v6 = str(sliver.labels.ipv6)
                                 if sliver.capacities:
                                     bw = sliver.capacities.bw
 
