@@ -8,7 +8,7 @@ services:
       - frontend
       - backend    
     ports:
-      - 0.0.0.0:443:443
+      - 443:443
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
       - ./certs/fullchain.pem:/etc/ssl/public.pem
