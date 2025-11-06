@@ -21,7 +21,6 @@ services:
     restart: always
     user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
     networks:
-      - frontend
       - backend
     volumes:
       - ${NEO4J_DATA_PATH_HOST:-$(pwd)/neo4j/data}:${NEO4J_DATA_PATH_DOCKER:-/data}
@@ -75,7 +74,6 @@ services:
       - database
       - neo4j
     networks:
-      - frontend
       - backend
     volumes:
       - ./neo4j:/usr/src/app/neo4j
