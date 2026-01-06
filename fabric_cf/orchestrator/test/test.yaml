@@ -71,12 +71,12 @@ logging:
   logger: orchestrator
 
 core_api:
-  host: https://alpha-6.fabric-testbed.net
+  host: https://beta-1.fabric-testbed.net
   token:
   enable: False
 
 oauth:
-  jwks-url: https://alpha-2.fabric-testbed.net/credmgr/certs
+  jwks-url: https://beta-2.fabric-testbed.net/credmgr/certs
   # Uses HH:MM:SS (less than 24 hours)
   key-refresh: 00:10:00
   trl-refresh: 00:10:00
@@ -93,10 +93,10 @@ pdp:
   enable: False
 
 neo4j:
-  url: bolt://localhost:9687
+  url: bolt://localhost:7687
   user: neo4j
   pass: password
-  import_host_dir: ../../../neo4j3/imports/
+  import_host_dir: ../../../neo4j1/imports/
   import_dir: /imports
 
 container:

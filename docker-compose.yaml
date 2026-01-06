@@ -1,0 +1,111 @@
+services:
+  broker1:
+    image: confluentinc/cp-kafka:latest
+    restart: always
+    hostname: broker1
+    container_name: broker1
+    ports:
+      - 9092:9092   # For external access
+      - 19092:19092   # For external access
+      - 9093:9093   # For controller communication
+    environment:
+      CLUSTER_ID: kraft-cluster-id-01
+      KAFKA_MESSAGE_MAX_BYTES: 3145764 # or higher (e.g., 20MB = 20971520)
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 3145764 # must be >= message.max.bytes
+      KAFKA_FETCH_MESSAGE_MAX_BYTES: 3145764
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENERS: PLAINTEXT://broker1:9092,HOST://0.0.0.0:19092,CONTROLLER://broker1:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker1:9092,HOST://localhost:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker1:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LOG_DIRS: ./kraft-logs
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  schemaregistry:
+    image: confluentinc/cp-schema-registry:latest
+    container_name: schemaregistry
+    restart: always
+    depends_on:
+      - broker1
+    ports:
+      - 8081:8081
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: ""
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://broker1:9092
+      SCHEMA_REGISTRY_HOST_NAME: schemaregistry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_DEBUG: 'true'
+  database:
+    image: fabrictestbed/postgres:17.7
+    container_name: database
+    restart: always
+    ports:
+      - 5432:5432
+    volumes:
+      - ${PGDATA_HOST:-.}/pg_data/data:${PGDATA:-/var/lib/postgresql/data}
+      - ${PGDATA_HOST:-.}/pg_data/logs:${POSTGRES_INITDB_WALDIR:-/var/log/postgresql}
+    environment:
+       - POSTGRES_HOST=${POSTGRES_HOST:-database}
+       - POSTGRES_PORT=5432
+       - POSTGRES_MULTIPLE_DATABASES=${POSTGRES_DB:-postgres}
+       - POSTGRES_USER=${POSTGRES_USER:-postgres}
+       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-fabric}
+       - PGDATA=${PGDATA:-/var/lib/postgresql/data}
+  neo4j1: &neo4j-base
+      image: kthare10/neo4j-apoc:5.26.19
+      restart: always
+      container_name: neo4j1
+      volumes:
+        - ./neo4j1/data:/data
+        - ./neo4j1/imports:/imports
+      environment:
+        - NEO4J_AUTH=neo4j/password
+        - NEO4J_dbms_security_procedures_allowlist=apoc.*,gds.*
+        - NEO4J_dbms_security_procedures_unrestricted=apoc.*,gds.*
+        - NEO4J_server_memory_heap_initial__size=512m
+        - NEO4J_server_memory_heap_max__size=512m
+        - NEO4J_server_memory_pagecache_size=256m
+      ports:
+        - "7474:7474"
+        - "7687:7687"
+      healthcheck:
+        test: ["CMD-SHELL", "cypher-shell -u neo4j -p password 'RETURN 1'"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+  neo4j2:
+    <<: *neo4j-base
+    container_name: neo4j2
+    volumes:
+      - ./neo4j2/data:/data
+      - ./neo4j2/imports:/imports
+    ports:
+      - "8474:7474"
+      - "8687:7687"
+
+  neo4j3:
+    <<: *neo4j-base
+    container_name: neo4j3
+    volumes:
+      - ./neo4j3/data:/data
+      - ./neo4j3/imports:/imports
+    ports:
+      - "9474:7474"
+      - "9687:7687"
+
+  neo4j4:
+    <<: *neo4j-base
+    container_name: neo4j4
+    volumes:
+      - ./neo4j4/data:/data
+      - ./neo4j4/imports:/imports
+    ports:
+      - "10474:7474"
+      - "10687:7687"

@@ -496,7 +496,7 @@ class OrchestratorHandler:
             topology = ExperimentTopology(graph_string=slice_graph, importer=NetworkXGraphImporterDisjoint())
             topology.validate()
 
-            asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=topology.serialize())
+            asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=slice_graph)
 
             # Authorize the slice
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.modify, resource=topology)

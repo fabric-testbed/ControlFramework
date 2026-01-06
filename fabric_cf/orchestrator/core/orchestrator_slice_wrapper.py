@@ -154,7 +154,7 @@ class OrchestratorSliceWrapper:
             sliver.reservation_info.reservation_id = str(res_id)
             sliver.reservation_info.reservation_state = str(ReservationStates.Nascent)
 
-        self.logger.info(f"ADD TIME: {time.time() - start:.0f}")
+        self.logger.info(f"ADD TIME: {time.time() - start:.0f} - reservation added: {len(self.computed_add_reservations)}")
 
     def create(self, *, slice_graph: ABCASMPropertyGraph, lease_start_time: datetime = None,
                lease_end_time: datetime = None, lifetime: int = None) -> List[LeaseReservationAvro]:
@@ -754,8 +754,10 @@ class OrchestratorSliceWrapper:
                                         capacities=sliver.capacities)
 
     def has_sliver_updates_at_authority(self):
-        return len(self.computed_reservations) or len(self.computed_remove_reservations) or \
-               len(self.computed_modify_reservations) or len(self.computed_modify_properties_reservations)
+        return (len(self.computed_reservations) or \
+                len(self.computed_add_reservations) or \
+                len(self.computed_remove_reservations) or \
+               len(self.computed_modify_reservations) or len(self.computed_modify_properties_reservations))
 
     def has_topology_diffs(self, *, topology_diff: TopologyDiff) -> bool:
         """
