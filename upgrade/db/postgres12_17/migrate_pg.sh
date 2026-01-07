@@ -1,8 +1,6 @@
 #!/bin/bash
 
 # Usage: sudo ./migrate_pg.sh <base_path> <relative_data_subpath>
-# Example 1: sudo ./migrate_pg.sh /opt/data/beta/cf/orchestrator postgres
-# Example 2: sudo ./migrate_pg.sh /opt/data/beta/cf/renc-am postgres/pgdata
 BASE_PATH=$1
 DATA_SUBPATH=$2
 
@@ -28,6 +26,11 @@ if [[ ! -d "$OLD_DATA_FULL" ]]; then
     exit 1
 fi
 
+if [[ ! -f "docker-compose.yml" ]]; then
+    echo "❌ Error: docker-compose.yml not found in $BASE_PATH"
+    exit 1
+fi
+
 echo "🚀 Starting migration"
 echo "📍 Base: $BASE_PATH"
 echo "📂 Old Data: $OLD_DATA_FULL"
@@ -43,11 +46,11 @@ sudo rm -f "$OLD_DATA_FULL/postmaster.pid"
 sudo rm -rf "$NEW_DATA_FULL"
 mkdir -p "$NEW_DATA_FULL"
 
-# Fix ownership so the container (UID 999) can write
+# Fix ownership so the container (UID 999) can write logs and data
 sudo chown -R $POSTGRES_UID:$POSTGRES_UID "$OLD_DATA_FULL"
 sudo chown -R $POSTGRES_UID:$POSTGRES_UID "$NEW_DATA_FULL"
 
-# 3. Perform Upgrade (Non-Link Mode for safety across paths)
+# 3. Perform Upgrade
 echo "⚙️ Running pg_upgrade..."
 docker run --rm \
   -e POSTGRES_INITDB_ARGS="--username=$DB_USER" \
@@ -57,7 +60,8 @@ docker run --rm \
   --username="$DB_USER"
 
 if [ $? -ne 0 ]; then
-    echo "❌ Upgrade failed!"
+    echo "❌ Upgrade failed! Reverting permissions..."
+    sudo chown -R root:root "$OLD_DATA_FULL"
     exit 1
 fi
 
@@ -72,10 +76,10 @@ sed -i "s|$OLD_IMG|$NEW_IMG|g" docker-compose.yml
 
 # 6. Start the new stack
 echo "🆙 Starting updated stack..."
-docker compose up -d
+docker compose up -d database
 
 # 7. Post-Migration Maintenance
-echo "🛠️ Running maintenance..."
+echo "🛠️ Running maintenance (Collations, Reindex, HBA)..."
 sleep 10
 
 CONTAINER_NAME=$(docker compose ps -q database 2>/dev/null || docker compose ps -q postgres 2>/dev/null)
@@ -84,15 +88,27 @@ if [[ -z "$CONTAINER_NAME" ]]; then
 fi
 
 if [[ -n "$CONTAINER_NAME" ]]; then
+    echo "Using container: $CONTAINER_NAME"
+    # Fix Collations
+    DBS=$(docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -qAt -c "SELECT datname FROM pg_database WHERE datallowconn")
+    for db in $DBS; do
+        docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$db" -c "ALTER DATABASE \"$db\" REFRESH COLLATION VERSION;"
+    done
+    # Optimize
     docker exec "$CONTAINER_NAME" vacuumdb -U "$DB_USER" --all --analyze-in-stages
     docker exec "$CONTAINER_NAME" reindexdb -U "$DB_USER" --all
 
-    # HBA Check (Assumes pg_hba.conf is in the new data root)
+    # HBA Check & Reload
     HBA_FILE="$OLD_DATA_FULL/pg_hba.conf"
-    if [[ -f "$HBA_FILE" ]] && ! grep -q "0.0.0.0/0" "$HBA_FILE"; then
+    if ! grep -q "0.0.0.0/0" "$HBA_FILE"; then
         echo "host all all 0.0.0.0/0 md5" | sudo tee -a "$HBA_FILE"
         docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -c "SELECT pg_reload_conf();"
     fi
 fi
+
+# 6. Start the new stack
+echo "🆙 Starting updated stack..."
+docker compose stop
+docker compose up -d
 
 echo "✅ Migration Complete!"
