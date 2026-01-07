@@ -1,7 +1,7 @@
 services:
 
   neo4j:
-    image: fabrictestbed/neo4j-apoc:5.3.0
+    image: fabrictestbed/neo4j-apoc:5.26.19
     container_name: broker-neo4j
     user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
     restart: always
@@ -16,6 +16,8 @@ services:
       - ../../../neo4j/certs/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
     environment:
       - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASS:-password}
+      - NEO4J_dbms_upgrade_allow__upgrades=true
+      - NEO4J_server_config_strict__validation_enabled=false
       - NEO4J_server_bolt_advertised__address=${NEO4J_server_bolt_advertised__address:-server:7687}
       - NEO4J_server_bolt_listen__address=${NEO4J_server_bolt_advertised__address:-server:7687}
       - NEO4J_server_http_advertised__address=${NEO4J_server_http_advertised__address:-server:7474}
@@ -24,7 +26,7 @@ services:
       - NEO4J_server_https_listen__address=${NEO4J_server_https_advertised__address:-server:7473}
       - NEO4J_server_memory_pagecache_size=${NEO4J_server_memory_pagecache_size:-512M}
   database:
-    image: fabrictestbed/postgres:12.3
+    image: fabrictestbed/postgres:17.7
     container_name: broker-db
     restart: always
     networks:
