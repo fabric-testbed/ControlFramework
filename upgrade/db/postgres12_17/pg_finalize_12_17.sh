@@ -45,6 +45,10 @@ if [[ -f "$HBA_FILE" ]]; then
     fi
 else
     echo "Warning: pg_hba.conf not found at $HBA_FILE"
+    echo "host all all 0.0.0.0/0 md5" | sudo tee -a "$HBA_FILE"
+    docker exec $CONTAINER_NAME psql -U $DB_USER -c "SELECT pg_reload_conf();"
+    echo "Restarting container to apply network changes..."
+    docker restart $CONTAINER_NAME
 fi
 
 echo "--- Migration Finalized Successfully ---"
