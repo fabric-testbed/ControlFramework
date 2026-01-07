@@ -8,7 +8,7 @@ services:
       - frontend
       - backend    
     ports:
-      - 0.0.0.0:443:443
+      - 443:443
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
       - ./certs/fullchain.pem:/etc/ssl/public.pem
@@ -21,7 +21,6 @@ services:
     restart: always
     user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
     networks:
-      - frontend
       - backend
     volumes:
       - ${NEO4J_DATA_PATH_HOST:-$(pwd)/neo4j/data}:${NEO4J_DATA_PATH_DOCKER:-/data}
@@ -68,14 +67,13 @@ services:
     build:
       context: ../../../
       dockerfile: Dockerfile-orchestrator
-    image: orchestrator:1.9.0
+    image: orchestrator:1.9.1
     container_name: orchestrator
     restart: always
     depends_on:
       - database
       - neo4j
     networks:
-      - frontend
       - backend
     volumes:
       - ./neo4j:/usr/src/app/neo4j

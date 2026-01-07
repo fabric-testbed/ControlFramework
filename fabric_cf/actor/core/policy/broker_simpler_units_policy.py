@@ -1145,7 +1145,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                         interface_type=InterfaceType.TrunkPort)
 
                 if net_cp is None:
-                    error_msg = "Peer Connection Point not found from Network AM"
+                    error_msg = f"Peer Connection Point not found from Network AM: {site_cp.node_id}"
                     raise BrokerException(msg=error_msg)
 
                 self.logger.debug(f"Peer Interface Sliver [Network Delegation] (A): {net_cp}")
@@ -2295,7 +2295,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         """
         try:
             self.lock.acquire()
-            peer_interfaces = FimHelper.get_peer_interfaces(ifs_node_id=site_ifs_id, graph=self.combined_broker_model,
+            peer_interfaces = FimHelper.get_peer_interfaces(ifs_node_id=site_ifs_id,
+                                                            graph=self.combined_broker_model,
                                                             interface_type=interface_type)
 
             if len(peer_interfaces) == 0:

@@ -117,10 +117,10 @@ pdp:
   enable: False
 
 neo4j:
-  url: bolt://localhost:7687
+  url: bolt://localhost:8687
   user: neo4j
   pass: password
-  import_host_dir: ../../../neo4j1/imports/
+  import_host_dir: ../../../neo4j2/imports/
   import_dir: /imports
 
 bqm:

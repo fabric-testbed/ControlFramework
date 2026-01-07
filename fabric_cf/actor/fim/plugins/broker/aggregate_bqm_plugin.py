@@ -407,7 +407,7 @@ class AggregatedBQMPlugin:
                     p4_sliver.capacities = Capacities()
                     p4_sliver.capacity_allocations = Capacities()
                     p4_sliver.capacities += p4.get_capacities()
-                    if not self.DEBUG_FLAG:
+                    if not self.DEBUG_FLAG and kwargs['query_level'] != 0:
                         # query database for everything taken on this node
                         allocated_caps, allocated_comp_caps = self.occupied_node_capacity(db=db, node_id=p4.node_id,
                                                                                           start=start, end=end)
@@ -529,7 +529,7 @@ class AggregatedBQMPlugin:
                         ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS]
                 elif cbm_link_props.get(ABCPropertyGraph.PROP_CAPACITIES):
                     new_link_props[ABCPropertyGraph.PROP_CAPACITIES] = cbm_link_props[ABCPropertyGraph.PROP_CAPACITIES]
-                if not self.DEBUG_FLAG:
+                if not self.DEBUG_FLAG and kwargs['query_level'] != 0:
                     occupied_link_capacity = self.occupied_link_capacity(node_id=link, db=db, start=start, end=end)
                     if occupied_link_capacity:
                         new_link_props[ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS] = occupied_link_capacity
@@ -654,7 +654,7 @@ class AggregatedBQMPlugin:
                         elif fac_link_props.get(ABCPropertyGraph.PROP_CAPACITIES):
                             new_link_props[ABCPropertyGraph.PROP_CAPACITIES] = fac_link_props[
                                 ABCPropertyGraph.PROP_CAPACITIES]
-                        if not self.DEBUG_FLAG:
+                        if not self.DEBUG_FLAG and kwargs['query_level'] != 0:
                             occupied_link_capacity = self.occupied_link_capacity(db=db, node_id=fac_link_id,
                                                                                  start=start, end=end)
                             if occupied_link_capacity:

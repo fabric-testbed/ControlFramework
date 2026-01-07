@@ -173,7 +173,7 @@ class OrchestratorHandler:
             broker_query_model = model.get_model()
 
             # Do not update cache for advance requests
-            if not start and not end and not includes and not excludes:
+            if not start and not end and not includes and not excludes and level > 0:
                 self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format, level=level)
 
         return broker_query_model
@@ -326,7 +326,6 @@ class OrchestratorHandler:
                                                             lease_start_time=lease_start_time,
                                                             lease_end_time=lease_end_time,
                                                             lifetime=lifetime)
-            new_slice_object.update_topology(topology=topology)
 
             # Check if Testbed in Maintenance or Site in Maintenance
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
@@ -338,6 +337,7 @@ class OrchestratorHandler:
                 # Enqueue future slices on Advanced Scheduling Thread to determine possible start time
                 # Determining start time may take time so this is done asynchronously to avoid increasing response time
                 # of create slice API
+                new_slice_object.update_topology(topology=topology)
                 self.controller_state.get_advance_scheduling_thread().queue_slice(controller_slice=new_slice_object)
             else:
                 # Enqueue the slice on the demand thread
@@ -346,6 +346,7 @@ class OrchestratorHandler:
 
                 # Add Reservations to relational database;
                 new_slice_object.add_reservations()
+                new_slice_object.update_topology(topology=topology)
                 self.logger.info(f"OC wrapper: TIME= {time.time() - create_ts:.0f}")
                 self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
                 self.logger.info(f"QU queue: TIME= {time.time() - create_ts:.0f}")
@@ -495,7 +496,7 @@ class OrchestratorHandler:
             topology = ExperimentTopology(graph_string=slice_graph, importer=NetworkXGraphImporterDisjoint())
             topology.validate()
 
-            asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=topology.serialize())
+            asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=slice_graph)
 
             # Authorize the slice
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.modify, resource=topology)
@@ -511,7 +512,6 @@ class OrchestratorHandler:
 
             # Compute the reservations
             topology_diff, computed_reservations = slice_object.modify(new_slice_graph=asm_graph)
-            slice_object.update_topology(topology=topology)
 
             # Check if Test Bed or site is in maintenance
             self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
@@ -521,10 +521,14 @@ class OrchestratorHandler:
 
             # Slice has sliver modifications - add/remove/update for slivers requiring AM updates
             modify_state = slice_object.has_sliver_updates_at_authority()
-            FimHelper.delete_graph(graph_id=slice_obj.get_graph_id())
-            graph_id = asm_graph.get_graph_id()
+            meta_data_updates = slice_object.has_meta_data_updates(topology_diff=topology_diff)
 
-            slice_obj.graph_id = graph_id
+            if topology_diff is not None and (modify_state or meta_data_updates):
+                slice_object.update_topology(topology=topology)
+                FimHelper.delete_graph(graph_id=slice_obj.get_graph_id())
+                graph_id = asm_graph.get_graph_id()
+                slice_obj.graph_id = graph_id
+
             config_props = slice_obj.get_config_properties()
             config_props[Constants.PROJECT_ID] = project
             config_props[Constants.TAGS] = ','.join(tags)

@@ -154,6 +154,8 @@ class ExportScript:
                             site_name = None
                             host_name = None
                             ip_subnet = None
+                            ip_v4 = None
+                            ip_v6 = None
                             core = None
                             ram = None
                             disk = None
@@ -178,6 +180,16 @@ class ExportScript:
                                 site_name = sliver.get_site()
                                 if sliver.get_gateway():
                                     ip_subnet = str(sliver.get_gateway().subnet)
+                                if sliver.labels and sliver.labels.ipv4:
+                                    if isinstance(sliver.labels.ipv4, list):
+                                        ip_v4 = str(sliver.labels.ipv4[0])
+                                    else:
+                                        ip_v4 = str(sliver.labels.ipv4)
+                                if sliver.labels and sliver.labels.ipv6:
+                                    if isinstance(sliver.labels.ipv4, list):
+                                        ip_v6 = str(sliver.labels.ipv6[0])
+                                    else:
+                                        ip_v6 = str(sliver.labels.ipv6)
                                 if sliver.capacities:
                                     bw = sliver.capacities.bw
 
@@ -195,6 +207,8 @@ class ExportScript:
                                 "state": reservation.get_state().name.lower(),
                                 "sliver_type": str(reservation.get_type()).lower(),
                                 "ip_subnet": ip_subnet,
+                                "ip_v4": ip_v4,
+                                "ip_v6": ip_v6,
                                 "error": error_message,
                                 "image": image,
                                 "core": core,

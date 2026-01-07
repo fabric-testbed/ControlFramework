@@ -42,7 +42,7 @@ from fim.slivers.capacities_labels import Labels
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver
 from fim.slivers.topology_diff import WhatsModifiedFlag, TopologyDiff
-from fim.user import ServiceType, ExperimentTopology, InterfaceType
+from fim.user import ServiceType, ExperimentTopology, InterfaceType, ReservationInfo
 
 from fabric_cf.actor.core.common.constants import ErrorCodes, Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
@@ -148,8 +148,13 @@ class OrchestratorSliceWrapper:
         start = time.time()
         # Add Network Node reservations
         for r in self.computed_add_reservations:
-            self.controller.add_reservation(reservation=r)
-        self.logger.info(f"ADD TIME: {time.time() - start:.0f}")
+            res_id = self.controller.add_reservation(reservation=r)
+            sliver = r.get_sliver()
+            sliver.reservation_info = ReservationInfo()
+            sliver.reservation_info.reservation_id = str(res_id)
+            sliver.reservation_info.reservation_state = str(ReservationStates.Nascent)
+
+        self.logger.info(f"ADD TIME: {time.time() - start:.0f} - reservation added: {len(self.computed_add_reservations)}")
 
     def create(self, *, slice_graph: ABCASMPropertyGraph, lease_start_time: datetime = None,
                lease_end_time: datetime = None, lifetime: int = None) -> List[LeaseReservationAvro]:
@@ -749,8 +754,10 @@ class OrchestratorSliceWrapper:
                                         capacities=sliver.capacities)
 
     def has_sliver_updates_at_authority(self):
-        return len(self.computed_reservations) or len(self.computed_remove_reservations) or \
-               len(self.computed_modify_reservations) or len(self.computed_modify_properties_reservations)
+        return (len(self.computed_reservations) or \
+                len(self.computed_add_reservations) or \
+                len(self.computed_remove_reservations) or \
+               len(self.computed_modify_reservations) or len(self.computed_modify_properties_reservations))
 
     def has_topology_diffs(self, *, topology_diff: TopologyDiff) -> bool:
         """
@@ -775,3 +782,28 @@ class OrchestratorSliceWrapper:
 
         self.logger.debug(f"Topology diff found: {ret_val}")
         return ret_val
+
+    def has_meta_data_updates(self, *, topology_diff: TopologyDiff) -> bool:
+        """
+        Check if there are any User Data updates in the given topology difference.
+
+        :param topology_diff: TopologyDiff object containing modifications.
+        :return: True if any node, component, interface, or service has USER_DATA updated.
+        """
+        if not topology_diff:
+            return False
+
+        modified = topology_diff.modified
+
+        for collection in (
+                modified.nodes,
+                modified.components,
+                modified.interfaces,
+                modified.services,
+        ):
+            if any(flag & WhatsModifiedFlag.USER_DATA for _, flag in collection):
+                self.logger.debug("Topology diff found with User Data Update: True")
+                return True
+
+        self.logger.debug("Topology diff found with User Data Update: False")
+        return False
