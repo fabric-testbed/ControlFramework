@@ -8,16 +8,16 @@ PostgreSQL major versions (12 to 17) are not binary-compatible. You must migrate
 ```bash
 docker run --rm \
   -e POSTGRES_INITDB_ARGS="--username=fabric" \
-  -v /opt/data/beta/cf/broker/postgres:/var/lib/postgresql/12/data \
-  -v /opt/data/beta/cf/broker/postgres_new:/var/lib/postgresql/17/data \
+  -v /opt/data/beta/cf/orchestrator/postgres:/var/lib/postgresql/12/data \
+  -v /opt/data/beta/cf/orchestrator/postgres_new:/var/lib/postgresql/17/data \
   tianon/postgres-upgrade:12-to-17 \
-  --username=fabric --link
+  --username=fabric
 
 ```
 
 2. **Swap Data Directories**
 ```bash
-cd /opt/data/beta/cf/broker/
+cd /opt/data/beta/cf/orchestrator/
 mv postgres postgres_v12_old
 mv postgres_new postgres
 
