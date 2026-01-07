@@ -1,43 +1,53 @@
-# Upgrading from PostgreSQL 12 to 17
+# PostgreSQL 12 to 17 Upgrade Guide
 
-PostgreSQL major versions (12 to 17) are not binary-compatible. You must migrate the data directory using `pg_upgrade`.
+PostgreSQL major versions are not binary-compatible. To move from **12.3** to **17.7**, you must migrate the data directory using the `pg_upgrade` utility. This process is automated via the `migrate_pg.sh` script.
+
+## Prerequisites
+
+* All commands must be executed as the **root** user (or using `sudo`).
+* Ensure you have enough disk space to accommodate a temporary copy of the database (if not using link mode).
+* Verify that you are in the correct environment where the Docker containers are running.
+
 
 ## Migration Steps
 
-1. **Perform the Upgrade** Run this as a user with `sudo` privileges to ensure correct file ownership:
+### 1. Prepare the Workspace
+
+Navigate to the project directory where your database container was originally spawned and copy the migration script to that location.
+
 ```bash
-docker run --rm \
-  -e POSTGRES_INITDB_ARGS="--username=fabric" \
-  -v /opt/data/beta/cf/orchestrator/postgres:/var/lib/postgresql/12/data \
-  -v /opt/data/beta/cf/orchestrator/postgres_new:/var/lib/postgresql/17/data \
-  tianon/postgres-upgrade:12-to-17 \
-  --username=fabric
+# Navigate to the service directory
+cd /home/nrig-service/ControlFramework/fabric_cf/authority/renc-am
+
+# Copy the migration script from the upgrade repository
+cp /home/nrig-service/ControlFramework/upgrade/db/postgres12_17/migrate_pg.sh .
+
+# Ensure the script is executable
+chmod +x migrate_pg.sh
 
 ```
 
-2. **Swap Data Directories**
-```bash
-cd /opt/data/beta/cf/orchestrator/
-mv postgres postgres_v12_old
-mv postgres_new postgres
+### 2. Identify Data Volumes
+
+Before running the script, you must determine the absolute path to your PostgreSQL data. Open your `docker-compose.yml` file and look for the `volumes` section under the database service.
+
+**Example structure to look for:**
+
+```yaml
+volumes:
+  - /opt/data/beta/cf/renc-am/postgres/pgdata:/var/lib/postgresql/data
 
 ```
 
-3. **Start the New Container** Update your `docker-compose.yml` image to `postgres:17` and run:
-```bash
-docker compose up -d
+### 3. Execute the Migration
 
-```
+Run the script by providing two arguments:
 
-4. **Run Post-Migration Maintenance** Run the maintenance script (below) to refresh collations, reindex, and update network permissions.
-
----
-
-## 2. Maintenance Script (`pg_finalize.sh`)
-
-This script automates the collation refresh for all databases, reindexing, and HBA configuration.
+1. **Base Path:** The directory containing the `docker-compose.yml`.
+2. **Relative Data Subpath:** The path from the base to the directory containing the `PG_VERSION` file.
 
 ```bash
-./pg_finalize.sh <container_name> <path of the volume>
+# Syntax: ./migrate_pg.sh <base_path> <relative_data_subpath>
+./migrate_pg.sh /opt/data/beta/cf/renc-am/ postgres/pgdata
 
 ```
