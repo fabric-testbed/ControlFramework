@@ -63,6 +63,18 @@ class PollEvent(ABCActorEvent):
                                            level=level)
 
 
+class SummaryPollEvent(ABCActorEvent):
+    def __init__(self, *, level_list: list):
+        self.level_list = level_list
+
+    def process(self):
+        from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
+        oh = OrchestratorHandler()
+        for level in self.level_list:
+            oh.discover_broker_query_model_summary(controller=oh.controller_state.controller,
+                                                    force_refresh=True, level=level)
+
+
 class OrchestratorKernel(ABCTick):
     """
     Class responsible for starting Orchestrator Threads; also holds Management Actor and Broker information
@@ -77,6 +89,7 @@ class OrchestratorKernel(ABCTick):
         self.controller = None
         self.lock = threading.Lock()
         self.bqm_cache = {}
+        self.summary_cache = {}
         self.event_processor = None
         self.combined_broker_model_graph_id = None
         self.combined_broker_model = None
@@ -105,6 +118,32 @@ class OrchestratorKernel(ABCTick):
 
             #if level == 0:
             #    self.load_model(model=bqm)
+        finally:
+            self.lock.release()
+
+    def get_saved_summary(self, *, level: int) -> BqmWrapper:
+        """
+        Get saved JSON resource summary from cache.
+        """
+        try:
+            self.lock.acquire()
+            key = f"SUMMARY-{level}"
+            return self.summary_cache.get(key)
+        finally:
+            self.lock.release()
+
+    def save_summary(self, *, summary: str, level: int):
+        """
+        Save JSON resource summary to cache.
+        """
+        try:
+            self.lock.acquire()
+            key = f"SUMMARY-{level}"
+            cached = self.summary_cache.get(key)
+            if cached is None:
+                cached = BqmWrapper()
+            cached.save(bqm=summary, graph_format=GraphFormat.GRAPHML, level=level)
+            self.summary_cache[key] = cached
         finally:
             self.lock.release()
 
@@ -219,6 +258,13 @@ class OrchestratorKernel(ABCTick):
                     model_level_list.append((cached_bqm.get_graph_format(), cached_bqm.get_level()))
             if self.event_processor is not None and len(model_level_list) > 0:
                 self.event_processor.enqueue(incoming=PollEvent(model_level_list=model_level_list))
+
+            summary_level_list = []
+            for cached_summary in self.summary_cache.values():
+                if cached_summary.can_refresh():
+                    summary_level_list.append(cached_summary.get_level())
+            if self.event_processor is not None and len(summary_level_list) > 0:
+                self.event_processor.enqueue(incoming=SummaryPollEvent(level_list=summary_level_list))
         except Exception as e:
             self.logger.error(f"Error occurred while doing periodic processing: {e}")
         finally:

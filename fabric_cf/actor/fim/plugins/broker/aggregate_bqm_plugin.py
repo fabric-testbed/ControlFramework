@@ -683,3 +683,370 @@ class AggregatedBQMPlugin:
                     abqm.add_link(node_a=fac_sp_id, rel=ABCPropertyGraph.REL_CONNECTS, node_b=site_to_ns_node_id[s])
 
         return abqm
+
+    def plug_produce_bqm_summary(self, *, cbm: ABCCBMPropertyGraph, **kwargs) -> dict:
+        """
+        Generate a JSON-serializable summary dict from CBM data, bypassing graph construction.
+
+        Produces the same data as plug_produce_bqm() but as a plain dict matching the
+        client-side SiteV2/HostInfo/LinkInfo/FacilityPortInfo structures. This avoids
+        the cost of graph serialization/deserialization for clients that only need JSON.
+
+        Parameters:
+            cbm (ABCCBMPropertyGraph): Input graph containing raw broker data.
+            **kwargs: Same as plug_produce_bqm() — query_level, includes, excludes, start, end.
+
+        Returns:
+            dict with keys: sites, hosts, links, facility_ports
+        """
+        query_level = kwargs.get('query_level', 2)
+        includes = kwargs.get('includes', None)
+        excludes = kwargs.get('excludes', None)
+
+        sites_to_include = [s.strip().upper() for s in includes.split(",")] if includes else []
+        sites_to_exclude = [s.strip().upper() for s in excludes.split(",")] if excludes else []
+
+        start = kwargs.get('start', None)
+        end = kwargs.get('end', None)
+        if not self.DEBUG_FLAG:
+            db = self.actor.get_plugin().get_database()
+        else:
+            db = None
+
+        # One-pass aggregation of servers and their components, grouped by site
+        nnodes = cbm.get_all_nodes_by_class(label=ABCPropertyGraph.CLASS_NetworkNode)
+        slivers_by_site = defaultdict(list)
+        p4s_by_site = defaultdict(list)
+        for n in nnodes:
+            node_sliver = cbm.build_deep_node_sliver(node_id=n)
+            slivers_by_site[node_sliver.site].append(node_sliver)
+            if node_sliver.get_type() == NodeType.Switch and "p4" in node_sliver.get_name():
+                p4s_by_site[node_sliver.site].append(node_sliver)
+
+        sites_out = []
+        hosts_out = []
+        facilities_by_site = defaultdict(list)
+
+        for s, ls in slivers_by_site.items():
+            if len(sites_to_include) and s not in sites_to_include:
+                continue
+            if len(sites_to_exclude) and s in sites_to_exclude:
+                continue
+
+            # Site-level aggregates
+            site_cores_cap, site_cores_alloc = 0, 0
+            site_ram_cap, site_ram_alloc = 0, 0
+            site_disk_cap, site_disk_alloc = 0, 0
+            # {model_str: {"capacity": int, "allocated": int}}
+            site_components = defaultdict(lambda: {"capacity": 0, "allocated": 0})
+            loc = None
+            ptp = False
+            ipv4_mgmt = False
+            host_count = 0
+            maintenance_info = self.__site_maintenance_info(site_name=s)
+
+            # Determine site state from maintenance info
+            site_state = None
+            if maintenance_info is not None:
+                try:
+                    site_entry = maintenance_info.get(s)
+                    if site_entry is not None:
+                        site_state = str(site_entry.state.name) if site_entry.state else None
+                except Exception:
+                    pass
+
+            for sliver in ls:
+                if sliver.get_type() != NodeType.Server:
+                    if sliver.get_type() == NodeType.Facility:
+                        facilities_by_site[s].append(sliver)
+                    continue
+
+                host_count += 1
+
+                # Get worker capacities
+                worker_caps = Capacities()
+                if sliver.get_capacity_delegations() is not None:
+                    _, delegation = sliver.get_capacity_delegations().get_sole_delegation()
+                    if delegation.get_format() == DelegationFormat.SinglePool:
+                        worker_caps = delegation.get_details()
+                else:
+                    worker_caps = sliver.get_capacities() or Capacities()
+
+                # Get worker allocations
+                worker_allocs = Capacities()
+                allocated_comp_caps = {}
+                if not self.DEBUG_FLAG and query_level != 0:
+                    allocated_caps, allocated_comp_caps = self.occupied_node_capacity(
+                        db=db, node_id=sliver.node_id, start=start, end=end
+                    )
+                    worker_allocs = allocated_caps
+
+                w_core_cap = getattr(worker_caps, 'core', 0) or 0
+                w_ram_cap = getattr(worker_caps, 'ram', 0) or 0
+                w_disk_cap = getattr(worker_caps, 'disk', 0) or 0
+                w_core_alloc = getattr(worker_allocs, 'core', 0) or 0
+                w_ram_alloc = getattr(worker_allocs, 'ram', 0) or 0
+                w_disk_alloc = getattr(worker_allocs, 'disk', 0) or 0
+
+                site_cores_cap += w_core_cap
+                site_cores_alloc += w_core_alloc
+                site_ram_cap += w_ram_cap
+                site_ram_alloc += w_ram_alloc
+                site_disk_cap += w_disk_cap
+                site_disk_alloc += w_disk_alloc
+
+                if loc is None:
+                    loc = sliver.get_location()
+
+                flags = sliver.get_flags()
+                if flags:
+                    if not ptp and flags.ptp:
+                        ptp = True
+                    if not ipv4_mgmt and getattr(flags, 'ipv4_management', None):
+                        ipv4_mgmt = True
+
+                # Worker-level components
+                worker_components = {}
+                if sliver.attached_components_info is not None:
+                    for comp in sliver.attached_components_info.list_devices():
+                        rt = comp.resource_type
+                        rm = comp.resource_model
+                        comp_key = f"{rt}-{rm}"
+                        comp_cap = getattr(comp.capacities, 'unit', 0) or 0
+
+                        comp_alloc = 0
+                        if rt in allocated_comp_caps and rm in allocated_comp_caps[rt]:
+                            comp_alloc = getattr(allocated_comp_caps[rt][rm], 'unit', 0) or 0
+
+                        if comp_key not in worker_components:
+                            worker_components[comp_key] = {"capacity": 0, "allocated": 0}
+                        worker_components[comp_key]["capacity"] += comp_cap
+                        worker_components[comp_key]["allocated"] += comp_alloc
+
+                        site_components[comp_key]["capacity"] += comp_cap
+                        site_components[comp_key]["allocated"] += comp_alloc
+
+                # Build host record (level 2 includes per-host detail)
+                if query_level == 2 or query_level == 0:
+                    hosts_out.append({
+                        "name": sliver.get_name(),
+                        "site": s,
+                        "cores_capacity": w_core_cap,
+                        "cores_allocated": w_core_alloc,
+                        "cores_available": max(0, w_core_cap - w_core_alloc),
+                        "ram_capacity": w_ram_cap,
+                        "ram_allocated": w_ram_alloc,
+                        "ram_available": max(0, w_ram_cap - w_ram_alloc),
+                        "disk_capacity": w_disk_cap,
+                        "disk_allocated": w_disk_alloc,
+                        "disk_available": max(0, w_disk_cap - w_disk_alloc),
+                        "components": {
+                            k: {"capacity": v["capacity"], "allocated": v["allocated"]}
+                            for k, v in worker_components.items()
+                        },
+                    })
+
+            # Finalize site-level component available counts
+            site_comps_final = {}
+            for comp_key, vals in site_components.items():
+                cap = vals["capacity"]
+                alloc = vals["allocated"]
+                site_comps_final[comp_key] = {
+                    "capacity": cap,
+                    "allocated": alloc,
+                    "available": max(0, cap - alloc),
+                }
+
+            # P4 switches
+            p4_switches = []
+            p4s = p4s_by_site.get(s, [])
+            for p4 in p4s:
+                p4_cap = getattr(p4.get_capacities(), 'unit', 0) or 0
+                p4_alloc = 0
+                if not self.DEBUG_FLAG and query_level != 0:
+                    p4_allocated_caps, _ = self.occupied_node_capacity(
+                        db=db, node_id=p4.node_id, start=start, end=end
+                    )
+                    p4_alloc = getattr(p4_allocated_caps, 'unit', 0) or 0
+                p4_switches.append({
+                    "name": p4.get_name(),
+                    "capacity": p4_cap,
+                    "allocated": p4_alloc,
+                })
+
+            site_record = {
+                "name": s,
+                "state": site_state,
+                "address": getattr(loc, 'postal', None) if loc else None,
+                "location": [loc.lat, loc.lon] if loc and hasattr(loc, 'lat') else None,
+                "ptp_capable": ptp,
+                "ipv4_management": ipv4_mgmt,
+                "cores_capacity": site_cores_cap,
+                "cores_allocated": site_cores_alloc,
+                "cores_available": max(0, site_cores_cap - site_cores_alloc),
+                "ram_capacity": site_ram_cap,
+                "ram_allocated": site_ram_alloc,
+                "ram_available": max(0, site_ram_cap - site_ram_alloc),
+                "disk_capacity": site_disk_cap,
+                "disk_allocated": site_disk_alloc,
+                "disk_available": max(0, site_disk_cap - site_disk_alloc),
+                "components": site_comps_final,
+                "hosts_count": host_count,
+            }
+            if p4_switches:
+                site_record["p4_switches"] = p4_switches
+            sites_out.append(site_record)
+
+        # Inter-site links
+        links_out = []
+        intersite_links = cbm.get_intersite_links()
+        for l in intersite_links:
+            source_switch = l[0]
+            sink_switch = l[2]
+            link = l[1]
+            source_site = l[3]
+            sink_site = l[4]
+            source_cp = l[5]
+            sink_cp = l[6]
+
+            if sites_to_include and (source_site not in sites_to_include or sink_site not in sites_to_include):
+                continue
+            if sites_to_exclude and (source_site in sites_to_exclude or sink_site in sites_to_exclude):
+                continue
+
+            _, cbm_source_cp_props = cbm.get_node_properties(node_id=source_cp)
+            _, cbm_sink_cp_props = cbm.get_node_properties(node_id=sink_cp)
+            _, cbm_link_props = cbm.get_node_properties(node_id=link)
+
+            # Extract bandwidth
+            bw = None
+            alloc_bw = None
+            cap_json = cbm_link_props.get(ABCPropertyGraph.PROP_CAPACITIES)
+            if cap_json:
+                try:
+                    cap_obj = Capacities.from_json(cap_json) if isinstance(cap_json, str) else cap_json
+                    bw = getattr(cap_obj, 'bw', None)
+                except Exception:
+                    pass
+
+            alloc_json = cbm_link_props.get(ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS)
+            if alloc_json:
+                try:
+                    alloc_obj = Capacities.from_json(alloc_json) if isinstance(alloc_json, str) else alloc_json
+                    alloc_bw = getattr(alloc_obj, 'bw', None)
+                except Exception:
+                    pass
+
+            if not self.DEBUG_FLAG and query_level != 0:
+                occupied = self.occupied_link_capacity(node_id=link, db=db, start=start, end=end)
+                if occupied:
+                    try:
+                        occ_obj = Capacities.from_json(occupied) if isinstance(occupied, str) else occupied
+                        alloc_bw = getattr(occ_obj, 'bw', None)
+                    except Exception:
+                        pass
+
+            # Extract port names from connection point labels
+            def _extract_port(cp_props):
+                lab_json = cp_props.get(ABCPropertyGraph.PROP_LABELS)
+                if lab_json:
+                    try:
+                        lab_obj = Labels.from_json(lab_json) if isinstance(lab_json, str) else lab_json
+                        return getattr(lab_obj, 'local_name', None) or getattr(lab_obj, 'device_name', None)
+                    except Exception:
+                        pass
+                return cp_props.get(ABCPropertyGraph.PROP_NAME)
+
+            link_name = cbm_link_props.get(ABCPropertyGraph.PROP_NAME)
+            link_layer = cbm_link_props.get(ABCPropertyGraph.PROP_LAYER)
+
+            links_out.append({
+                "name": link_name,
+                "layer": link_layer,
+                "bandwidth": bw,
+                "allocated_bandwidth": alloc_bw,
+                "sites": (source_site, sink_site),
+                "endpoints": [
+                    {"site": source_site, "node": source_switch, "port": _extract_port(cbm_source_cp_props)},
+                    {"site": sink_site, "node": sink_switch, "port": _extract_port(cbm_sink_cp_props)},
+                ],
+            })
+
+        # Facility ports
+        fps_out = []
+        for s, lf in facilities_by_site.items():
+            for fac_sliver in lf:
+                ns_list = cbm.get_first_neighbor(node_id=fac_sliver.node_id,
+                                                 rel=ABCPropertyGraph.REL_HAS,
+                                                 node_label=ABCPropertyGraph.CLASS_NetworkService)
+                if not ns_list or not len(ns_list):
+                    continue
+
+                fac_ns_node_id = ns_list[0]
+                fac_ns_cp_list = cbm.get_all_ns_or_link_connection_points(link_id=fac_ns_node_id)
+                if not fac_ns_cp_list:
+                    continue
+
+                for fac_cp_node_id in fac_ns_cp_list:
+                    _, fac_cp_props = cbm.get_node_properties(node_id=fac_cp_node_id)
+
+                    # Extract labels for VLANs and port info
+                    vlans = None
+                    port_name = None
+                    lab_json = fac_cp_props.get(ABCPropertyGraph.PROP_LABELS)
+                    if lab_json:
+                        try:
+                            lab_obj = Labels.from_json(lab_json) if isinstance(lab_json, str) else lab_json
+                            vr = getattr(lab_obj, 'vlan_range', None)
+                            if vr:
+                                vlans = str(vr)
+                            else:
+                                v = getattr(lab_obj, 'vlan', None)
+                                if v is not None:
+                                    vlans = str([v])
+                            port_name = getattr(lab_obj, 'local_name', None) or \
+                                        getattr(lab_obj, 'device_name', None)
+                        except Exception:
+                            pass
+
+                    # Get allocated VLANs
+                    allocated_vlans = None
+                    if not self.DEBUG_FLAG and query_level != 0:
+                        alloc_vlan_list = self.occupied_vlans(
+                            db=db, node_id=fac_sliver.resource_name,
+                            component_name=fac_cp_node_id, start=start, end=end
+                        )
+                        if alloc_vlan_list:
+                            allocated_vlans = str(alloc_vlan_list)
+
+                    # Trace switch port
+                    switch_port = None
+                    fac_cp_nbs = cbm.get_first_and_second_neighbor(
+                        node_id=fac_cp_node_id,
+                        rel1=ABCPropertyGraph.REL_CONNECTS,
+                        node1_label=ABCPropertyGraph.CLASS_Link,
+                        rel2=ABCPropertyGraph.REL_CONNECTS,
+                        node2_label=ABCPropertyGraph.CLASS_ConnectionPoint
+                    )
+                    if len(fac_cp_nbs) == 1:
+                        fac_sp_id = fac_cp_nbs[0][1]
+                        switch_port = fac_sp_id
+
+                    if not port_name:
+                        port_name = fac_cp_props.get(ABCPropertyGraph.PROP_NAME)
+
+                    fps_out.append({
+                        "site": s,
+                        "name": fac_sliver.resource_name,
+                        "port": port_name,
+                        "switch": switch_port,
+                        "vlans": vlans,
+                        "allocated_vlans": allocated_vlans,
+                    })
+
+        return {
+            "sites": sites_out,
+            "hosts": hosts_out,
+            "links": links_out,
+            "facility_ports": fps_out,
+        }

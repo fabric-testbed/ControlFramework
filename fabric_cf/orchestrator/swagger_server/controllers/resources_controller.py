@@ -50,3 +50,19 @@ def resources_get(level, force_refresh, start_date=None, end_date=None, includes
     """
     return rc.resources_get(level=level, force_refresh=force_refresh, start_date=start_date,
                             end_date=end_date, includes=includes, excludes=excludes)
+
+
+def portalresources_summary_get(level=None, force_refresh=None, start_date=None, end_date=None,
+                                 includes=None, excludes=None, type=None):  # noqa: E501
+    """Retrieve a JSON summary of available resources for portal"""
+    return rc.portalresources_summary_get(level=level, force_refresh=force_refresh,
+                                           start_date=start_date, end_date=end_date,
+                                           includes=includes, excludes=excludes, type=type)
+
+
+def resources_summary_get(level=None, force_refresh=None, start_date=None, end_date=None,
+                           includes=None, excludes=None, type=None):  # noqa: E501
+    """Retrieve a JSON summary of available resources"""
+    return rc.resources_summary_get(level=level, force_refresh=force_refresh,
+                                     start_date=start_date, end_date=end_date,
+                                     includes=includes, excludes=excludes, type=type)

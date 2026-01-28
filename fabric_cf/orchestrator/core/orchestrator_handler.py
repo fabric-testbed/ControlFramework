@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import json
 import time
 import traceback
 from datetime import datetime, timedelta, timezone
@@ -215,6 +216,108 @@ class OrchestratorHandler:
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing list_resources e: {e}")
+            raise e
+
+    def discover_broker_query_model_summary(self, *, controller: ABCMgmtControllerMixin, token: str = None,
+                                             level: int = 2, force_refresh: bool = False,
+                                             start: datetime = None, end: datetime = None,
+                                             includes: str = None, excludes: str = None,
+                                             email: str = None) -> str or None:
+        """
+        Discover resource summary (JSON) by querying Broker.
+        :param controller: Management Controller Object
+        :param token: Fabric Token
+        :param level: level of details
+        :param force_refresh: Force fetching a fresh model from Broker
+        :param start: start time
+        :param end: end time
+        :param includes: comma separated lists of sites to include
+        :param excludes: comma separated lists of sites to exclude
+        :param email: Email of the user
+        :return: JSON string or None
+        """
+        summary_json = None
+        # Always get fresh copy for advanced resource requests
+        if not start and not end and not includes and not excludes:
+            saved = self.controller_state.get_saved_summary(level=level)
+            if saved is not None:
+                if not force_refresh and not saved.can_refresh() and not saved.refresh_in_progress:
+                    summary_json = saved.get_bqm()
+                else:
+                    saved.start_refresh()
+
+        if not summary_json:
+            broker = self.get_broker(controller=controller)
+            if broker is None:
+                raise OrchestratorException("Unable to determine broker proxy for this controller. "
+                                            "Please check Orchestrator container configuration and logs.")
+
+            self.logger.info(f"Sending Summary Query to broker on behalf of {email} Start: {start}, End: {end}, "
+                             f"Force: {force_refresh}, Level: {level}")
+
+            model = controller.get_broker_query_model_summary(broker=broker, id_token=token, level=level,
+                                                               start=start, end=end,
+                                                               includes=includes, excludes=excludes)
+            if model is None or model.get_model() is None or model.get_model() == '':
+                raise OrchestratorException(http_error_code=NOT_FOUND,
+                                            message=f"Resource summary not found for level: {level}!")
+
+            summary_json = model.get_model()
+
+            # Do not update cache for advance requests
+            if not start and not end and not includes and not excludes and level > 0:
+                self.controller_state.save_summary(summary=summary_json, level=level)
+
+        return summary_json
+
+    def list_resources_summary(self, *, level: int = 2, force_refresh: bool = False,
+                               start: datetime = None, end: datetime = None,
+                               includes: str = None, excludes: str = None,
+                               token: str = None, authorize: bool = True,
+                               resource_type: str = None) -> dict:
+        """
+        List Resources as a JSON summary dict.
+        :param token: Fabric Identity Token
+        :param level: level of details (default 2)
+        :param force_refresh: force fetching from broker
+        :param start: start time
+        :param end: end time
+        :param includes: comma separated lists of sites to include
+        :param excludes: comma separated lists of sites to exclude
+        :param authorize: Authorize the request
+        :param resource_type: comma-separated resource types to include (sites,hosts,links,facility_ports)
+        :raises OrchestratorException
+        :returns dict with keys: sites, hosts, links, facility_ports
+        """
+        try:
+            controller = self.controller_state.get_management_actor()
+            self.logger.debug(f"list_resources_summary invoked controller:{controller}")
+
+            if authorize:
+                fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
+                email = fabric_token.email
+            else:
+                email = None
+
+            summary_json = self.discover_broker_query_model_summary(
+                controller=controller, token=token, level=level,
+                force_refresh=force_refresh, start=start, end=end,
+                includes=includes, excludes=excludes, email=email
+            )
+
+            summary = json.loads(summary_json)
+
+            # Filter by resource type if requested
+            if resource_type:
+                requested_types = {t.strip().lower() for t in resource_type.split(",")}
+                all_types = {"sites", "hosts", "links", "facility_ports"}
+                summary = {k: v for k, v in summary.items() if k in requested_types and k in all_types}
+
+            return summary
+
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing list_resources_summary e: {e}")
             raise e
 
     def create_slice(self, *, token: str, slice_name: str, slice_graph: str, ssh_key: str,

@@ -324,6 +324,227 @@ paths:
               schema:
                 $ref: '#/components/schemas/status_500_internal_server_error'
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.resources_controller
+  /resources/summary:
+    get:
+      tags:
+      - resources
+      summary: Retrieve a JSON summary of available resources.
+      description: Returns a pre-built JSON dict with sites, hosts, links, and facility_ports.
+        Much faster than the graph-based /resources endpoint for clients that only need summary data.
+      operationId: resources_summary_get
+      parameters:
+      - name: level
+        in: query
+        description: Level of details
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          default: 2
+      - name: force_refresh
+        in: query
+        description: Force to retrieve current available resource information.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: start_date
+        in: query
+        description: starting date to check availability from
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: 2023-01-01 16:20:15 +00:00
+      - name: end_date
+        in: query
+        description: end date to check availability until
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: 2023-01-01 16:20:15 +00:00
+      - name: includes
+        in: query
+        description: comma separated lists of sites to include
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "RENC,UKY"
+      - name: excludes
+        in: query
+        description: comma separated lists of sites to exclude
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "SRI,LBNL"
+      - name: type
+        in: query
+        description: "comma separated resource types to return (sites,hosts,links,facility_ports). Returns all if omitted."
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "sites,hosts"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resources'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_400_bad_request'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_401_unauthorized'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_403_forbidden'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_404_not_found'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_500_internal_server_error'
+      security:
+      - bearerAuth: []
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.resources_controller
+  /portalresources/summary:
+    get:
+      tags:
+      - resources
+      summary: Retrieve a JSON summary of available resources for portal
+      description: Returns a pre-built JSON dict with sites, hosts, links, and facility_ports for portal.
+      operationId: portalresources_summary_get
+      parameters:
+      - name: level
+        in: query
+        description: Level of details
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          default: 2
+      - name: force_refresh
+        in: query
+        description: Force to retrieve current available resource information.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: start_date
+        in: query
+        description: starting date to check availability from
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: 2023-01-01 16:20:15 +00:00
+      - name: end_date
+        in: query
+        description: end date to check availability until
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: 2023-01-01 16:20:15 +00:00
+      - name: includes
+        in: query
+        description: comma separated lists of sites to include
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "RENC,UKY"
+      - name: excludes
+        in: query
+        description: comma separated lists of sites to exclude
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "SRI,LBNL"
+      - name: type
+        in: query
+        description: "comma separated resource types to return (sites,hosts,links,facility_ports). Returns all if omitted."
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          example: "sites,hosts"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resources'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_400_bad_request'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_401_unauthorized'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_403_forbidden'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_404_not_found'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_500_internal_server_error'
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.resources_controller
   /slices:
     get:
       tags:
