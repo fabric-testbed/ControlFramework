@@ -831,7 +831,8 @@ class AggregatedBQMPlugin:
                     hosts_out.append({
                         "name": sliver.get_name(),
                         "site": s,
-                        "location": loc,
+                        "address": getattr(loc, 'postal', None) if loc else None,
+                        "location": [loc.lat, loc.lon] if loc and hasattr(loc, 'lat') else None,
                         "state": site_state,
                         "ptp": ptp,
                         "ipv4_management": ipv4_mgmt,
