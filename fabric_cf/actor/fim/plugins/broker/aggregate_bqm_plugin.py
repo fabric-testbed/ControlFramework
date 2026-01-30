@@ -831,6 +831,10 @@ class AggregatedBQMPlugin:
                     hosts_out.append({
                         "name": sliver.get_name(),
                         "site": s,
+                        "location": loc,
+                        "state": site_state,
+                        "ptp": ptp,
+                        "ipv4_management": ipv4_mgmt,
                         "cores_capacity": w_core_cap,
                         "cores_allocated": w_core_alloc,
                         "cores_available": max(0, w_core_cap - w_core_alloc),
@@ -895,7 +899,10 @@ class AggregatedBQMPlugin:
             }
             if p4_switches:
                 site_record["p4_switches"] = p4_switches
-            sites_out.append(site_record)
+            # Only add sites with hosts
+            if host_count:
+
+                sites_out.append(site_record)
 
         # Inter-site links
         links_out = []
