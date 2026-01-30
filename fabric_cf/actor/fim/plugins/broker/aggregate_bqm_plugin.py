@@ -834,7 +834,7 @@ class AggregatedBQMPlugin:
                         "address": getattr(loc, 'postal', None) if loc else None,
                         "location": [loc.lat, loc.lon] if loc and hasattr(loc, 'lat') else None,
                         "state": site_state,
-                        "ptp": ptp,
+                        "ptp_capable": ptp,
                         "ipv4_management": ipv4_mgmt,
                         "cores_capacity": w_core_cap,
                         "cores_allocated": w_core_alloc,
