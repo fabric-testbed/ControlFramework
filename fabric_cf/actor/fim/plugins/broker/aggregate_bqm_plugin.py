@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import Tuple, Dict, TYPE_CHECKING, List
+from typing import Tuple, Dict, TYPE_CHECKING, List, Optional
 from collections import defaultdict
 
 import uuid
@@ -44,6 +44,7 @@ from fim.slivers.network_node import CompositeNodeSliver, NodeType, NodeSliver
 from fim.slivers.attached_components import ComponentSliver, ComponentType, AttachedComponentsInfo
 from fim.slivers.interface_info import InterfaceType
 from fim.slivers.network_service import ServiceType
+from matplotlib.style.core import available
 
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 
@@ -119,7 +120,8 @@ class AggregatedBQMPlugin:
         return result
 
     @staticmethod
-    def occupied_link_capacity(*, db: ABCDatabase, node_id: str, start: datetime, end: datetime) -> str:
+    def occupied_link_capacity(*, db: ABCDatabase, node_id: str,
+                               start: Optional[datetime], end: Optional[datetime]) -> Optional[str]:
         """
         Compute the total bandwidth capacity occupied on a given link node within a specific time window.
 
@@ -152,8 +154,8 @@ class AggregatedBQMPlugin:
             return Capacities(bw=bw_used).to_json()
 
     @staticmethod
-    def occupied_node_capacity(*, db: ABCDatabase, node_id: str, start: datetime,
-                               end: datetime) -> Tuple[Capacities, Dict[ComponentType, Dict[str, Capacities]]]:
+    def occupied_node_capacity(*, db: ABCDatabase, node_id: str, start: Optional[datetime],
+                               end: Optional[datetime]) -> Tuple[Capacities, Dict[ComponentType, Dict[str, Capacities]]]:
         """
         Figure out the total capacity occupied in the network node and return a tuple of
         capacities occupied in this node and a dict of component capacities that are occupied
@@ -928,6 +930,7 @@ class AggregatedBQMPlugin:
 
             # Extract bandwidth
             bw = None
+            available_bw = None
             alloc_bw = None
             cap_json = cbm_link_props.get(ABCPropertyGraph.PROP_CAPACITIES)
             if cap_json:
@@ -937,11 +940,11 @@ class AggregatedBQMPlugin:
                 except Exception:
                     pass
 
-            alloc_json = cbm_link_props.get(ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS)
-            if alloc_json:
+            available_json = cbm_link_props.get(ABCPropertyGraph.PROP_CAPACITY_ALLOCATIONS)
+            if available_json:
                 try:
-                    alloc_obj = Capacities.from_json(alloc_json) if isinstance(alloc_json, str) else alloc_json
-                    alloc_bw = getattr(alloc_obj, 'bw', None)
+                    available_obj = Capacities.from_json(available_json) if isinstance(available_json, str) else available_json
+                    available_bw = getattr(available_obj, 'bw', None)
                 except Exception:
                     pass
 
@@ -972,6 +975,7 @@ class AggregatedBQMPlugin:
                 "name": link_name,
                 "layer": link_layer,
                 "bandwidth": bw,
+                "available_bandwidth": available_bw,
                 "allocated_bandwidth": alloc_bw,
                 "sites": (source_site, sink_site),
                 "endpoints": [
