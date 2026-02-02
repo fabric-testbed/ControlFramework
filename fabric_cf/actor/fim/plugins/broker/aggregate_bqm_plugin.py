@@ -975,7 +975,7 @@ class AggregatedBQMPlugin:
                 "name": link_name,
                 "layer": link_layer,
                 "bandwidth": bw,
-                "available_bandwidth": available_bw,
+                "available_bandwidth": available_bw if available_bw is not None else bw,
                 "allocated_bandwidth": alloc_bw,
                 "sites": (source_site, sink_site),
                 "endpoints": [
