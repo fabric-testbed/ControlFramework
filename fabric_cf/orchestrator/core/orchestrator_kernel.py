@@ -255,6 +255,7 @@ class OrchestratorKernel(ABCTick):
             model_level_list = []
             for cached_bqm in self.bqm_cache.values():
                 if cached_bqm.can_refresh():
+                    cached_bqm.start_refresh()
                     model_level_list.append((cached_bqm.get_graph_format(), cached_bqm.get_level()))
             if self.event_processor is not None and len(model_level_list) > 0:
                 self.event_processor.enqueue(incoming=PollEvent(model_level_list=model_level_list))
@@ -262,6 +263,7 @@ class OrchestratorKernel(ABCTick):
             summary_level_list = []
             for cached_summary in self.summary_cache.values():
                 if cached_summary.can_refresh():
+                    cached_summary.start_refresh()
                     summary_level_list.append(cached_summary.get_level())
             if self.event_processor is not None and len(summary_level_list) > 0:
                 self.event_processor.enqueue(incoming=SummaryPollEvent(level_list=summary_level_list))

@@ -38,21 +38,16 @@ class BqmWrapper:
         self.graph_format = None
         self.bqm = None
         self.last_query_time = None
+        '''
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         config = GlobalsSingleton.get().get_config()
         bqm_config = config.get_global_config().get_bqm_config()
         refresh_interval = bqm_config.get(Constants.REFRESH_INTERVAL, 2000)
-        self.refresh_interval_in_seconds = refresh_interval
+        '''
+        self.refresh_interval_in_seconds = 2000
         self.refresh_in_progress = False
         self.level = 1
         self.graph_id = None
-
-    def set_refresh_interval(self, *, refresh_interval: int):
-        """
-        Set BQM Refresh Interval
-        @param refresh_interval: Refresh Interval in seconds
-        """
-        self.refresh_interval_in_seconds = refresh_interval
 
     def can_refresh(self) -> bool:
         """
@@ -61,7 +56,7 @@ class BqmWrapper:
         """
         current_time = datetime.now(timezone.utc)
         if not self.refresh_in_progress and (self.last_query_time is None or
-                                             ((current_time - self.last_query_time).seconds >
+                                             ((current_time - self.last_query_time).total_seconds() >
                                               self.refresh_interval_in_seconds)):
             return True
         return False

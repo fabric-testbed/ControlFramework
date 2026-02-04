@@ -162,7 +162,7 @@ class OrchestratorHandler:
                                             "Please check Orchestrator container configuration and logs.")
 
             self.logger.info(f"Sending Query to broker on behalf of {email} Start: {start}, End: {end}, "
-                             f"Force: {force_refresh}, Level: {level}")
+                             f"Force: {force_refresh}, Level: {level}, format: {graph_format}")
 
             model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
                                                       graph_format=graph_format, start=start, end=end,
