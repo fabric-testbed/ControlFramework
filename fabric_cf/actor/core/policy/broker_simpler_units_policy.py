@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import json
 import random
 import threading
 import traceback
@@ -2234,15 +2235,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                   msg=f"query_action {query_action}")
 
-        if query_action != Constants.QUERY_ACTION_DISCOVER_BQM:
+        if query_action not in (Constants.QUERY_ACTION_DISCOVER_BQM,
+                                Constants.QUERY_ACTION_DISCOVER_BQM_SUMMARY):
             raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                   msg=f"query_action {query_action}")
-
-        bqm_format = p.get(Constants.BROKER_QUERY_MODEL_FORMAT, None)
-        if bqm_format is not None:
-            bqm_format = GraphFormat(int(bqm_format))
-        else:
-            bqm_format = GraphFormat.GRAPHML
 
         start = p.get(Constants.START, None)
         if start:
@@ -2253,6 +2249,35 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         excludes = p.get(Constants.EXCLUDES, None)
         includes = p.get(Constants.INCLUDES, None)
+
+        # Handle JSON summary path — bypasses graph construction entirely
+        if query_action == Constants.QUERY_ACTION_DISCOVER_BQM_SUMMARY:
+            try:
+                if self.query_cbm is not None:
+                    plugin = AggregatedBQMPlugin(actor=self.actor, logger=self.logger)
+                    summary = plugin.plug_produce_bqm_summary(
+                        cbm=self.query_cbm, query_level=query_level,
+                        start=start, end=end, includes=includes, excludes=excludes
+                    )
+                    result[Constants.BROKER_QUERY_MODEL] = json.dumps(summary)
+                    result[Constants.QUERY_RESPONSE_STATUS] = "True"
+                else:
+                    result[Constants.BROKER_QUERY_MODEL] = ""
+                    result[Constants.QUERY_RESPONSE_STATUS] = "False"
+                    result[Constants.QUERY_RESPONSE_MESSAGE] = "Resource(s) not found"
+            except Exception as e:
+                self.logger.error(traceback.format_exc())
+                self.logger.error(e)
+                result[Constants.BROKER_QUERY_MODEL] = ""
+                result[Constants.QUERY_RESPONSE_STATUS] = "False"
+                result[Constants.QUERY_RESPONSE_MESSAGE] = str(e)
+            return result
+
+        bqm_format = p.get(Constants.BROKER_QUERY_MODEL_FORMAT, None)
+        if bqm_format is not None:
+            bqm_format = GraphFormat(int(bqm_format))
+        else:
+            bqm_format = GraphFormat.GRAPHML
 
         try:
             if self.query_cbm is not None:

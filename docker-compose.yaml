@@ -59,7 +59,7 @@ services:
        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-fabric}
        - PGDATA=${PGDATA:-/var/lib/postgresql/data}
   neo4j1: &neo4j-base
-      image: kthare10/neo4j-apoc:5.26.19
+      image: fabrictestbed/neo4j-apoc:5.26.19
       restart: always
       container_name: neo4j1
       volumes:

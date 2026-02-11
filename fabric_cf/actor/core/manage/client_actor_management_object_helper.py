@@ -182,6 +182,37 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
+    def get_broker_query_model_summary(self, *, broker: ID, caller: AuthToken, id_token: str,
+                                       level: int, start: datetime = None,
+                                       end: datetime = None, includes: str = None,
+                                       excludes: str = None) -> ResultBrokerQueryModelAvro:
+        result = ResultBrokerQueryModelAvro()
+        result.status = ResultAvro()
+
+        if broker is None or caller is None:
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            return result
+
+        try:
+            b = self.client.get_broker(guid=broker)
+            if b is not None:
+                request = BrokerPolicy.get_broker_query_model_summary_query(
+                    level=level, start=start, end=end, includes=includes, excludes=excludes
+                )
+                response = ManagementUtils.query(actor=self.client, actor_proxy=b, query=request)
+                result.model = Translate.translate_to_broker_query_model(query_response=response, level=level)
+            else:
+                result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
+                result.status.set_message(ErrorCodes.ErrorNoSuchBroker.interpret())
+        except Exception as e:
+            self.logger.error("get_broker_query_model_summary {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        return result
+
     def add_reservation_private(self, *, reservation: TicketReservationAvro):
         result = ResultAvro()
         slice_id = ID(uid=reservation.get_slice_id())

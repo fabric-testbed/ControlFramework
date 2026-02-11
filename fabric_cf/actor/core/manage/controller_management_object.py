@@ -109,6 +109,15 @@ class ControllerManagementObject(ActorManagementObject, ABCClientActorManagement
                                                          graph_format=graph_format, start=start, end=end,
                                                          includes=includes, excludes=excludes)
 
+    def get_broker_query_model_summary(self, *, broker: ID, caller: AuthToken, id_token: str,
+                                       level: int, start: datetime = None,
+                                       end: datetime = None, includes: str = None,
+                                       excludes: str = None) -> ResultBrokerQueryModelAvro:
+        return self.client_helper.get_broker_query_model_summary(
+            broker=broker, caller=caller, id_token=id_token, level=level,
+            start=start, end=end, includes=includes, excludes=excludes
+        )
+
     def add_reservation(self, *, reservation: TicketReservationAvro, caller: AuthToken) -> ResultStringAvro:
         return self.client_helper.add_reservation(reservation=reservation, caller=caller)
 

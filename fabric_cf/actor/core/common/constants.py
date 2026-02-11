@@ -213,6 +213,7 @@ class Constants:
     ELASTIC_SIZE = "request.elasticSize"
 
     QUERY_ACTION_DISCOVER_BQM = "discover.bqm"
+    QUERY_ACTION_DISCOVER_BQM_SUMMARY = "discover.bqm.summary"
     QUERY_ACTION = "query.action"
     QUERY_RESPONSE = "query.response"
     QUERY_RESPONSE_STATUS = "query.response.status"

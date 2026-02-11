@@ -31,7 +31,10 @@ from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 from fabric_cf.orchestrator.swagger_server.models import Resource
 from fabric_cf.orchestrator.swagger_server.models.resources import Resources  # noqa: E501
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
-from fabric_cf.orchestrator.swagger_server.response.constants import GET_METHOD, RESOURCES_PATH, PORTAL_RESOURCES_PATH
+from fabric_cf.orchestrator.swagger_server.response.constants import (
+    GET_METHOD, RESOURCES_PATH, PORTAL_RESOURCES_PATH,
+    RESOURCES_SUMMARY_PATH, PORTAL_RESOURCES_SUMMARY_PATH
+)
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
@@ -153,4 +156,104 @@ def resources_get(level: int = 1, force_refresh: bool = False, start_date: str =
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
+        return cors_error_response(error=e)
+
+
+def portalresources_summary_get(level: int = 2, force_refresh: bool = False, start_date: str = None,
+                                 end_date: str = None, includes: str = None, excludes: str = None,
+                                 type: str = None) -> dict:
+    """Retrieve a JSON summary of available resources for portal
+
+    :param level: Level of details
+    :param force_refresh: Force to retrieve current available resource information.
+    :param start_date: starting date to check availability from
+    :param end_date: end date to check availability until
+    :param includes: comma separated lists of sites to include
+    :param excludes: comma separated lists of sites to exclude
+    :param type: comma separated resource types (sites,hosts,links,facility_ports)
+    :rtype: dict
+    """
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(GET_METHOD, PORTAL_RESOURCES_SUMMARY_PATH).inc()
+    try:
+        start = handler.validate_lease_time(lease_time=start_date)
+        end = handler.validate_lease_time(lease_time=end_date)
+
+        if start and not end:
+            now = datetime.now(timezone.utc)
+            if now - start < timedelta(minutes=10):
+                start = None
+
+        if start and end and (end - start) < timedelta(minutes=60):
+            raise OrchestratorException(http_error_code=BAD_REQUEST,
+                                        message="Time range should be at least 60 minutes long!")
+
+        summary = handler.list_resources_summary(level=level, force_refresh=force_refresh,
+                                                  start=start, end=end, includes=includes,
+                                                  excludes=excludes, authorize=False,
+                                                  resource_type=type)
+        response = Resources()
+        response.data = [summary]
+        response.size = 1
+        response.type = "resources.summary"
+        success_counter.labels(GET_METHOD, PORTAL_RESOURCES_SUMMARY_PATH).inc()
+        return cors_success_response(response_body=response)
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, PORTAL_RESOURCES_SUMMARY_PATH).inc()
+        return cors_error_response(error=e)
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, PORTAL_RESOURCES_SUMMARY_PATH).inc()
+        return cors_error_response(error=e)
+
+
+def resources_summary_get(level: int = 2, force_refresh: bool = False, start_date: str = None,
+                           end_date: str = None, includes: str = None, excludes: str = None,
+                           type: str = None) -> dict:
+    """Retrieve a JSON summary of available resources
+
+    :param level: Level of details
+    :param force_refresh: Force to retrieve current available resource information.
+    :param start_date: starting date to check availability from
+    :param end_date: end date to check availability until
+    :param includes: comma separated lists of sites to include
+    :param excludes: comma separated lists of sites to exclude
+    :param type: comma separated resource types (sites,hosts,links,facility_ports)
+    :rtype: dict
+    """
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(GET_METHOD, RESOURCES_SUMMARY_PATH).inc()
+    try:
+        token = get_token()
+        start = handler.validate_lease_time(lease_time=start_date)
+        end = handler.validate_lease_time(lease_time=end_date)
+
+        if start and not end:
+            now = datetime.now(timezone.utc)
+            if now - start < timedelta(minutes=10):
+                start = None
+
+        if start and end and (end - start) < timedelta(minutes=60):
+            raise OrchestratorException(http_error_code=BAD_REQUEST,
+                                        message="Time range should be at least 60 minutes long!")
+
+        summary = handler.list_resources_summary(token=token, level=level, force_refresh=force_refresh,
+                                                  start=start, end=end, includes=includes,
+                                                  excludes=excludes, resource_type=type)
+        response = Resources()
+        response.data = [summary]
+        response.size = 1
+        response.type = "resources.summary"
+        success_counter.labels(GET_METHOD, RESOURCES_SUMMARY_PATH).inc()
+        return cors_success_response(response_body=response)
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, RESOURCES_SUMMARY_PATH).inc()
+        return cors_error_response(error=e)
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, RESOURCES_SUMMARY_PATH).inc()
         return cors_error_response(error=e)
