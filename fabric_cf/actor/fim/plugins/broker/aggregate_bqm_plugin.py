@@ -605,7 +605,7 @@ class AggregatedBQMPlugin:
                                     }
 
                     if not self.DEBUG_FLAG and kwargs['query_level'] != 0:
-                        allocated_vlans = self.occupied_vlans(db=db, node_id=fac_sliver.resource_name,
+                        allocated_vlans = self.occupied_vlans(db=db, node_id=fac_sliver.node_id,
                                                               component_name=fac_cp_node_id, start=start, end=end)
 
                         if allocated_vlans and len(allocated_vlans):
@@ -1025,7 +1025,7 @@ class AggregatedBQMPlugin:
                     allocated_vlans = None
                     if not self.DEBUG_FLAG and query_level != 0:
                         alloc_vlan_list = self.occupied_vlans(
-                            db=db, node_id=fac_sliver.resource_name,
+                            db=db, node_id=fac_sliver.node_id,
                             component_name=fac_cp_node_id, start=start, end=end
                         )
                         if alloc_vlan_list:

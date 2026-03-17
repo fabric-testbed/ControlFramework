@@ -283,8 +283,6 @@ class SliceStateMachine:
             for r in reservations.values():
                 bins.add(s=r.get_state())
                 if r.get_pending_state() in [ReservationPendingStates.ModifyingLease,
-                                             ReservationPendingStates.ExtendingTicket,
-                                             ReservationPendingStates.ExtendingLease,
                                              ReservationPendingStates.Redeeming,
                                              ReservationPendingStates.Ticketing,
                                              ReservationPendingStates.Priming,
