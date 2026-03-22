@@ -137,6 +137,7 @@ class Reservations(Base):
     rsv_joining = Column(Integer, nullable=False)
     lease_start = Column(TIMESTAMP(timezone=True), nullable=True)
     lease_end = Column(TIMESTAMP(timezone=True), nullable=True)
+    closed_at = Column(TIMESTAMP(timezone=True), nullable=True)
     properties = Column(LargeBinary)
     components = relationship('Components', back_populates='reservation')
     links = relationship('Links', back_populates='reservation')

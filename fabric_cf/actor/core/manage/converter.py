@@ -126,6 +126,10 @@ class Converter:
 
         rsv_mng.set_notices(reservation.get_notices())
 
+        closed_at = getattr(reservation, 'closed_at', None)
+        if closed_at is not None:
+            rsv_mng.set_closed_at(ActorClock.to_milliseconds(when=closed_at))
+
         if full:
             rsv_mng = Converter.attach_res_properties(mng=rsv_mng, reservation=reservation)
 

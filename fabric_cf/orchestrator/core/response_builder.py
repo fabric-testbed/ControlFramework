@@ -50,6 +50,7 @@ class ResponseBuilder:
     PROP_GRAPH_ID = "graph_id"
     PROP_LEASE_START_TIME = "lease_start_time"
     PROP_LEASE_END_TIME = "lease_end_time"
+    PROP_CLOSED_AT = "closed_at"
 
     PROP_SLIVER_ID = "sliver_id"
     PROP_PENDING_STATE = "pending_state"
@@ -100,6 +101,11 @@ class ResponseBuilder:
 
                 if reservation.get_notices() is not None:
                     res_dict[ResponseBuilder.PROP_NOTICE] = reservation.get_notices()
+
+                closed_at_ms = reservation.get_closed_at()
+                if closed_at_ms is not None:
+                    closed_at_time = ActorClock.from_milliseconds(milli_seconds=closed_at_ms)
+                    res_dict[ResponseBuilder.PROP_CLOSED_AT] = closed_at_time.strftime(Constants.LEASE_TIME_FORMAT)
 
                 reservations.append(res_dict)
 

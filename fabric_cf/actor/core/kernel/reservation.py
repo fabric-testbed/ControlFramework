@@ -144,6 +144,7 @@ class Reservation(ABCReservationMixin):
         # Scratch element to trigger post-actions on a probe.
         self.service_pending = ReservationPendingStates.None_
         self.last_transition_time = None
+        self.closed_at = None
         self.last_pending_state = ReservationPendingStates.None_
         self.thread_lock = threading.Lock()
 
@@ -620,6 +621,10 @@ class Reservation(ABCReservationMixin):
         self.set_dirty()
         self.state_transition = True
         self.last_transition_time = datetime.now(timezone.utc)
+
+        if state in (ReservationStates.Closed, ReservationStates.Failed, ReservationStates.CloseFail):
+            if self.closed_at is None:
+                self.closed_at = datetime.now(timezone.utc)
 
         if change:
             sliver = None
