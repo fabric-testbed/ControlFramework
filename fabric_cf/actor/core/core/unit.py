@@ -549,8 +549,6 @@ class Unit(ConfigToken):
         :param sliver Sliver returned by Handler
         """
         try:
-            from fabric_cf.actor.core.container.globals import GlobalsSingleton
-            #log = GlobalsSingleton.get().get_logger()
             self.lock.acquire()
             self.sliver.set_capacity_allocations(sliver.get_capacity_allocations())
             self.sliver.set_capacity_hints(sliver.get_capacity_hints())
@@ -569,9 +567,6 @@ class Unit(ConfigToken):
                             existing_ifs = existing_device.network_service_info.network_services[ns_name].interface_info.interfaces
                             for ifs in ns.interface_info.interfaces.values():
                                 existing_ifs[ifs.get_name()].label_allocations = ifs.label_allocations
-                                #log.info("KOMAL -- existing ifs: {}".format(existing_ifs))
-
-                        #log.info(f"Updated device: {existing_device}")
 
                         #self.sliver.attached_components_info.devices[device.get_name()].label_allocations = device.label_allocations
         finally:
