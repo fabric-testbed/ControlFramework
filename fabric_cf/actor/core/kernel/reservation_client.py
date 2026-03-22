@@ -553,7 +553,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
             self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {sliver}")
 
-    def approve_extend_ticket(self) -> Tuple[bool, bool]:
+    def approve_extend_ticket(self) -> Tuple[bool, bool, List[str]]:
         """
         ExtendTicket predicate: invoked internally to determine if the reservation
         should be extended. This gives subclasses an opportunity sequence actions at the orchestrator side.
@@ -601,7 +601,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 rollback = True
                 break
 
-        return approved, rollback
+        return approved, rollback, failed_preds
 
     def approve_ticket(self, extend: bool = False) -> Tuple[bool, List[str]]:
         """
@@ -649,7 +649,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if self.get_type() is not None:
             resource_type_str = str(self.get_type())
             if resource_type_str in Constants.SUPPORTED_SERVICES_STR:
-                ret_val, rollback = self.approve_extend_ticket()
+                ret_val, rollback, _ = self.approve_extend_ticket()
             else:
                 ret_val = True
 
@@ -1058,7 +1058,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
             if self.requested_resources.sliver is not None:
                 status, failed_preds = self.approve_ticket(extend=True)
             else:
-                status, rollback = self.approve_extend_ticket()
+                status, rollback, failed_preds = self.approve_extend_ticket()
 
             if status:
                 if not rollback:
@@ -1077,20 +1077,27 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 # Update ASM with Reservation Info
                 self.update_slice_graph(sliver=self.resources.sliver)
             else:
-                # Modify scenario; interfaces to the newly added VMs cannot be attached
-                # as the VM failed to ticket at the broker
                 if len(failed_preds) > 0:
-                    msg = f"ignore modify, redeem predecessor reservation# {failed_preds[0]} is in a terminal state"
-                    self.transition_with_join(prefix=msg,
-                                              state=self.state, pending=ReservationPendingStates.None_,
-                                              join_state=JoinState.NoJoin)
+                    if self.requested_resources.sliver is not None:
+                        # Modify scenario; interfaces to the newly added VMs cannot be attached
+                        # as the VM failed to ticket at the broker
+                        msg = f"ignore modify, redeem predecessor reservation# {failed_preds[0]} is in a terminal state"
+                        self.transition_with_join(prefix=msg,
+                                                  state=self.state, pending=ReservationPendingStates.None_,
+                                                  join_state=JoinState.NoJoin)
 
-                    for rid in failed_preds:
-                        self.remove_redeem_predecessor(rid=ID(uid=rid))
+                        for rid in failed_preds:
+                            self.remove_redeem_predecessor(rid=ID(uid=rid))
 
-                    # Update ASM with Reservation Info
-                    self.update_slice_graph(sliver=self.resources.sliver)
-                    self.pending_recover = False
+                        # Update ASM with Reservation Info
+                        self.update_slice_graph(sliver=self.resources.sliver)
+                        self.pending_recover = False
+                    else:
+                        # Extend/renew scenario — close the reservation since predecessors are dead
+                        msg = f"Closing reservation# {self.get_reservation_id()} - " \
+                              f"redeem predecessor(s) {failed_preds} in terminal state during extend"
+                        self.logger.error(msg)
+                        self.fail(message=msg)
 
         elif self.joinstate == JoinState.BlockedRedeem:
             # this reservation has a ticket to redeem, and the redeem is
