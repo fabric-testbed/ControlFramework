@@ -217,6 +217,7 @@ class ExportScript:
                                 "bandwidth": bw,
                                 "lease_start": reservation.get_term().get_start_time().isoformat(),
                                 "lease_end": reservation.get_term().get_end_time().isoformat(),
+                                "closed_at": reservation.closed_at.isoformat() if getattr(reservation, 'closed_at', None) else None,
                                 "interfaces": {
                                     "data": []
                                 },

@@ -368,7 +368,8 @@ class ActorDatabase(ABCDatabase):
                                     components=components,
                                     lease_start=term.get_start_time() if term else None,
                                     lease_end=term.get_end_time() if term else None,
-                                    host=host, ip_subnet=ip_subnet, links=links)
+                                    host=host, ip_subnet=ip_subnet, links=links,
+                                    closed_at=getattr(reservation, 'closed_at', None))
             self.logger.debug(
                 "Reservation {} added to slice {}".format(reservation.get_reservation_id(), reservation.get_slice()))
         finally:
@@ -470,7 +471,8 @@ class ActorDatabase(ABCDatabase):
                                        site=site, rsv_type=rsv_type, components=components,
                                        lease_start=term.get_start_time() if term else None,
                                        lease_end=term.get_end_time() if term else None,
-                                       ip_subnet=ip_subnet, host=host, links=links)
+                                       ip_subnet=ip_subnet, host=host, links=links,
+                                       closed_at=getattr(reservation, 'closed_at', None))
             diff = int(time.time() - begin)
             if diff > 0:
                 self.logger.info(f"DB TIME: {diff}")

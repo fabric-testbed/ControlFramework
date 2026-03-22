@@ -662,7 +662,7 @@ class PsqlDatabase:
                         lease_end: datetime = None, rsv_graph_node_id: str = None, oidc_claim_sub: str = None,
                         email: str = None, project_id: str = None, site: str = None, rsv_type: str = None,
                         components: List[Tuple[str, str, str]] = None, host: str = None, ip_subnet: str = None,
-                        links: list[dict] = None):
+                        links: list[dict] = None, closed_at: datetime = None):
         """
         Add a reservation
         @param slc_guid slice guid
@@ -684,6 +684,7 @@ class PsqlDatabase:
         @param host host
         @param ip_subnet ip_subnet
         @param links: list of dictionary objects representing link
+        @param closed_at timestamp when reservation was closed
         """
         session = self.get_session()
         try:
@@ -692,7 +693,8 @@ class PsqlDatabase:
                                    rsv_state=rsv_state, rsv_pending=rsv_pending, rsv_joining=rsv_joining,
                                    lease_start=lease_start, lease_end=lease_end,
                                    properties=properties, oidc_claim_sub=oidc_claim_sub, email=email,
-                                   project_id=project_id, site=site, rsv_type=rsv_type, host=host, ip_subnet=ip_subnet)
+                                   project_id=project_id, site=site, rsv_type=rsv_type, host=host, ip_subnet=ip_subnet,
+                                   closed_at=closed_at)
             if rsv_graph_node_id is not None:
                 rsv_obj.rsv_graph_node_id = rsv_graph_node_id
 
@@ -761,7 +763,8 @@ class PsqlDatabase:
                            rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
                            lease_end: datetime = None, rsv_graph_node_id: str = None, site: str = None,
                            rsv_type: str = None, components: List[Tuple[str, str, str]] = None,
-                           host: str = None, ip_subnet: str = None, links: list[dict] = None):
+                           host: str = None, ip_subnet: str = None, links: list[dict] = None,
+                           closed_at: datetime = None):
         session = self.get_session()
         try:
             rsv_obj = session.query(Reservations).filter_by(rsv_resid=rsv_resid).one()
@@ -776,6 +779,7 @@ class PsqlDatabase:
             rsv_obj.properties = properties
             rsv_obj.lease_start = lease_start
             rsv_obj.lease_end = lease_end
+            rsv_obj.closed_at = closed_at
             if host:
                 rsv_obj.host = host
             if ip_subnet:

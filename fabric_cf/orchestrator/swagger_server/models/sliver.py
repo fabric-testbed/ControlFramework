@@ -14,7 +14,7 @@ class Sliver(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, notice: str=None, sliver_type: str=None, sliver: object=None, lease_start_time: str=None, lease_end_time: str=None, state: str=None, pending_state: str=None, join_state: str=None, graph_node_id: str=None, slice_id: str=None, sliver_id: str=None, owner_user_id: str=None, owner_email: str=None):  # noqa: E501
+    def __init__(self, notice: str=None, sliver_type: str=None, sliver: object=None, lease_start_time: str=None, lease_end_time: str=None, closed_at: str=None, state: str=None, pending_state: str=None, join_state: str=None, graph_node_id: str=None, slice_id: str=None, sliver_id: str=None, owner_user_id: str=None, owner_email: str=None):  # noqa: E501
         """Sliver - a model defined in Swagger
 
         :param notice: The notice of this Sliver.  # noqa: E501
@@ -27,6 +27,8 @@ class Sliver(Model):
         :type lease_start_time: str
         :param lease_end_time: The lease_end_time of this Sliver.  # noqa: E501
         :type lease_end_time: str
+        :param closed_at: The closed_at of this Sliver.  # noqa: E501
+        :type closed_at: str
         :param state: The state of this Sliver.  # noqa: E501
         :type state: str
         :param pending_state: The pending_state of this Sliver.  # noqa: E501
@@ -50,6 +52,7 @@ class Sliver(Model):
             'sliver': object,
             'lease_start_time': str,
             'lease_end_time': str,
+            'closed_at': str,
             'state': str,
             'pending_state': str,
             'join_state': str,
@@ -66,6 +69,7 @@ class Sliver(Model):
             'sliver': 'sliver',
             'lease_start_time': 'lease_start_time',
             'lease_end_time': 'lease_end_time',
+            'closed_at': 'closed_at',
             'state': 'state',
             'pending_state': 'pending_state',
             'join_state': 'join_state',
@@ -80,6 +84,7 @@ class Sliver(Model):
         self._sliver = sliver
         self._lease_start_time = lease_start_time
         self._lease_end_time = lease_end_time
+        self._closed_at = closed_at
         self._state = state
         self._pending_state = pending_state
         self._join_state = join_state
@@ -204,6 +209,27 @@ class Sliver(Model):
         """
 
         self._lease_end_time = lease_end_time
+
+    @property
+    def closed_at(self) -> str:
+        """Gets the closed_at of this Sliver.
+
+
+        :return: The closed_at of this Sliver.
+        :rtype: str
+        """
+        return self._closed_at
+
+    @closed_at.setter
+    def closed_at(self, closed_at: str):
+        """Sets the closed_at of this Sliver.
+
+
+        :param closed_at: The closed_at of this Sliver.
+        :type closed_at: str
+        """
+
+        self._closed_at = closed_at
 
     @property
     def state(self) -> str:

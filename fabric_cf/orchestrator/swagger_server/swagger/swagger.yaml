@@ -1884,6 +1884,8 @@ components:
           type: string
         lease_end_time:
           type: string
+        closed_at:
+          type: string
         state:
           type: string
         pending_state:

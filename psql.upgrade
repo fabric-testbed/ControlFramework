@@ -116,3 +116,6 @@ CREATE TABLE IF NOT EXISTS "Links" (
 
 -- Create an index on node_id for faster lookups
 CREATE INDEX IF NOT EXISTS ix_Links_node_id ON "Links" (node_id);
+
+-- Add closed_at column to track when a reservation was actually closed
+ALTER TABLE "Reservations" ADD COLUMN IF NOT EXISTS closed_at TIMESTAMPTZ;
