@@ -105,9 +105,9 @@ class SliceState(Enum):
         elif state_name.lower() == SliceState.Dead.name.lower():
             return SliceState.Dead
         elif state_name.lower() == SliceState.AllocatedOK.name.lower():
-            return SliceState.Closing
+            return SliceState.AllocatedOK
         elif state_name.lower() == SliceState.AllocatedError.name.lower():
-            return SliceState.Dead
+            return SliceState.AllocatedError
         else:
             return SliceState.All
 
