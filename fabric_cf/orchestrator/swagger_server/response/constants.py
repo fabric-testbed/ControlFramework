@@ -31,6 +31,7 @@ DELETE_METHOD = 'delete'
 
 RESOURCES_PATH = '/resources'
 RESOURCES_SUMMARY_PATH = '/resources/summary'
+RESOURCES_CALENDAR_PATH = '/resources/calendar'
 PORTAL_RESOURCES_PATH = '/portalresources'
 PORTAL_RESOURCES_SUMMARY_PATH = '/portalresources/summary'
 

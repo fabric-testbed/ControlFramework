@@ -1159,3 +1159,47 @@ class OrchestratorHandler:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_metrics_overview e: {e}")
             raise e
+
+    def validate_token(self, *, token: str):
+        """
+        Validate and authorize token for query operations.
+        :param token: Fabric Identity Token
+        """
+        self.__authorize_request(id_token=token, action_id=ActionId.query)
+
+    def list_resources_calendar(self, *, token: str, start_date: str, end_date: str,
+                                 interval: str = "day", site: list = None, host: list = None,
+                                 exclude_site: list = None, exclude_host: list = None) -> dict:
+        """
+        Proxy resource availability calendar from reports API.
+        :param token: Fabric Identity Token
+        :param start_date: Start time (ISO 8601)
+        :param end_date: End time (ISO 8601)
+        :param interval: Time interval (day or week)
+        :param site: Filter by site
+        :param host: Filter by host
+        :param exclude_site: Exclude sites
+        :param exclude_host: Exclude hosts
+        :returns dict with calendar data
+        """
+        try:
+            reports_conf = self.config.get_reports_api()
+            if not reports_conf or not reports_conf.get("enable", False):
+                raise OrchestratorException(message="Reports API is not enabled")
+
+            reports_host = reports_conf.get("host")
+            reports_token = reports_conf.get("token")
+            if not reports_host:
+                raise OrchestratorException(message="Reports API host is not configured")
+
+            from fabric_reports_client.reports_api import ReportsApi
+            reports_api = ReportsApi(base_url=reports_host, token=reports_token)
+            return reports_api.query_calendar(
+                start_time=start_date, end_time=end_date,
+                interval=interval, site=site, host=host,
+                exclude_site=exclude_site, exclude_host=exclude_host
+            )
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing list_resources_calendar e: {e}")
+            raise e

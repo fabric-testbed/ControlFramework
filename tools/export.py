@@ -31,6 +31,8 @@ import os
 from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 
+import requests
+
 from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
@@ -102,6 +104,76 @@ class ExportScript:
         """
         with open(LAST_EXPORT_FILE, "w") as f:
             f.write(new_timestamp.isoformat())
+
+    def export_host_capacities(self):
+        """
+        Exports host capacity data from the orchestrator's resource summary to reports.
+        Requires 'orchestrator_host' in the reports_api config section.
+        """
+        orchestrator_host = self.reports_conf.get("orchestrator_host")
+        if not orchestrator_host:
+            self.logger.debug("orchestrator_host not configured in reports_api, skipping capacity export")
+            return
+
+        try:
+            self.logger.info("Fetching resource summary from orchestrator for capacity export...")
+            url = f"{orchestrator_host.rstrip('/')}/portalresources/summary"
+            resp = requests.get(url, params={"type": "hosts"}, timeout=60)
+            resp.raise_for_status()
+            summary = resp.json()
+
+            # Extract host data from the summary response
+            hosts_data = []
+            if isinstance(summary, dict) and "data" in summary:
+                for item in summary["data"]:
+                    if isinstance(item, dict) and "model" in item:
+                        import json
+                        model = json.loads(item["model"]) if isinstance(item["model"], str) else item["model"]
+                        hosts_data = model.get("hosts", [])
+
+            if not hosts_data:
+                # Try direct format if the response is the model directly
+                if isinstance(summary, dict):
+                    hosts_data = summary.get("hosts", [])
+
+            if not hosts_data:
+                self.logger.warning("No host data found in resource summary")
+                return
+
+            self.logger.info(f"Exporting capacity for {len(hosts_data)} hosts")
+            for host in hosts_data:
+                try:
+                    host_name = host.get("name")
+                    site_name = host.get("site")
+                    if not host_name or not site_name:
+                        continue
+
+                    # Extract component capacities as a flat dict: {"GPU-A100": 4, "SmartNIC-ConnectX-6": 2}
+                    components = {}
+                    for comp_key, comp_data in host.get("components", {}).items():
+                        if isinstance(comp_data, dict):
+                            components[comp_key] = comp_data.get("capacity", 0)
+                        else:
+                            components[comp_key] = comp_data
+
+                    self.reports_api.post_host_capacity(
+                        host_name=host_name,
+                        capacity_payload={
+                            "site": site_name,
+                            "cores_capacity": host.get("cores_capacity", 0),
+                            "ram_capacity": host.get("ram_capacity", 0),
+                            "disk_capacity": host.get("disk_capacity", 0),
+                            "components": components
+                        }
+                    )
+                except Exception as host_error:
+                    self.logger.error(f"Error exporting capacity for host {host.get('name')}: {host_error}")
+
+            self.logger.info("Host capacity export completed successfully!")
+
+        except Exception as e:
+            self.logger.error(f"Error during host capacity export: {e}")
+            traceback.print_exc()
 
     def export(self):
         """
@@ -297,6 +369,9 @@ class ExportScript:
                         self.logger.error(f"Error processing slice {slice_object.get_slice_id()}: {slice_error}")
                         traceback.print_exc()
                 offset += self.batch_size  # Move to the next batch
+
+            # Export host capacity data from orchestrator resource summary
+            self.export_host_capacities()
 
             self.logger.info(f"Updating last export time to {new_timestamp}")
             self.update_last_export_time(new_timestamp)

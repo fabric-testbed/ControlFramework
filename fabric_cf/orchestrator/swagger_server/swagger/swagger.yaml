@@ -436,6 +436,123 @@ paths:
       security:
       - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.resources_controller
+  /resources/calendar:
+    get:
+      tags:
+      - resources
+      summary: Retrieve resource availability calendar
+      description: Returns resource availability over time slots, proxied from the reports API.
+        Shows capacity, allocation, and availability per host and site for each time interval.
+      operationId: resources_calendar_get
+      parameters:
+      - name: start_date
+        in: query
+        description: Start time for the calendar range (ISO 8601)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: date-time
+      - name: end_date
+        in: query
+        description: End time for the calendar range (ISO 8601)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: date-time
+      - name: interval
+        in: query
+        description: "Time interval for each slot (default: day)"
+        required: false
+        schema:
+          type: string
+          default: day
+          enum:
+          - day
+          - week
+      - name: site
+        in: query
+        description: Filter by site
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      - name: host
+        in: query
+        description: Filter by host
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      - name: exclude_site
+        in: query
+        description: Exclude sites
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      - name: exclude_host
+        in: query
+        description: Exclude hosts
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resources'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_400_bad_request'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_401_unauthorized'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_403_forbidden'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_404_not_found'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_500_internal_server_error'
+      security:
+      - bearerAuth: []
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.resources_controller
   /portalresources/summary:
     get:
       tags:

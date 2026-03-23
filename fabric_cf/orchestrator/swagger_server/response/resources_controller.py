@@ -33,7 +33,8 @@ from fabric_cf.orchestrator.swagger_server.models.resources import Resources  # 
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
 from fabric_cf.orchestrator.swagger_server.response.constants import (
     GET_METHOD, RESOURCES_PATH, PORTAL_RESOURCES_PATH,
-    RESOURCES_SUMMARY_PATH, PORTAL_RESOURCES_SUMMARY_PATH
+    RESOURCES_SUMMARY_PATH, PORTAL_RESOURCES_SUMMARY_PATH,
+    RESOURCES_CALENDAR_PATH
 )
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
@@ -256,4 +257,47 @@ def resources_summary_get(level: int = 2, force_refresh: bool = False, start_dat
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, RESOURCES_SUMMARY_PATH).inc()
+        return cors_error_response(error=e)
+
+
+def resources_calendar_get(start_date: str, end_date: str, interval: str = "day",
+                            site: list = None, host: list = None,
+                            exclude_site: list = None, exclude_host: list = None) -> dict:
+    """Proxy resource availability calendar from reports API
+
+    :param start_date: Start time for the calendar range
+    :param end_date: End time for the calendar range
+    :param interval: Time interval (day or week)
+    :param site: Filter by site
+    :param host: Filter by host
+    :param exclude_site: Exclude sites
+    :param exclude_host: Exclude hosts
+    :rtype: dict
+    """
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(GET_METHOD, RESOURCES_CALENDAR_PATH).inc()
+    try:
+        token = get_token()
+        # Authorize the request
+        handler.validate_token(token=token)
+
+        calendar = handler.list_resources_calendar(
+            token=token, start_date=start_date, end_date=end_date,
+            interval=interval, site=site, host=host,
+            exclude_site=exclude_site, exclude_host=exclude_host
+        )
+        response = Resources()
+        response.data = [calendar]
+        response.size = 1
+        response.type = "resources.calendar"
+        success_counter.labels(GET_METHOD, RESOURCES_CALENDAR_PATH).inc()
+        return cors_success_response(response_body=response)
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, RESOURCES_CALENDAR_PATH).inc()
+        return cors_error_response(error=e)
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, RESOURCES_CALENDAR_PATH).inc()
         return cors_error_response(error=e)
