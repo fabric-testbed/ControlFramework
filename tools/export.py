@@ -171,6 +171,29 @@ class ExportScript:
             traceback.print_exc()
 
     @staticmethod
+    def _normalize_vlan_range(vlan_range) -> str:
+        """
+        Normalize VLAN range from various formats to a clean comma-separated string.
+        Handles: "100-200,300-350", "['100-200', '300-350']", ['100-200', '300-350']
+        Returns: "100-200,300-350"
+        """
+        if isinstance(vlan_range, list):
+            return ",".join(str(v).strip().strip("'\"") for v in vlan_range)
+        if isinstance(vlan_range, str):
+            # Strip Python list representation: "['100-200', '300-350']" -> "100-200,300-350"
+            s = vlan_range.strip()
+            if s.startswith("[") and s.endswith("]"):
+                s = s[1:-1]
+            # Remove quotes around individual ranges
+            parts = []
+            for part in s.split(","):
+                part = part.strip().strip("'\"")
+                if part:
+                    parts.append(part)
+            return ",".join(parts)
+        return str(vlan_range)
+
+    @staticmethod
     def _count_vlans_in_range(vlan_range: str) -> int:
         """Count total VLANs in a range string like '100-200,300-350'."""
         total = 0
@@ -280,7 +303,7 @@ class ExportScript:
                     if not port_name or not site_name:
                         continue
 
-                    vlan_range = port.get("vlans", "")
+                    vlan_range = self._normalize_vlan_range(port.get("vlans", ""))
                     total_vlans = self._count_vlans_in_range(vlan_range) if vlan_range else 0
 
                     self.reports_api.post_facility_port_capacity(
