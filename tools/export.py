@@ -194,6 +194,9 @@ class ExportScript:
             new_timestamp = datetime.now(timezone.utc)
 
             while True:
+                # Export host capacity data from orchestrator resource summary
+                self.export_host_capacities()
+                
                 self.logger.info(f"Fetching slices from offset {offset} (batch size: {self.batch_size})")
                 slices = self.src_db.get_slices(offset=offset, limit=self.batch_size, slc_type=[SliceTypes.ClientSlice],
                                                 updated_after=self.last_export_time)  # Fetch only updated slices
@@ -369,9 +372,6 @@ class ExportScript:
                         self.logger.error(f"Error processing slice {slice_object.get_slice_id()}: {slice_error}")
                         traceback.print_exc()
                 offset += self.batch_size  # Move to the next batch
-
-            # Export host capacity data from orchestrator resource summary
-            self.export_host_capacities()
 
             self.logger.info(f"Updating last export time to {new_timestamp}")
             self.update_last_export_time(new_timestamp)
