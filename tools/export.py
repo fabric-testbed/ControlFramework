@@ -123,18 +123,13 @@ class ExportScript:
             summary = resp.json()
 
             # Extract host data from the summary response
+            # Response format: {"data": [{"hosts": [...], "sites": [...], ...}], "type": "resources.summary"}
             hosts_data = []
             if isinstance(summary, dict) and "data" in summary:
                 for item in summary["data"]:
-                    if isinstance(item, dict) and "model" in item:
-                        import json
-                        model = json.loads(item["model"]) if isinstance(item["model"], str) else item["model"]
-                        hosts_data = model.get("hosts", [])
-
-            if not hosts_data:
-                # Try direct format if the response is the model directly
-                if isinstance(summary, dict):
-                    hosts_data = summary.get("hosts", [])
+                    if isinstance(item, dict) and "hosts" in item:
+                        hosts_data = item["hosts"]
+                        break
 
             if not hosts_data:
                 self.logger.warning("No host data found in resource summary")
@@ -196,7 +191,7 @@ class ExportScript:
             while True:
                 # Export host capacity data from orchestrator resource summary
                 self.export_host_capacities()
-                
+
                 self.logger.info(f"Fetching slices from offset {offset} (batch size: {self.batch_size})")
                 slices = self.src_db.get_slices(offset=offset, limit=self.batch_size, slc_type=[SliceTypes.ClientSlice],
                                                 updated_after=self.last_export_time)  # Fetch only updated slices
