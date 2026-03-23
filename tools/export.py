@@ -170,6 +170,138 @@ class ExportScript:
             self.logger.error(f"Error during host capacity export: {e}")
             traceback.print_exc()
 
+    @staticmethod
+    def _count_vlans_in_range(vlan_range: str) -> int:
+        """Count total VLANs in a range string like '100-200,300-350'."""
+        total = 0
+        for part in vlan_range.split(","):
+            part = part.strip()
+            if not part:
+                continue
+            if "-" in part:
+                try:
+                    lo, hi = part.split("-", 1)
+                    total += int(hi) - int(lo) + 1
+                except ValueError:
+                    continue
+            else:
+                try:
+                    int(part)
+                    total += 1
+                except ValueError:
+                    continue
+        return total
+
+    def export_link_capacities(self):
+        """
+        Exports link capacity data from the orchestrator's resource summary to reports.
+        """
+        orchestrator_host = self.reports_conf.get("orchestrator_host")
+        if not orchestrator_host:
+            self.logger.debug("orchestrator_host not configured, skipping link capacity export")
+            return
+
+        try:
+            self.logger.info("Fetching link summary from orchestrator for capacity export...")
+            url = f"{orchestrator_host.rstrip('/')}/portalresources/summary"
+            resp = requests.get(url, params={"type": "links"}, timeout=60)
+            resp.raise_for_status()
+            summary = resp.json()
+
+            links_data = []
+            if isinstance(summary, dict) and "data" in summary:
+                for item in summary["data"]:
+                    if isinstance(item, dict) and "links" in item:
+                        links_data = item["links"]
+                        break
+
+            if not links_data:
+                self.logger.warning("No link data found in resource summary")
+                return
+
+            self.logger.info(f"Exporting capacity for {len(links_data)} links")
+            for link in links_data:
+                try:
+                    link_name = link.get("name")
+                    sites = link.get("sites", [])
+                    if not link_name or len(sites) < 2:
+                        continue
+
+                    self.reports_api.post_link_capacity(
+                        link_name=link_name,
+                        capacity_payload={
+                            "site_a": sites[0],
+                            "site_b": sites[1],
+                            "layer": link.get("layer", "L2"),
+                            "bandwidth_capacity": link.get("bandwidth", 0)
+                        }
+                    )
+                except Exception as link_error:
+                    self.logger.error(f"Error exporting capacity for link {link.get('name')}: {link_error}")
+
+            self.logger.info("Link capacity export completed successfully!")
+
+        except Exception as e:
+            self.logger.error(f"Error during link capacity export: {e}")
+            traceback.print_exc()
+
+    def export_facility_port_capacities(self):
+        """
+        Exports facility port capacity data from the orchestrator's resource summary to reports.
+        """
+        orchestrator_host = self.reports_conf.get("orchestrator_host")
+        if not orchestrator_host:
+            self.logger.debug("orchestrator_host not configured, skipping facility port capacity export")
+            return
+
+        try:
+            self.logger.info("Fetching facility port summary from orchestrator for capacity export...")
+            url = f"{orchestrator_host.rstrip('/')}/portalresources/summary"
+            resp = requests.get(url, params={"type": "facility_ports"}, timeout=60)
+            resp.raise_for_status()
+            summary = resp.json()
+
+            fp_data = []
+            if isinstance(summary, dict) and "data" in summary:
+                for item in summary["data"]:
+                    if isinstance(item, dict) and "facility_ports" in item:
+                        fp_data = item["facility_ports"]
+                        break
+
+            if not fp_data:
+                self.logger.warning("No facility port data found in resource summary")
+                return
+
+            self.logger.info(f"Exporting capacity for {len(fp_data)} facility ports")
+            for port in fp_data:
+                try:
+                    port_name = port.get("name")
+                    site_name = port.get("site")
+                    if not port_name or not site_name:
+                        continue
+
+                    vlan_range = port.get("vlans", "")
+                    total_vlans = self._count_vlans_in_range(vlan_range) if vlan_range else 0
+
+                    self.reports_api.post_facility_port_capacity(
+                        port_name=port_name,
+                        capacity_payload={
+                            "site": site_name,
+                            "device_name": port.get("switch", ""),
+                            "local_name": port.get("port", ""),
+                            "vlan_range": vlan_range,
+                            "total_vlans": total_vlans
+                        }
+                    )
+                except Exception as port_error:
+                    self.logger.error(f"Error exporting capacity for port {port.get('name')}: {port_error}")
+
+            self.logger.info("Facility port capacity export completed successfully!")
+
+        except Exception as e:
+            self.logger.error(f"Error during facility port capacity export: {e}")
+            traceback.print_exc()
+
     def export(self):
         """
         Exports only the slices updated after the last execution timestamp.
@@ -188,9 +320,12 @@ class ExportScript:
             offset = 0
             new_timestamp = datetime.now(timezone.utc)
 
+            # Export capacity data from orchestrator resource summary
+            self.export_host_capacities()
+            self.export_link_capacities()
+            self.export_facility_port_capacities()
+
             while True:
-                # Export host capacity data from orchestrator resource summary
-                self.export_host_capacities()
 
                 self.logger.info(f"Fetching slices from offset {offset} (batch size: {self.batch_size})")
                 slices = self.src_db.get_slices(offset=offset, limit=self.batch_size, slc_type=[SliceTypes.ClientSlice],
