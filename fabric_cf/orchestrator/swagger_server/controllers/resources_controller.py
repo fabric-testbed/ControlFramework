@@ -94,3 +94,16 @@ def resources_calendar_get(start_date, end_date, interval=None, site=None, host=
     return rc.resources_calendar_get(start_date=start_date, end_date=end_date, interval=interval,
                                       site=site, host=host, exclude_site=exclude_site,
                                       exclude_host=exclude_host)
+
+
+def resources_find_slot(body):  # noqa: E501
+    """Find available time slots for resources
+
+    Find the earliest time windows where all requested resources are simultaneously available. # noqa: E501
+
+    :param body: Resource request payload
+    :type body: dict
+
+    :rtype: Resources
+    """
+    return rc.resources_find_slot(body=body)

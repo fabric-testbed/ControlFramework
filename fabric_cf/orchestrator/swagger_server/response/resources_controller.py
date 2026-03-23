@@ -32,9 +32,9 @@ from fabric_cf.orchestrator.swagger_server.models import Resource
 from fabric_cf.orchestrator.swagger_server.models.resources import Resources  # noqa: E501
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
 from fabric_cf.orchestrator.swagger_server.response.constants import (
-    GET_METHOD, RESOURCES_PATH, PORTAL_RESOURCES_PATH,
+    GET_METHOD, POST_METHOD, RESOURCES_PATH, PORTAL_RESOURCES_PATH,
     RESOURCES_SUMMARY_PATH, PORTAL_RESOURCES_SUMMARY_PATH,
-    RESOURCES_CALENDAR_PATH
+    RESOURCES_CALENDAR_PATH, RESOURCES_FIND_SLOT_PATH
 )
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
@@ -300,4 +300,33 @@ def resources_calendar_get(start_date: str, end_date: str, interval: str = "day"
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, RESOURCES_CALENDAR_PATH).inc()
+        return cors_error_response(error=e)
+
+
+def resources_find_slot(body: dict) -> Resources:
+    """Proxy find-slot request to reports API
+
+    :param body: Request body with start, end, duration, resources, max_results
+    :rtype: Resources
+    """
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(POST_METHOD, RESOURCES_FIND_SLOT_PATH).inc()
+    try:
+        token = get_token()
+
+        result = handler.find_resource_slot(token=token, body=body)
+        response = Resources()
+        response.data = [result]
+        response.size = 1
+        response.type = "resources.find_slot"
+        success_counter.labels(POST_METHOD, RESOURCES_FIND_SLOT_PATH).inc()
+        return cors_success_response(response_body=response)
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(POST_METHOD, RESOURCES_FIND_SLOT_PATH).inc()
+        return cors_error_response(error=e)
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(POST_METHOD, RESOURCES_FIND_SLOT_PATH).inc()
         return cors_error_response(error=e)

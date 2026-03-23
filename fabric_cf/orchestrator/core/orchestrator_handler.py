@@ -1203,3 +1203,36 @@ class OrchestratorHandler:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing list_resources_calendar e: {e}")
             raise e
+
+    def find_resource_slot(self, *, token: str, body: dict) -> dict:
+        """
+        Proxy find-slot request to reports API.
+        :param token: Fabric Identity Token
+        :param body: Request body with start, end, duration, resources, max_results
+        :returns dict with find-slot results
+        """
+        try:
+            self.__authorize_request(id_token=token, action_id=ActionId.query)
+
+            reports_conf = self.config.get_reports_api()
+            if not reports_conf or not reports_conf.get("enable", False):
+                raise OrchestratorException(message="Reports API is not enabled")
+
+            reports_host = reports_conf.get("host")
+            reports_token = reports_conf.get("token")
+            if not reports_host:
+                raise OrchestratorException(message="Reports API host is not configured")
+
+            from fabric_reports_client.reports_api import ReportsApi
+            reports_api = ReportsApi(base_url=reports_host, token=reports_token)
+            return reports_api.find_slot(
+                start_time=body.get("start"),
+                end_time=body.get("end"),
+                duration=body.get("duration"),
+                resources=body.get("resources"),
+                max_results=body.get("max_results", 1)
+            )
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing find_resource_slot e: {e}")
+            raise e
