@@ -441,6 +441,14 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         return self.db.get_links(node_id=node_id, rsv_type=rsv_type, states=states, start=start,
                                  end=end, excludes=excludes)
 
+    def get_link_allocations(self, *, rsv_type: list[str], states: list[int],
+                             start: datetime = None, end: datetime = None) -> list[dict]:
+        return self.db.get_link_allocations(states=states, rsv_type=rsv_type, start=start, end=end)
+
+    def get_component_allocations(self, *, states: list[int],
+                                  start: datetime = None, end: datetime = None) -> list[dict]:
+        return self.db.get_component_allocations(states=states, start=start, end=end)
+
     def get_reservations(self, *, caller: AuthToken, states: List[int] = None,
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
                          email: str = None, rid_list: List[str] = None, type: str = None,

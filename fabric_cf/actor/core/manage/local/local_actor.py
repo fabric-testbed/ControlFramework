@@ -145,6 +145,23 @@ class LocalActor(LocalProxy, ABCMgmtActor):
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
+    def get_link_allocations(self, *, rsv_type: list[str], states: list[int],
+                             start: datetime = None, end: datetime = None) -> list[dict]:
+        try:
+            return self.manager.get_link_allocations(rsv_type=rsv_type, states=states,
+                                                     start=start, end=end)
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+        return []
+
+    def get_component_allocations(self, *, states: list[int],
+                                  start: datetime = None, end: datetime = None) -> list[dict]:
+        try:
+            return self.manager.get_component_allocations(states=states, start=start, end=end)
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+        return []
+
     def get_sites(self, *, site: str) -> List[SiteAvro] or None:
         self.clear_last()
         try:

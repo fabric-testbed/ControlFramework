@@ -206,6 +206,29 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
+    def get_link_allocations(self, *, states: list[int], rsv_type: list[str],
+                             start: datetime = None, end: datetime = None) -> list[dict]:
+        """
+        Return per-reservation link allocation data with lease times.
+        @param states: list of reservation states to include
+        @param rsv_type: list of reservation types (ServiceType strings)
+        @param start: start of time range
+        @param end: end of time range
+        @return list of dicts with keys: link_node_id, bw, lease_start, lease_end, site
+        """
+
+    @abstractmethod
+    def get_component_allocations(self, *, states: list[int],
+                                  start: datetime = None, end: datetime = None) -> list[dict]:
+        """
+        Return per-reservation component allocation data with lease times and host info.
+        @param states: list of reservation states to include
+        @param start: start of time range
+        @param end: end of time range
+        @return list of dicts with keys: host, site, lease_start, lease_end, component, bdf
+        """
+
+    @abstractmethod
     def get_client_reservations(self, *, slice_id: ID = None) -> List[ABCReservationMixin]:
         """
         Retrieves the client reservations

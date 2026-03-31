@@ -591,6 +591,10 @@ paths:
                   maximum: 50
                   default: 1
                   description: Maximum number of windows to return (1-50)
+                use_live_data:
+                  type: boolean
+                  default: false
+                  description: When true, compute find-slot using live orchestrator data instead of proxying to Reports API
                 resources:
                   type: array
                   minItems: 1

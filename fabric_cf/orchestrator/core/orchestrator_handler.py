@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import json
+import re
 import time
 import traceback
 from datetime import datetime, timedelta, timezone
@@ -36,6 +37,7 @@ from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.networkx_property_graph_disjoint import NetworkXGraphImporterDisjoint
 from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
 from fim.user import GraphFormat
 from fim.user.topology import ExperimentTopology
@@ -1167,6 +1169,36 @@ class OrchestratorHandler:
         """
         self.__authorize_request(id_token=token, action_id=ActionId.query)
 
+    @staticmethod
+    def _reports_api_exception_to_orchestrator_exception(e: Exception) -> OrchestratorException:
+        """
+        Convert a Reports API exception into an OrchestratorException,
+        preserving the HTTP status code and error details when possible.
+
+        The Reports API client raises plain Exceptions with messages like:
+          "Failed to find slot: 400 - {\"errors\": [{\"details\": \"...\"}]}"
+        This method parses out the status code and detail text so the
+        orchestrator can return a proper HTTP error to the caller.
+        """
+        msg = str(e)
+        # Try to extract "NNN - {json}" from the message
+        m = re.search(r':\s*(\d{3})\s*-\s*(\{.*)', msg, re.DOTALL)
+        if m:
+            status_code = int(m.group(1))
+            body = m.group(2)
+            # Try to pull the details text from the JSON body
+            try:
+                payload = json.loads(body)
+                errors = payload.get("errors", [])
+                if errors and isinstance(errors[0], dict):
+                    detail = errors[0].get("details", msg)
+                else:
+                    detail = msg
+            except (json.JSONDecodeError, IndexError):
+                detail = msg
+            return OrchestratorException(http_error_code=status_code, message=detail)
+        return OrchestratorException(message=msg)
+
     def list_resources_calendar(self, *, token: str, start_date: str, end_date: str,
                                  interval: str = "day", site: list = None, host: list = None,
                                  exclude_site: list = None, exclude_host: list = None) -> dict:
@@ -1199,20 +1231,30 @@ class OrchestratorHandler:
                 interval=interval, site=site, host=host,
                 exclude_site=exclude_site, exclude_host=exclude_host
             )
+        except OrchestratorException:
+            raise
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing list_resources_calendar e: {e}")
-            raise e
+            raise self._reports_api_exception_to_orchestrator_exception(e)
 
     def find_resource_slot(self, *, token: str, body: dict) -> dict:
         """
-        Proxy find-slot request to reports API.
+        Find time windows where requested resources are simultaneously available.
+
+        When ``use_live_data`` is True, capacity data comes from the cached
+        resource summary (BQM) and allocation data is queried live from the
+        orchestrator DB.  Otherwise the request is proxied to the Reports API.
+
         :param token: Fabric Identity Token
-        :param body: Request body with start, end, duration, resources, max_results
+        :param body: Request body with start, end, duration, resources, max_results, use_live_data
         :returns dict with find-slot results
         """
         try:
             self.__authorize_request(id_token=token, action_id=ActionId.query)
+
+            if body.get("use_live_data", False):
+                return self._find_slot_live(body=body, token=token)
 
             reports_conf = self.config.get_reports_api()
             if not reports_conf or not reports_conf.get("enable", False):
@@ -1232,7 +1274,364 @@ class OrchestratorHandler:
                 resources=body.get("resources"),
                 max_results=body.get("max_results", 1)
             )
+        except OrchestratorException:
+            raise
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing find_resource_slot e: {e}")
-            raise e
+            raise self._reports_api_exception_to_orchestrator_exception(e)
+
+    # ------------------------------------------------------------------
+    # Live find-slot implementation
+    # ------------------------------------------------------------------
+
+    def _find_slot_live(self, *, body: dict, token: str) -> dict:
+        """
+        Compute find-slot using the cached resource summary for capacity data
+        and the orchestrator DB for live allocation data.
+
+        :param body: Request body with start, end, duration, resources, max_results
+        :param token: Fabric Identity Token (used for resource summary query)
+        :returns dict matching the Reports API find-slot response format
+        """
+        from collections import defaultdict
+        from fim.user import ServiceType
+
+        start_str = body.get("start")
+        end_str = body.get("end")
+        duration = body.get("duration")
+        resources = body.get("resources", [])
+        max_results = body.get("max_results", 1)
+
+        start_time = datetime.fromisoformat(start_str)
+        end_time = datetime.fromisoformat(end_str)
+
+        total_hours = int((end_time - start_time).total_seconds() // 3600)
+        if total_hours < duration:
+            return self._empty_find_slot_result(start_time, end_time, duration)
+
+        compute_requests = [r for r in resources if r.get("type") == "compute"]
+        link_requests = [r for r in resources if r.get("type") == "link"]
+        fp_requests = [r for r in resources if r.get("type") == "facility_port"]
+
+        # --- Capacity data from cached resource summary ---
+        summary = self.list_resources_summary(level=2, token=token, authorize=False)
+
+        # Build host capacity map: {host_name: {site, cores_capacity, ram_capacity, disk_capacity, components}}
+        host_cap_map = {}
+        hosts_by_site = defaultdict(list)
+        for h in summary.get("hosts", []):
+            hname = h["name"]
+            host_cap_map[hname] = {
+                "site": h["site"],
+                "cores_capacity": h.get("cores_capacity", 0),
+                "ram_capacity": h.get("ram_capacity", 0),
+                "disk_capacity": h.get("disk_capacity", 0),
+                "components": {k.lower(): v.get("capacity", 0)
+                               for k, v in h.get("components", {}).items()},
+            }
+            hosts_by_site[h["site"]].append(hname)
+
+        # Build link capacity map: {(site_a, site_b) sorted: {bandwidth_capacity}}
+        link_cap_map = {}
+        for lnk in summary.get("links", []):
+            sites = lnk.get("sites")
+            if sites and len(sites) == 2:
+                pair = tuple(sorted(sites))
+                bw = lnk.get("bandwidth") or 0
+                if pair not in link_cap_map or bw > link_cap_map[pair]["bandwidth_capacity"]:
+                    link_cap_map[pair] = {"bandwidth_capacity": bw}
+
+        # Build facility port capacity map: {(fp_name, site): {total_vlans}}
+        fp_cap_map = {}
+        for fp in summary.get("facility_ports", []):
+            fp_name = fp.get("name")
+            fp_site = fp.get("site")
+            vlans_str = fp.get("vlans")
+            total_vlans = 0
+            if vlans_str:
+                try:
+                    import ast
+                    vlan_list = ast.literal_eval(vlans_str)
+                    if isinstance(vlan_list, list):
+                        total_vlans = len(vlan_list)
+                    elif isinstance(vlan_list, str) and "-" in vlan_list:
+                        parts = vlan_list.split("-")
+                        total_vlans = int(parts[1]) - int(parts[0]) + 1
+                except Exception:
+                    pass
+            if fp_name and fp_site:
+                fp_cap_map[(fp_name, fp_site)] = {"total_vlans": total_vlans}
+
+        # Early exit if no capacity data for requested resource types
+        if compute_requests and not host_cap_map:
+            return self._empty_find_slot_result(start_time, end_time, duration)
+        if link_requests and not link_cap_map:
+            return self._empty_find_slot_result(start_time, end_time, duration)
+        if fp_requests and not fp_cap_map:
+            return self._empty_find_slot_result(start_time, end_time, duration)
+
+        # --- Live allocation data from orchestrator DB ---
+        controller = self.controller_state.get_management_actor()
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value]
+
+        # Query compute reservations (NodeSlivers) — need full sliver for cores/ram/disk
+        compute_reservations = []
+        if compute_requests:
+            existing = controller.get_reservations(states=states, start=start_time,
+                                                   end=end_time, full=True) or []
+            for r in existing:
+                sliver = r.get_sliver()
+                if isinstance(sliver, NodeSliver):
+                    r_start = ActorClock.from_milliseconds(milli_seconds=r.get_start())
+                    r_end = ActorClock.from_milliseconds(milli_seconds=r.get_end())
+                    host = None
+                    if sliver.get_labels() and sliver.get_labels().instance_parent:
+                        host = sliver.get_labels().instance_parent
+                    alloc = sliver.capacity_allocations
+                    caps = sliver.capacities
+                    cores = (getattr(alloc, 'core', 0) or 0) if alloc else 0
+                    cores = cores or ((getattr(caps, 'core', 0) or 0) if caps else 0)
+                    ram = (getattr(alloc, 'ram', 0) or 0) if alloc else 0
+                    ram = ram or ((getattr(caps, 'ram', 0) or 0) if caps else 0)
+                    disk = (getattr(alloc, 'disk', 0) or 0) if alloc else 0
+                    disk = disk or ((getattr(caps, 'disk', 0) or 0) if caps else 0)
+                    compute_reservations.append({
+                        "host": host,
+                        "lease_start": r_start,
+                        "lease_end": r_end,
+                        "cores": cores,
+                        "ram": ram,
+                        "disk": disk,
+                        "components": self._extract_reservation_components(sliver),
+                    })
+
+        # Query network service reservations (for links and/or facility ports)
+        net_reservations = []
+        if link_requests or fp_requests:
+            svc_types = ",".join(str(x) for x in ServiceType)
+            existing = controller.get_reservations(states=states, type=svc_types,
+                                                   start=start_time, end=end_time,
+                                                   full=True) or []
+            for r in existing:
+                sliver = r.get_sliver()
+                if isinstance(sliver, NetworkServiceSliver):
+                    r_start = ActorClock.from_milliseconds(milli_seconds=r.get_start())
+                    r_end = ActorClock.from_milliseconds(milli_seconds=r.get_end())
+                    iface_sites = []
+                    iface_vlans = []
+                    fp_name = None
+                    if sliver.interface_info and sliver.interface_info.interfaces:
+                        for ifs in sliver.interface_info.interfaces.values():
+                            if ifs.get_site():
+                                iface_sites.append(ifs.get_site())
+                            labels = ifs.get_label_allocations() or ifs.get_labels()
+                            if labels:
+                                vlan = getattr(labels, 'vlan', None)
+                                if vlan is not None:
+                                    iface_vlans.append(vlan)
+                                parent = getattr(labels, 'device_name', None)
+                                if parent:
+                                    fp_name = parent
+                    bw = 0
+                    if sliver.capacities:
+                        bw = getattr(sliver.capacities, 'bw', 0) or 0
+                    elif sliver.capacity_allocations:
+                        bw = getattr(sliver.capacity_allocations, 'bw', 0) or 0
+                    net_reservations.append({
+                        "lease_start": r_start,
+                        "lease_end": r_end,
+                        "bandwidth": bw,
+                        "sites": sorted(set(iface_sites)),
+                        "vlans": iface_vlans,
+                        "fp_name": fp_name,
+                        "site": sliver.get_site(),
+                    })
+
+        # --- Sliding window search ---
+        windows = []
+        for h in range(total_hours - duration + 1):
+            window_start = start_time + timedelta(hours=h)
+            window_end = window_start + timedelta(hours=duration)
+
+            if self._check_live_window(
+                window_start, window_end, duration,
+                compute_requests, link_requests, fp_requests,
+                host_cap_map, hosts_by_site, compute_reservations,
+                link_cap_map, net_reservations,
+                fp_cap_map,
+            ):
+                windows.append({
+                    "start": window_start.isoformat(),
+                    "end": window_end.isoformat(),
+                })
+                if len(windows) >= max_results:
+                    break
+
+        return {
+            "windows": windows,
+            "total": len(windows),
+            "search_start": start_time.isoformat(),
+            "search_end": end_time.isoformat(),
+            "duration_hours": duration,
+        }
+
+    @staticmethod
+    def _empty_find_slot_result(start_time: datetime, end_time: datetime, duration: int) -> dict:
+        return {
+            "windows": [],
+            "total": 0,
+            "search_start": start_time.isoformat(),
+            "search_end": end_time.isoformat(),
+            "duration_hours": duration,
+        }
+
+    @staticmethod
+    def _extract_reservation_components(sliver: NodeSliver) -> list:
+        """Extract component type-model keys from a NodeSliver's attached components."""
+        comps = []
+        info = sliver.attached_components_info
+        if not info:
+            return comps
+        for comp_type, comp_list in info.by_type.items():
+            for c in comp_list:
+                units = 1
+                if c.get_capacity_allocations() and getattr(c.get_capacity_allocations(), 'unit', None):
+                    units = c.get_capacity_allocations().unit
+                elif c.get_capacities() and getattr(c.get_capacities(), 'unit', None):
+                    units = c.get_capacities().unit
+                comp_key = f"{c.resource_type}-{c.resource_model}".lower()
+                for _ in range(units):
+                    comps.append(comp_key)
+        return comps
+
+    @staticmethod
+    def _check_live_window(window_start, window_end, duration,
+                           compute_requests, link_requests, fp_requests,
+                           host_cap_map, hosts_by_site, compute_reservations,
+                           link_cap_map, net_reservations,
+                           fp_cap_map) -> bool:
+        """Check if all resource requests can be satisfied in every hour of the window."""
+
+        # --- Compute check (greedy bin-pack per hour) ---
+        if compute_requests:
+            for dh in range(duration):
+                hour_start = window_start + timedelta(hours=dh)
+                hour_end = hour_start + timedelta(hours=1)
+
+                # Build remaining capacity for each host at this hour
+                remaining = {}
+                for host_name, cap in host_cap_map.items():
+                    remaining[host_name] = {
+                        "cores": cap["cores_capacity"],
+                        "ram": cap["ram_capacity"],
+                        "disk": cap["disk_capacity"],
+                        "components": dict(cap["components"]),
+                    }
+
+                # Subtract live allocations overlapping this hour
+                for rsv in compute_reservations:
+                    if rsv["lease_start"] < hour_end and rsv["lease_end"] > hour_start:
+                        h = rsv["host"]
+                        if h and h in remaining:
+                            remaining[h]["cores"] -= rsv["cores"]
+                            remaining[h]["ram"] -= rsv["ram"]
+                            remaining[h]["disk"] -= rsv["disk"]
+                            for comp_key in rsv["components"]:
+                                if comp_key in remaining[h]["components"]:
+                                    remaining[h]["components"][comp_key] -= 1
+
+                # Greedy bin-pack each compute request
+                for req in compute_requests:
+                    req_cores = req.get("cores", 0)
+                    req_ram = req.get("ram", 0)
+                    req_disk = req.get("disk", 0)
+                    req_components = req.get("components", {})
+                    req_site = req.get("site")
+
+                    candidate_hosts = (
+                        [hid for hid in hosts_by_site.get(req_site, []) if hid in remaining]
+                        if req_site
+                        else list(remaining.keys())
+                    )
+
+                    placed = False
+                    for host_name in candidate_hosts:
+                        rem = remaining[host_name]
+                        if rem["cores"] < req_cores:
+                            continue
+                        if rem["ram"] < req_ram:
+                            continue
+                        if rem["disk"] < req_disk:
+                            continue
+                        comp_ok = True
+                        for comp_key, comp_count in req_components.items():
+                            if rem["components"].get(comp_key.lower(), 0) < comp_count:
+                                comp_ok = False
+                                break
+                        if not comp_ok:
+                            continue
+                        # Place on this host
+                        rem["cores"] -= req_cores
+                        rem["ram"] -= req_ram
+                        rem["disk"] -= req_disk
+                        for comp_key, comp_count in req_components.items():
+                            rem["components"][comp_key.lower()] -= comp_count
+                        placed = True
+                        break
+
+                    if not placed:
+                        return False
+
+        # --- Link check ---
+        for req in link_requests:
+            pair = tuple(sorted([req["site_a"], req["site_b"]]))
+            cap_entry = link_cap_map.get(pair)
+            if not cap_entry:
+                return False
+            bw_cap = cap_entry["bandwidth_capacity"]
+            req_bw = req["bandwidth"]
+
+            for dh in range(duration):
+                hour_start = window_start + timedelta(hours=dh)
+                hour_end = hour_start + timedelta(hours=1)
+
+                bw_used = 0
+                for ns in net_reservations:
+                    if ns["lease_start"] < hour_end and ns["lease_end"] > hour_start:
+                        if len(ns["sites"]) == 2 and tuple(ns["sites"]) == pair:
+                            bw_used += ns["bandwidth"]
+
+                if bw_cap - bw_used < req_bw:
+                    return False
+
+        # --- Facility port check ---
+        for req in fp_requests:
+            req_name = req["name"]
+            req_site = req["site"]
+            req_vlans = req["vlans"]
+
+            cap_entry = fp_cap_map.get((req_name, req_site))
+            if not cap_entry:
+                return False
+            total_vlans = cap_entry["total_vlans"]
+
+            for dh in range(duration):
+                hour_start = window_start + timedelta(hours=dh)
+                hour_end = hour_start + timedelta(hours=1)
+
+                vlans_in_use = set()
+                for ns in net_reservations:
+                    if ns["lease_start"] < hour_end and ns["lease_end"] > hour_start:
+                        ns_fp = ns.get("fp_name")
+                        ns_site = ns.get("site")
+                        if ns_fp == req_name and ns_site == req_site:
+                            for v in ns["vlans"]:
+                                vlans_in_use.add(v)
+
+                if total_vlans - len(vlans_in_use) < req_vlans:
+                    return False
+
+        return True

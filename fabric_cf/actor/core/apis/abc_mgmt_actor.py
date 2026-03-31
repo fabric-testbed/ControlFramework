@@ -208,6 +208,22 @@ class ABCMgmtActor(ABCComponent):
         """
         raise NotImplementedError
 
+    def get_link_allocations(self, *, rsv_type: list[str], states: list[int],
+                             start: datetime = None, end: datetime = None) -> list[dict]:
+        """
+        Return per-reservation link allocation data with lease times.
+        @return list of dicts with keys: link_node_id, bw, lease_start, lease_end, site
+        """
+        raise NotImplementedError
+
+    def get_component_allocations(self, *, states: list[int],
+                                  start: datetime = None, end: datetime = None) -> list[dict]:
+        """
+        Return per-reservation component allocation data with lease times and host info.
+        @return list of dicts with keys: host, site, lease_start, lease_end, component, bdf
+        """
+        raise NotImplementedError
+
     @abstractmethod
     def get_sites(self, *, site: str) -> List[SiteAvro] or None:
         """
