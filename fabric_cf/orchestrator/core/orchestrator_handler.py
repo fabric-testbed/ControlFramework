@@ -1388,8 +1388,18 @@ class OrchestratorHandler:
                     r_start = ActorClock.from_milliseconds(milli_seconds=r.get_start())
                     r_end = ActorClock.from_milliseconds(milli_seconds=r.get_end())
                     host = None
-                    if sliver.get_labels() and sliver.get_labels().instance_parent:
-                        host = sliver.get_labels().instance_parent
+                    label_allocs = sliver.get_label_allocations()
+                    labels = sliver.get_labels()
+                    if label_allocs and getattr(label_allocs, 'instance_parent', None):
+                        host = label_allocs.instance_parent
+                    elif labels and getattr(labels, 'instance_parent', None):
+                        host = labels.instance_parent
+                    if host is None:
+                        self.logger.warning(
+                            f"find_resource_slot: reservation {r.get_reservation_id()} "
+                            f"has no instance_parent in labels or label_allocations; "
+                            f"its resources will not be subtracted from host capacity"
+                        )
                     alloc = sliver.capacity_allocations
                     caps = sliver.capacities
                     cores = (getattr(alloc, 'core', 0) or 0) if alloc else 0
@@ -1398,6 +1408,12 @@ class OrchestratorHandler:
                     ram = ram or ((getattr(caps, 'ram', 0) or 0) if caps else 0)
                     disk = (getattr(alloc, 'disk', 0) or 0) if alloc else 0
                     disk = disk or ((getattr(caps, 'disk', 0) or 0) if caps else 0)
+                    comps = self._extract_reservation_components(sliver)
+                    self.logger.debug(
+                        f"find_resource_slot: reservation {r.get_reservation_id()} "
+                        f"host={host} cores={cores} ram={ram} disk={disk} "
+                        f"components={comps} lease=[{r_start}, {r_end}]"
+                    )
                     compute_reservations.append({
                         "host": host,
                         "lease_start": r_start,
@@ -1405,7 +1421,7 @@ class OrchestratorHandler:
                         "cores": cores,
                         "ram": ram,
                         "disk": disk,
-                        "components": self._extract_reservation_components(sliver),
+                        "components": comps,
                     })
 
         # Query network service reservations (for links and/or facility ports)
