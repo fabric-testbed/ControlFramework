@@ -28,7 +28,7 @@ dependencies = [
     "PyYAML",
     "fabric_fss_utils==1.6.2",
     "fabric-message-bus==1.10.0",
-    "fabric-fim==1.9.1",
+    "fabric-fim==1.9.2",
     "fabrictestbed==1.9.1",
     "ansible"
     ]
