@@ -1050,6 +1050,122 @@ class PsqlDatabase:
             raise e
         return result
 
+    def get_link_allocations(self, *, states: list[int], rsv_type: list[str],
+                             start: datetime = None, end: datetime = None) -> list[dict]:
+        """
+        Return per-reservation link allocation data with lease times.
+
+        Each dict contains: link_node_id, bw, lease_start, lease_end.
+        This avoids deserializing full slivers for network service reservations.
+
+        @param states: list of reservation states to include
+        @param rsv_type: list of reservation types (ServiceType strings)
+        @param start: start of time range
+        @param end: end of time range
+        @return list of dicts with link allocation data
+        """
+        result = []
+        session = self.get_session()
+        try:
+            lease_end_filter = True
+            if start is not None or end is not None:
+                if start is not None and end is not None:
+                    lease_end_filter = or_(
+                        and_(start <= Reservations.lease_end, Reservations.lease_end <= end),
+                        and_(start <= Reservations.lease_start, Reservations.lease_start <= end),
+                        and_(Reservations.lease_start <= start, Reservations.lease_end >= end)
+                    )
+                elif start is not None:
+                    lease_end_filter = start <= Reservations.lease_end
+                elif end is not None:
+                    lease_end_filter = Reservations.lease_end <= end
+
+            rows = (
+                session.query(
+                    Links.node_id,
+                    Links.bw,
+                    Reservations.lease_start,
+                    Reservations.lease_end,
+                    Reservations.site,
+                )
+                .join(Reservations, Links.reservation_id == Reservations.rsv_id)
+                .filter(Reservations.rsv_type.in_(rsv_type))
+                .filter(Reservations.rsv_state.in_(states))
+                .filter(lease_end_filter)
+                .all()
+            )
+
+            for row in rows:
+                result.append({
+                    "link_node_id": row[0],
+                    "bw": row[1] or 0,
+                    "lease_start": row[2],
+                    "lease_end": row[3],
+                    "site": row[4],
+                })
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
+    def get_component_allocations(self, *, states: list[int],
+                                  start: datetime = None, end: datetime = None) -> list[dict]:
+        """
+        Return per-reservation component allocation data with lease times and host info.
+
+        Each dict contains: host, site, lease_start, lease_end, component (name), bdf.
+        This avoids deserializing full slivers for component counting.
+
+        @param states: list of reservation states to include
+        @param start: start of time range
+        @param end: end of time range
+        @return list of dicts with component allocation data
+        """
+        result = []
+        session = self.get_session()
+        try:
+            lease_end_filter = True
+            if start is not None or end is not None:
+                if start is not None and end is not None:
+                    lease_end_filter = or_(
+                        and_(start <= Reservations.lease_end, Reservations.lease_end <= end),
+                        and_(start <= Reservations.lease_start, Reservations.lease_start <= end),
+                        and_(Reservations.lease_start <= start, Reservations.lease_end >= end)
+                    )
+                elif start is not None:
+                    lease_end_filter = start <= Reservations.lease_end
+                elif end is not None:
+                    lease_end_filter = Reservations.lease_end <= end
+
+            rows = (
+                session.query(
+                    Reservations.host,
+                    Reservations.site,
+                    Reservations.lease_start,
+                    Reservations.lease_end,
+                    Components.component,
+                    Components.bdf,
+                )
+                .join(Components, Components.reservation_id == Reservations.rsv_id)
+                .filter(Reservations.rsv_state.in_(states))
+                .filter(lease_end_filter)
+                .all()
+            )
+
+            for row in rows:
+                result.append({
+                    "host": row[0],
+                    "site": row[1],
+                    "lease_start": row[2],
+                    "lease_end": row[3],
+                    "component": row[4],
+                    "bdf": row[5],
+                })
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
     def get_reservations_by_rids(self, *, rsv_resid_list: list) -> list:
         """
         Get Reservations for an actor by reservation ids

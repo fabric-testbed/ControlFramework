@@ -631,6 +631,28 @@ class ActorDatabase(ABCDatabase):
             if self.lock.locked():
                 self.lock.release()
 
+    def get_link_allocations(self, *, states: list[int], rsv_type: list[str],
+                             start: datetime = None, end: datetime = None) -> list[dict]:
+        try:
+            return self.db.get_link_allocations(states=states, rsv_type=rsv_type, start=start, end=end)
+        except Exception as e:
+            self.logger.error(e)
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+        return []
+
+    def get_component_allocations(self, *, states: list[int],
+                                  start: datetime = None, end: datetime = None) -> list[dict]:
+        try:
+            return self.db.get_component_allocations(states=states, start=start, end=end)
+        except Exception as e:
+            self.logger.error(e)
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+        return []
+
     def get_reservations(self, *, slice_id: ID = None, graph_node_id: str = None, project_id: str = None,
                          email: str = None, oidc_sub: str = None, rid: ID = None, states: list[int] = None,
                          site: str = None, rsv_type: list[str] = None, start: datetime = None,

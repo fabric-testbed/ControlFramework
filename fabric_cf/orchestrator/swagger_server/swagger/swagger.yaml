@@ -436,6 +436,242 @@ paths:
       security:
       - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.resources_controller
+  /resources/calendar:
+    get:
+      tags:
+      - resources
+      summary: Retrieve resource availability calendar
+      description: Returns resource availability over time slots, proxied from the reports API.
+        Shows capacity, allocation, and availability per host and site for each time interval.
+      operationId: resources_calendar_get
+      parameters:
+      - name: start_date
+        in: query
+        description: Start time for the calendar range (ISO 8601)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: date-time
+      - name: end_date
+        in: query
+        description: End time for the calendar range (ISO 8601)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: date-time
+      - name: interval
+        in: query
+        description: "Time interval for each slot (default: day)"
+        required: false
+        schema:
+          type: string
+          default: day
+          enum:
+          - hour
+          - day
+          - week
+      - name: site
+        in: query
+        description: Filter by site
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      - name: host
+        in: query
+        description: Filter by host
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      - name: exclude_site
+        in: query
+        description: Exclude sites
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      - name: exclude_host
+        in: query
+        description: Exclude hosts
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resources'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_400_bad_request'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_401_unauthorized'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_403_forbidden'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_404_not_found'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_500_internal_server_error'
+      security:
+      - bearerAuth: []
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.resources_controller
+  /resources/find-slot:
+    post:
+      tags:
+      - resources
+      summary: Find available time slots for resources
+      description: Find the earliest time windows where all requested resources are simultaneously available for a given duration. Proxied from the reports API.
+      operationId: resources_find_slot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - start
+              - end
+              - duration
+              - resources
+              properties:
+                start:
+                  type: string
+                  format: date-time
+                  description: Start of search range (ISO 8601)
+                end:
+                  type: string
+                  format: date-time
+                  description: End of search range (ISO 8601)
+                duration:
+                  type: integer
+                  minimum: 1
+                  description: Consecutive hours needed
+                max_results:
+                  type: integer
+                  minimum: 1
+                  maximum: 50
+                  default: 1
+                  description: Maximum number of windows to return (1-50)
+                use_live_data:
+                  type: boolean
+                  default: false
+                  description: When true, compute find-slot using live orchestrator data instead of proxying to Reports API
+                resources:
+                  type: array
+                  minItems: 1
+                  description: Array of resource requests
+                  items:
+                    type: object
+                    required:
+                    - type
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                        - compute
+                        - link
+                        - facility_port
+                      site:
+                        type: string
+                      cores:
+                        type: integer
+                      ram:
+                        type: integer
+                      disk:
+                        type: integer
+                      components:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                      site_a:
+                        type: string
+                      site_b:
+                        type: string
+                      bandwidth:
+                        type: integer
+                      name:
+                        type: string
+                      vlans:
+                        type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resources'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_400_bad_request'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_401_unauthorized'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_403_forbidden'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_404_not_found'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/status_500_internal_server_error'
+      security:
+      - bearerAuth: []
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.resources_controller
   /portalresources/summary:
     get:
       tags:

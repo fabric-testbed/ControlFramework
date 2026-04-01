@@ -66,3 +66,44 @@ def resources_summary_get(level=None, force_refresh=None, start_date=None, end_d
     return rc.resources_summary_get(level=level, force_refresh=force_refresh,
                                      start_date=start_date, end_date=end_date,
                                      includes=includes, excludes=excludes, type=type)
+
+
+def resources_calendar_get(start_date, end_date, interval=None, site=None, host=None,
+                            exclude_site=None, exclude_host=None):  # noqa: E501
+    """Retrieve resource availability calendar
+
+    Returns resource availability over time slots, proxied from the reports API. # noqa: E501
+
+    :param start_date: Start time for the calendar range (ISO 8601)
+    :type start_date: str
+    :param end_date: End time for the calendar range (ISO 8601)
+    :type end_date: str
+    :param interval: Time interval (day or week)
+    :type interval: str
+    :param site: Filter by site
+    :type site: List[str]
+    :param host: Filter by host
+    :type host: List[str]
+    :param exclude_site: Exclude sites
+    :type exclude_site: List[str]
+    :param exclude_host: Exclude hosts
+    :type exclude_host: List[str]
+
+    :rtype: Resources
+    """
+    return rc.resources_calendar_get(start_date=start_date, end_date=end_date, interval=interval,
+                                      site=site, host=host, exclude_site=exclude_site,
+                                      exclude_host=exclude_host)
+
+
+def resources_find_slot(body):  # noqa: E501
+    """Find available time slots for resources
+
+    Find the earliest time windows where all requested resources are simultaneously available. # noqa: E501
+
+    :param body: Resource request payload
+    :type body: dict
+
+    :rtype: Resources
+    """
+    return rc.resources_find_slot(body=body)

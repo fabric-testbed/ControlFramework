@@ -294,6 +294,20 @@ class ABCActorManagementObject(ABCManagementObject):
         @return Dictionary with link node id as key and cumulative bandwidth.
         """
 
+    def get_link_allocations(self, *, rsv_type: list[str], states: list[int],
+                             start: datetime = None, end: datetime = None) -> list[dict]:
+        """
+        Return per-reservation link allocation data with lease times.
+        @return list of dicts with keys: link_node_id, bw, lease_start, lease_end, site
+        """
+
+    def get_component_allocations(self, *, states: list[int],
+                                  start: datetime = None, end: datetime = None) -> list[dict]:
+        """
+        Return per-reservation component allocation data with lease times and host info.
+        @return list of dicts with keys: host, site, lease_start, lease_end, component, bdf
+        """
+
     def get_slices(self, *, slice_id: ID, caller: AuthToken, slice_name: str = None, email: str = None,
                    states: List[int] = None, project: str = None, limit: int = None,
                    offset: int = None, user_id: str = None, search: str = None,
