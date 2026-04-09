@@ -759,6 +759,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
                         self.logger.error(traceback.format_exc())
                         self.transition(prefix="close", state=ReservationStates.Closed,
                                         pending=ReservationPendingStates.None_)
+                    finally:
                         self.do_relinquish()
                 else:
                     self.transition_with_join(prefix="close", state=ReservationStates.Active,
@@ -1272,8 +1273,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 # unreachable, it might be better to retry.
                 self.transition(prefix=self.CLOSE_COMPLETE, state=ReservationStates.Closed,
                                 pending=ReservationPendingStates.None_)
-                # Note: the broker does not have information to ensure we
-                # are not cheating
+            finally:
+                # Always notify the Broker to release ticketed resources.
+                # do_relinquish() is idempotent (guarded by self.relinquished flag),
+                # so it is safe to call here even if update_lease() later calls it again.
                 self.do_relinquish()
 
     def set_policy(self, *, policy: ABCClientPolicy):
