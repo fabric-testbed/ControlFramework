@@ -26,7 +26,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Tuple, Dict, TYPE_CHECKING, List, Optional
 from collections import defaultdict
 
@@ -166,6 +166,15 @@ class AggregatedBQMPlugin:
                   ReservationStates.ActiveTicketed.value,
                   ReservationStates.Ticketed.value,
                   ReservationStates.Nascent.value]
+
+        # When no time range is specified, default to "now" so that future
+        # advance reservations (Ticketed state) are not counted as currently
+        # occupied.  Callers that need future availability (e.g. the calendar
+        # endpoint) pass explicit start/end and are unaffected.
+        if start is None and end is None:
+            now = datetime.now(timezone.utc)
+            start = now
+            end = now
 
         # get existing reservations for this node
         existing_reservations = db.get_reservations(graph_node_id=node_id, states=states, start=start, end=end)
