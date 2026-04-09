@@ -333,6 +333,19 @@ class AggregatedBQMPlugin:
                     site_sliver.capacity_allocations = site_sliver.capacity_allocations + allocated_caps
                     worker_sliver.capacity_allocations = allocated_caps
 
+                    # Warn when allocations exceed capacity
+                    w_cap = sliver.get_capacities() or Capacities()
+                    if sliver.get_capacity_delegations() is not None:
+                        _, dlg = sliver.get_capacity_delegations().get_sole_delegation()
+                        if dlg.get_format() == DelegationFormat.SinglePool:
+                            w_cap = dlg.get_details()
+                    a_core = getattr(allocated_caps, 'core', 0) or 0
+                    c_core = getattr(w_cap, 'core', 0) or 0
+                    if a_core > c_core:
+                        self.logger.warning(
+                            f"Over-allocation detected on {sliver.get_name()} at {sliver.site}: "
+                            f"cores_alloc={a_core} > cores_cap={c_core}")
+
                 # get the location if available
                 if loc is None:
                     loc = sliver.get_location()
@@ -798,6 +811,15 @@ class AggregatedBQMPlugin:
                 w_core_alloc = getattr(worker_allocs, 'core', 0) or 0
                 w_ram_alloc = getattr(worker_allocs, 'ram', 0) or 0
                 w_disk_alloc = getattr(worker_allocs, 'disk', 0) or 0
+
+                # Warn when allocations exceed capacity (indicates stale or
+                # over-committed reservations on a host)
+                if w_core_alloc > w_core_cap or w_ram_alloc > w_ram_cap or w_disk_alloc > w_disk_cap:
+                    self.logger.warning(
+                        f"Over-allocation detected on {sliver.get_name()} at {s}: "
+                        f"cores={w_core_alloc}/{w_core_cap} "
+                        f"ram={w_ram_alloc}/{w_ram_cap} "
+                        f"disk={w_disk_alloc}/{w_disk_cap}")
 
                 site_cores_cap += w_core_cap
                 site_cores_alloc += w_core_alloc
