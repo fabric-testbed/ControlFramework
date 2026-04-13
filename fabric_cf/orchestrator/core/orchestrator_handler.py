@@ -151,10 +151,15 @@ class OrchestratorHandler:
         if not start and not end and not includes and not excludes:
             saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format, level=level)
             if saved_bqm is not None:
-                if not force_refresh and not saved_bqm.can_refresh() and not saved_bqm.refresh_in_progress:
+                if force_refresh:
+                    saved_bqm.start_refresh()
+                elif saved_bqm.can_refresh():
+                    saved_bqm.start_refresh()
+                elif saved_bqm.refresh_in_progress and saved_bqm.get_bqm():
+                    # Serve stale cache while a refresh is already in progress
                     broker_query_model = saved_bqm.get_bqm()
                 else:
-                    saved_bqm.start_refresh()
+                    broker_query_model = saved_bqm.get_bqm()
 
         # Request the model from Broker as a fallback
         if not broker_query_model:
@@ -243,10 +248,15 @@ class OrchestratorHandler:
         if not start and not end and not includes and not excludes:
             saved = self.controller_state.get_saved_summary(level=level)
             if saved is not None:
-                if not force_refresh and not saved.can_refresh() and not saved.refresh_in_progress:
+                if force_refresh:
+                    saved.start_refresh()
+                elif saved.can_refresh():
+                    saved.start_refresh()
+                elif saved.refresh_in_progress and saved.get_bqm():
+                    # Serve stale cache while a refresh is already in progress
                     summary_json = saved.get_bqm()
                 else:
-                    saved.start_refresh()
+                    summary_json = saved.get_bqm()
 
         if not summary_json:
             broker = self.get_broker(controller=controller)
