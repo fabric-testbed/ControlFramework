@@ -41,11 +41,14 @@ from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 
+from fabric_mb.message_bus.messages.extend_reservation_avro import ExtendReservationAvro
+
 from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor
+from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.util.id import ID
 
 
@@ -79,6 +82,21 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
 
         if status.code == 0:
             return response.units
+
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver,
+                           dependencies: List[ReservationPredecessorAvro] = None) -> bool:
+        request = ExtendReservationAvro()
+        request.guid = str(self.management_id)
+        request.auth = self.auth
+        request.message_id = str(ID())
+        request.callback_topic = self.callback_topic
+        request.reservation_id = str(reservation)
+        request.end_time = ActorClock.to_milliseconds(when=new_end_time)
+        request.sliver = sliver
+
+        status, response = self.send_request(request)
+
+        return status.code == 0
 
     def modify_reservation(self, *, rid: ID, modify_properties: dict) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)
