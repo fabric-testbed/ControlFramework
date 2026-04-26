@@ -841,23 +841,26 @@ class AggregatedBQMPlugin:
                 # Worker-level components
                 worker_components = {}
                 if sliver.attached_components_info is not None:
+                    # First pass: accumulate total capacity per type/model
                     for comp in sliver.attached_components_info.list_devices():
                         rt = comp.resource_type
                         rm = comp.resource_model
                         comp_key = f"{rt}-{rm}"
                         comp_cap = getattr(comp.capacities, 'unit', 0) or 0
 
-                        comp_alloc = 0
-                        if rt in allocated_comp_caps and rm in allocated_comp_caps[rt]:
-                            comp_alloc = getattr(allocated_comp_caps[rt][rm], 'unit', 0) or 0
-
                         if comp_key not in worker_components:
                             worker_components[comp_key] = {"capacity": 0, "allocated": 0}
                         worker_components[comp_key]["capacity"] += comp_cap
-                        worker_components[comp_key]["allocated"] += comp_alloc
-
                         site_components[comp_key]["capacity"] += comp_cap
-                        site_components[comp_key]["allocated"] += comp_alloc
+
+                    # Second pass: set allocations once per type/model from DB query results
+                    for rt, models in allocated_comp_caps.items():
+                        for rm, alloc_cap in models.items():
+                            comp_key = f"{rt}-{rm}"
+                            comp_alloc = getattr(alloc_cap, 'unit', 0) or 0
+                            if comp_key in worker_components:
+                                worker_components[comp_key]["allocated"] += comp_alloc
+                                site_components[comp_key]["allocated"] += comp_alloc
 
                 # Build host record (level 2 includes per-host detail)
                 if query_level == 2 or query_level == 0:
