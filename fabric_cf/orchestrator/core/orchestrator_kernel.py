@@ -112,7 +112,7 @@ class OrchestratorKernel(ABCTick):
             key = f"{graph_format}-{level}"
             saved_bqm = self.bqm_cache.get(key)
             if saved_bqm is None:
-                saved_bqm = BqmWrapper()
+                saved_bqm = BqmWrapper(logger=self.get_logger())
             saved_bqm.save(bqm=bqm, graph_format=graph_format, level=level)
             self.bqm_cache[key] = saved_bqm
 
@@ -141,7 +141,7 @@ class OrchestratorKernel(ABCTick):
             key = f"SUMMARY-{level}"
             cached = self.summary_cache.get(key)
             if cached is None:
-                cached = BqmWrapper()
+                cached = BqmWrapper(logger=self.get_logger())
             cached.save(bqm=summary, graph_format=GraphFormat.GRAPHML, level=level)
             self.summary_cache[key] = cached
         finally:

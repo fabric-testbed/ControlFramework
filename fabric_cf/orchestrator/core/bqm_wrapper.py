@@ -34,7 +34,7 @@ class BqmWrapper:
     """
     Implements cache for storing the BQM
     """
-    def __init__(self):
+    def __init__(self, *, logger=None):
         self.graph_format = None
         self.bqm = None
         self.last_query_time = None
@@ -46,8 +46,10 @@ class BqmWrapper:
         '''
         self.refresh_interval_in_seconds = 2000
         self.refresh_in_progress = False
+        self.refresh_started_at = None
         self.level = 1
         self.graph_id = None
+        self.logger = logger
 
     def can_refresh(self) -> bool:
         """
@@ -55,9 +57,23 @@ class BqmWrapper:
         @return True -> On first attempt or last query time is after refresh Interval; False otherwise
         """
         current_time = datetime.now(timezone.utc)
-        if not self.refresh_in_progress and (self.last_query_time is None or
-                                             ((current_time - self.last_query_time).total_seconds() >
-                                              self.refresh_interval_in_seconds)):
+
+        if self.refresh_in_progress:
+            if self.refresh_started_at and \
+                    (current_time - self.refresh_started_at).total_seconds() > self.refresh_interval_in_seconds:
+                if self.logger:
+                    self.logger.warning(
+                        f"BQM refresh has been stuck for "
+                        f"{(current_time - self.refresh_started_at).total_seconds():.0f}s "
+                        f"(timeout={self.refresh_interval_in_seconds}s); allowing new refresh"
+                    )
+                self.refresh_in_progress = False
+                self.refresh_started_at = None
+            else:
+                return False
+
+        if self.last_query_time is None or \
+                (current_time - self.last_query_time).total_seconds() > self.refresh_interval_in_seconds:
             return True
         return False
 
@@ -72,10 +88,12 @@ class BqmWrapper:
         self.bqm = bqm
         self.last_query_time = datetime.now(timezone.utc)
         self.refresh_in_progress = False
+        self.refresh_started_at = None
         self.level = level
 
     def start_refresh(self):
         self.refresh_in_progress = True
+        self.refresh_started_at = datetime.now(timezone.utc)
 
     def get_bqm(self) -> str:
         """
