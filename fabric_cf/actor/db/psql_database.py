@@ -177,6 +177,7 @@ class PsqlDatabase:
             for row in session.query(Actors).all():
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -195,6 +196,7 @@ class PsqlDatabase:
                     Actors.act_name.like(actor_name)).all():
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -211,6 +213,7 @@ class PsqlDatabase:
             for row in session.query(Actors).filter(Actors.act_name.like(act_name)).all():
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -234,6 +237,7 @@ class PsqlDatabase:
                 result = None
                 self.logger.error("Actor: {} not found!".format(name))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -302,6 +306,7 @@ class PsqlDatabase:
             else:
                 return None
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -371,6 +376,7 @@ class PsqlDatabase:
             for row in rows:
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -387,6 +393,7 @@ class PsqlDatabase:
             act_id = act_obj['act_id']
             result = self.get_manager_objects(act_id=act_id)
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -406,6 +413,7 @@ class PsqlDatabase:
             else:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Manager Object", mo_key))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -421,6 +429,7 @@ class PsqlDatabase:
             for mo_obj in session.query(ManagerObjects).filter(ManagerObjects.mo_act_id.is_(None)).all():
                 result.append(self.generate_dict_from_row(mo_obj))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -520,6 +529,7 @@ class PsqlDatabase:
             for row in session.query(Slices).all():
                 result.append(row.slc_id)
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -572,6 +582,7 @@ class PsqlDatabase:
 
             return rows.count()
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
@@ -634,6 +645,7 @@ class PsqlDatabase:
             for row in rows.all():
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -653,6 +665,7 @@ class PsqlDatabase:
             else:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_id))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -923,6 +936,7 @@ class PsqlDatabase:
             for row in rows.all():
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -991,6 +1005,7 @@ class PsqlDatabase:
                 if row.bdf not in result[row.component]:
                     result[row.component].append(row.bdf)
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1046,6 +1061,7 @@ class PsqlDatabase:
                     result[row.node_id] = 0
                 result[row.node_id] += row.bw
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1104,6 +1120,7 @@ class PsqlDatabase:
                     "site": row[4],
                 })
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1162,6 +1179,7 @@ class PsqlDatabase:
                     "bdf": row[5],
                 })
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1179,6 +1197,7 @@ class PsqlDatabase:
             for row in session.query(Reservations).filter(Reservations.rsv_resid.in_(rsv_resid_list)).all():
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1247,6 +1266,7 @@ class PsqlDatabase:
             for row in session.query(Proxies).filter_by(prx_act_id=act_id).all():
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1315,6 +1335,7 @@ class PsqlDatabase:
             for row in session.query(ConfigMappings).filter_by(cfgm_act_id=act_id).all():
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1403,6 +1424,7 @@ class PsqlDatabase:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Client", clt_guid))
             result = self.generate_dict_from_row(clt_obj)
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1419,6 +1441,7 @@ class PsqlDatabase:
             for row in session.query(Clients).all():
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1469,6 +1492,7 @@ class PsqlDatabase:
                 return result
             result = self.generate_dict_from_row(unt_obj)
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1490,6 +1514,7 @@ class PsqlDatabase:
             for row in session.query(Units).filter_by(unt_rsv_id=rsv_obj['rsv_id']).all():
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1618,6 +1643,7 @@ class PsqlDatabase:
             for row in rows.all():
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1637,6 +1663,7 @@ class PsqlDatabase:
             else:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Delegation", dlg_graph_id))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1703,6 +1730,7 @@ class PsqlDatabase:
             for row in session.query(Sites).all():
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1717,6 +1745,7 @@ class PsqlDatabase:
             for row in session.query(Sites).filter_by(name=site_name).all():
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1854,6 +1883,7 @@ class PsqlDatabase:
             for row in rows.all():
                 result.append(self.generate_dict_from_row(row=row))
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
@@ -1908,6 +1938,7 @@ class PsqlDatabase:
                 result.append(self.generate_dict_from_row(row=r))
             return result
         except Exception as e:
+            session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
