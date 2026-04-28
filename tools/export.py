@@ -40,6 +40,7 @@ from fim.slivers.network_service import NetworkServiceSliver
 from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
+from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
 from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
 from fabric_reports_client.reports_api import ReportsApi
 
@@ -378,7 +379,11 @@ class ExportScript:
                         for reservation in self.src_db.get_reservations(slice_id=slice_object.get_slice_id()):
                             error_message = reservation.get_error_message()
                             sliver_guid = str(reservation.get_reservation_id())
-                            sliver = InventoryForType.get_allocated_sliver(reservation=reservation)
+                            if isinstance(reservation, ABCControllerReservation) and reservation.is_active() \
+                                    and reservation.get_leased_resources() is not None:
+                                sliver = reservation.get_leased_resources().get_sliver()
+                            else:
+                                sliver = InventoryForType.get_allocated_sliver(reservation=reservation)
                             site_name = None
                             host_name = None
                             ip_subnet = None
@@ -395,7 +400,7 @@ class ExportScript:
                                 site_name = sliver.get_site()
                                 if sliver.label_allocations and sliver.label_allocations.instance_parent:
                                     host_name = sliver.label_allocations.instance_parent
-                                ip_subnet = str(sliver.management_ip)
+                                ip_subnet = str(sliver.management_ip) if sliver.management_ip else None
                                 image = sliver.image_ref
                                 node_id = str(reservation.get_graph_node_id())
 
