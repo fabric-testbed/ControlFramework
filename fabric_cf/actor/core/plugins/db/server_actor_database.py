@@ -35,51 +35,31 @@ from fabric_cf.actor.core.util.id import ID
 
 class ServerActorDatabase(ActorDatabase, ClientDatabase):
     def add_client(self, *, client: Client):
-        try:
-            #self.lock.acquire()
-            properties = pickle.dumps(client)
-            self.db.add_client(act_id=self.actor_id, clt_name=client.get_name(), clt_guid=str(client.get_guid()),
-                               properties=properties)
-        finally:
-            if self.lock.locked():
-                self.lock.release()
+        properties = pickle.dumps(client)
+        self.db.add_client(act_id=self.actor_id, clt_name=client.get_name(), clt_guid=str(client.get_guid()),
+                           properties=properties)
 
     def update_client(self, *, client: Client):
-        try:
-            #self.lock.acquire()
-            properties = pickle.dumps(client)
-            self.db.update_client(act_id=self.actor_id, clt_name=client.get_name(), properties=properties)
-        finally:
-            if self.lock.locked():
-                self.lock.release()
+        properties = pickle.dumps(client)
+        self.db.update_client(act_id=self.actor_id, clt_name=client.get_name(), properties=properties)
 
     def remove_client(self, *, guid: ID):
-        try:
-            #self.lock.acquire()
-            self.db.remove_client_by_guid(act_id=self.actor_id, clt_guid=str(guid))
-        finally:
-            if self.lock.locked():
-                self.lock.release()
+        self.db.remove_client_by_guid(act_id=self.actor_id, clt_guid=str(guid))
 
     def get_client(self, *, guid: ID) -> Client or None:
         result = None
         try:
-            #self.lock.acquire()
             client_dict = self.db.get_client_by_guid(clt_guid=str(guid))
             if client_dict is not None:
                 pickled_client = client_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
                 return pickle.loads(pickled_client)
         except Exception as e:
             self.logger.error(e)
-        finally:
-            if self.lock.locked():
-                self.lock.release()
         return result
 
     def get_clients(self) -> List[Client]:
         result = None
         try:
-            #self.lock.acquire()
             result = []
             client_dict_list = self.db.get_clients()
             if client_dict_list is not None:
@@ -90,7 +70,4 @@ class ServerActorDatabase(ActorDatabase, ClientDatabase):
             return result
         except Exception as e:
             self.logger.error(e)
-        finally:
-            if self.lock.locked():
-                self.lock.release()
         return result

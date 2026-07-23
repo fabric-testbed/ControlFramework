@@ -75,7 +75,7 @@ class Kernel:
         # All reservations managed by the kernel.
         self.reservations = ReservationSet()
         self.delegations = {}
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.nothing_pending = threading.Condition()
 
     def amend_reserve(self, *, reservation: ABCReservationMixin):
@@ -518,14 +518,10 @@ class Kernel:
         @param did delegation id
         @return delegation
         """
-        try:
-            if did is not None:
-                self.lock.acquire()
-                return self.delegations.get(did, None)
-        finally:
-            if self.lock.locked():
-                self.lock.release()
-        return None
+        if did is None:
+            return None
+        with self.lock:
+            return self.delegations.get(did, None)
 
     def get_plugin(self) -> ABCBasePlugin:
         """
@@ -1369,13 +1365,9 @@ class Kernel:
             slice_object.unregister_delegation(delegation=delegation)
         finally:
             slice_object.unlock_slice()
-        try:
-            self.lock.acquire()
+        with self.lock:
             if delegation.get_delegation_id() in self.delegations:
                 self.delegations.pop(delegation.get_delegation_id())
-        finally:
-            if self.lock.locked():
-                self.lock.release()
 
     def unregister_reservation(self, *, rid: ID):
         """

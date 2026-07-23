@@ -71,8 +71,7 @@ class KafkaMgmtMessageProcessor(AvroConsumerApi):
 
     def stop(self):
         self.shutdown()
-        try:
-            self.thread_lock.acquire()
+        with self.thread_lock:
             temp = self.thread
             self.thread = None
             if temp is not None:
@@ -81,11 +80,6 @@ class KafkaMgmtMessageProcessor(AvroConsumerApi):
                     temp.join()
                 except Exception as e:
                     self.logger.error("Could not join KafkaMgmtMessageProcessor thread {}".format(e))
-                finally:
-                    self.thread_lock.release()
-        finally:
-            if self.thread_lock is not None and self.thread_lock.locked():
-                self.thread_lock.release()
 
     def handle_message(self, message: AbcMessageAvro):
         try:

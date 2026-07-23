@@ -38,6 +38,8 @@ class Status(enum.Enum):
 
 class OrchestratorHelper:
     HTTP_OK = 200
+    # (connect, read) timeout in seconds so helper calls cannot hang indefinitely.
+    HTTP_TIMEOUT = (10, 60)
     PROP_DATA = "data"
     PROP_SLIVERS = "slivers"
     PROP_SLICES = "slices"
@@ -58,12 +60,12 @@ class OrchestratorHelper:
 
     def resources(self, level: int = 1):
         url = f"{self.host}/resources?level={level}&force_refresh=true"
-        return requests.get(url, headers=self.headers, verify=False)
+        return requests.get(url, headers=self.headers, verify=False, timeout=self.HTTP_TIMEOUT)
 
     def portal_resources(self, graph_format: GraphFormat = GraphFormat.JSON_NODELINK):
         url = f"{self.host}/portalresources?graph_format={graph_format.name}"
         headers = {'accept': 'application/json'}
-        return requests.get(url, headers=headers, verify=False)
+        return requests.get(url, headers=headers, verify=False, timeout=self.HTTP_TIMEOUT)
 
     def create(self, slice_graph: str, slice_name: str,
                lease_end_time: str = None) -> Tuple[Status, Union[list, requests.Response]]:
@@ -71,7 +73,8 @@ class OrchestratorHelper:
             url = f"{self.host}/slices/create?name={slice_name}&ssh_key={self.ssh_key}"
         else:
             url = f"{self.host}/slices/create?name={slice_name}&ssh_key={self.ssh_key}&lease_end_time={lease_end_time}"
-        response = requests.post(url, headers=self.headers_with_content, verify=False, data=slice_graph)
+        response = requests.post(url, headers=self.headers_with_content, verify=False, data=slice_graph,
+                                 timeout=self.HTTP_TIMEOUT)
         if response.status_code == self.HTTP_OK:
             reservations = response.json()[self.PROP_DATA]
             return Status.OK, reservations
@@ -80,7 +83,7 @@ class OrchestratorHelper:
 
     def delete(self, slice_id: str) -> Tuple[Status, requests.Response]:
         url = f"{self.host}/slices/delete/{slice_id}"
-        response = requests.delete(url, headers=self.headers, verify=False)
+        response = requests.delete(url, headers=self.headers, verify=False, timeout=self.HTTP_TIMEOUT)
         if response.status_code == self.HTTP_OK:
             return Status.OK, response
         else:
@@ -92,7 +95,7 @@ class OrchestratorHelper:
         if slice_id is not None:
             url = f"{self.host}/slices/{slice_id}?graph_format=GRAPHML"
 
-        response = requests.get(url, headers=self.headers, verify=False)
+        response = requests.get(url, headers=self.headers, verify=False, timeout=self.HTTP_TIMEOUT)
         if response.status_code == self.HTTP_OK:
             slices = response.json()[self.PROP_DATA]
             return Status.OK, slices
@@ -104,7 +107,7 @@ class OrchestratorHelper:
         if sliver_id is not None:
             url = f"{self.host}/slivers/{sliver_id}?slice_id={slice_id}"
 
-        response = requests.get(url, headers=self.headers, verify=False)
+        response = requests.get(url, headers=self.headers, verify=False, timeout=self.HTTP_TIMEOUT)
         if response.status_code == self.HTTP_OK:
             reservations = response.json()[self.PROP_DATA]
             return Status.OK, reservations
@@ -123,7 +126,7 @@ class OrchestratorHelper:
         try:
             # Set the tokens
             url = f"{self.host}/slices/renew/{slice_id}?new_lease_end_time={new_lease_end_time}"
-            response = requests.post(url, headers=self.headers, verify=False)
+            response = requests.post(url, headers=self.headers, verify=False, timeout=self.HTTP_TIMEOUT)
             if response.status_code != self.HTTP_OK:
                 return Status.FAILURE, response
 

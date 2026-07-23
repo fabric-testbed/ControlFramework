@@ -85,8 +85,7 @@ class ReservationStatusUpdateThread:
         """
         self.stopped = True
         self.stopped_worker.set()
-        try:
-            self.thread_lock.acquire()
+        with self.thread_lock:
             temp = self.thread
             self.thread = None
             if temp is not None:
@@ -95,11 +94,6 @@ class ReservationStatusUpdateThread:
                     temp.join()
                 except Exception as e:
                     self.logger.error("Could not join ReservationStatusUpdateThread thread {}".format(e))
-                finally:
-                    self.thread_lock.release()
-        finally:
-            if self.thread_lock is not None and self.thread_lock.locked():
-                self.thread_lock.release()
 
     def periodic(self):
         """
