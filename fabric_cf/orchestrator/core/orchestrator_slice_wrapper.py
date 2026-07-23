@@ -79,7 +79,7 @@ class OrchestratorSliceWrapper:
         self.computed_remove_reservations = []
         # Reservations trigger ModifyLease (AM)
         self.computed_modify_properties_reservations = []
-        self.thread_lock = threading.Lock()
+        self.thread_lock = threading.RLock()
         self.start = None
         self.end = None
         self.lifetime = None
@@ -96,8 +96,12 @@ class OrchestratorSliceWrapper:
         Unlock slice
         :return:
         """
-        if self.thread_lock.locked():
+        try:
             self.thread_lock.release()
+        except RuntimeError:
+            # RLock.release() raises if this thread does not hold the lock
+            # (or it is not held at all); treat unlock() as a safe no-op then.
+            pass
 
     def get_computed_reservations(self) -> List[TicketReservationAvro]:
         """

@@ -117,31 +117,26 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         Shutdown Process Pool, Future Processor
         """
         try:
-            self.lock.acquire()
-            self.executor.shutdown(wait=True)
-            self.stopped = True
-            for f, u in self.futures:
-                f.cancel()
+            with self.lock:
+                self.executor.shutdown(wait=True)
+                self.stopped = True
+                for f, u in self.futures:
+                    f.cancel()
 
-            temp = self.thread
-            self.thread = None
-            if temp is not None:
-                self.logger.warning("It seems that the future thread is running. Interrupting it")
-                try:
-                    with self.future_lock:
-                        self.future_lock.notify_all()
-                    temp.join()
-                except Exception as e:
-                    self.logger.error("Could not join future thread {}".format(e))
-                    self.logger.error(traceback.format_exc())
-                finally:
-                    self.lock.release()
+                temp = self.thread
+                self.thread = None
+                if temp is not None:
+                    self.logger.warning("It seems that the future thread is running. Interrupting it")
+                    try:
+                        with self.future_lock:
+                            self.future_lock.notify_all()
+                        temp.join()
+                    except Exception as e:
+                        self.logger.error("Could not join future thread {}".format(e))
+                        self.logger.error(traceback.format_exc())
         except Exception as e:
             self.logger.error(f"Exception occurred {e}")
             self.logger.error(traceback.format_exc())
-        finally:
-            if self.lock.locked():
-                self.lock.release()
 
     def set_logger(self, *, logger):
         self.logger = logger

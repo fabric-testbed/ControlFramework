@@ -49,35 +49,29 @@ class SubstrateActorDatabase(ServerActorDatabase, ABCSubstrateDatabase):
         return result
 
     def add_unit(self, *, u: Unit):
-        try:
-            if u.get_resource_type() is None:
-                raise DatabaseException(Constants.INVALID_ARGUMENT)
-            #self.lock.acquire()
-            if self.get_unit(uid=u.get_id()) is not None:
-                self.logger.info("unit {} is already present in database".format(u.get_id()))
-                return
+        if u.get_resource_type() is None:
+            raise DatabaseException(Constants.INVALID_ARGUMENT)
+        if self.get_unit(uid=u.get_id()) is not None:
+            self.logger.info("unit {} is already present in database".format(u.get_id()))
+            return
 
-            slice_id = str(u.get_slice_id())
-            parent = None
-            if u.get_parent_id() is not None:
-                parent = self.get_unit(uid=u.get_parent_id())
-            parent_id = None
-            if parent is not None:
-                parent_id = parent['unt_id']
-            res_id = str(u.get_reservation_id())
+        slice_id = str(u.get_slice_id())
+        parent = None
+        if u.get_parent_id() is not None:
+            parent = self.get_unit(uid=u.get_parent_id())
+        parent_id = None
+        if parent is not None:
+            parent_id = parent['unt_id']
+        res_id = str(u.get_reservation_id())
 
-            properties = pickle.dumps(u)
-            self.db.add_unit(slc_guid=slice_id, rsv_resid=res_id,
-                             unt_uid=str(u.get_id()), unt_unt_id=parent_id,
-                             unt_state=u.get_state().value, properties=properties)
-        finally:
-            if self.lock.locked():
-                self.lock.release()
+        properties = pickle.dumps(u)
+        self.db.add_unit(slc_guid=slice_id, rsv_resid=res_id,
+                         unt_uid=str(u.get_id()), unt_unt_id=parent_id,
+                         unt_state=u.get_state().value, properties=properties)
 
     def get_units(self, *, rid: ID):
         result = None
         try:
-            #self.lock.acquire()
             result = []
             unit_dict_list = self.db.get_units(rsv_resid=str(rid))
             if unit_dict_list is not None:
@@ -88,24 +82,11 @@ class SubstrateActorDatabase(ServerActorDatabase, ABCSubstrateDatabase):
             return result
         except Exception as e:
             self.logger.error(e)
-        finally:
-            if self.lock.locked():
-                self.lock.release()
         return result
 
     def remove_unit(self, *, uid: ID):
-        try:
-            #self.lock.acquire()
-            self.db.remove_unit(unt_uid=str(uid))
-        finally:
-            if self.lock.locked():
-                self.lock.release()
+        self.db.remove_unit(unt_uid=str(uid))
 
     def update_unit(self, *, u: Unit):
-        try:
-            #self.lock.acquire()
-            properties = pickle.dumps(u)
-            self.db.update_unit(unt_uid=str(u.get_id()), properties=properties)
-        finally:
-            if self.lock.locked():
-                self.lock.release()
+        properties = pickle.dumps(u)
+        self.db.update_unit(unt_uid=str(u.get_id()), properties=properties)
