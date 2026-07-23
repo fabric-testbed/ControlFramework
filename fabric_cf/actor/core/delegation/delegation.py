@@ -66,7 +66,7 @@ class Delegation(ABCDelegation):
         self.owner = None
         self.delegation_name = delegation_name
         self.site = site
-        self.thread_lock = threading.Lock()
+        self.thread_lock = threading.RLock()
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -85,7 +85,7 @@ class Delegation(ABCDelegation):
         self.slice_object = None
         self.logger = None
         self.policy = None
-        self.thread_lock = threading.Lock()
+        self.thread_lock = threading.RLock()
 
     def restore(self, actor: ABCActorMixin, slice_obj: ABCSlice):
         self.actor = actor
@@ -452,5 +452,9 @@ class Delegation(ABCDelegation):
         self.thread_lock.acquire()
 
     def unlock(self):
-        if self.thread_lock.locked():
+        try:
             self.thread_lock.release()
+        except RuntimeError:
+            # RLock.release() raises if this thread does not hold the lock
+            # (or it is not held at all); treat unlock() as a safe no-op then.
+            pass

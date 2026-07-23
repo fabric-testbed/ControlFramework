@@ -87,8 +87,7 @@ class RPCProducer(AvroProducerApi):
         """
         Stop the Poller Thread
         """
-        try:
-            self.thread_lock.acquire()
+        with self.thread_lock:
             temp = self.thread
             self.thread = None
             self.running = False
@@ -98,11 +97,6 @@ class RPCProducer(AvroProducerApi):
                     temp.join()
                 except Exception as e:
                     self.logger.error(f"Could not join {self.__class__.__name__} thread {e}")
-                finally:
-                    self.thread_lock.release()
-        finally:
-            if self.thread_lock is not None and self.thread_lock.locked():
-                self.thread_lock.release()
 
     def delivery_check(self):
         """

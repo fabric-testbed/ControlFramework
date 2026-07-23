@@ -148,21 +148,15 @@ class EventProcessor:
 
     def stop(self):
         self.shutdown = True
-        try:
-            self.thread_lock.acquire()
+        with self.thread_lock:
             temp = self.thread
             self.thread = None
             if temp is not None:
-                self.logger.warning("It seems that the Event Processor {self.name} thread is running. Interrupting it")
+                self.logger.warning(f"It seems that the Event Processor {self.name} thread is running. Interrupting it")
                 try:
                     temp.join()
                 except Exception as e:
                     self.logger.error(f"Could not join Event Processor {self.name} thread {e}")
-                finally:
-                    self.thread_lock.release()
-        finally:
-            if self.thread_lock is not None and self.thread_lock.locked():
-                self.thread_lock.release()
 
     def enqueue(self, incoming):
         try:

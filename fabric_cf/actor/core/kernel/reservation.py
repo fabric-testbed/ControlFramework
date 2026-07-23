@@ -146,7 +146,7 @@ class Reservation(ABCReservationMixin):
         self.last_transition_time = None
         self.closed_at = None
         self.last_pending_state = ReservationPendingStates.None_
-        self.thread_lock = threading.Lock()
+        self.thread_lock = threading.RLock()
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -177,7 +177,7 @@ class Reservation(ABCReservationMixin):
         self.pending_recover = False
         self.state_transition = False
         self.service_pending = ReservationPendingStates.None_
-        self.thread_lock = threading.Lock()
+        self.thread_lock = threading.RLock()
 
     def restore(self, *, actor: ABCActorMixin, slice_obj: ABCSlice):
         """
@@ -711,8 +711,12 @@ class Reservation(ABCReservationMixin):
         self.thread_lock.acquire()
 
     def unlock(self):
-        if self.thread_lock.locked():
+        try:
             self.thread_lock.release()
+        except RuntimeError:
+            # RLock.release() raises if this thread does not hold the lock
+            # (or it is not held at all); treat unlock() as a safe no-op then.
+            pass
 
     def service_poa(self):
         pass

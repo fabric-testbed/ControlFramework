@@ -81,7 +81,7 @@ class Slice(ABCSlice):
         self.state_machine = SliceStateMachine(slice_id=slice_id)
         self.dirty = False
         self.config_properties = None
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.lease_end = None
         self.lease_start = None
         self.project_id = project_id
@@ -102,7 +102,7 @@ class Slice(ABCSlice):
         self.reservations = ReservationSet()
         self.graph = None
         self.delegations = {}
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.last_updated_time = None
 
     def set_last_updated_time(self, updated: datetime):
@@ -380,8 +380,12 @@ class Slice(ABCSlice):
         self.lock.acquire()
 
     def unlock_slice(self):
-        if self.lock.locked():
+        try:
             self.lock.release()
+        except RuntimeError:
+            # RLock.release() raises if this thread does not hold the lock
+            # (or it is not held at all); treat unlock_slice() as a safe no-op then.
+            pass
 
 
 class SliceFactory:
