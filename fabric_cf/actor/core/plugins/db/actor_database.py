@@ -536,6 +536,8 @@ class ActorDatabase(ABCDatabase):
             return self.db.get_components(node_id=node_id, states=states, component=component, bdf=bdf,
                                           rsv_type=rsv_type, start=start, end=end, excludes=excludes)
         except Exception as e:
+            # Do not swallow DB/infra errors: returning None on failure would be read by
+            # allocation logic as "no components in use", risking double-allocation.
             self.logger.error(e)
 
     def get_links(self, *, node_id: str, states: list[int], rsv_type: list[str], start: datetime = None,
@@ -544,6 +546,8 @@ class ActorDatabase(ABCDatabase):
             return self.db.get_links(node_id=node_id, states=states, rsv_type=rsv_type, start=start,
                                      end=end, excludes=excludes)
         except Exception as e:
+            # Do not swallow DB/infra errors: returning None on failure would be read by
+            # allocation logic as "no bandwidth in use", risking over-allocation.
             self.logger.error(e)
 
     def get_link_allocations(self, *, states: list[int], rsv_type: list[str],
