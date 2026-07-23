@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, rel-2.0.1]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: Unit tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package and pytest
+        run: |
+          python -m pip install --upgrade pip
+          # Install the package (runtime deps) plus pytest. We intentionally do
+          # not use the [test] extra, which still pins the unmaintained 'nose'.
+          pip install . pytest
+
+      - name: Byte-compile the whole package (syntax check)
+        run: python -m compileall fabric_cf
+
+      - name: Run unit tests (no infrastructure required)
+        run: pytest fabric_cf/actor/test/unit -v -p no:randomly -m "not integration"
+
+  pip-audit:
+    name: Dependency vulnerability audit (advisory)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Run pip-audit
+        run: |
+          python -m pip install --upgrade pip pip-audit
+          pip-audit --progress-spinner off || true
