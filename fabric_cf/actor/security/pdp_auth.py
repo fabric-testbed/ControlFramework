@@ -90,9 +90,15 @@ class PdpAuth:
     Responsible for Authorization against PDP
     """
 
+    # (connect, read) timeout in seconds for the outbound PDP call. Kept short so a
+    # hung/slow AuthZForce PDP cannot stall the calling actor thread indefinitely.
+    DEFAULT_TIMEOUT = (3, 10)
+
     def __init__(self, *, config: dict, logger=None):
         self.config = config
-        self.logger = logger
+        # Default to a module logger so every code path (including the "PDP disabled"
+        # fast path and error handlers) can log without dereferencing a None logger.
+        self.logger = logger if logger is not None else logging.getLogger(__name__)
 
     @staticmethod
     def _headers() -> dict:
@@ -168,7 +174,8 @@ class PdpAuth:
 
         # send request to PDP
         try:
-            response = requests.post(url=self.config['url'], headers=self._headers(), json=pdp_request)
+            response = requests.post(url=self.config['url'], headers=self._headers(), json=pdp_request,
+                                     timeout=self.config.get('timeout', self.DEFAULT_TIMEOUT))
 
             try:
                 response_json = response.json()
