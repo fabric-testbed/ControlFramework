@@ -34,7 +34,7 @@ def cors_response(req: request, status_code: int = 200, body: object = None, x_e
     """
     Return CORS Response object
     """
-    response = Response()
+    response = Response(mimetype='application/json')
     response.status_code = status_code
     response.data = body
     response.headers['Access-Control-Allow-Origin'] = req.headers.get('Origin', '*')
