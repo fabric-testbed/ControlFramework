@@ -49,3 +49,11 @@ Sources = "https://github.com/fabric-testbed/ControlFramework"
 
 [tool.flit.module]
 name = "fabric_cf"
+
+[tool.pytest.ini_options]
+# Register custom markers so @pytest.mark.integration does not warn.
+# Infrastructure-dependent tests (Kafka/Postgres/Neo4j/Schema Registry) should be
+# marked 'integration'; CI runs the unit tier with '-m "not integration"'.
+markers = [
+    "integration: test requires running infrastructure (Kafka, Postgres, Neo4j, Schema Registry)",
+]
