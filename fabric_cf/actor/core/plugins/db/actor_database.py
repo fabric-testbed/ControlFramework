@@ -539,6 +539,7 @@ class ActorDatabase(ABCDatabase):
             # Do not swallow DB/infra errors: returning None on failure would be read by
             # allocation logic as "no components in use", risking double-allocation.
             self.logger.error(e)
+            raise
 
     def get_links(self, *, node_id: str, states: list[int], rsv_type: list[str], start: datetime = None,
                   end: datetime = None, excludes: List[str] = None) -> Dict[str, int]:
@@ -549,6 +550,7 @@ class ActorDatabase(ABCDatabase):
             # Do not swallow DB/infra errors: returning None on failure would be read by
             # allocation logic as "no bandwidth in use", risking over-allocation.
             self.logger.error(e)
+            raise
 
     def get_link_allocations(self, *, states: list[int], rsv_type: list[str],
                              start: datetime = None, end: datetime = None) -> list[dict]:
