@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import pickle
+from fabric_cf.actor.security.restricted_unpickler import restricted_loads
 import traceback
 
 from fabric_cf.actor.core.common.constants import Constants
@@ -41,7 +42,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ABCSubstrateDatabase):
             unit_dict = self.db.get_unit(unt_uid=str(uid))
             if unit_dict is not None:
                 pickled_unit = unit_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                return pickle.loads(pickled_unit)
+                return restricted_loads(pickled_unit)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(e)
@@ -77,7 +78,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ABCSubstrateDatabase):
             if unit_dict_list is not None:
                 for u in unit_dict_list:
                     pickled_unit = u.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                    unit_obj = pickle.loads(pickled_unit)
+                    unit_obj = restricted_loads(pickled_unit)
                     result.append(unit_obj)
             return result
         except Exception as e:

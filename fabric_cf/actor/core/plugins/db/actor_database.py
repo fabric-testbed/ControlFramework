@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import pickle
+from fabric_cf.actor.security.restricted_unpickler import restricted_loads
 import threading
 import time
 import traceback
@@ -131,7 +132,7 @@ class ActorDatabase(ABCDatabase):
             slice_dict = self.db.get_slice_by_id(slc_id=slc_id)
             if slice_dict is not None:
                 pickled_slice = slice_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                return pickle.loads(pickled_slice)
+                return restricted_loads(pickled_slice)
         except Exception as e:
             self.logger.error(e)
         return None
@@ -196,7 +197,7 @@ class ActorDatabase(ABCDatabase):
             if slices is not None:
                 for s in slices:
                     pickled_slice = s.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                    slice_obj = pickle.loads(pickled_slice)
+                    slice_obj = restricted_loads(pickled_slice)
                     slice_obj.set_last_updated_time(s.get('last_updated_time'))
                     result.append(slice_obj)
         except Exception as e:
@@ -441,7 +442,7 @@ class ActorDatabase(ABCDatabase):
     def _load_reservation_from_pickled_object(self, pickled_res: bytes, slc_id: int) -> ABCReservationMixin or None:
         try:
             slice_obj = self.get_slice_by_id(slc_id=slc_id)
-            result = pickle.loads(pickled_res)
+            result = restricted_loads(pickled_res)
             result.restore(actor=self.actor, slice_obj=slice_obj)
 
             if isinstance(result, ABCControllerReservation):
@@ -615,7 +616,7 @@ class ActorDatabase(ABCDatabase):
             if broker_dict_list is not None:
                 for b in broker_dict_list:
                     pickled_broker = b.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                    broker_obj = pickle.loads(pickled_broker)
+                    broker_obj = restricted_loads(pickled_broker)
                     result.append(broker_obj)
             return result
         except Exception as e:
@@ -655,7 +656,7 @@ class ActorDatabase(ABCDatabase):
 
     def _load_delegation_from_pickled_instance(self, pickled_del: bytes, slc_id: int) -> ABCDelegation:
         slice_obj = self.get_slice_by_id(slc_id=slc_id)
-        delegation = pickle.loads(pickled_del)
+        delegation = restricted_loads(pickled_del)
         delegation.restore(actor=self.actor, slice_obj=slice_obj)
         return delegation
 
@@ -744,7 +745,7 @@ class ActorDatabase(ABCDatabase):
 
         for s in site_list:
             pickled_site = s.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-            site = pickle.loads(pickled_site)
+            site = restricted_loads(pickled_site)
             result.append(site)
 
         return result
@@ -788,7 +789,7 @@ class ActorDatabase(ABCDatabase):
         if cfg_map_list is not None:
             for c in cfg_map_list:
                 pickled_cfg_map = c.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                cfg_obj = pickle.loads(pickled_cfg_map)
+                cfg_obj = restricted_loads(pickled_cfg_map)
                 result.append(cfg_obj)
         return result
 
@@ -799,7 +800,7 @@ class ActorDatabase(ABCDatabase):
 
         for p in poa_dict_list:
             pickled_poa = p.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-            poa_obj = pickle.loads(pickled_poa)
+            poa_obj = restricted_loads(pickled_poa)
             sliver_id = poa_obj.get_sliver_id()
             if include_res_info:
                 reservations = self.get_reservations(rid=sliver_id)

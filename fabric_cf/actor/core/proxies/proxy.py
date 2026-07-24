@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import pickle
+from fabric_cf.actor.security.restricted_unpickler import restricted_loads
 import traceback
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
@@ -118,7 +119,7 @@ class Proxy(ABCProxy):
     @staticmethod
     def decode(*, encoded, plugin: ABCBasePlugin) -> ABCConcreteSet:
         try:
-            decoded_resource = pickle.loads(encoded)
+            decoded_resource = restricted_loads(encoded)
             decoded_resource.restore(plugin=plugin, reservation=None)
             return decoded_resource
         except Exception as e:

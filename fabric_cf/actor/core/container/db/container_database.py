@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 import pickle
+from fabric_cf.actor.security.restricted_unpickler import restricted_loads
 from typing import TYPE_CHECKING, List
 
 from fabric_cf.actor.core.common.constants import Constants
@@ -136,7 +137,7 @@ class ContainerDatabase(ABCContainerDatabase):
                 result = []
                 for a in act_dict_list:
                     pickled_actor = a.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                    act_obj = pickle.loads(pickled_actor)
+                    act_obj = restricted_loads(pickled_actor)
                     result.append(act_obj)
             return result
         except Exception as e:
@@ -154,7 +155,7 @@ class ContainerDatabase(ABCContainerDatabase):
             act_dict = self.db.get_actor(name=actor_name)
             if act_dict is not None:
                 pickled_actor = act_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                return pickle.loads(pickled_actor)
+                return restricted_loads(pickled_actor)
         except Exception as e:
             self.logger.error(e)
         return result
