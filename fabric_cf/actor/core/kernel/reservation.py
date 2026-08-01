@@ -699,7 +699,7 @@ class Reservation(ABCReservationMixin):
             return False
 
         current_time = datetime.now(timezone.utc)
-        if (current_time - self.last_transition_time).seconds > timeout:
+        if (current_time - self.last_transition_time).total_seconds() > timeout:
             return True
 
         return False

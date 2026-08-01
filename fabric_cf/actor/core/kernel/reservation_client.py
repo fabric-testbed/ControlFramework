@@ -1252,6 +1252,42 @@ class ReservationClient(Reservation, ABCControllerReservation):
                     update_data.message = "Redeem/Ticket timeout"
                     self.mark_close_by_ticket_review(update_data=update_data)
 
+            # Handle pending response for an ExtendTicket from Broker or
+            # ExtendLease/ModifyLease from AM
+            # This happens usually in case of Kafka Message Timeout
+            # To avoid the slice from being stuck in Configuring/Modifying state
+            # Do not close the reservation - unlike Redeem/Ticket it holds resources
+            # on the user's behalf and the existing lease is valid until the original
+            # end time; instead revert the pending state and record an error so the
+            # slice can transition to StableError/ModifyError and the operation
+            # can be retried
+            # Timeout is configurable
+            if self.pending_state in [ReservationPendingStates.ExtendingTicket,
+                                      ReservationPendingStates.ExtendingLease,
+                                      ReservationPendingStates.ModifyingLease]:
+                from fabric_cf.actor.core.container.globals import GlobalsSingleton
+                if self.exceeds_timeout(timeout=GlobalsSingleton.get().RPC_TIMEOUT):
+                    if self.pending_state == ReservationPendingStates.ExtendingTicket:
+                        operation = "Extend Ticket"
+                        remote_name = self.broker.get_name() if self.broker is not None else None
+                    elif self.pending_state == ReservationPendingStates.ExtendingLease:
+                        operation = "Extend Lease"
+                        remote_name = self.authority.get_name() if self.authority is not None else None
+                    else:
+                        operation = "Modify Lease"
+                        remote_name = self.authority.get_name() if self.authority is not None else None
+
+                    self.error_message = f"{operation} timeout! No response received in " \
+                                         f"{GlobalsSingleton.get().RPC_TIMEOUT} seconds from {remote_name}!"
+                    self.logger.info(f"Res# {self.get_reservation_id()} {self.error_message}")
+
+                    # An un-redeemed extended ticket cannot be kept - ActiveTicketed
+                    # blocks the slice from reaching a stable state; fall back to Active
+                    prev_state = ReservationStates.Active if self.state == ReservationStates.ActiveTicketed \
+                        else self.state
+                    self.transition(prefix=f"{operation} timeout", state=prev_state,
+                                    pending=ReservationPendingStates.None_)
+
         if self.leased_resources is None:
             return
 
