@@ -47,6 +47,7 @@ from fabric_cf.actor.core.kernel.poa import PoaStates
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.fim.fim_helper import FimHelper
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
@@ -121,7 +122,16 @@ class OrchestratorHandler:
             self.logger.debug(f"Brokers: {brokers}")
             self.logger.error(f"Last Error: {controller.get_last_error()}")
             if brokers is not None:
-                result = ID(uid=next(iter(brokers), None).get_guid())
+                # A client actor's broker registry also holds the Authority proxies
+                # (needed for redeem/extend/close) and its ordering is not guaranteed
+                # across restarts; pick the peer that actually is a Broker
+                broker_proxy = next((b for b in brokers if b.get_type() is not None and
+                                     ActorType.get_actor_type_from_string(actor_type=b.get_type()) ==
+                                     ActorType.Broker), None)
+                if broker_proxy is None:
+                    self.logger.error(f"No broker peer found among proxies: {brokers}")
+                    return None
+                result = ID(uid=broker_proxy.get_guid())
                 self.controller_state.set_broker(broker=result)
                 return result
         except Exception as e:
