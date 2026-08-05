@@ -76,7 +76,10 @@ class SelectBrokerProxyTest(unittest.TestCase):
     """
     def setUp(self):
         self.handler = OrchestratorHandler.__new__(OrchestratorHandler)
+        # Keep the expected warnings out of the test output
         self.handler.logger = logging.getLogger(self.__class__.__name__)
+        self.handler.logger.addHandler(logging.NullHandler())
+        self.handler.logger.propagate = False
         self.handler.config = self
         self.peers = [Peer(config={"name": "broker", "type": "broker", "guid": "broker-guid"}),
                       Peer(config={"name": "uky-am", "type": "authority", "guid": "uky-am-guid"})]
@@ -140,10 +143,23 @@ class SelectBrokerProxyTest(unittest.TestCase):
         self.assertIsNotNone(selected)
         self.assertEqual("broker-guid", selected.get_guid())
 
-    def test_unrecognized_type_still_eligible_for_name_fallback(self):
-        # An unparsable type resolves to ActorType.All i.e. no usable type
+    def test_blank_type_is_eligible_for_name_fallback(self):
+        # A blank type is no type at all
         brokers = [self.make_proxy(name="uky-am", guid="uky-am-guid", actor_type="authority"),
-                   self.make_proxy(name="broker", guid="broker-guid", actor_type="")]
+                   self.make_proxy(name="broker", guid="broker-guid", actor_type="   ")]
+        selected = self.select(brokers)
+        self.assertIsNotNone(selected)
+        self.assertEqual("broker-guid", selected.get_guid())
+
+    def test_unrecognized_non_blank_type_is_not_eligible(self):
+        # A malformed but declared type must not fail open to name matching:
+        # 'site' is what an AM peer would plausibly be mislabelled as
+        brokers = [self.make_proxy(name="broker", guid="mislabelled-guid", actor_type="site")]
+        self.assertIsNone(self.select(brokers))
+
+    def test_typeless_peer_wins_over_mislabelled_peer(self):
+        brokers = [self.make_proxy(name="broker", guid="mislabelled-guid", actor_type="site"),
+                   self.make_proxy(name="broker", guid="broker-guid")]
         selected = self.select(brokers)
         self.assertIsNotNone(selected)
         self.assertEqual("broker-guid", selected.get_guid())

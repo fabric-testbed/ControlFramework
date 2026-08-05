@@ -121,12 +121,24 @@ class OrchestratorHandler:
         return result
 
     @staticmethod
-    def __get_proxy_actor_type(proxy) -> ActorType or None:
+    def __declares_no_type(proxy) -> bool:
         """
-        Actor type advertised by a proxy, or None when it carries none
+        True when a proxy carries no actor type at all. A blank string is treated
+        the same as an absent one; anything non-blank counts as declared, even if
+        it cannot be parsed.
         :param proxy: ProxyAvro
         """
-        if proxy.get_type() is None:
+        actor_type = proxy.get_type()
+        return actor_type is None or actor_type.strip() == ""
+
+    def __get_proxy_actor_type(self, proxy) -> ActorType or None:
+        """
+        Actor type advertised by a proxy, or None when it carries none. An
+        unrecognized non-blank type resolves to ActorType.All, which is never
+        treated as a match for a specific role.
+        :param proxy: ProxyAvro
+        """
+        if self.__declares_no_type(proxy=proxy):
             return None
         return ActorType.get_actor_type_from_string(actor_type=proxy.get_type())
 
@@ -142,18 +154,24 @@ class OrchestratorHandler:
         :return ProxyAvro for the Broker or None
         """
         # Preferred: the peer whose proxy advertises the Broker actor type
-        broker_proxy = next((b for b in brokers if self.__get_proxy_actor_type(b) == ActorType.Broker), None)
+        broker_proxy = next((b for b in brokers if self.__get_proxy_actor_type(proxy=b) == ActorType.Broker), None)
         if broker_proxy is not None:
             return broker_proxy
 
-        # Fallback for proxies that carry no usable actor type: match against the
-        # peers configured as Brokers by name. A proxy that explicitly declares
-        # another type (an Authority) is never eligible - trusting the name over an
-        # explicit type would resurrect the misrouting this selection prevents.
+        for b in brokers:
+            if not self.__declares_no_type(proxy=b) and \
+                    self.__get_proxy_actor_type(proxy=b) == ActorType.All:
+                self.logger.warning(f"Peer {b.get_name()} declares an unrecognized actor type "
+                                    f"'{b.get_type()}'; it will not be considered for broker selection")
+
+        # Fallback for proxies that carry no actor type at all: match against the
+        # peers configured as Brokers by name. A proxy that declares any type is
+        # never eligible here - overriding a declared type by name would resurrect
+        # the misrouting this selection prevents, and an unparsable type is a
+        # declaration we must not second-guess.
         configured = self.__get_configured_broker_names()
         broker_proxy = next((b for b in brokers
-                             if self.__get_proxy_actor_type(b) in (None, ActorType.All) and
-                             b.get_name() in configured), None)
+                             if self.__declares_no_type(proxy=b) and b.get_name() in configured), None)
         if broker_proxy is not None:
             self.logger.info(f"Selected broker peer {broker_proxy.get_name()} by configured peer name; "
                              f"proxy carried no actor type")
