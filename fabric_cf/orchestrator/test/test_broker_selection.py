@@ -127,6 +127,27 @@ class SelectBrokerProxyTest(unittest.TestCase):
                    self.make_proxy(name="lbnl-am", guid="lbnl-am-guid", actor_type="authority")]
         self.assertIsNone(self.select(brokers))
 
+    def test_name_fallback_never_overrides_authority_type(self):
+        # A name collision must not let the fallback pick a peer that explicitly
+        # declares itself an Authority
+        brokers = [self.make_proxy(name="broker", guid="impostor-guid", actor_type="authority")]
+        self.assertIsNone(self.select(brokers))
+
+    def test_name_fallback_skips_authority_and_picks_typeless_peer(self):
+        brokers = [self.make_proxy(name="broker", guid="impostor-guid", actor_type="authority"),
+                   self.make_proxy(name="broker", guid="broker-guid")]
+        selected = self.select(brokers)
+        self.assertIsNotNone(selected)
+        self.assertEqual("broker-guid", selected.get_guid())
+
+    def test_unrecognized_type_still_eligible_for_name_fallback(self):
+        # An unparsable type resolves to ActorType.All i.e. no usable type
+        brokers = [self.make_proxy(name="uky-am", guid="uky-am-guid", actor_type="authority"),
+                   self.make_proxy(name="broker", guid="broker-guid", actor_type="")]
+        selected = self.select(brokers)
+        self.assertIsNotNone(selected)
+        self.assertEqual("broker-guid", selected.get_guid())
+
 
 class PeerRegistryDefaultBrokerTest(unittest.TestCase):
     """

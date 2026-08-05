@@ -120,6 +120,16 @@ class OrchestratorHandler:
                 result.append(peer.get_name())
         return result
 
+    @staticmethod
+    def __get_proxy_actor_type(proxy) -> ActorType or None:
+        """
+        Actor type advertised by a proxy, or None when it carries none
+        :param proxy: ProxyAvro
+        """
+        if proxy.get_type() is None:
+            return None
+        return ActorType.get_actor_type_from_string(actor_type=proxy.get_type())
+
     def __select_broker_proxy(self, *, brokers: list):
         """
         Select the Broker peer from a client actor's broker registry.
@@ -132,16 +142,18 @@ class OrchestratorHandler:
         :return ProxyAvro for the Broker or None
         """
         # Preferred: the peer whose proxy advertises the Broker actor type
-        broker_proxy = next((b for b in brokers if b.get_type() is not None and
-                             ActorType.get_actor_type_from_string(actor_type=b.get_type()) ==
-                             ActorType.Broker), None)
+        broker_proxy = next((b for b in brokers if self.__get_proxy_actor_type(b) == ActorType.Broker), None)
         if broker_proxy is not None:
             return broker_proxy
 
-        # Fallback for proxies that carry no actor type: match against the peers
-        # configured as Brokers by name
+        # Fallback for proxies that carry no usable actor type: match against the
+        # peers configured as Brokers by name. A proxy that explicitly declares
+        # another type (an Authority) is never eligible - trusting the name over an
+        # explicit type would resurrect the misrouting this selection prevents.
         configured = self.__get_configured_broker_names()
-        broker_proxy = next((b for b in brokers if b.get_name() in configured), None)
+        broker_proxy = next((b for b in brokers
+                             if self.__get_proxy_actor_type(b) in (None, ActorType.All) and
+                             b.get_name() in configured), None)
         if broker_proxy is not None:
             self.logger.info(f"Selected broker peer {broker_proxy.get_name()} by configured peer name; "
                              f"proxy carried no actor type")
