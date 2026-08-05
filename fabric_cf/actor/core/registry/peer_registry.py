@@ -54,13 +54,36 @@ class PeerRegistry:
     def actor_added(self):
         self.load_from_db()
 
+    @staticmethod
+    def is_broker_proxy(*, proxy) -> bool:
+        """
+        True only for proxies to an actor acting in the Broker role. This registry
+        also holds the Authority proxies (needed to redeem/extend/close directly
+        with the AMs) and ABCAuthorityProxy derives from ABCBrokerProxy, so the
+        narrower type must be excluded explicitly.
+        @param proxy proxy
+        """
+        from fabric_cf.actor.core.apis.abc_authority_proxy import ABCAuthorityProxy
+        from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy as BrokerProxy
+        return isinstance(proxy, BrokerProxy) and not isinstance(proxy, ABCAuthorityProxy)
+
+    def __set_default_broker_if_needed(self, *, broker: ABCBrokerProxy):
+        """
+        Record the default broker; an Authority peer is never a valid default and
+        must not shadow the real Broker regardless of registration order.
+        Caller must hold the lock.
+        @param broker broker proxy
+        """
+        if not self.is_broker_proxy(proxy=broker):
+            return
+        if self.default_broker is None or not self.is_broker_proxy(proxy=self.default_broker):
+            self.default_broker = broker
+
     def add_broker(self, *, broker: ABCBrokerProxy):
         try:
             self.lock.acquire()
             self.brokers[broker.get_identity().get_guid()] = broker
-
-            if self.default_broker is None:
-                self.default_broker = broker
+            self.__set_default_broker_if_needed(broker=broker)
         finally:
             self.lock.release()
 
@@ -74,9 +97,7 @@ class PeerRegistry:
         try:
             self.lock.acquire()
             self.brokers[broker.get_identity().get_guid()] = broker
-
-            if self.default_broker is None:
-                self.default_broker = broker
+            self.__set_default_broker_if_needed(broker=broker)
         finally:
             self.lock.release()
 
@@ -121,15 +142,14 @@ class PeerRegistry:
 
     def load_from_db(self):
         brokers = self.plugin.get_database().get_brokers()
-        count = 0
         if brokers is None:
             return
+        # The Proxies table has no ordering guarantee, so the first row may well
+        # be an Authority; pick the default by role instead of by position
         for b in brokers:
             agent = Proxy.get_proxy(proxy_reload_from_db=b)
             self.brokers[agent.get_identity().get_guid()] = agent
-            if count == 0:
-                self.default_broker = agent
-            count += 1
+            self.__set_default_broker_if_needed(broker=agent)
 
     def remove_broker(self, *, broker: ABCBrokerProxy):
         try:

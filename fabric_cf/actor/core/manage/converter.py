@@ -37,6 +37,9 @@ from fabric_mb.message_bus.messages.reservation_predecessor_avro import Reservat
 from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
+from fabric_cf.actor.core.apis.abc_authority_proxy import ABCAuthorityProxy
+from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
 from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
 from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
 from fabric_cf.actor.core.common.constants import Constants
@@ -239,6 +242,14 @@ class Converter:
         elif isinstance(proxy, KafkaProxy):
             result.set_protocol(Constants.PROTOCOL_KAFKA)
             result.set_kafka_topic(proxy.get_kafka_topic())
+
+        # ProxyAvro.type carries the peer's actor type (as consumed by
+        # Converter.get_agent_proxy/ProxyFactory); Authority proxies derive from
+        # the Broker proxy interface, so check the narrower type first.
+        if isinstance(proxy, ABCAuthorityProxy):
+            result.set_type(ActorType.Authority.name)
+        elif isinstance(proxy, ABCBrokerProxy):
+            result.set_type(ActorType.Broker.name)
 
         return result
 
