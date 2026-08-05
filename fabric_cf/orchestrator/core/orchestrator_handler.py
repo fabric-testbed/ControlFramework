@@ -108,6 +108,45 @@ class OrchestratorHandler:
                                         message="POA rescan not authorized - missing permissions Component.FPGA")
         return fabric_token
 
+    def __get_configured_broker_names(self) -> List[str]:
+        """
+        Names of the peers configured as Brokers for this actor
+        :return list of peer names
+        """
+        result = []
+        for peer in self.config.get_peers() or []:
+            if peer.get_type() is not None and \
+                    ActorType.get_actor_type_from_string(actor_type=peer.get_type()) == ActorType.Broker:
+                result.append(peer.get_name())
+        return result
+
+    def __select_broker_proxy(self, *, brokers: list):
+        """
+        Select the Broker peer from a client actor's broker registry.
+
+        The registry also holds the Authority proxies (registered via add_broker so
+        the orchestrator can redeem/extend/close directly with the AMs) and its
+        ordering is not guaranteed across restarts, so the first entry cannot be
+        assumed to be the Broker.
+        :param brokers: list of ProxyAvro
+        :return ProxyAvro for the Broker or None
+        """
+        # Preferred: the peer whose proxy advertises the Broker actor type
+        broker_proxy = next((b for b in brokers if b.get_type() is not None and
+                             ActorType.get_actor_type_from_string(actor_type=b.get_type()) ==
+                             ActorType.Broker), None)
+        if broker_proxy is not None:
+            return broker_proxy
+
+        # Fallback for proxies that carry no actor type: match against the peers
+        # configured as Brokers by name
+        configured = self.__get_configured_broker_names()
+        broker_proxy = next((b for b in brokers if b.get_name() in configured), None)
+        if broker_proxy is not None:
+            self.logger.info(f"Selected broker peer {broker_proxy.get_name()} by configured peer name; "
+                             f"proxy carried no actor type")
+        return broker_proxy
+
     def get_broker(self, *, controller: ABCMgmtControllerMixin) -> ID:
         """
         Get broker
@@ -120,20 +159,18 @@ class OrchestratorHandler:
 
             brokers = controller.get_brokers()
             self.logger.debug(f"Brokers: {brokers}")
-            self.logger.error(f"Last Error: {controller.get_last_error()}")
-            if brokers is not None:
-                # A client actor's broker registry also holds the Authority proxies
-                # (needed for redeem/extend/close) and its ordering is not guaranteed
-                # across restarts; pick the peer that actually is a Broker
-                broker_proxy = next((b for b in brokers if b.get_type() is not None and
-                                     ActorType.get_actor_type_from_string(actor_type=b.get_type()) ==
-                                     ActorType.Broker), None)
-                if broker_proxy is None:
-                    self.logger.error(f"No broker peer found among proxies: {brokers}")
-                    return None
-                result = ID(uid=broker_proxy.get_guid())
-                self.controller_state.set_broker(broker=result)
-                return result
+            if not brokers:
+                self.logger.error(f"No peer proxies returned; Last Error: {controller.get_last_error()}")
+                return None
+
+            broker_proxy = self.__select_broker_proxy(brokers=brokers)
+            if broker_proxy is None:
+                self.logger.error(f"No broker peer found among proxies: "
+                                  f"{[(b.get_name(), b.get_type()) for b in brokers]}")
+                return None
+            result = ID(uid=broker_proxy.get_guid())
+            self.controller_state.set_broker(broker=result)
+            return result
         except Exception as e:
             self.logger.error(f"Error occurred: {e}", stack_info=True)
 
