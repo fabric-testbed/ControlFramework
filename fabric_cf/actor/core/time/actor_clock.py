@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime, timezone
+from typing import Optional
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import TimeException
@@ -179,7 +180,14 @@ class ActorClock:
         return int((when - epoch).total_seconds() * 1000)
 
     @staticmethod
-    def from_milliseconds(*, milli_seconds) -> datetime:
+    def from_milliseconds(*, milli_seconds) -> Optional[datetime]:
+        """
+        Converts milliseconds since epoch to a timezone aware datetime.
+        @params milli_seconds: milliseconds since epoch; may be None
+        @returns corresponding datetime or None if milli_seconds is None
+        """
+        if milli_seconds is None:
+            return None
         result = datetime.fromtimestamp(milli_seconds//1000, timezone.utc).replace(microsecond=milli_seconds%1000*1000)
         return result
 
