@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 
 from fabric_mb.message_bus.messages.poa_avro import PoaAvro
 
@@ -11,6 +11,23 @@ from fabric_cf.orchestrator.swagger_server.models.poa_post import PoaPost  # noq
 from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD, POAS_POST_SLIVER_ID_PATH, \
     POAS_GET_PATH, POAS_GET_POA_ID_PATH
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_success_response, cors_error_response
+
+
+def to_plain_list(value: List[Any]) -> List[Any]:
+    """
+    Flatten a list of swagger models into a list of plain dicts.
+
+    POA list fields are pickled on to the Kafka message (see PoaAvro.get_vcpu_cpu_map), so any model
+    object assigned here is delivered to the AM handlers as a model instance. Those instances are
+    rejected by ansible-core >= 2.20 variable storage, and pickling swagger classes on to the wire
+    also requires every AM to be able to import them. Send plain dicts instead.
+
+    :param value: list of swagger models or plain values
+    :return list of plain dicts; None if value is None
+    """
+    if value is None:
+        return None
+    return [x.to_dict() if hasattr(x, "to_dict") else x for x in value]
 
 
 def poas_create_sliver_id_post(body: PoaPost, sliver_id: str):  # noqa: E501
@@ -29,13 +46,12 @@ def poas_create_sliver_id_post(body: PoaPost, sliver_id: str):  # noqa: E501
     logger = handler.get_logger()
     received_counter.labels(POST_METHOD, POAS_POST_SLIVER_ID_PATH).inc()
     try:
-        logger.info(f"KOMAL -- incoming: {body.data}")
         token = get_token()
         poa_avro = PoaAvro(operation=body.operation, rid=sliver_id)
         if body.data is not None:
             poa_avro.node_set = body.data.node_set
-            poa_avro.vcpu_cpu_map = body.data.vcpu_cpu_map
-            poa_avro.keys = body.data.keys
+            poa_avro.vcpu_cpu_map = to_plain_list(body.data.vcpu_cpu_map)
+            poa_avro.keys = to_plain_list(body.data.keys)
             poa_avro.bdf = body.data.bdf
         poa_id, slice_id = handler.poa(sliver_id=sliver_id, token=token, poa=poa_avro)
         poa_data = PoaData(poa_id=poa_id, operation=body.operation,
