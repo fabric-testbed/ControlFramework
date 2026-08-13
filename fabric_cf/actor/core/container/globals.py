@@ -341,6 +341,9 @@ class Globals:
         """
         if self.config and self.config.get_runtime_config():
             conf = self.get_kafka_config_producer()
+            # request.timeout.ms is a producer-only property; librdkafka logs a
+            # CONFWARN if it is passed to a consumer
+            conf.pop(Constants.PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS, None)
 
             group_id = self.get_config().get_kafka_cons_group_id()
 
