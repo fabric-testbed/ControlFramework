@@ -138,6 +138,8 @@ class Translate:
         result = SiteAvro()
         result.name = site.get_name()
         result.maint_info = site.get_maintenance_info()
+        if site.get_properties():
+            result.properties = site.get_properties()
         return result
 
     @staticmethod
@@ -145,6 +147,8 @@ class Translate:
         if site_avro is None:
             return None
         result = Site(name=site_avro.get_name(), maint_info=site_avro.get_maint_info())
+        if site_avro.get_properties():
+            result.set_properties(properties=site_avro.get_properties())
         return result
 
     @staticmethod

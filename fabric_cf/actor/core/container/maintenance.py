@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime, timezone
-from typing import List, Dict, Optional, Tuple, Union
+from typing import List, Dict, Optional, Set, Tuple, Union
 
 from fim.slivers.maintenance_mode import MaintenanceEntry, MaintenanceInfo, MaintenanceState
 
@@ -69,6 +69,27 @@ class Site:
             self.maintenance_info.finalize()
             for name, entry in self.maintenance_info.iter():
                 return entry.state
+
+    def get_blocked_vlans(self, *, worker: str = None) -> Set[str]:
+        """
+        VLANs that must not be handed out for Shared NIC allocations on this site, typically
+        because stale switch configuration would make provisioning fail. Sourced from the site
+        properties: 'blocked-vlans' applies site wide, 'blocked-vlans.<worker>' to a single
+        worker; both hold comma separated VLAN tags and are combined.
+        @param worker worker (host) name; only the site wide VLANs are returned when omitted
+        @return set of blocked VLAN tags as strings; empty set when none are blocked
+        """
+        result = set()
+        if not self.properties:
+            return result
+        keys = [Constants.BLOCKED_VLANS]
+        if worker is not None:
+            keys.append(f"{Constants.BLOCKED_VLANS}.{worker}")
+        for key in keys:
+            value = self.properties.get(key)
+            if value:
+                result.update(v.strip() for v in str(value).split(",") if v.strip())
+        return result
 
     def is_worker_in_maintenance(self, *, worker: str) -> bool:
         if self.maintenance_info is None:
@@ -219,6 +240,24 @@ class Maintenance:
         return result
 
     @staticmethod
+    def merge_properties(*, existing: Dict[str, str], updates: Dict[str, str]) -> Dict[str, str]:
+        """
+        Merge a properties update into the stored site properties. Only the keys present in the
+        update are touched, so e.g. setting blocked VLANs does not drop the allowed projects/users
+        or the blocked VLANs of another worker; an empty value removes the key.
+        @param existing stored site properties
+        @param updates properties passed with the maintenance request
+        @return merged properties
+        """
+        result = dict(existing) if existing else {}
+        for key, value in updates.items():
+            if value is None or str(value).strip() == "":
+                result.pop(key, None)
+            else:
+                result[key] = value
+        return result
+
+    @staticmethod
     def update_maintenance_mode(*, database: ABCDatabase, properties: Dict[str, str], sites: List[Site] = None):
         """
         Update Maintenance Mode at Testbed/Site/Worker Level
@@ -229,22 +268,27 @@ class Maintenance:
         Site level and worker level updates are merged - a site level update preserves the
         worker level entries and a worker level update preserves an explicitly set site level
         maintenance (Maint/PreMaint)
+        Properties (allowed projects/users, blocked VLANs) are merged per key - keys absent from
+        the update are preserved and an empty value removes the key
         @param database database
-        @param properties properties container project ids/ user emails
+        @param properties properties containing project ids/user emails/blocked VLANs
         @param sites Maintenance information for the sites
         """
         for s in sites:
             # Set the list of allowed projects/users at the site level
             if properties is not None:
-                s.set_properties(properties=properties)
+                s.set_properties(properties=Maintenance.merge_properties(existing=s.get_properties(),
+                                                                          updates=properties))
 
             # Get Current Maintenance mode for the Site
             existing_site = database.get_site(site_name=s.get_name())
             # Site entry exists
             if existing_site is not None:
-                # Update the Properties {project id/user email information)
+                # Update the Properties {project id/user email/blocked VLAN information)
                 if properties is not None:
-                    existing_site.set_properties(properties=properties)
+                    existing_site.set_properties(
+                        properties=Maintenance.merge_properties(existing=existing_site.get_properties(),
+                                                                updates=properties))
                 # Site level Maintenance Update - preserve the worker level entries
                 if s.get_maintenance_info().get(s.get_name()) is not None:
                     new_maint_info = existing_site.clone_maintenance_info()
