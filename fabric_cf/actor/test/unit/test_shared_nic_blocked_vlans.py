@@ -34,7 +34,7 @@ from fim.slivers.network_service import NetworkServiceInfo, NetworkServiceSliver
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
-from fabric_cf.actor.core.container.maintenance import Site
+from fabric_cf.actor.core.container.maintenance import Maintenance, Site
 from fabric_cf.actor.core.policy.network_node_inventory import NetworkNodeInventory
 
 
@@ -197,6 +197,38 @@ class TestSiteBlockedVlans(unittest.TestCase):
         site = self._site({f"{Constants.BLOCKED_VLANS}.{self.W1}": "2118"})
         self.assertEqual({"2118"}, site.get_blocked_vlans(worker=self.W1))
         self.assertEqual(set(), site.get_blocked_vlans(worker=self.W2))
+
+
+class TestMergePropertiesForMaintenance(unittest.TestCase):
+    """
+    Per key merge of the site properties carried with a maintenance request.
+    """
+    W1 = "utah-w1.fabric-testbed.net"
+
+    def test_untouched_keys_are_preserved(self):
+        existing = {Constants.PROJECT_ID: "p1", f"{Constants.BLOCKED_VLANS}.{self.W1}": "2118"}
+        merged = Maintenance.merge_properties(existing=existing,
+                                              updates={Constants.BLOCKED_VLANS: "2120"})
+        self.assertEqual({Constants.PROJECT_ID: "p1",
+                          f"{Constants.BLOCKED_VLANS}.{self.W1}": "2118",
+                          Constants.BLOCKED_VLANS: "2120"}, merged)
+
+    def test_update_overwrites_key(self):
+        merged = Maintenance.merge_properties(existing={Constants.BLOCKED_VLANS: "2118"},
+                                              updates={Constants.BLOCKED_VLANS: "2120"})
+        self.assertEqual({Constants.BLOCKED_VLANS: "2120"}, merged)
+
+    def test_empty_value_removes_key(self):
+        existing = {Constants.PROJECT_ID: "p1", Constants.BLOCKED_VLANS: "2118"}
+        merged = Maintenance.merge_properties(existing=existing,
+                                              updates={Constants.BLOCKED_VLANS: " "})
+        self.assertEqual({Constants.PROJECT_ID: "p1"}, merged)
+
+    def test_no_existing_properties(self):
+        merged = Maintenance.merge_properties(existing=None,
+                                              updates={Constants.BLOCKED_VLANS: "2118",
+                                                       Constants.USERS: ""})
+        self.assertEqual({Constants.BLOCKED_VLANS: "2118"}, merged)
 
 
 if __name__ == '__main__':

@@ -26,7 +26,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List
+from typing import Dict, List
 
 from fabric_mb.message_bus.messages.close_delegations_avro import CloseDelegationsAvro
 from fabric_mb.message_bus.messages.close_reservations_avro import CloseReservationsAvro
@@ -64,13 +64,18 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
         self.callback_topic = callback_topic
 
     def toggle_maintenance_mode(self, actor_guid: str, callback_topic: str, sites: List[SiteAvro] = None,
-                                projects: str = None, users: str = None):
+                                projects: str = None, users: str = None,
+                                properties: Dict[str, str] = None):
         props = {}
+        if properties is not None:
+            props.update(properties)
         if projects is not None:
             props[Constants.PROJECT_ID] = projects
         if users is not None:
             props[Constants.USERS] = users
-        request = MaintenanceRequestAvro(properties=props, actor_guid=actor_guid,
+        # Stored site properties are replaced only when properties are explicitly passed;
+        # sending an empty dict would wipe them on every maintenance toggle
+        request = MaintenanceRequestAvro(properties=props if len(props) > 0 else None, actor_guid=actor_guid,
                                          callback_topic=callback_topic, sites=sites)
 
         status, response = self.send_request(request)
