@@ -32,6 +32,7 @@ from fim.slivers.capacities_labels import Capacities, Flags
 from fim.slivers.maintenance_mode import MaintenanceEntry, MaintenanceInfo, MaintenanceState
 from fim.slivers.network_node import NodeSliver, NodeType
 
+from fabric_cf.actor.core.container.maintenance import Maintenance
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
 
 
@@ -53,8 +54,8 @@ class TestBqmWorkerMaintenanceState(unittest.TestCase):
         return info
 
     def _entry(self, info: MaintenanceInfo, worker: str) -> MaintenanceEntry:
-        return AggregatedBQMPlugin.worker_maintenance_entry(maintenance_info=info, site_name=self.SITE,
-                                                            worker_name=worker)
+        return Maintenance.worker_maintenance_entry(maintenance_info=info, site_name=self.SITE,
+                                                    worker_name=worker)
 
     def _state(self, info: MaintenanceInfo, worker: str) -> str:
         entry = self._entry(info, worker)
@@ -85,10 +86,10 @@ class TestBqmWorkerMaintenanceState(unittest.TestCase):
                                                             deadline=datetime.now(timezone.utc) + timedelta(days=7)),
                                  self.W2: MaintenanceEntry(state=MaintenanceState.Maint)})
         self.assertEqual("Maint", self._state(info, self.W2))
-        self.assertTrue(AggregatedBQMPlugin.is_maintenance_blocking(entry=self._entry(info, self.W2)))
+        self.assertTrue(Maintenance.is_maintenance_blocking(entry=self._entry(info, self.W2)))
         # ... while its unaffected peers inherit the site's upcoming maintenance
         self.assertEqual("PreMaint", self._state(info, self.W1))
-        self.assertFalse(AggregatedBQMPlugin.is_maintenance_blocking(entry=self._entry(info, self.W1)))
+        self.assertFalse(Maintenance.is_maintenance_blocking(entry=self._entry(info, self.W1)))
 
     def test_active_site_pre_maint_worker_keeps_worker_deadline(self):
         # Two PreMaint entries: the one starting sooner is the effective one
@@ -106,7 +107,7 @@ class TestBqmWorkerMaintenanceState(unittest.TestCase):
                                                             deadline=datetime.now(timezone.utc) - timedelta(hours=1)),
                                  self.W1: MaintenanceEntry(state=MaintenanceState.Active)})
         self.assertEqual("PreMaint", self._state(info, self.W1))
-        self.assertTrue(AggregatedBQMPlugin.is_maintenance_blocking(entry=self._entry(info, self.W1)))
+        self.assertTrue(Maintenance.is_maintenance_blocking(entry=self._entry(info, self.W1)))
 
     def test_worker_pre_maint_is_reported(self):
         deadline = datetime.now(timezone.utc) + timedelta(days=1)
@@ -121,7 +122,7 @@ class TestBqmWorkerMaintenanceState(unittest.TestCase):
         self.assertIsNone(self._state(self._maint_info({}), self.W1))
 
     def test_blocking(self):
-        blocking = AggregatedBQMPlugin.is_maintenance_blocking
+        blocking = Maintenance.is_maintenance_blocking
         now = datetime.now(timezone.utc)
 
         self.assertFalse(blocking(entry=None))

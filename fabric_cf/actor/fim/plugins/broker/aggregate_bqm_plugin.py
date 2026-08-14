@@ -39,12 +39,13 @@ from fim.graph.networkx_property_graph import NetworkXGraphImporter
 from fim.graph.resources.networkx_abqm import NetworkXAggregateBQM
 from fim.slivers.capacities_labels import Capacities, Flags, Labels
 from fim.slivers.delegations import DelegationFormat
-from fim.slivers.maintenance_mode import MaintenanceInfo, MaintenanceEntry, MaintenanceState
+from fim.slivers.maintenance_mode import MaintenanceInfo
 from fim.slivers.network_node import CompositeNodeSliver, NodeType, NodeSliver
 from fim.slivers.attached_components import ComponentSliver, ComponentType, AttachedComponentsInfo
 from fim.slivers.interface_info import InterfaceType
 from fim.slivers.network_service import ServiceType
 
+from fabric_cf.actor.core.container.maintenance import Maintenance
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 
 if TYPE_CHECKING:
@@ -75,94 +76,8 @@ class AggregatedBQMPlugin:
         if self.actor is None:
             return None
         site = self.actor.get_plugin().get_database().get_site(site_name=site_name)
-        if site is not None:
-            result = site.get_maintenance_info().copy()
-            if result.get(site_name) is None:
-                entry = MaintenanceEntry(state=MaintenanceState.Active)
-                result.add(site_name, entry)
-        else:
-            result = MaintenanceInfo()
-            entry = MaintenanceEntry(state=MaintenanceState.Active)
-            result.add(site_name, entry)
-        result.finalize()
-        return result
-
-    # Relative severity of the maintenance states, used to pick between a site and a worker entry
-    __STATE_SEVERITY = {MaintenanceState.Active: 0,
-                        MaintenanceState.Unknown: 1,
-                        MaintenanceState.PreMaint: 2,
-                        MaintenanceState.Maint: 3}
-
-    @classmethod
-    def __entry_severity(cls, entry: MaintenanceEntry) -> Optional[tuple]:
-        """
-        Sort key ranking how restrictive a maintenance entry is: entries that already block
-        provisioning outrank those that do not, then the state itself, then the deadline (an
-        earlier deadline is more restrictive; entries without one rank last).
-        """
-        if entry is None or entry.state is None:
-            return None
-
-        deadline = entry.deadline
-        if deadline is not None and deadline.tzinfo is None:
-            deadline = deadline.replace(tzinfo=timezone.utc)
-
-        return (cls.is_maintenance_blocking(entry=entry),
-                cls.__STATE_SEVERITY.get(entry.state, cls.__STATE_SEVERITY[MaintenanceState.Unknown]),
-                -deadline.timestamp() if deadline is not None else float('-inf'))
-
-    @classmethod
-    def worker_maintenance_entry(cls, *, maintenance_info: MaintenanceInfo, site_name: str,
-                                 worker_name: str) -> Optional[MaintenanceEntry]:
-        """
-        Determine the effective maintenance entry for a worker.
-
-        Maintenance is tracked per site, with the site's MaintenanceInfo holding one entry keyed
-        by the site name (site level maintenance) and one entry per worker in maintenance. Both
-        can apply to a worker at once - a site scheduled for maintenance next week does not stop a
-        worker from being in maintenance right now - so the more restrictive of the two wins.
-
-        :param maintenance_info: Maintenance information for the site
-        :param site_name: Site name
-        :param worker_name: Worker (host) name
-        :return: Effective MaintenanceEntry or None if unknown
-        """
-        if maintenance_info is None:
-            return None
-
-        site_entry = maintenance_info.get(site_name)
-        worker_entry = maintenance_info.get(worker_name)
-
-        site_severity = cls.__entry_severity(site_entry)
-        worker_severity = cls.__entry_severity(worker_entry)
-
-        if worker_severity is not None and (site_severity is None or worker_severity > site_severity):
-            return worker_entry
-
-        return site_entry
-
-    @staticmethod
-    def is_maintenance_blocking(*, entry: MaintenanceEntry) -> bool:
-        """
-        Determine whether a maintenance entry prevents new provisioning, mirroring the checks in
-        Maintenance/Site: Maint always blocks, PreMaint blocks once its deadline has passed.
-
-        Resources behind a blocking entry are not advertised as available; note that the broker may
-        still allocate them to projects/users explicitly exempted from the maintenance.
-
-        :param entry: Maintenance entry to inspect
-        :return: True if the resource should not be counted as available
-        """
-        if entry is None or entry.state is None:
-            return False
-        if entry.state == MaintenanceState.Maint:
-            return True
-        if entry.state == MaintenanceState.PreMaint and entry.deadline is not None:
-            deadline = entry.deadline
-            if deadline.tzinfo is None:
-                deadline = deadline.replace(tzinfo=timezone.utc)
-            return deadline <= datetime.now(timezone.utc)
-        return False
+        maint_info = site.get_maintenance_info() if site is not None else None
+        return Maintenance.effective_site_maintenance_info(site_name=site_name, maint_info=maint_info)
 
     @staticmethod
     def occupied_vlans(db: ABCDatabase, node_id: str, component_name: str, start: datetime = None,
@@ -399,14 +314,14 @@ class AggregatedBQMPlugin:
                 worker_sliver.node_id = str(uuid.uuid4())
                 # Carry the worker's own maintenance state on the worker node; the site
                 # CompositeNode only holds the site-wide MaintenanceInfo
-                worker_entry = self.worker_maintenance_entry(
+                worker_entry = Maintenance.worker_maintenance_entry(
                     maintenance_info=site_sliver.maintenance_info, site_name=s, worker_name=sliver.get_name())
                 if worker_entry is not None:
                     worker_maint_info = MaintenanceInfo()
                     worker_maint_info.add(sliver.get_name(), worker_entry)
                     worker_maint_info.finalize()
                     worker_sliver.maintenance_info = worker_maint_info
-                in_maintenance = self.is_maintenance_blocking(entry=worker_entry)
+                in_maintenance = Maintenance.is_maintenance_blocking(entry=worker_entry)
 
                 # delegated capacity of this worker
                 worker_caps = None
@@ -933,11 +848,11 @@ class AggregatedBQMPlugin:
 
                 # Effective maintenance state for this host; hosts in maintenance still report their
                 # capacity/allocations but do not contribute to what the site advertises as available
-                worker_maint_entry = self.worker_maintenance_entry(
+                worker_maint_entry = Maintenance.worker_maintenance_entry(
                     maintenance_info=maintenance_info, site_name=s, worker_name=sliver.get_name())
                 worker_state = worker_maint_entry.state.name \
                     if worker_maint_entry is not None and worker_maint_entry.state is not None else None
-                in_maintenance = self.is_maintenance_blocking(entry=worker_maint_entry)
+                in_maintenance = Maintenance.is_maintenance_blocking(entry=worker_maint_entry)
                 if in_maintenance:
                     hosts_in_maintenance += 1
 
