@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Set
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver, ComponentType
@@ -100,7 +100,8 @@ class NetworkNodeInventory(InventoryForType):
     @staticmethod
     def __update_shared_nic_labels_and_capacities(*, available: ComponentSliver,
                                                   requested: ComponentSliver,
-                                                  logger: logging.Logger) -> ComponentSliver:
+                                                  logger: logging.Logger,
+                                                  blocked_vlans: Set[str] = None) -> ComponentSliver:
         """
         Update the shared NIC Labels and Capacities. Assign the 1st available PCI address/bdf to the requested component
         Traverse the available component's labels to find the index for bdf assigned
@@ -109,6 +110,8 @@ class NetworkNodeInventory(InventoryForType):
         interface post VM creation
         :param available: Available Component
         :param requested: Requested Component
+        :param blocked_vlans: VLANs which must not be allocated on this worker (e.g. stale switch config);
+        the PCI devices bound to them are skipped
         :return updated requested component with VLAN, MAC and IP information
         """
         # Check labels
@@ -143,8 +146,27 @@ class NetworkNodeInventory(InventoryForType):
 
         delegation_id, ifs_delegated_labels = FimHelper.get_delegations(delegations=ifs.get_label_delegations())
 
-        assigned_bdf = delegated_label.bdf[0]
-        assigned_numa = delegated_label.numa[0]
+        # Skip PCI devices whose delegated VLAN is blocked on this worker (e.g. stale switch
+        # config would make provisioning fail); the VLAN is not pushed to the switch for
+        # OpenStack-vNIC so blocked VLANs do not restrict it
+        usable_bdfs = delegated_label.bdf
+        if blocked_vlans and requested.get_model() != Constants.OPENSTACK_VNIC_MODEL and \
+                ifs_delegated_labels.vlan is not None:
+            usable_bdfs = []
+            for bdf in delegated_label.bdf:
+                vlan_for_bdf = ifs_delegated_labels.vlan[ifs_delegated_labels.bdf.index(bdf)]
+                if str(vlan_for_bdf) in blocked_vlans:
+                    logger.info(f"Excluding PCI device {bdf}; VLAN {vlan_for_bdf} is blocked")
+                    continue
+                usable_bdfs.append(bdf)
+            if len(usable_bdfs) == 0:
+                message = "No PCI devices with a usable VLAN available in the delegation"
+                logger.error(message)
+                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                      msg=f"{message}")
+
+        assigned_bdf = usable_bdfs[0]
+        assigned_numa = delegated_label.numa[delegated_label.bdf.index(assigned_bdf)]
 
         # Updated the Requested component with VLAN, BDF, MAC
         req_ns_name = next(iter(requested.network_service_info.network_services))
@@ -155,10 +177,15 @@ class NetworkNodeInventory(InventoryForType):
         # Check if the requested component's VLAN exists in the delegated labels
         if req_ifs.labels and req_ifs.labels.vlan and \
                 req_ifs.labels.vlan in ifs_delegated_labels.vlan:
+            if blocked_vlans and str(req_ifs.labels.vlan) in blocked_vlans:
+                message = f"Requested VLAN {req_ifs.labels.vlan} is blocked on this worker"
+                logger.error(message)
+                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                      msg=f"{message}")
             vlan_index = ifs_delegated_labels.vlan.index(req_ifs.labels.vlan)
             bdf_for_requested_vlan = ifs_delegated_labels.bdf[vlan_index]
-            
-            if bdf_for_requested_vlan in delegated_label.bdf:
+
+            if bdf_for_requested_vlan in usable_bdfs:
                 bdf_index = delegated_label.bdf.index(bdf_for_requested_vlan)
                 assigned_bdf = bdf_for_requested_vlan
                 assigned_numa = delegated_label.numa[bdf_index]
@@ -245,13 +272,15 @@ class NetworkNodeInventory(InventoryForType):
     @staticmethod
     def __check_component_labels_and_capacities(*, available: ComponentSliver, graph_id: str,
                                                 requested: ComponentSliver, logger: logging.Logger,
-                                                operation: ReservationOperation = ReservationOperation.Create) -> ComponentSliver:
+                                                operation: ReservationOperation = ReservationOperation.Create,
+                                                blocked_vlans: Set[str] = None) -> ComponentSliver:
         """
         Check if available component capacities, labels to match requested component
         :param available: available component
         :param graph_id: BQM graph id
         :param requested: requested component
         :param operation: operation
+        :param blocked_vlans: VLANs which must not be allocated for Shared NICs on this worker
         :return: requested component annotated with properties in case of success, None otherwise
         """
         if requested.get_model() is not None and \
@@ -279,7 +308,8 @@ class NetworkNodeInventory(InventoryForType):
             requested = NetworkNodeInventory.__update_shared_nic_labels_and_capacities(
                 available=available,
                 requested=requested,
-                logger=logger)
+                logger=logger,
+                blocked_vlans=blocked_vlans)
         else:
             requested.label_allocations = delegated_label
             if requested.get_type() == ComponentType.SmartNIC:
@@ -414,7 +444,8 @@ class NetworkNodeInventory(InventoryForType):
     def check_components(*, rid: ID, requested_components: AttachedComponentsInfo, graph_id: str,
                          graph_node: NodeSliver, existing_reservations: List[ABCReservationMixin],
                          existing_components: Dict[str, List[str]], logger: logging.Logger,
-                         operation: ReservationOperation = ReservationOperation.Create) -> AttachedComponentsInfo:
+                         operation: ReservationOperation = ReservationOperation.Create,
+                         blocked_vlans: Set[str] = None) -> AttachedComponentsInfo:
         """
         Check if the requested capacities can be satisfied with the available capacities
         :param rid: reservation id of the reservation being served
@@ -425,6 +456,7 @@ class NetworkNodeInventory(InventoryForType):
         :param existing_components: Existing components
         :param operation: Flag indicating if this is create or modify
         :param logger: logger
+        :param blocked_vlans: VLANs which must not be allocated for Shared NICs on this worker
         :return: Components updated with the corresponding BQM node ids
         :raises: BrokerException in case the request cannot be satisfied
         """
@@ -514,7 +546,8 @@ class NetworkNodeInventory(InventoryForType):
                 requested_component = NetworkNodeInventory.__check_component_labels_and_capacities(
                     available=component, graph_id=graph_id,
                     requested=requested_component,
-                    operation=operation, logger=logger)
+                    operation=operation, logger=logger,
+                    blocked_vlans=blocked_vlans)
 
                 if requested_component.get_node_map() is not None:
                     logger.info(f"Assigning {component.node_id} to component# "
@@ -584,7 +617,8 @@ class NetworkNodeInventory(InventoryForType):
 
     def allocate(self, *, rid: ID, requested_sliver: BaseSliver, graph_id: str, graph_node: BaseSliver,
                  existing_reservations: List[ABCReservationMixin], existing_components: Dict[str, List[str]],
-                 operation: ReservationOperation = ReservationOperation.Create) -> Tuple[str, BaseSliver]:
+                 operation: ReservationOperation = ReservationOperation.Create,
+                 blocked_vlans: Set[str] = None) -> Tuple[str, BaseSliver]:
         """
         Allocate an extending or ticketing reservation
         :param rid: reservation id of the reservation to be allocated
@@ -594,6 +628,7 @@ class NetworkNodeInventory(InventoryForType):
         :param existing_components: Existing Components
         :param existing_reservations: Existing Reservations served by the same BQM node
         :param operation: Indicates if this is create or modify
+        :param blocked_vlans: VLANs which must not be allocated for Shared NICs on this worker
         :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
         :raises: BrokerException in case the request cannot be satisfied
         """
@@ -647,7 +682,8 @@ class NetworkNodeInventory(InventoryForType):
                 existing_reservations=existing_reservations,
                 existing_components=existing_components,
                 operation=operation,
-                logger=self.logger)
+                logger=self.logger,
+                blocked_vlans=blocked_vlans)
 
         # Do this only for create
         if operation == ReservationOperation.Create:

@@ -890,6 +890,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         delegation_id = None
         error_msg = None
         self.logger.debug(f"Possible candidates to serve {reservation} candidates# {node_id_list}")
+        # Operators can block Shared NIC VLANs (e.g. stale switch config) via the site's
+        # maintenance properties; resolved per worker below
+        _, maint_site = Maintenance.is_site_in_maintenance(database=self.actor.get_plugin().get_database(),
+                                                           site_name=sliver.site)
         for node_id in node_id_list:
             try:
                 self.logger.debug(f"Attempting to allocate {reservation} via graph_node# {node_id}")
@@ -913,13 +917,17 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                                    excludes=[str(reservation.get_reservation_id())],
                                                                    include_ns=include_ns)
 
+                blocked_vlans = maint_site.get_blocked_vlans(worker=graph_node.get_name()) \
+                    if maint_site is not None else None
+
                 delegation_id, sliver = inv.allocate(rid=reservation.get_reservation_id(),
                                                      requested_sliver=sliver,
                                                      graph_id=self.combined_broker_model_graph_id,
                                                      graph_node=graph_node,
                                                      existing_reservations=existing_reservations,
                                                      existing_components=existing_components,
-                                                     operation=operation)
+                                                     operation=operation,
+                                                     blocked_vlans=blocked_vlans)
 
                 if delegation_id is not None and sliver is not None:
                     break

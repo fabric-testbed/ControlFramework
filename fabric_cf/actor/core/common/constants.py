@@ -286,6 +286,7 @@ class Constants:
     PROJECT_ID = "project_id"
     USERS = "users"
     DEADLINE = "deadline"
+    BLOCKED_VLANS = "blocked-vlans"
 
     PROPERTY_EXCEPTION_MESSAGE = "exception.message"
     PROPERTY_TARGET_NAME = "target.name"

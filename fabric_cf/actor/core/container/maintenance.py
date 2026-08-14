@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime, timezone
-from typing import List, Dict, Optional, Tuple, Union
+from typing import List, Dict, Optional, Set, Tuple, Union
 
 from fim.slivers.maintenance_mode import MaintenanceEntry, MaintenanceInfo, MaintenanceState
 
@@ -69,6 +69,27 @@ class Site:
             self.maintenance_info.finalize()
             for name, entry in self.maintenance_info.iter():
                 return entry.state
+
+    def get_blocked_vlans(self, *, worker: str = None) -> Set[str]:
+        """
+        VLANs that must not be handed out for Shared NIC allocations on this site, typically
+        because stale switch configuration would make provisioning fail. Sourced from the site
+        properties: 'blocked-vlans' applies site wide, 'blocked-vlans.<worker>' to a single
+        worker; both hold comma separated VLAN tags and are combined.
+        @param worker worker (host) name; only the site wide VLANs are returned when omitted
+        @return set of blocked VLAN tags as strings; empty set when none are blocked
+        """
+        result = set()
+        if not self.properties:
+            return result
+        keys = [Constants.BLOCKED_VLANS]
+        if worker is not None:
+            keys.append(f"{Constants.BLOCKED_VLANS}.{worker}")
+        for key in keys:
+            value = self.properties.get(key)
+            if value:
+                result.update(v.strip() for v in str(value).split(",") if v.strip())
+        return result
 
     def is_worker_in_maintenance(self, *, worker: str) -> bool:
         if self.maintenance_info is None:
