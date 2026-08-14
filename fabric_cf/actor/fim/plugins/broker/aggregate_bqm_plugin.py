@@ -39,13 +39,13 @@ from fim.graph.networkx_property_graph import NetworkXGraphImporter
 from fim.graph.resources.networkx_abqm import NetworkXAggregateBQM
 from fim.slivers.capacities_labels import Capacities, Flags, Labels
 from fim.slivers.delegations import DelegationFormat
-from fim.slivers.maintenance_mode import MaintenanceInfo, MaintenanceEntry, MaintenanceState
+from fim.slivers.maintenance_mode import MaintenanceInfo
 from fim.slivers.network_node import CompositeNodeSliver, NodeType, NodeSliver
 from fim.slivers.attached_components import ComponentSliver, ComponentType, AttachedComponentsInfo
 from fim.slivers.interface_info import InterfaceType
 from fim.slivers.network_service import ServiceType
-from matplotlib.style.core import available
 
+from fabric_cf.actor.core.container.maintenance import Maintenance
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 
 if TYPE_CHECKING:
@@ -76,17 +76,8 @@ class AggregatedBQMPlugin:
         if self.actor is None:
             return None
         site = self.actor.get_plugin().get_database().get_site(site_name=site_name)
-        if site is not None:
-            result = site.get_maintenance_info().copy()
-            if result.get(site_name) is None:
-                entry = MaintenanceEntry(state=MaintenanceState.Active)
-                result.add(site_name, entry)
-        else:
-            result = MaintenanceInfo()
-            entry = MaintenanceEntry(state=MaintenanceState.Active)
-            result.add(site_name, entry)
-        result.finalize()
-        return result
+        maint_info = site.get_maintenance_info() if site is not None else None
+        return Maintenance.effective_site_maintenance_info(site_name=site_name, maint_info=maint_info)
 
     @staticmethod
     def occupied_vlans(db: ABCDatabase, node_id: str, component_name: str, start: datetime = None,
@@ -321,6 +312,30 @@ class AggregatedBQMPlugin:
                 worker_sliver.resource_type = NodeType.Server
                 worker_sliver.set_site(s)
                 worker_sliver.node_id = str(uuid.uuid4())
+                # Carry the worker's own maintenance state on the worker node; the site
+                # CompositeNode only holds the site-wide MaintenanceInfo
+                worker_entry = Maintenance.worker_maintenance_entry(
+                    maintenance_info=site_sliver.maintenance_info, site_name=s, worker_name=sliver.get_name())
+                if worker_entry is not None:
+                    worker_maint_info = MaintenanceInfo()
+                    worker_maint_info.add(sliver.get_name(), worker_entry)
+                    worker_maint_info.finalize()
+                    worker_sliver.maintenance_info = worker_maint_info
+                in_maintenance = Maintenance.is_maintenance_blocking(entry=worker_entry)
+
+                # delegated capacity of this worker
+                worker_caps = None
+                if sliver.get_capacity_delegations() is not None:
+                    # CBM only has one delegation if it has one
+                    _, delegation = sliver.get_capacity_delegations().get_sole_delegation()
+                    # FIXME: skip pool definitions and references for now
+                    if delegation.get_format() == DelegationFormat.SinglePool:
+                        worker_caps = delegation.get_details()
+                # This for the case when BQM is generated from Orchestrator
+                else:
+                    worker_caps = sliver.get_capacities()
+
+                allocated_caps = Capacities()
                 if self.DEBUG_FLAG or kwargs['query_level'] == 0:
                     # for debugging and running in a test environment
                     # also for level 0; only return capacity information
@@ -330,21 +345,32 @@ class AggregatedBQMPlugin:
                     # query database for everything taken on this node
                     allocated_caps, allocated_comp_caps = self.occupied_node_capacity(db=db, node_id=sliver.node_id,
                                                                                       start=start, end=end)
-                    site_sliver.capacity_allocations = site_sliver.capacity_allocations + allocated_caps
-                    worker_sliver.capacity_allocations = allocated_caps
 
                     # Warn when allocations exceed capacity
-                    w_cap = sliver.get_capacities() or Capacities()
-                    if sliver.get_capacity_delegations() is not None:
-                        _, dlg = sliver.get_capacity_delegations().get_sole_delegation()
-                        if dlg.get_format() == DelegationFormat.SinglePool:
-                            w_cap = dlg.get_details()
+                    w_cap = worker_caps if worker_caps is not None else (sliver.get_capacities() or Capacities())
                     a_core = getattr(allocated_caps, 'core', 0) or 0
                     c_core = getattr(w_cap, 'core', 0) or 0
                     if a_core > c_core:
                         self.logger.warning(
                             f"Over-allocation detected on {sliver.get_name()} at {sliver.site}: "
                             f"cores_alloc={a_core} > cores_cap={c_core}")
+
+                # A host in maintenance can serve no new reservation. A sliver has no separate
+                # "available" field - consumers derive capacities - capacity_allocations, and do so
+                # for whole sites too (fablib sums the per worker components to get what a site has
+                # free) - so a host in maintenance is reported as fully allocated instead. Capacity
+                # keeps describing the hardware, and maintenance_info attached above says why the
+                # host has nothing free.
+                if in_maintenance and worker_caps is not None:
+                    effective_allocs = worker_caps
+                else:
+                    effective_allocs = allocated_caps
+
+                if worker_caps is not None:
+                    worker_sliver.capacities = worker_caps
+                    site_sliver.capacities = site_sliver.capacities + worker_caps
+                worker_sliver.capacity_allocations = effective_allocs
+                site_sliver.capacity_allocations = site_sliver.capacity_allocations + effective_allocs
 
                 # get the location if available
                 if loc is None:
@@ -358,21 +384,7 @@ class AggregatedBQMPlugin:
 
                 site_sliver.set_flags(Flags(ptp=ptp))
 
-                # calculate available node capacities based on delegations
-                if sliver.get_capacity_delegations() is not None:
-                    # CBM only has one delegation if it has one
-                    _, delegation = sliver.get_capacity_delegations().get_sole_delegation()
-                    # FIXME: skip pool definitions and references for now
-                    if delegation.get_format() == DelegationFormat.SinglePool:
-                        site_sliver.capacities = site_sliver.capacities + \
-                            delegation.get_details()
-                        worker_sliver.capacities = delegation.get_details()
-                # This for the case when BQM is generated from Orchestrator
-                else:
-                    site_sliver.capacities += sliver.get_capacities()
-                    worker_sliver.capacities = sliver.get_capacities()
-
-                    # collect available components in lists by type and model for the site (for later aggregation)
+                # collect available components in lists by type and model for the site (for later aggregation)
                 if sliver.attached_components_info is None:
                     continue
                 worker_sliver.attached_components_info = AttachedComponentsInfo()
@@ -396,16 +408,26 @@ class AggregatedBQMPlugin:
 
                     worker_sliver.attached_components_info.devices[name].capacities += comp.capacities
 
-                # merge allocated component capacities
-                for kt, v in allocated_comp_caps.items():
-                    for km, vcap in v.items():
-                        if site_allocated_comps_caps_by_type[kt].get(km) is None:
-                            site_allocated_comps_caps_by_type[kt][km] = Capacities()
-                        site_allocated_comps_caps_by_type[kt][km] = site_allocated_comps_caps_by_type[kt][km] + \
-                                                                    vcap
-                        name = f"{kt}-{km}"
-                        if worker_sliver.attached_components_info.devices.get(name) is not None:
-                            worker_sliver.attached_components_info.devices[name].capacity_allocations += vcap
+                    # as above: nothing on a host in maintenance is available
+                    if in_maintenance:
+                        worker_sliver.attached_components_info.devices[name].capacity_allocations += comp.capacities
+                        if site_allocated_comps_caps_by_type[rt].get(rm) is None:
+                            site_allocated_comps_caps_by_type[rt][rm] = Capacities()
+                        site_allocated_comps_caps_by_type[rt][rm] = site_allocated_comps_caps_by_type[rt][rm] + \
+                                                                    comp.capacities
+
+                # merge allocated component capacities; components of a host in maintenance were
+                # already marked fully allocated above
+                if not in_maintenance:
+                    for kt, v in allocated_comp_caps.items():
+                        for km, vcap in v.items():
+                            if site_allocated_comps_caps_by_type[kt].get(km) is None:
+                                site_allocated_comps_caps_by_type[kt][km] = Capacities()
+                            site_allocated_comps_caps_by_type[kt][km] = site_allocated_comps_caps_by_type[kt][km] + \
+                                                                        vcap
+                            name = f"{kt}-{km}"
+                            if worker_sliver.attached_components_info.devices.get(name) is not None:
+                                worker_sliver.attached_components_info.devices[name].capacity_allocations += vcap
 
                 workers.append(worker_sliver)
 
@@ -761,12 +783,15 @@ class AggregatedBQMPlugin:
             site_cores_cap, site_cores_alloc = 0, 0
             site_ram_cap, site_ram_alloc = 0, 0
             site_disk_cap, site_disk_alloc = 0, 0
-            # {model_str: {"capacity": int, "allocated": int}}
-            site_components = defaultdict(lambda: {"capacity": 0, "allocated": 0})
+            # Availability only counts hosts that are not in maintenance
+            site_cores_avail, site_ram_avail, site_disk_avail = 0, 0, 0
+            # {model_str: {"capacity": int, "allocated": int, "available": int}}
+            site_components = defaultdict(lambda: {"capacity": 0, "allocated": 0, "available": 0})
             loc = None
             ptp = False
             ipv4_mgmt = False
             host_count = 0
+            hosts_in_maintenance = 0
             maintenance_info = self.__site_maintenance_info(site_name=s)
 
             # Determine site state from maintenance info
@@ -821,12 +846,27 @@ class AggregatedBQMPlugin:
                         f"ram={w_ram_alloc}/{w_ram_cap} "
                         f"disk={w_disk_alloc}/{w_disk_cap}")
 
+                # Effective maintenance state for this host; hosts in maintenance still report their
+                # capacity/allocations but do not contribute to what the site advertises as available
+                worker_maint_entry = Maintenance.worker_maintenance_entry(
+                    maintenance_info=maintenance_info, site_name=s, worker_name=sliver.get_name())
+                worker_state = worker_maint_entry.state.name \
+                    if worker_maint_entry is not None and worker_maint_entry.state is not None else None
+                in_maintenance = Maintenance.is_maintenance_blocking(entry=worker_maint_entry)
+                if in_maintenance:
+                    hosts_in_maintenance += 1
+
                 site_cores_cap += w_core_cap
                 site_cores_alloc += w_core_alloc
                 site_ram_cap += w_ram_cap
                 site_ram_alloc += w_ram_alloc
                 site_disk_cap += w_disk_cap
                 site_disk_alloc += w_disk_alloc
+
+                if not in_maintenance:
+                    site_cores_avail += max(0, w_core_cap - w_core_alloc)
+                    site_ram_avail += max(0, w_ram_cap - w_ram_alloc)
+                    site_disk_avail += max(0, w_disk_cap - w_disk_alloc)
 
                 if loc is None:
                     loc = sliver.get_location()
@@ -862,40 +902,46 @@ class AggregatedBQMPlugin:
                                 worker_components[comp_key]["allocated"] += comp_alloc
                                 site_components[comp_key]["allocated"] += comp_alloc
 
-                # Build host record (level 2 includes per-host detail)
+                    if not in_maintenance:
+                        for comp_key, vals in worker_components.items():
+                            site_components[comp_key]["available"] += max(0, vals["capacity"] - vals["allocated"])
+
+                # Build host record (level 2 includes per-host detail). A host in maintenance
+                # advertises nothing as available - its capacity/allocations are still reported -
+                # so that the host records add up to the site totals
                 if query_level == 2 or query_level == 0:
                     hosts_out.append({
                         "name": sliver.get_name(),
                         "site": s,
                         "address": getattr(loc, 'postal', None) if loc else None,
                         "location": [loc.lat, loc.lon] if loc and hasattr(loc, 'lat') else None,
-                        "state": site_state,
+                        "state": worker_state,
+                        "in_maintenance": in_maintenance,
                         "ptp_capable": ptp,
                         "ipv4_management": ipv4_mgmt,
                         "cores_capacity": w_core_cap,
                         "cores_allocated": w_core_alloc,
-                        "cores_available": max(0, w_core_cap - w_core_alloc),
+                        "cores_available": 0 if in_maintenance else max(0, w_core_cap - w_core_alloc),
                         "ram_capacity": w_ram_cap,
                         "ram_allocated": w_ram_alloc,
-                        "ram_available": max(0, w_ram_cap - w_ram_alloc),
+                        "ram_available": 0 if in_maintenance else max(0, w_ram_cap - w_ram_alloc),
                         "disk_capacity": w_disk_cap,
                         "disk_allocated": w_disk_alloc,
-                        "disk_available": max(0, w_disk_cap - w_disk_alloc),
+                        "disk_available": 0 if in_maintenance else max(0, w_disk_cap - w_disk_alloc),
                         "components": {
-                            k: {"capacity": v["capacity"], "allocated": v["allocated"]}
+                            k: {"capacity": v["capacity"], "allocated": v["allocated"],
+                                "available": 0 if in_maintenance else max(0, v["capacity"] - v["allocated"])}
                             for k, v in worker_components.items()
                         },
                     })
 
-            # Finalize site-level component available counts
+            # Finalize site-level component available counts; availability excludes hosts in maintenance
             site_comps_final = {}
             for comp_key, vals in site_components.items():
-                cap = vals["capacity"]
-                alloc = vals["allocated"]
                 site_comps_final[comp_key] = {
-                    "capacity": cap,
-                    "allocated": alloc,
-                    "available": max(0, cap - alloc),
+                    "capacity": vals["capacity"],
+                    "allocated": vals["allocated"],
+                    "available": vals["available"],
                 }
 
             # P4 switches
@@ -924,15 +970,16 @@ class AggregatedBQMPlugin:
                 "ipv4_management": ipv4_mgmt,
                 "cores_capacity": site_cores_cap,
                 "cores_allocated": site_cores_alloc,
-                "cores_available": max(0, site_cores_cap - site_cores_alloc),
+                "cores_available": site_cores_avail,
                 "ram_capacity": site_ram_cap,
                 "ram_allocated": site_ram_alloc,
-                "ram_available": max(0, site_ram_cap - site_ram_alloc),
+                "ram_available": site_ram_avail,
                 "disk_capacity": site_disk_cap,
                 "disk_allocated": site_disk_alloc,
-                "disk_available": max(0, site_disk_cap - site_disk_alloc),
+                "disk_available": site_disk_avail,
                 "components": site_comps_final,
                 "hosts_count": host_count,
+                "hosts_in_maintenance": hosts_in_maintenance,
             }
             if p4_switches:
                 site_record["p4_switches"] = p4_switches
