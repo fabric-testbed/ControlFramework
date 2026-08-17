@@ -65,7 +65,8 @@ class QuotaMgr:
         quota_list = self.core_api.list_quotas(project_uuid=project_uuid, offset=offset, limit=limit)
         quotas = {}
         for q in quota_list:
-            quotas[(q.get("resource_type").get("name").lower(), q.get("resource_unit").lower())] = q
+            quotas[(CoreApi.resource_name(q.get("resource_type")).lower(),
+                    CoreApi.resource_name(q.get("resource_unit")).lower())] = q
         return quotas
 
     def update_quota(self, reservation: ABCReservationMixin, duration: float):
