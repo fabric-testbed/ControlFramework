@@ -361,6 +361,10 @@ class NetworkNodeInventory(InventoryForType):
         else:
             excluded_labels = [allocated_labels.bdf]
 
+        if delegated_label is None or delegated_label.bdf is None:
+            logger.warning(f"Shared NIC {shared.get_name()} has no delegated PCI addresses")
+            return shared, True
+
         exists = False
         for e in excluded_labels:
             if e in delegated_label.bdf:
@@ -368,11 +372,18 @@ class NetworkNodeInventory(InventoryForType):
                 delegated_label.bdf.remove(e)
                 exists = True
 
-        # Exclude already allocated Shared NIC cards
-        if exists:
-            delegated_capacity -= allocated.get_capacity_allocations()
+        # Keep the delegated capacity in step with the PCI addresses that are actually left.
+        # Capacities defines __sub__ but not __isub__, so `delegated_capacity -= ...` would build
+        # a new object and rebind the local, leaving the delegation holding its original unit
+        # count. The component would then never be excluded even with every BDF allocated, and
+        # the next allocation would index an empty BDF list. The remaining BDFs are the source of
+        # truth, so derive the unit count from them and mutate the delegated object in place -
+        # the same way the BDF list itself is updated above.
+        remaining = len(delegated_label.bdf)
+        if exists and delegated_capacity is not None:
+            delegated_capacity.unit = remaining
 
-        return shared, (delegated_capacity.unit < 1)
+        return shared, (remaining < 1)
 
     @staticmethod
     def __exclude_allocated_component(*, graph_node: NodeSliver, available: ComponentSliver,
