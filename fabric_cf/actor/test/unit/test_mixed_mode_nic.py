@@ -33,6 +33,7 @@ from fim.slivers.interface_info import InterfaceInfo, InterfaceSliver
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceInfo, NetworkServiceSliver, NSLayer
 
+from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
 from fabric_cf.actor.core.policy.network_node_inventory import NetworkNodeInventory
 
 
@@ -257,11 +258,8 @@ class TestMixedModeNic(unittest.TestCase):
                 break
             self._exclude(graph_node=node, available=available, allocated=allocated)
 
-        # every VF of PF0 is spoken for
-        shared = node.attached_components_info.devices.get(self.SHARED_NAME)
-        if shared is not None:
-            _, labels = self._label_details(shared)
-            self.assertEqual([], labels.bdf)
+        # every VF of PF0 is spoken for, so the shared half is gone from the candidate node
+        self.assertNotIn(self.SHARED_NAME, node.attached_components_info.devices)
 
         # PF1 is a separate component and is completely unaffected
         self.assertIn(self.DEDICATED_NAME, node.attached_components_info.devices)
@@ -280,6 +278,81 @@ class TestMixedModeNic(unittest.TestCase):
     def _capacity_details(component: ComponentSliver):
         from fabric_cf.actor.fim.fim_helper import FimHelper
         return FimHelper.get_delegations(delegations=component.get_capacity_delegations())
+
+
+class TestSharedNicCapacityTracking(unittest.TestCase):
+    """
+    The delegated capacity of a Shared NIC must stay in step with the PCI addresses left in
+    its label delegation. Capacities defines __sub__ but not __isub__, so decrementing it with
+    `-=` used to rebind a local and leave the delegation untouched: the component was never
+    excluded once fully allocated, and the next allocation indexed an empty BDF list.
+    """
+    logger = logging.getLogger("test-shared-nic-capacity")
+
+    def _shared(self) -> ComponentSliver:
+        return TestMixedModeNic._available_shared()
+
+    def _allocated_vf(self, bdf: str) -> ComponentSliver:
+        allocated = ComponentSliver()
+        allocated.set_type(ComponentType.SharedNIC)
+        allocated.set_name(resource_name="nic1")
+        allocated.set_model(resource_model=TestMixedModeNic.SHARED_MODEL)
+        allocated.set_labels(lab=Labels(bdf=bdf))
+        allocated.capacity_allocations = Capacities(unit=1)
+        return allocated
+
+    def _exclude_vf(self, shared: ComponentSliver, bdf: str):
+        return NetworkNodeInventory._NetworkNodeInventory__exclude_allocated_pci_device_from_shared_nic(
+            shared=shared, allocated=self._allocated_vf(bdf), logger=self.logger)
+
+    def test_capacity_follows_remaining_bdfs(self):
+        shared = self._shared()
+        for i, bdf in enumerate(TestMixedModeNic.VF_BDFS):
+            _, exhausted = self._exclude_vf(shared, bdf)
+            _, caps = TestMixedModeNic._capacity_details(shared)
+            _, labels = TestMixedModeNic._label_details(shared)
+            expected = len(TestMixedModeNic.VF_BDFS) - (i + 1)
+            self.assertEqual(expected, len(labels.bdf))
+            self.assertEqual(expected, caps.unit,
+                             "delegated capacity drifted from the remaining PCI addresses")
+            self.assertEqual(expected < 1, exhausted)
+
+    def test_last_bdf_reports_exhausted(self):
+        shared = self._shared()
+        for bdf in TestMixedModeNic.VF_BDFS[:-1]:
+            _, exhausted = self._exclude_vf(shared, bdf)
+            self.assertFalse(exhausted)
+        _, exhausted = self._exclude_vf(shared, TestMixedModeNic.VF_BDFS[-1])
+        self.assertTrue(exhausted)
+
+    def test_unknown_bdf_leaves_capacity_alone(self):
+        shared = self._shared()
+        _, exhausted = self._exclude_vf(shared, "0000:99:00.9")
+        _, caps = TestMixedModeNic._capacity_details(shared)
+        self.assertFalse(exhausted)
+        self.assertEqual(len(TestMixedModeNic.VF_BDFS), caps.unit)
+
+    def test_exhausted_card_is_not_offered_for_allocation(self):
+        """
+        The regression this guards: with capacity stuck at its original value the exhausted card
+        stayed in the candidate node and the next allocation hit usable_bdfs[0] on an empty list.
+        """
+        shared = self._shared()
+        for bdf in TestMixedModeNic.VF_BDFS:
+            self._exclude_vf(shared, bdf)
+
+        _, caps = TestMixedModeNic._capacity_details(shared)
+        self.assertEqual(0, caps.unit)
+
+        requested = ComponentSliver()
+        requested.set_type(ComponentType.SharedNIC)
+        requested.set_name(resource_name="nic1")
+        requested.set_model(resource_model=TestMixedModeNic.SHARED_MODEL)
+
+        with self.assertRaises(BrokerException) as ctx:
+            NetworkNodeInventory._NetworkNodeInventory__check_component_labels_and_capacities(
+                available=shared, graph_id="graph-1", requested=requested, logger=self.logger)
+        self.assertEqual(ExceptionErrorCode.INSUFFICIENT_RESOURCES, ctx.exception.error_code)
 
 
 if __name__ == '__main__':
