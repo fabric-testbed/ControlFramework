@@ -224,42 +224,66 @@ class OrchestratorHandler:
         :return str or None
         """
         broker_query_model = None
-        # Always get Fresh copy for advanced resource requests
-        if not start and not end and not includes and not excludes:
+        saved_bqm = None
+        is_cacheable = not start and not end and not includes and not excludes
+        do_query = False
+
+        # Check cache for non-advanced resource requests
+        if is_cacheable:
             saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format, level=level)
             if saved_bqm is not None:
-                if force_refresh:
-                    saved_bqm.start_refresh()
-                elif saved_bqm.can_refresh():
-                    saved_bqm.start_refresh()
-                elif saved_bqm.refresh_in_progress and saved_bqm.get_bqm():
-                    # Serve stale cache while a refresh is already in progress
-                    broker_query_model = saved_bqm.get_bqm()
+                if force_refresh or saved_bqm.can_refresh():
+                    if saved_bqm.start_refresh():
+                        # This caller wins — perform the broker query
+                        do_query = True
+                    else:
+                        # Another refresh is in flight — wait for it to complete
+                        broker_query_model = saved_bqm.wait_for_refresh()
                 else:
+                    # Cache is still fresh
                     broker_query_model = saved_bqm.get_bqm()
+            else:
+                # No cache entry yet — need to query
+                do_query = True
 
-        # Request the model from Broker as a fallback
-        if not broker_query_model:
+        # Advanced requests always query the broker directly
+        if not is_cacheable:
+            do_query = True
+
+        if not broker_query_model and do_query:
             broker = self.get_broker(controller=controller)
             if broker is None:
+                if saved_bqm is not None:
+                    saved_bqm.abort_refresh()
                 raise OrchestratorException("Unable to determine broker proxy for this controller. "
                                             "Please check Orchestrator container configuration and logs.")
 
             self.logger.info(f"Sending Query to broker on behalf of {email} Start: {start}, End: {end}, "
                              f"Force: {force_refresh}, Level: {level}, format: {graph_format}")
 
-            model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
-                                                      graph_format=graph_format, start=start, end=end,
-                                                      includes=includes, excludes=excludes)
+            try:
+                model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
+                                                          graph_format=graph_format, start=start, end=end,
+                                                          includes=includes, excludes=excludes)
+            except Exception as e:
+                if saved_bqm is not None:
+                    saved_bqm.abort_refresh()
+                raise
+
             if model is None or model.get_model() is None or model.get_model() == '':
+                if saved_bqm is not None:
+                    saved_bqm.abort_refresh()
                 raise OrchestratorException(http_error_code=NOT_FOUND, message=f"Resource(s) not found for "
                                                                                f"level: {level} format: {graph_format}!")
 
             broker_query_model = model.get_model()
 
-            # Do not update cache for advance requests
-            if not start and not end and not includes and not excludes and level > 0:
-                self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format, level=level)
+            # Update cache (not for advanced requests)
+            if is_cacheable and level > 0:
+                if saved_bqm is not None:
+                    saved_bqm.finish_refresh(bqm=broker_query_model, graph_format=graph_format, level=level)
+                else:
+                    self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format, level=level)
 
         return broker_query_model
 
@@ -321,41 +345,66 @@ class OrchestratorHandler:
         :return: JSON string or None
         """
         summary_json = None
-        # Always get fresh copy for advanced resource requests
-        if not start and not end and not includes and not excludes:
+        saved = None
+        is_cacheable = not start and not end and not includes and not excludes
+        do_query = False
+
+        # Check cache for non-advanced resource requests
+        if is_cacheable:
             saved = self.controller_state.get_saved_summary(level=level)
             if saved is not None:
-                if force_refresh:
-                    saved.start_refresh()
-                elif saved.can_refresh():
-                    saved.start_refresh()
-                elif saved.refresh_in_progress and saved.get_bqm():
-                    # Serve stale cache while a refresh is already in progress
-                    summary_json = saved.get_bqm()
+                if force_refresh or saved.can_refresh():
+                    if saved.start_refresh():
+                        # This caller wins — perform the broker query
+                        do_query = True
+                    else:
+                        # Another refresh is in flight — wait for it to complete
+                        summary_json = saved.wait_for_refresh()
                 else:
+                    # Cache is still fresh
                     summary_json = saved.get_bqm()
+            else:
+                # No cache entry yet — need to query
+                do_query = True
 
-        if not summary_json:
+        # Advanced requests always query the broker directly
+        if not is_cacheable:
+            do_query = True
+
+        if not summary_json and do_query:
             broker = self.get_broker(controller=controller)
             if broker is None:
+                if saved is not None:
+                    saved.abort_refresh()
                 raise OrchestratorException("Unable to determine broker proxy for this controller. "
                                             "Please check Orchestrator container configuration and logs.")
 
             self.logger.info(f"Sending Summary Query to broker on behalf of {email} Start: {start}, End: {end}, "
                              f"Force: {force_refresh}, Level: {level}")
 
-            model = controller.get_broker_query_model_summary(broker=broker, id_token=token, level=level,
-                                                               start=start, end=end,
-                                                               includes=includes, excludes=excludes)
+            try:
+                model = controller.get_broker_query_model_summary(broker=broker, id_token=token, level=level,
+                                                                   start=start, end=end,
+                                                                   includes=includes, excludes=excludes)
+            except Exception as e:
+                if saved is not None:
+                    saved.abort_refresh()
+                raise
+
             if model is None or model.get_model() is None or model.get_model() == '':
+                if saved is not None:
+                    saved.abort_refresh()
                 raise OrchestratorException(http_error_code=NOT_FOUND,
                                             message=f"Resource summary not found for level: {level}!")
 
             summary_json = model.get_model()
 
-            # Do not update cache for advance requests
-            if not start and not end and not includes and not excludes and level > 0:
-                self.controller_state.save_summary(summary=summary_json, level=level)
+            # Update cache (not for advanced requests)
+            if is_cacheable and level > 0:
+                if saved is not None:
+                    saved.finish_refresh(bqm=summary_json, graph_format=GraphFormat.GRAPHML, level=level)
+                else:
+                    self.controller_state.save_summary(summary=summary_json, level=level)
 
         return summary_json
 

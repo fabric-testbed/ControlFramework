@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import threading
 from datetime import datetime, timezone
 
 from fabric_cf.actor.core.common.constants import Constants
@@ -50,6 +51,7 @@ class BqmWrapper:
         self.level = 1
         self.graph_id = None
         self.logger = logger
+        self._condition = threading.Condition(threading.Lock())
 
     def can_refresh(self) -> bool:
         """
@@ -58,24 +60,74 @@ class BqmWrapper:
         """
         current_time = datetime.now(timezone.utc)
 
-        if self.refresh_in_progress:
-            if self.refresh_started_at and \
-                    (current_time - self.refresh_started_at).total_seconds() > self.refresh_interval_in_seconds:
-                if self.logger:
-                    self.logger.warning(
-                        f"BQM refresh has been stuck for "
-                        f"{(current_time - self.refresh_started_at).total_seconds():.0f}s "
-                        f"(timeout={self.refresh_interval_in_seconds}s); allowing new refresh"
-                    )
-                self.refresh_in_progress = False
-                self.refresh_started_at = None
-            else:
-                return False
+        with self._condition:
+            if self.refresh_in_progress:
+                if self.refresh_started_at and \
+                        (current_time - self.refresh_started_at).total_seconds() > self.refresh_interval_in_seconds:
+                    if self.logger:
+                        self.logger.warning(
+                            f"BQM refresh has been stuck for "
+                            f"{(current_time - self.refresh_started_at).total_seconds():.0f}s "
+                            f"(timeout={self.refresh_interval_in_seconds}s); allowing new refresh"
+                        )
+                    self.refresh_in_progress = False
+                    self.refresh_started_at = None
+                    self._condition.notify_all()
+                else:
+                    return False
 
-        if self.last_query_time is None or \
-                (current_time - self.last_query_time).total_seconds() > self.refresh_interval_in_seconds:
+            if self.last_query_time is None or \
+                    (current_time - self.last_query_time).total_seconds() > self.refresh_interval_in_seconds:
+                return True
+            return False
+
+    def start_refresh(self) -> bool:
+        """
+        Attempt to start a refresh. Returns True if this caller should perform
+        the refresh (first caller wins). Returns False if a refresh is already
+        in progress — the caller should then call wait_for_refresh() to block
+        until the in-flight refresh completes.
+        """
+        with self._condition:
+            if self.refresh_in_progress:
+                return False
+            self.refresh_in_progress = True
+            self.refresh_started_at = datetime.now(timezone.utc)
             return True
-        return False
+
+    def finish_refresh(self, *, bqm: str, graph_format: GraphFormat, level: int):
+        """
+        Complete a refresh: save the result and wake all waiting threads.
+        """
+        with self._condition:
+            self.graph_format = graph_format
+            self.bqm = bqm
+            self.last_query_time = datetime.now(timezone.utc)
+            self.refresh_in_progress = False
+            self.refresh_started_at = None
+            self.level = level
+            self._condition.notify_all()
+
+    def abort_refresh(self):
+        """
+        Abort a failed refresh and wake all waiting threads so they can
+        fall back to stale cache or retry.
+        """
+        with self._condition:
+            self.refresh_in_progress = False
+            self.refresh_started_at = None
+            self._condition.notify_all()
+
+    def wait_for_refresh(self, timeout: float = 120) -> str:
+        """
+        Block until an in-flight refresh completes (or times out).
+        Returns the cached value (fresh if the refresh succeeded,
+        stale if it failed or timed out).
+        """
+        with self._condition:
+            if self.refresh_in_progress:
+                self._condition.wait(timeout=timeout)
+            return self.bqm
 
     def save(self, *, bqm: str, graph_format: GraphFormat, level: int):
         """
@@ -90,10 +142,6 @@ class BqmWrapper:
         self.refresh_in_progress = False
         self.refresh_started_at = None
         self.level = level
-
-    def start_refresh(self):
-        self.refresh_in_progress = True
-        self.refresh_started_at = datetime.now(timezone.utc)
 
     def get_bqm(self) -> str:
         """
