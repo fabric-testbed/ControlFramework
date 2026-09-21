@@ -1372,7 +1372,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         :type end: datetime
         :param node_id_to_reservations: Map of node IDs to currently assigned reservations
         :type node_id_to_reservations: dict
-        :raises Exception: If ERO path is missing, malformed, or no viable link satisfies the bandwidth requirement
+        :raises Exception: If ERO path is missing, malformed, or no viable link satisfies the bandwidth
+                           requirement. When candidate paths are disqualified because a link cannot be
+                           evaluated, the reasons (naming each link) are included in the error message.
         """
         if not isinstance(requested_sliver, NetworkServiceSliver):
             return
@@ -1427,6 +1429,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 hops=hops
             )
 
+            # Reasons candidate paths were disqualified, surfaced in the final error message
+            rejected_reasons = []
+
             for sorted_path in sorted(paths, key=len)[:50]:
                 links = []
                 final_path = []
@@ -1442,9 +1447,20 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                         final_path.append(node_id)
                         links.append(node_id)
 
-                if all(self._is_link_allowed(link_id=link_id, node_id_to_reservations=node_id_to_reservations,
-                                             requested_bw=requested_bw, reservation_id=reservation_id,
-                                             start=start, end=end) for link_id in links):
+                try:
+                    path_allowed = all(
+                        self._is_link_allowed(link_id=link_id, node_id_to_reservations=node_id_to_reservations,
+                                              requested_bw=requested_bw, reservation_id=reservation_id,
+                                              start=start, end=end) for link_id in links)
+                except BrokerException as e:
+                    # A link that cannot be evaluated (e.g. no bandwidth advertised in the model)
+                    # disqualifies this candidate path only; other paths may still be viable.
+                    self.logger.error(f"Skipping candidate path {final_path}: {e.msg}")
+                    if e.msg not in rejected_reasons:
+                        rejected_reasons.append(e.msg)
+                    continue
+
+                if path_allowed:
                     path = Path()
                     path.set_symmetric(final_path)
                     # Assign to requested sliver
@@ -1452,9 +1468,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                     self.logger.debug(f"Final path: {final_path}")
                     return
 
-            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                  msg=f"No ERO path from {source_site} => {dest_site} found that satisfies "
-                                      f"the requested bandwidth: {requested_bw} constraints.")
+            msg = (f"No ERO path from {source_site} => {dest_site} found that satisfies the requested "
+                   f"bandwidth: {requested_bw} constraints.")
+            if rejected_reasons:
+                msg += " Candidate paths were disqualified: " + " ".join(rejected_reasons)
+            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES, msg=msg)
 
         except Exception as e:
             self.logger.error(f"Error occurred when finding ERO link: {e}")
@@ -1483,19 +1501,30 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         :type node_id_to_reservations: dict
         :return: True if the link has enough bandwidth, False otherwise
         :rtype: bool
+        :raises BrokerException: If the link advertises no bandwidth in the model, and so cannot be
+                                 evaluated against the requested bandwidth
         """
         link_sliver = self.abqm.build_deep_link_sliver(node_id=link_id)
+
+        # CapacityAllocations, when advertised, is the administratively usable share of the link
+        # (typically a percentage of Capacities); fall back to the link's total Capacities.
+        capacities = link_sliver.capacity_allocations or link_sliver.capacities
+        if capacities is None or not capacities.bw:
+            raise BrokerException(
+                error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                msg=f"Link '{link_id}' (name: {link_sliver.get_name()}, type: {link_sliver.get_type()}) "
+                    f"advertises no bandwidth - both Capacities and CapacityAllocations are unset on the "
+                    f"link in the model - so the requested bandwidth of {requested_bw} cannot be validated. "
+                    f"Set Capacities/CapacityAllocations for this link in the network ARM.")
+
+        allowed_bw = capacities.bw
         existing = self.get_existing_links(node_id=link_sliver.node_id, excludes=[reservation_id],
                                            start=start, end=end, node_id_to_reservations=node_id_to_reservations)
-        allowed_bw = (
-            link_sliver.capacity_allocations.bw
-            if link_sliver.capacity_allocations
-            else link_sliver.capacities.bw
-        )
         if existing:
             allowed_bw -= existing.get(link_id, 0)
         self.logger.debug(f"Link Sliver: {link_sliver}")
-        self.logger.debug("Existing bandwidth: {existing} Available bandwidth: {allowed_bw}")
+        self.logger.debug(f"Link: {link_id} Existing bandwidth: {existing} "
+                          f"Available bandwidth: {allowed_bw} Requested bandwidth: {requested_bw}")
 
         return requested_bw <= allowed_bw
 
