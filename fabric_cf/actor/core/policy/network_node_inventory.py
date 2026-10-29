@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
-from typing import Tuple, List, Dict, Set
+from typing import Tuple, List, Dict, Set, Callable
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver, ComponentType
@@ -452,11 +452,44 @@ class NetworkNodeInventory(InventoryForType):
         return graph_node
 
     @staticmethod
+    def __component_unavailable_message(*, resource_model: str, graph_node: NodeSliver,
+                                        excluded_components: Dict[str, List[str]],
+                                        ns_components_lookup: Callable[[], Dict[str, List[str]]] = None,
+                                        logger: logging.Logger = None) -> str:
+        """
+        Build the error message when a requested component cannot be allocated on a worker
+        :param resource_model: requested component model
+        :param graph_node: BQM graph node (worker)
+        :param excluded_components: model -> BQM node ids of components excluded as already in use
+        :param ns_components_lookup: returns components in use by Network Services only; invoked lazily
+        :param logger: logger
+        :return: error message
+        """
+        message = f"Component of type: {resource_model} not available on worker: {graph_node.get_name()}"
+        if ns_components_lookup is None:
+            return message
+        excluded = excluded_components.get(resource_model, []) if resource_model is not None else \
+            [node_id for node_ids in excluded_components.values() for node_id in node_ids]
+        if not excluded:
+            return message
+        try:
+            ns_components = ns_components_lookup() or {}
+            held = [node_id for node_id in excluded if node_id in ns_components]
+            if held:
+                message += f" - {len(held)} matching component(s) are still attached to active network " \
+                           f"service(s) and cannot be allocated until those network services are released"
+        except Exception as e:
+            if logger is not None:
+                logger.error(f"Unable to determine components held by network services: {e}")
+        return message
+
+    @staticmethod
     def check_components(*, rid: ID, requested_components: AttachedComponentsInfo, graph_id: str,
                          graph_node: NodeSliver, existing_reservations: List[ABCReservationMixin],
                          existing_components: Dict[str, List[str]], logger: logging.Logger,
                          operation: ReservationOperation = ReservationOperation.Create,
-                         blocked_vlans: Set[str] = None) -> AttachedComponentsInfo:
+                         blocked_vlans: Set[str] = None,
+                         ns_components_lookup: Callable[[], Dict[str, List[str]]] = None) -> AttachedComponentsInfo:
         """
         Check if the requested capacities can be satisfied with the available capacities
         :param rid: reservation id of the reservation being served
@@ -468,6 +501,7 @@ class NetworkNodeInventory(InventoryForType):
         :param operation: Flag indicating if this is create or modify
         :param logger: logger
         :param blocked_vlans: VLANs which must not be allocated for Shared NICs on this worker
+        :param ns_components_lookup: returns components in use by Network Services only; used for error reporting
         :return: Components updated with the corresponding BQM node ids
         :raises: BrokerException in case the request cannot be satisfied
         """
@@ -479,6 +513,9 @@ class NetworkNodeInventory(InventoryForType):
 
         logger.debug(f"Excluding components connected to Network Services: {existing_components}")
 
+        # Track components (by model) excluded as already in use;
+        # used to report a meaningful error if the request cannot be satisfied
+        excluded_components = {}
         if existing_components and len(existing_components):
             comps_to_remove = []
             for av in graph_node.attached_components_info.devices.values():
@@ -499,6 +536,7 @@ class NetworkNodeInventory(InventoryForType):
                                                                                                       logger=logger)
                 if exclude:
                     comps_to_remove.append(av)
+                    excluded_components.setdefault(av.get_model(), []).append(av.node_id)
 
             for c in comps_to_remove:
                 logger.debug(f"Excluding component: {c.get_name()}")
@@ -549,8 +587,10 @@ class NetworkNodeInventory(InventoryForType):
 
             if available_components is None or len(available_components) == 0:
                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                      msg=f"Component of type: {resource_model} not available in "
-                                          f"graph node: {graph_node.node_id}")
+                                      msg=NetworkNodeInventory.__component_unavailable_message(
+                                          resource_model=resource_model, graph_node=graph_node,
+                                          excluded_components=excluded_components,
+                                          ns_components_lookup=ns_components_lookup, logger=logger))
 
             for component in available_components:
                 # check model matches the requested model
@@ -571,8 +611,10 @@ class NetworkNodeInventory(InventoryForType):
 
             if requested_component.get_node_map() is None:
                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                      msg=f"Component of type: {resource_model} not available in "
-                                          f"graph node: {graph_node.node_id}")
+                                      msg=NetworkNodeInventory.__component_unavailable_message(
+                                          resource_model=resource_model, graph_node=graph_node,
+                                          excluded_components=excluded_components,
+                                          ns_components_lookup=ns_components_lookup, logger=logger))
 
         return requested_components
 
@@ -629,7 +671,8 @@ class NetworkNodeInventory(InventoryForType):
     def allocate(self, *, rid: ID, requested_sliver: BaseSliver, graph_id: str, graph_node: BaseSliver,
                  existing_reservations: List[ABCReservationMixin], existing_components: Dict[str, List[str]],
                  operation: ReservationOperation = ReservationOperation.Create,
-                 blocked_vlans: Set[str] = None) -> Tuple[str, BaseSliver]:
+                 blocked_vlans: Set[str] = None,
+                 ns_components_lookup: Callable[[], Dict[str, List[str]]] = None) -> Tuple[str, BaseSliver]:
         """
         Allocate an extending or ticketing reservation
         :param rid: reservation id of the reservation to be allocated
@@ -640,6 +683,7 @@ class NetworkNodeInventory(InventoryForType):
         :param existing_reservations: Existing Reservations served by the same BQM node
         :param operation: Indicates if this is create or modify
         :param blocked_vlans: VLANs which must not be allocated for Shared NICs on this worker
+        :param ns_components_lookup: returns components in use by Network Services only; used for error reporting
         :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
         :raises: BrokerException in case the request cannot be satisfied
         """
@@ -694,7 +738,8 @@ class NetworkNodeInventory(InventoryForType):
                 existing_components=existing_components,
                 operation=operation,
                 logger=self.logger,
-                blocked_vlans=blocked_vlans)
+                blocked_vlans=blocked_vlans,
+                ns_components_lookup=ns_components_lookup)
 
         # Do this only for create
         if operation == ReservationOperation.Create:
