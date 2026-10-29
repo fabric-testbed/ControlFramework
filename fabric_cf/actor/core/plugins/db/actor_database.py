@@ -621,10 +621,10 @@ class ActorDatabase(ABCDatabase):
                 self.lock.release()
 
     def get_links(self, *, node_id: str, states: list[int], rsv_type: list[str], start: datetime = None,
-                  end: datetime = None, excludes: List[str] = None) -> Dict[str, int]:
+                  end: datetime = None, excludes: List[str] = None, peak: bool = False) -> Dict[str, int]:
         try:
             return self.db.get_links(node_id=node_id, states=states, rsv_type=rsv_type, start=start,
-                                     end=end, excludes=excludes)
+                                     end=end, excludes=excludes, peak=peak)
         except Exception as e:
             self.logger.error(e)
         finally:

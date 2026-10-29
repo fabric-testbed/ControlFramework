@@ -192,7 +192,7 @@ class ABCDatabase(ABC):
 
     @abstractmethod
     def get_links(self, *, node_id: str, states: list[int], rsv_type: list[str], start: datetime = None,
-                  end: datetime = None, excludes: List[str] = None) -> Dict[str, int]:
+                  end: datetime = None, excludes: List[str] = None, peak: bool = False) -> Dict[str, int]:
         """
         Returns links matching the search criteria
         @param node_id: Link Node ID
@@ -201,6 +201,7 @@ class ABCDatabase(ABC):
         @param start: start time
         @param end: end time
         @param excludes: Excludes the list of reservations
+        @param peak: if True, return the peak bandwidth allocated concurrently within [start, end]
 
         @return Dictionary with link node id as the key and value cumulative bw.
         """

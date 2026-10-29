@@ -935,7 +935,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                      existing_components=existing_components,
                                                      operation=operation,
                                                      blocked_vlans=blocked_vlans,
-                                                     ns_components_lookup=ns_components_lookup)
+                                                     ns_components_lookup=ns_components_lookup,
+                                                     start=term.get_start_time(),
+                                                     end=term.get_end_time())
 
                 if delegation_id is not None and sliver is not None:
                     break
@@ -2721,8 +2723,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 res_type.append(str(x))
 
         # Only get Active or Ticketing reservations
+        # Peak concurrent bandwidth within the window; reservations which do not overlap each other are not summed
         existing = self.actor.get_plugin().get_database().get_links(node_id=node_id, rsv_type=res_type, states=states,
-                                                                    start=start, end=end, excludes=excludes)
+                                                                    start=start, end=end, excludes=excludes,
+                                                                    peak=True)
 
         reservations_allocated_in_cycle = node_id_to_reservations.get(node_id, None)
 

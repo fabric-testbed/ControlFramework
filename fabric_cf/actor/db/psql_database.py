@@ -33,6 +33,7 @@ from typing import List, Tuple, Dict, Optional
 from sqlalchemy import create_engine, desc, func, and_, or_
 from sqlalchemy.orm import scoped_session, sessionmaker, joinedload
 
+from fabric_cf.actor.core.util.time_window import usage_at_peaks
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
 from fabric_cf.actor.db import Base, Clients, ConfigMappings, Proxies, Units, Reservations, Slices, ManagerObjects, \
@@ -1011,17 +1012,20 @@ class PsqlDatabase:
         return result
 
     def get_links(self, *, node_id: str, states: list[int], rsv_type: list[str],
-                  start: datetime = None, end: datetime = None, excludes: List[str] = None) -> Dict[str, int]:
+                  start: datetime = None, end: datetime = None, excludes: List[str] = None,
+                  peak: bool = False) -> Dict[str, int]:
         """
-        Returns components matching the search criteria
-        @param node_id: Worker Node ID to which components belong
+        Returns bandwidth allocated on the link matching the search criteria
+        @param node_id: Link Node ID
         @param states: list of states used to find reservations
         @param rsv_type: type of reservations
         @param start: start time
         @param end: end time
         @param excludes: list of the reservations ids to exclude
+        @param peak: if True, return the peak bandwidth allocated concurrently within [start, end] instead of the
+                     sum of the bandwidth of all the reservations overlapping [start, end]
 
-        @return Dictionary with component name as the key and value as list of associated PCI addresses in use.
+        @return Dictionary with link node id as the key and value as allocated bw.
         """
         result = {}
         session = self.get_session()
@@ -1055,11 +1059,14 @@ class PsqlDatabase:
             if excludes:
                 rows = rows.filter(Reservations.rsv_resid.notin_(excludes))
 
+            allocations = {}
             for row in rows.all():
-                print(row.node_id)
-                if row.node_id not in result:
-                    result[row.node_id] = 0
-                result[row.node_id] += row.bw
+                window = (row.reservation.lease_start, row.reservation.lease_end) if peak else None
+                allocations.setdefault(row.node_id, []).append((window, row.bw))
+
+            for link_id, link_allocations in allocations.items():
+                result[link_id] = max(usage_at_peaks(allocations=link_allocations, start=start if peak else None,
+                                                     end=end if peak else None, zero=0))
         except Exception as e:
             session.rollback()
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
