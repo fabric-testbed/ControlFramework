@@ -33,6 +33,7 @@ from typing import TYPE_CHECKING
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
 from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.network_service import NetworkServiceSliver
 
 from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
@@ -210,10 +211,41 @@ class Controller(ActorMixin, ABCController):
 
         if rset is not None and rset.size() > 0:
             #self.logger.debug("SlottedSM close expiring for cycle {} expiring {}".format(self.current_cycle, rset))
+            self.add_dependent_network_services(reservations=rset)
             self.close_reservations(reservations=rset)
         diff = int(time.time() - begin)
         if diff > 0:
             self.logger.info(f"Event close_expiring TIME: {diff}")
+
+    def add_dependent_network_services(self, *, reservations: ReservationSet):
+        """
+        Add to the closing set the network service reservations which depend on (have as redeem predecessor)
+        any of the reservations being closed.
+        A VM which failed to extend closes at its original expiry while the network services connected to it
+        may have been extended successfully. Leaving such network services active keeps the interfaces/VLANs
+        allocated at the Broker/AM and causes subsequent provisioning on those components to fail.
+        @param reservations reservations being closed; updated in place
+        """
+        expiring_rids = set(reservations.reservations.keys())
+        slices = {}
+        for r in reservations.values():
+            if r.get_slice() is not None:
+                slices[r.get_slice().get_slice_id()] = r.get_slice()
+
+        for slice_obj in slices.values():
+            for r in slice_obj.get_reservations_list():
+                if reservations.contains(rid=r.get_reservation_id()) or r.is_closed() or r.is_closing():
+                    continue
+                if not isinstance(r, ABCControllerReservation) or r.get_resources() is None or \
+                        not isinstance(r.get_resources().get_sliver(), NetworkServiceSliver):
+                    continue
+                closing_preds = [str(p.get_reservation().get_reservation_id()) for p in r.get_redeem_predecessors()
+                                 if p.get_reservation() is not None and
+                                 p.get_reservation().get_reservation_id() in expiring_rids]
+                if len(closing_preds) > 0:
+                    self.logger.info(f"Closing network service reservation# {r.get_reservation_id()} as "
+                                     f"dependencies {closing_preds} are expiring")
+                    reservations.add(reservation=r)
 
     def demand(self, *, rid: ID):
         if rid is None:

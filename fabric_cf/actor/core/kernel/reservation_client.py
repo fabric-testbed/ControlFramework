@@ -598,7 +598,25 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 break
 
             if self.get_approved_term().ends_after(date=pred_reservation_term.get_end_time()):
-                rollback = True
+                # Predecessor does not (yet) cover the extension; reservations in a slice are extended in
+                # arbitrary order so the predecessor may not have been asked to extend yet.
+                # Roll back only once its extend attempt concluded after this reservation blocked on it,
+                # or if it never attempted one within the timeout
+                if self.joinstate != JoinState.BlockedExtendTicket:
+                    approved = False
+                    break
+
+                from fabric_cf.actor.core.container.globals import GlobalsSingleton
+                pred_transition_time = pred_reservation.last_transition_time \
+                    if isinstance(pred_reservation, Reservation) else None
+                if (pred_transition_time is not None and self.last_transition_time is not None and
+                    pred_transition_time > self.last_transition_time) or \
+                        self.exceeds_timeout(timeout=GlobalsSingleton.get().RPC_TIMEOUT):
+                    self.error_message = f"redeem predecessor reservation# {pred_reservation.get_reservation_id()} " \
+                                         f"could not be extended"
+                    rollback = True
+                else:
+                    approved = False
                 break
 
         return approved, rollback, failed_preds
@@ -650,6 +668,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
             resource_type_str = str(self.get_type())
             if resource_type_str in Constants.SUPPORTED_SERVICES_STR:
                 ret_val, rollback, _ = self.approve_extend_ticket()
+                # Never issue the extend when the predecessors do not cover the extension
+                ret_val = ret_val and not rollback
             else:
                 ret_val = True
 
@@ -1052,7 +1072,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
         elif self.joinstate == JoinState.BlockedExtendTicket:
             # this is existing reservation, and the extend ticket is
             # blocked for a predecessor: see if we can get it going now.
-            assert self.state == ReservationStates.Active
+            # extend_ticket permits Active and Ticketed (controller) reservations to block on predecessors
+            assert self.state in [ReservationStates.Active, ReservationStates.Ticketed]
             rollback = False
             failed_preds = []
 

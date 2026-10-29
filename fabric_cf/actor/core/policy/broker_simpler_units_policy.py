@@ -1802,9 +1802,15 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         """
         error_msg = None
         try:
+            # Window used to evaluate availability; ticket is still issued for the full term
+            alloc_term = term
             if operation == ReservationOperation.Extend:
                 rset = reservation.get_resources()
                 duration = Term.delta(reservation.get_term().get_end_time(), term.get_end_time())
+                # Only the extension period needs to be checked; the current period is already held.
+                # Using the original start pulls in reservations which do not overlap the extension
+                if term.get_new_start_time() is not None:
+                    alloc_term = Term(start=term.get_new_start_time(), end=term.get_end_time())
             else:
                 rset = reservation.get_requested_resources()
                 duration = term.get_full_length()
@@ -1833,14 +1839,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 delegation_id, sliver, error_msg = self.__allocate_nodes(reservation=reservation, inv=inv,
                                                                          sliver=res_sliver,
                                                                          node_id_to_reservations=node_id_to_reservations,
-                                                                         term=term,
+                                                                         term=alloc_term,
                                                                          operation=operation)
 
             elif isinstance(res_sliver, NetworkServiceSliver):
                 delegation_id, sliver, error_msg = self.__allocate_services(rid=reservation.get_reservation_id(),
                                                                             inv=inv, sliver=res_sliver,
                                                                             node_id_to_reservations=node_id_to_reservations,
-                                                                            term=term, operation=operation)
+                                                                            term=alloc_term, operation=operation)
             else:
                 self.logger.error(f'Reservation {reservation} sliver type is neither Node, nor NetworkServiceSliver')
                 raise BrokerException(msg=f"Reservation sliver type is neither Node "
