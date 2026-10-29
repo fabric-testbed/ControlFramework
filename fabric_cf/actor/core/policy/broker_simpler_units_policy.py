@@ -920,6 +920,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 blocked_vlans = maint_site.get_blocked_vlans(worker=graph_node.get_name()) \
                     if maint_site is not None else None
 
+                # Components in use by Network Services only; looked up lazily to explain allocation failures
+                def ns_components_lookup(node_id=node_id):
+                    return self.get_existing_components(node_id=node_id, start=term.get_start_time(),
+                                                        end=term.get_end_time(),
+                                                        excludes=[str(reservation.get_reservation_id())],
+                                                        include_ns=True, include_node=False)
+
                 delegation_id, sliver = inv.allocate(rid=reservation.get_reservation_id(),
                                                      requested_sliver=sliver,
                                                      graph_id=self.combined_broker_model_graph_id,
@@ -927,7 +934,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                      existing_reservations=existing_reservations,
                                                      existing_components=existing_components,
                                                      operation=operation,
-                                                     blocked_vlans=blocked_vlans)
+                                                     blocked_vlans=blocked_vlans,
+                                                     ns_components_lookup=ns_components_lookup)
 
                 if delegation_id is not None and sliver is not None:
                     break
