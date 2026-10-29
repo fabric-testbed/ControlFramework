@@ -24,7 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
-from typing import Tuple, List, Dict, Set, Callable
+from datetime import datetime
+from typing import Tuple, List, Dict, Set, Callable, Optional
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver, ComponentType
@@ -42,20 +43,48 @@ from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErr
 from fabric_cf.actor.core.kernel.reservation_states import ReservationOperation
 from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.util.time_window import to_utc, usage_at_peaks
 
 
 class NetworkNodeInventory(InventoryForType):
     @staticmethod
+    def get_reservation_window(*, reservation: ABCReservationMixin) -> Optional[Tuple[datetime, datetime]]:
+        """
+        Compute the time window during which a reservation may hold resources.
+        Spans the current, approved and requested terms so that reservations being extended are
+        accounted for their full (possibly extended) duration
+        :param reservation: reservation
+        :return: (start, end) or None if the window cannot be determined
+        """
+        starts = []
+        ends = []
+        for term in [reservation.get_term(), reservation.get_approved_term(), reservation.get_requested_term()]:
+            if term is None:
+                continue
+            if term.get_start_time() is not None:
+                starts.append(to_utc(term.get_start_time()))
+            if term.get_end_time() is not None:
+                ends.append(to_utc(term.get_end_time()))
+        if len(starts) == 0 or len(ends) == 0:
+            return None
+        return min(starts), max(ends)
+
+    @staticmethod
     def check_capacities(*, rid: ID, requested_capacities: Capacities, delegated: Delegations,
                          existing_reservations: List[ABCReservationMixin],
-                         logger: logging.Logger) -> str:
+                         logger: logging.Logger, start: datetime = None, end: datetime = None) -> str:
         """
         Check if the requested capacities can be satisfied with the available capacities
+        When the requested window (start, end) is known, the capacities allocated to existing reservations
+        are only accounted for the reservations which overlap each other in time, i.e. the peak
+        concurrent usage within the window is used instead of the sum of all reservations in the window
         :param rid: reservation id of the reservation being served
         :param requested_capacities: Requested Capacities
         :param delegated: Delegated Capacities
         :param existing_reservations: Existing Reservations served by the same BQM node
         :param logger: logger
+        :param start: start of the requested window
+        :param end: end of the requested window
         :return: Delegation Id of the delegation which satisfies the request
         :raises: BrokerException in case the request cannot be satisfied
         """
@@ -63,7 +92,8 @@ class NetworkNodeInventory(InventoryForType):
 
         delegation_id, delegated_capacity = FimHelper.get_delegations(delegations=delegated)
 
-        # Remove allocated capacities to the reservations
+        # Capacities allocated to the reservations along with the window during which they are held
+        allocations = []
         if existing_reservations is not None:
             for reservation in existing_reservations:
                 if rid == reservation.get_reservation_id():
@@ -71,18 +101,22 @@ class NetworkNodeInventory(InventoryForType):
                 # For Active or Ticketed or Ticketing reservations; reduce the counts from available
                 resource_sliver = InventoryForType.get_allocated_sliver(reservation=reservation)
 
-                if resource_sliver is not None and isinstance(resource_sliver, NodeSliver):
+                if resource_sliver is not None and isinstance(resource_sliver, NodeSliver) and \
+                        resource_sliver.get_capacity_allocations() is not None:
                     logger.debug(
                         f"Excluding already assigned resources {resource_sliver.get_capacity_allocations()} to "
                         f"reservation# {reservation.get_reservation_id()}")
-                    delegated_capacity = delegated_capacity - resource_sliver.get_capacity_allocations()
+                    window = NetworkNodeInventory.get_reservation_window(reservation=reservation)
+                    allocations.append((window, resource_sliver.get_capacity_allocations()))
 
-        # Compare the requested against available
-        delegated_capacity = delegated_capacity - requested_capacities
-        negative_fields = delegated_capacity.negative_fields()
+        negative_fields = set()
+        for used in usage_at_peaks(allocations=allocations, start=start, end=end, zero=Capacities()):
+            available = delegated_capacity - used - requested_capacities
+            negative_fields.update(available.negative_fields())
+
         if len(negative_fields) > 0:
             raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                  msg=f"{negative_fields}")
+                                  msg=f"{sorted(negative_fields)}")
         return delegation_id
 
     @staticmethod
@@ -620,7 +654,8 @@ class NetworkNodeInventory(InventoryForType):
 
     def __allocate_p4_switch(self, *, rid: ID, requested_sliver: NodeSliver, graph_id: str, graph_node: NodeSliver,
                              existing_reservations: List[ABCReservationMixin], existing_components: Dict[str, List[str]],
-                             operation: ReservationOperation = ReservationOperation.Create) -> Tuple[str, BaseSliver]:
+                             operation: ReservationOperation = ReservationOperation.Create,
+                             start: datetime = None, end: datetime = None) -> Tuple[str, BaseSliver]:
         """
         Allocate an extending or ticketing reservation for a P4 switch
 
@@ -631,6 +666,8 @@ class NetworkNodeInventory(InventoryForType):
         :param existing_components: Existing Components
         :param existing_reservations: Existing Reservations served by the same BQM node
         :param operation: Indicates if this is create or modify
+        :param start: start of the requested window; used to account for concurrent usage
+        :param end: end of the requested window; used to account for concurrent usage
 
         :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
         :raises: BrokerException in case the request cannot be satisfied
@@ -655,7 +692,8 @@ class NetworkNodeInventory(InventoryForType):
         # Check if Capacities can be satisfied
         delegation_id = self.check_capacities(rid=rid, requested_capacities=requested_capacities,
                                               delegated=graph_node.get_capacity_delegations(),
-                                              existing_reservations=existing_reservations, logger=self.logger)
+                                              existing_reservations=existing_reservations, logger=self.logger,
+                                              start=start, end=end)
         requested_sliver.capacity_allocations = Capacities()
         requested_sliver.capacity_allocations = Capacities.update(lab=requested_capacities)
         requested_sliver.label_allocations = Labels(local_name=graph_node.get_name())
@@ -672,7 +710,8 @@ class NetworkNodeInventory(InventoryForType):
                  existing_reservations: List[ABCReservationMixin], existing_components: Dict[str, List[str]],
                  operation: ReservationOperation = ReservationOperation.Create,
                  blocked_vlans: Set[str] = None,
-                 ns_components_lookup: Callable[[], Dict[str, List[str]]] = None) -> Tuple[str, BaseSliver]:
+                 ns_components_lookup: Callable[[], Dict[str, List[str]]] = None,
+                 start: datetime = None, end: datetime = None) -> Tuple[str, BaseSliver]:
         """
         Allocate an extending or ticketing reservation
         :param rid: reservation id of the reservation to be allocated
@@ -684,6 +723,8 @@ class NetworkNodeInventory(InventoryForType):
         :param operation: Indicates if this is create or modify
         :param blocked_vlans: VLANs which must not be allocated for Shared NICs on this worker
         :param ns_components_lookup: returns components in use by Network Services only; used for error reporting
+        :param start: start of the requested window; used to account for concurrent usage
+        :param end: end of the requested window; used to account for concurrent usage
         :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
         :raises: BrokerException in case the request cannot be satisfied
         """
@@ -706,7 +747,8 @@ class NetworkNodeInventory(InventoryForType):
         if requested_sliver.get_type() == NodeType.Switch:
             return self.__allocate_p4_switch(rid=rid, requested_sliver=requested_sliver, graph_id=graph_id,
                                              graph_node=graph_node, existing_reservations=existing_reservations,
-                                             existing_components=existing_components, operation=operation)
+                                             existing_components=existing_components, operation=operation,
+                                             start=start, end=end)
 
         delegation_id = None
         requested_capacities = None
@@ -725,7 +767,8 @@ class NetworkNodeInventory(InventoryForType):
         # Check if Capacities can be satisfied
         delegation_id = self.check_capacities(rid=rid, requested_capacities=requested_capacities,
                                               delegated=graph_node.get_capacity_delegations(),
-                                              existing_reservations=existing_reservations, logger=self.logger)
+                                              existing_reservations=existing_reservations, logger=self.logger,
+                                              start=start, end=end)
 
         # Check if Components can be allocated
         if requested_sliver.attached_components_info is not None:
