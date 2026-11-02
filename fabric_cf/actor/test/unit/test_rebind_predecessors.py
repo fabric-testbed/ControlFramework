@@ -51,8 +51,9 @@ class TestRebindPredecessors(unittest.TestCase):
         r.get_join_predecessors.return_value = join or []
         return r
 
-    def _rebind(self, reservations: list, live: dict):
-        actor = SimpleNamespace(get_reservation=lambda rid: live.get(str(rid)))
+    def _rebind(self, reservations: list, live: dict, get_reservation=None):
+        actor = SimpleNamespace(get_reservation=get_reservation or (lambda rid: live.get(str(rid))),
+                                logger=MagicMock())
         ActorMixin.rebind_predecessors(actor, reservations=reservations)
 
     def test_predecessors_rebound_to_live_reservations(self):
@@ -78,6 +79,24 @@ class TestRebindPredecessors(unittest.TestCase):
         self._rebind(reservations=[ns], live={})
 
         self.assertIs(redeem.get_reservation(), stale_vm)
+
+    def test_lookup_failure_does_not_abort_rebind(self):
+        stale_vm = self._reservation("vm")
+        stale_switch = self._reservation("switch")
+        live_switch = self._reservation("switch")
+        failing = PredecessorState(reservation=stale_vm)
+        rebound = PredecessorState(reservation=stale_switch)
+        ns = self._controller_reservation(redeem=[failing, rebound])
+
+        def get_reservation(rid):
+            if str(rid) == "vm":
+                raise Exception("lookup failed")
+            return live_switch
+
+        self._rebind(reservations=[ns], live={}, get_reservation=get_reservation)
+
+        self.assertIs(failing.get_reservation(), stale_vm)
+        self.assertIs(rebound.get_reservation(), live_switch)
 
     def test_non_controller_reservations_ignored(self):
         other = MagicMock()

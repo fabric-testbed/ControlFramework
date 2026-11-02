@@ -604,9 +604,13 @@ class ActorMixin(ABCActorMixin):
             for pred_state in r.get_redeem_predecessors() + r.get_join_predecessors():
                 if pred_state.reservation_id is None:
                     continue
-                live = self.get_reservation(rid=pred_state.reservation_id)
-                if live is not None:
-                    pred_state.set_reservation(reservation=live)
+                try:
+                    live = self.get_reservation(rid=pred_state.reservation_id)
+                    if live is not None:
+                        pred_state.set_reservation(reservation=live)
+                except Exception as e:
+                    self.logger.error(f"Could not rebind predecessor {pred_state.reservation_id} for "
+                                      f"reservation# {r.get_reservation_id()}: {e}")
 
     def recover_delegations(self, *, slice_obj: ABCSlice):
         """
