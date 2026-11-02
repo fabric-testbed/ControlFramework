@@ -1077,8 +1077,9 @@ class OrchestratorHandler:
                              f"({default_max_duration} hours). Setting to maximum allowable.")
             lifetime = default_max_duration
 
-        # Calculate the new end time
-        new_end_time = base_time + timedelta(hours=lifetime)
+        # Calculate the new end time; whole seconds, as terms exchanged with the broker and AM are carried in
+        # milliseconds and a microsecond remainder never compares equal to the end they return
+        new_end_time = (base_time + timedelta(hours=lifetime)).replace(microsecond=0)
 
         return base_time, new_end_time
 
