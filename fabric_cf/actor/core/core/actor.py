@@ -36,6 +36,7 @@ from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
 from fabric_cf.actor.core.apis.abc_actor_event import ABCActorEvent
 from fabric_cf.actor.core.apis.abc_actor_proxy import ABCActorProxy
 from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
+from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
 from fabric_cf.actor.core.apis.abc_query_response_handler import ABCQueryResponseHandler
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
@@ -547,6 +548,8 @@ class ActorMixin(ABCActorMixin):
             except Exception as e:
                 self.logger.error("Unexpected error while recovering reservation {}".format(e))
 
+        self.rebind_predecessors(reservations=reservations)
+
         self.logger.info("Recovery for reservations in slice {} completed".format(slice_obj))
 
     def recover_reservation(self, *, r: ABCReservationMixin, slice_obj: ABCSlice):
@@ -586,6 +589,28 @@ class ActorMixin(ABCActorMixin):
             self.logger.error(traceback.format_exc())
             self.logger.error("Exception occurred in recovering reservation e={}".format(e))
             raise ActorException("Could not recover Reservation #{}".format(r))
+
+    def rebind_predecessors(self, *, reservations: List[ABCReservationMixin]):
+        """
+        Point the predecessors of recovered reservations at the reservations registered with the kernel.
+        When a reservation is loaded from the database its predecessors are bound to separate copies
+        loaded from the database, which are never updated; predecessor checks (e.g. renew waiting for the
+        VMs to be extended) would then evaluate the state and term as of the restart
+        @param reservations recovered reservations
+        """
+        for r in reservations:
+            if not isinstance(r, ABCControllerReservation):
+                continue
+            for pred_state in r.get_redeem_predecessors() + r.get_join_predecessors():
+                if pred_state.reservation_id is None:
+                    continue
+                try:
+                    live = self.get_reservation(rid=pred_state.reservation_id)
+                    if live is not None:
+                        pred_state.set_reservation(reservation=live)
+                except Exception as e:
+                    self.logger.error(f"Could not rebind predecessor {pred_state.reservation_id} for "
+                                      f"reservation# {r.get_reservation_id()}: {e}")
 
     def recover_delegations(self, *, slice_obj: ABCSlice):
         """
