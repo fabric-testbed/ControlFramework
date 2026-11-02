@@ -48,6 +48,7 @@ from fabric_cf.actor.core.kernel.poa import Poa
 from fabric_cf.actor.core.util.rpc_exception import RPCError
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin, ReservationCategory
 from fabric_cf.actor.core.kernel.predecessor_state import PredecessorState
+from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric_cf.actor.core.kernel.reservation import Reservation
 from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates, JoinState
@@ -597,7 +598,12 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 approved = False
                 break
 
-            if self.get_approved_term().ends_after(date=pred_reservation_term.get_end_time()):
+            # Compare at millisecond precision: terms exchanged with the broker and AM are carried in
+            # milliseconds, while a renew from the REST API computes the new end with microseconds; a
+            # predecessor extended to the same end would otherwise never cover this reservation
+            approved_end_ms = ActorClock.to_milliseconds(when=self.get_approved_term().get_end_time())
+            pred_end_ms = ActorClock.to_milliseconds(when=pred_reservation_term.get_end_time())
+            if approved_end_ms > pred_end_ms:
                 # Predecessor does not (yet) cover the extension; reservations in a slice are extended in
                 # arbitrary order so the predecessor may not have been asked to extend yet.
                 # Roll back only once its extend attempt concluded after this reservation blocked on it,
