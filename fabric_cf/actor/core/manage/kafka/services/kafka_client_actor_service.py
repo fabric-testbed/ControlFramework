@@ -49,7 +49,6 @@ from fabric_cf.actor.core.common.constants import ErrorCodes
 from fabric_cf.actor.core.manage.kafka.services.kafka_actor_service import KafkaActorService
 from fabric_cf.actor.core.manage.management_object import ManagementObject
 from fabric_cf.actor.core.time.actor_clock import ActorClock
-from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.util.id import ID
 
@@ -248,14 +247,10 @@ class KafkaClientActorService(KafkaActorService):
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             end_time = ActorClock.from_milliseconds(milli_seconds=request.end_time)
-            rtype = None
-            if request.new_resource_type is not None:
-                rtype = ResourceType(resource_type=request.new_resource_type)
 
-            result.status = mo.extend_reservation(rid=ID(uid=request.reservation_id), new_end_time=end_time,
-                                                  new_units=request.new_units, new_resource_type=rtype,
-                                                  request_properties=request.request_properties,
-                                                  config_properties=request.config_properties, caller=auth)
+            # ExtendReservationAvro carries no sliver; a renew only moves the end time
+            result.status = mo.extend_reservation(reservation=ID(uid=request.reservation_id), new_end_time=end_time,
+                                                  sliver=None, caller=auth)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
