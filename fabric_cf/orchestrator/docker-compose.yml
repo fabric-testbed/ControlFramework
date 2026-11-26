@@ -1,6 +1,6 @@
 services:
   nginx:
-    image: library/nginx:1
+    image: library/nginx:1.31.9
     container_name: orchestrator-nginx
     depends_on:
       - orchestrator    
